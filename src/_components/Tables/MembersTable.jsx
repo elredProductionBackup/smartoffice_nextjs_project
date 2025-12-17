@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { FaWhatsapp, FaEnvelope, FaPhone } from "react-icons/fa";
+import { IoIosArrowBack,IoIosArrowForward  } from "react-icons/io";
 import { SiGoogledocs } from "react-icons/si";
 
 import noMember from "@/assets/logo/no-member.svg";
@@ -9,6 +10,8 @@ import userImage from "@/assets/image/user.jpeg";
 import { CONSTANTS } from "@/utils/data";
 import { useModalStore } from "@/store/useModalStore";
 import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+
 
 // ------------------------ 10 SAMPLE MEMBERS ------------------------
 const sampleData = [
@@ -92,10 +95,33 @@ const sampleData = [
     email: "emily.johnson@gmail.com",
     phone: "9876567890",
   },
+  {
+    id: 11,
+    name: "Emily Johnson",
+    role: "Content Strategist",
+    image: userImage,
+    email: "emily.johnson@gmail.com",
+    phone: "9876567890",
+  },
+  {
+    id: 12,
+    name: "Emily Johnson",
+    role: "Content Strategist",
+    image: userImage,
+    email: "emily.johnson@gmail.com",
+    phone: "9876567890",
+  },
 ];
 
 export default function MembersTable({ data = sampleData, document = true }) {
   const open = useModalStore((state) => state.open);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const currentPage = Number(searchParams.get("page")) || 1;
+
+  const startIndex = (currentPage - 1) * CONSTANTS.ITEMS_PER_PAGE;
+  const endIndex = startIndex + CONSTANTS.ITEMS_PER_PAGE;
 
   const [openPhoneFor, setOpenPhoneFor] = useState(null);
 
@@ -106,8 +132,17 @@ export default function MembersTable({ data = sampleData, document = true }) {
 
   const columns = document ? "grid-cols-3" : "grid-cols-2";
 
+    const changePage = (page) => {
+    router.push(`/dashboard/members?page=${page}`);
+  };
+
+
+  
+  const paginatedData = data?.slice(startIndex, endIndex);
+  const totalPages = Math.ceil(data.length / CONSTANTS.ITEMS_PER_PAGE);
+
   return (
-    <div className="rounded-[20px] bg-[#F2F7FF] h-[calc(100vh-226px)] overflow-y-auto pb-10">
+    <div className="rounded-[20px] bg-[#F2F7FF] h-[calc(100vh-226px)] overflow-y-auto relative flex flex-col">
 
       {/* Table Header */}
       <div
@@ -128,17 +163,18 @@ export default function MembersTable({ data = sampleData, document = true }) {
       )}
 
       {/* Rows */}
-      <div className="space-y-4">
-        {data.map((member, index) => {
+      <div className="space-y-4 flex-1">
+        {paginatedData.map((member, index) => {
 
           // last few items → popup opens upward
-          const openUpwards = index >= data.length - 2;
+          const openUpwards = index >= paginatedData.length - 2;
+          // const openUpwards = index >= data.length - 2;
 
           return (
             <div
               key={member.id}
               className={`grid ${columns} items-center p-4 bg-[#F2F7FF] mx-4 cursor-pointer
-              ${index !== data.length - 1 ? "border-b border-b-[#D4DFF1]" : ""}
+              ${index !== paginatedData.length - 1 ? "border-b border-b-[#D4DFF1]" : ""}
             `}
               onClick={() => open(member)}
             >
@@ -219,6 +255,35 @@ export default function MembersTable({ data = sampleData, document = true }) {
           );
         })}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex justify-between gap-2 mt-6 bg-[#F2F7FF] px-[30px] pt-[20px] pb-[33px] sticky bottom-0">
+          <div className="h-[48px] flex items-center text-lg font-semibold text-[#333333]">
+            Showing {(currentPage - 1) * CONSTANTS.ITEMS_PER_PAGE + 1} to {Math.min(currentPage * CONSTANTS.ITEMS_PER_PAGE, data.length)} out of {data.length} entries
+          </div>
+
+          <div className="absolute left-1/2 -translate-x-1/2 flex gap-[80px]">
+              <button
+              disabled={currentPage === 1}
+              onClick={() => changePage(currentPage - 1)}
+              className="w-[48px] h-[48px] flex items-center justify-center rounded-full border-[1.2px] text-[24px] border-[#0B57D0] text-[#0B57D0] disabled:border-[#999999] disabled:text-[#999999] cursor-pointer"
+            >
+              <IoIosArrowBack/>
+            </button>
+
+            <button
+              disabled={currentPage === totalPages}
+              onClick={() => changePage(currentPage + 1)}
+              className="w-[48px] h-[48px] flex items-center justify-center rounded-full border-[1.2px] text-[24px] border-[#0B57D0] text-[#0B57D0] disabled:border-[#999999] disabled:text-[#999999] cursor-pointer"
+            >
+              <IoIosArrowForward/>
+            </button>
+          </div>
+          <div></div>
+        </div>
+      )}
+
     </div>
   );
 }
