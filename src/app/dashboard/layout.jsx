@@ -83,6 +83,7 @@ import vendorsLogo from "@/assets/logo/vendors.svg";
 import resourcesLogo from "@/assets/logo/mynaui_database.svg";
 import archiveLogo from "@/assets/logo/ion_archive-outline.svg";
 import alliancesLogo from "@/assets/logo/la_handshake.svg";
+import actionableLogo from "@/assets/logo/actionable.svg";
 import Image from "next/image";
 import Header from "@/_components/Header";
 
@@ -96,6 +97,7 @@ export default function DashboardLayout({ children }) {
   const menu = [
     { name: "Dashboard", path: "/dashboard/profile", logo: dashboardLogo },
     { name: "Checklist", path: "/dashboard/checklist", logo: checklistLogo },
+    { name: "Vendors", path: "/dashboard/actionable", logo: actionableLogo },
     { name: "Members", path: "/dashboard/members?tab=members", logo: memberLogo },  // ⬅ FIXED
     { name: "Vendors", path: "/dashboard/vendors?tab=hotels", logo: vendorsLogo },
     { name: "Resources", path: "/dashboard/resources", logo: resourcesLogo },
