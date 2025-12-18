@@ -5,7 +5,7 @@ import user from "@/assets/image/user.jpeg";
 
 const Header = () => {
   return (
-    <div className="h-20 bg-[#F2F7FF] flex items-center justify-between px-[50px]">
+    <div className="min-h-20 bg-[#F2F7FF] flex items-center justify-between px-[50px]">
       <Image src={logo} alt="logo" width={96} height={40}/>
       <div className="flex gap-10">
         <div className="flex gap-[10px] items-center cursor-pointer">

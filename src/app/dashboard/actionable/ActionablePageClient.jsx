@@ -1,34 +1,24 @@
 "use client";
 
+// import SectionHeader from "@/_components/SectionHeader";
+// import MembersTable from "@/_components/Tables/MembersTable";
 import { useSearchParams } from "next/navigation";
-import SectionHeader from "@/_components/SectionHeader";
-import MembersTable from "@/_components/Tables/MembersTable";
 import ActionableHeader from "@/_components/ActionableHeader";
+import ActionableTabs from "@/_components/ActionableTabs";
+import ActionItems from "@/_components/ActionItems";
+
 
 export default function ActionablePageClient() {
   const searchParams = useSearchParams();
   const currentTab = searchParams.get("tab") || "members";
 
   return (
-    <div>
+   <div className="h-[100%] flex flex-1 flex-col">
       <ActionableHeader
         title="Actionable"
-       
-        // searchPlaceholder="Search member"
       />
-
-      {/* <div className="mt-6">
-        {currentTab === "members" && (
-          <div>
-            <MembersTable />
-          </div>
-        )}
-        {currentTab === "board" && (
-          <div>
-            <MembersTable document={false} />
-          </div>
-        )}
-      </div> */}
+      <ActionableTabs />
+       <ActionItems />
     </div>
   );
 }
