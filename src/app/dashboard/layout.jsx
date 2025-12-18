@@ -105,6 +105,7 @@ export default function DashboardLayout({ children }) {
     { name: "Alliances", path: "/dashboard/alliances", logo: alliancesLogo },
   ];
 
+  console.log('deployyed')
   return (
     <div className="h-screen flex flex-col">
       {/* Navbar */}

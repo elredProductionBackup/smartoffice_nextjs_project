@@ -2,6 +2,7 @@ import { Nunito_Sans } from "next/font/google";
 import "./globals.css";
 import MemberInfoPopup from "@/_components/MemberInfoPopup";
 import VendorNotePopup from "@/_components/VendorNotePopup";
+import DatepickerModal from "@/_components/DatepickerModal";
 
 const nunito_sans = Nunito_Sans({
   variable: "--font-nunito-sans",
@@ -19,7 +20,8 @@ export default function RootLayout({ children }) {
       <body className={`${nunito_sans.variable} antialiased`}>
         <MemberInfoPopup />
         {children}
-        <VendorNotePopup />  
+        <VendorNotePopup />
+        <DatepickerModal />
       </body>
     </html>
   );
