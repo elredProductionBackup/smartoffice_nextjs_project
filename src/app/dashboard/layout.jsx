@@ -99,10 +99,17 @@ export default function DashboardLayout({ children }) {
     { name: "Checklist", path: "/dashboard/checklist", logo: checklistLogo },
     { name: "Vendors", path: "/dashboard/actionable", logo: actionableLogo },
     { name: "Members", path: "/dashboard/members?tab=members", logo: memberLogo },  // ⬅ FIXED
+<<<<<<< Updated upstream
     // { name: "Vendors", path: "/dashboard/vendors?tab=hotels", logo: vendorsLogo },
     // { name: "Resources", path: "/dashboard/resources", logo: resourcesLogo },
     // { name: "Archive", path: "/dashboard/archive", logo: archiveLogo },
     // { name: "Alliances", path: "/dashboard/alliances", logo: alliancesLogo },
+=======
+    { name: "Vendors", path: "/dashboard/vendors?tab=hotels", logo: vendorsLogo },
+    { name: "Resources", path: "/dashboard/resources", logo: resourcesLogo },
+    { name: "Archive", path: "/dashboard/archive", logo: archiveLogo },
+    { name: "Test", path: "/dashboard/test", logo: alliancesLogo },
+>>>>>>> Stashed changes
   ];
 
   return (
