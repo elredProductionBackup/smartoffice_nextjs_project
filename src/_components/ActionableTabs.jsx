@@ -6,9 +6,6 @@ import { useState } from "react";
 const DEFAULT_TABS = [
   { label: "All", value: "all" },
   // { label: "Board", value: "board" },
-  // { label: "Event", value: "event" },
-  // { label: "Membership", value: "membership" },
-  // { label: "Finance", value: "finance" },
 ];
 
 export default function ActionableTabs() {
