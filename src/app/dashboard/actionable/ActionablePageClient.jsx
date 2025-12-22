@@ -16,9 +16,11 @@ export default function ActionablePageClient() {
    <div className="h-[100%] flex flex-1 flex-col">
       <ActionableHeader
         title="Actionable"
+        taskCount={24}
+        refresh
       />
       <ActionableTabs />
-       <ActionItems />
+      <ActionItems />
     </div>
   );
 }

@@ -111,7 +111,7 @@ export default function DashboardLayout({ children }) {
       <Header />
 
       {/* Main */}
-      <div className="flex flex-1">
+      <div className="flex flex-1 max-h-[calc(100vh - 80px)]">
         <div className="p-5">
           <div className="w-21 bg-[#F2F7FF] h-full p-5 rounded-2xl">
             <ul className="space-y-10">

@@ -1,5 +1,6 @@
 import { Nunito_Sans } from "next/font/google";
 import "./globals.css";
+import '../icons.css'
 import MemberInfoPopup from "@/_components/MemberInfoPopup";
 import VendorNotePopup from "@/_components/VendorNotePopup";
 
