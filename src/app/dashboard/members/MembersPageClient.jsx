@@ -1,35 +1,55 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import SectionHeader from "@/_components/SectionHeader";
 import MembersTable from "@/_components/Tables/MembersTable";
+import { useMembersData } from "@/hooks/useMembersData";
+import { useState } from "react";
 
 export default function MembersPageClient() {
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const currentTab = searchParams.get("tab") || "members";
+  const [search, setSearch] = useState("");
+  const tab = searchParams.get("tab") || "members";
+  const page = Number(searchParams.get("page")) || 1;
+  // const search = searchParams.get("search") || "";
+
+  const updateParams = (params) => {
+    const q = new URLSearchParams(searchParams.toString());
+    Object.entries(params).forEach(([k, v]) => q.set(k, v));
+    router.replace(`?${q.toString()}`);
+  };
+
+  const { data, total, loading } = useMembersData({
+    tab,
+    page,
+    search,
+    limit: 10,
+  });
 
   return (
-    <div>
+    <div className="h-[calc(100vh-120px)] flex flex-col">
       <SectionHeader
         title="Members"
         tabs={[
           { key: "members", label: "Members" },
           { key: "board", label: "Board" },
         ]}
-        searchPlaceholder="Search member"
+        activeTab={tab}
+        onTabChange={(key) =>
+          updateParams({ tab: key, page: 1 })
+        }
+        search={search}
+        onSearch={setSearch}
       />
-
-      <div className="mt-6">
-        {currentTab === "members" && (
-          <div>
-            <MembersTable />
-          </div>
-        )}
-        {currentTab === "board" && (
-          <div>
-            <MembersTable document={false} />
-          </div>
-        )}
+      <div className="flex-1 flex flex-col min-h-0">
+        <MembersTable
+          data={data}
+          total={total}
+          currentPage={page}
+          loading={loading}
+          onPageChange={(p) => updateParams({ page: p })}
+        />
       </div>
     </div>
   );

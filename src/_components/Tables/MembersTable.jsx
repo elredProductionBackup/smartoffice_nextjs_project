@@ -1,5 +1,4 @@
 import Image from "next/image";
-import { FaWhatsapp, FaEnvelope, FaPhone } from "react-icons/fa";
 import { IoIosArrowBack,IoIosArrowForward  } from "react-icons/io";
 import { SiGoogledocs } from "react-icons/si";
 
@@ -10,15 +9,13 @@ import userImage from "@/assets/image/user.jpeg";
 import { CONSTANTS } from "@/utils/data";
 import { useModalStore } from "@/store/useModalStore";
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
 
 
-// ------------------------ 10 SAMPLE MEMBERS ------------------------
 const sampleData = [
   {
     id: 1,
     name: "Liam Chen",
-    role: "UX Designer",
+    title: "UX Designer",
     image: userImage,
     email: "liamchen@gmail.com",
     phone: "9876543210",
@@ -26,102 +23,15 @@ const sampleData = [
   {
     id: 2,
     name: "Ava Patel",
-    role: "Marketing Specialist",
+    title: "Marketing Specialist",
     image: userImage,
     email: "ava.patel@gmail.com",
     phone: "9876501234",
   },
-  {
-    id: 3,
-    name: "Noah Kim",
-    role: "Software Engineer",
-    image: userImage,
-    email: "noah.kim@gmail.com",
-    phone: "9876505678",
-  },
-  {
-    id: 4,
-    name: "Isabella Garcia",
-    role: "Data Analyst",
-    image: userImage,
-    email: "isabella.garcia@gmail.com",
-    phone: "9876512345",
-  },
-  {
-    id: 5,
-    name: "Ethan Rodriguez",
-    role: "Product Manager",
-    image: userImage,
-    email: "ethan.rod@gmail.com",
-    phone: "9876554321",
-  },
-  {
-    id: 6,
-    name: "Sophia Mehta",
-    role: "Customer Success Lead",
-    image: userImage,
-    email: "sophia.mehta@gmail.com",
-    phone: "9876549870",
-  },
-  {
-    id: 7,
-    name: "Arjun Reddy",
-    role: "Frontend Developer",
-    image: userImage,
-    email: "arjun.reddy@gmail.com",
-    phone: "9876598765",
-  },
-  {
-    id: 8,
-    name: "Mia Thompson",
-    role: "HR Executive",
-    image: userImage,
-    email: "mia.thompson@gmail.com",
-    phone: "9876524680",
-  },
-  {
-    id: 9,
-    name: "Rahul Singh",
-    role: "QA Engineer",
-    image: userImage,
-    email: "rahul.singh@gmail.com",
-    phone: "9876581234",
-  },
-  {
-    id: 10,
-    name: "Emily Johnson",
-    role: "Content Strategist",
-    image: userImage,
-    email: "emily.johnson@gmail.com",
-    phone: "9876567890",
-  },
-  {
-    id: 11,
-    name: "Emily Johnson",
-    role: "Content Strategist",
-    image: userImage,
-    email: "emily.johnson@gmail.com",
-    phone: "9876567890",
-  },
-  {
-    id: 12,
-    name: "Emily Johnson",
-    role: "Content Strategist",
-    image: userImage,
-    email: "emily.johnson@gmail.com",
-    phone: "9876567890",
-  },
 ];
 
-export default function MembersTable({ data = sampleData, document = true }) {
+export default function MembersTable({ data = sampleData,total, document = false,currentPage,loading, onPageChange }) {
   const open = useModalStore((state) => state.open);
-  const router = useRouter();
-  const searchParams = useSearchParams();
-
-  const currentPage = Number(searchParams.get("page")) || 1;
-
-  const startIndex = (currentPage - 1) * CONSTANTS.ITEMS_PER_PAGE;
-  const endIndex = startIndex + CONSTANTS.ITEMS_PER_PAGE;
 
   const [openPhoneFor, setOpenPhoneFor] = useState(null);
 
@@ -129,57 +39,50 @@ export default function MembersTable({ data = sampleData, document = true }) {
     e.stopPropagation();
     setOpenPhoneFor((prev) => (prev === member.id ? null : member.id));
   };
-
-  const columns = document ? "grid-cols-3" : "grid-cols-2";
-
-    const changePage = (page) => {
-    router.push(`/dashboard/members?page=${page}`);
-  };
-
-
   
-  const paginatedData = data?.slice(startIndex, endIndex);
-  const totalPages = Math.ceil(data.length / CONSTANTS.ITEMS_PER_PAGE);
+
+  const paginatedData = data;
+  const totalPages = Math.ceil(total / CONSTANTS.ITEMS_PER_PAGE);
+
+  if (loading) return null;
 
   return (
-    <div className="rounded-[20px] bg-[#F2F7FF] h-[calc(100vh-226px)] overflow-y-auto relative flex flex-col">
+    <div className="flex-1 min-h-0 mt-[20px] rounded-[20px] bg-[#F2F7FF]  overflow-y-auto relative flex flex-col">
 
       {/* Table Header */}
       <div
-        className={`grid ${columns} font-bold text-lg text-[#333333] mb-4 px-6 sticky top-0 bg-[#F2F7FF] py-3 pt-6 z-10`}
+        className={`flex items-center font-bold text-lg text-[#333333] px-[30px] pt-[30px] pb-[20px] sticky top-0 bg-[#F2F7FF] py-3 pt-6 z-10`}
       >
-        <div>Name/Title</div>
+        <div className="flex-3">Name/Title</div>
         {document && <div className="text-center">Documents</div>}
-        <div className="text-center">Actions</div>
+        <div className="flex-1">Actions</div>
       </div>
 
       {/* Empty State */}
       {data.length === 0 && (
         <div className="flex flex-col justify-center items-center h-[calc(100vh-340px)] text-xl font-medium text-[#666]">
           <Image src={noMember} alt="" className="mb-8" />
-          <div className="mb-5 text-2xl font-semibold">No members found</div>
+          <div className="mb-5 text-2xl font-semibold">No members yet</div>
           <div className="text-base font-normal">{CONSTANTS.NO_USER}</div>
         </div>
       )}
 
       {/* Rows */}
-      <div className="space-y-4 flex-1">
+      <div className=" flex-1">
         {paginatedData.map((member, index) => {
 
-          // last few items → popup opens upward
           const openUpwards = index >= paginatedData.length - 2;
-          // const openUpwards = index >= data.length - 2;
 
           return (
             <div
               key={member.id}
-              className={`grid ${columns} items-center p-4 bg-[#F2F7FF] mx-4 cursor-pointer
+              className={`flex flex-1 items-center py-[20px] px-[30px] bg-[#F2F7FF]  cursor-pointer
               ${index !== paginatedData.length - 1 ? "border-b border-b-[#D4DFF1]" : ""}
             `}
               onClick={() => open(member)}
             >
-              {/* LEFT - Name + Role */}
-              <div className="flex items-center gap-4">
+              {/* LEFT - Name + title */}
+              <div className="flex flex-3 items-center gap-4">
                 <Image
                   src={member.image}
                   alt={member.name}
@@ -192,7 +95,7 @@ export default function MembersTable({ data = sampleData, document = true }) {
                     {member.name}
                   </p>
                   <p className="text-base font-medium text-[#666666]">
-                    {member.role}
+                    {member.title}
                   </p>
                 </div>
               </div>
@@ -207,13 +110,15 @@ export default function MembersTable({ data = sampleData, document = true }) {
               )}
 
               {/* RIGHT - Action Icons */}
-              <div className="flex justify-center gap-4">
+              <div className="flex flex-1  gap-4 text-[#666666]">
                 <div className="w-10 h-10 bg-[#E6EBF2] rounded-full flex items-center justify-center cursor-pointer">
-                  <FaWhatsapp size={24} color="#666666" />
+                  {/* <FaWhatsapp size={24} color="#666666" /> */}
+                  <span className="ic--baseline-whatsapp"></span>
                 </div>
 
                 <div className="w-10 h-10 bg-[#E6EBF2] rounded-full flex items-center justify-center cursor-pointer">
-                  <FaEnvelope size={24} color="#666666" />
+                  {/* <FaEnvelope size={24} color="#666666" /> */}
+                  <span className="oui--email"></span>
                 </div>
 
                 {/* PHONE ICON + POPUP */}
@@ -221,8 +126,8 @@ export default function MembersTable({ data = sampleData, document = true }) {
                   className="w-10 h-10 bg-[#E6EBF2] rounded-full flex items-center justify-center cursor-pointer relative"
                   onClick={(e) => showPhoneDetails(e, member)}
                 >
-                  <FaPhone size={24} color="#666666" />
-
+                  {/* <FaPhone size={24} color="#666666" /> */}
+                  <span className="proicons--call"></span>
                   {/* PHONE POPUP */}
                   {openPhoneFor === member.id && (
                     <div
@@ -260,21 +165,23 @@ export default function MembersTable({ data = sampleData, document = true }) {
       {totalPages > 1 && (
         <div className="flex justify-between gap-2 mt-6 bg-[#F2F7FF] px-[30px] pt-[20px] pb-[33px] sticky bottom-0">
           <div className="h-[48px] flex items-center text-lg font-semibold text-[#333333]">
-            Showing {(currentPage - 1) * CONSTANTS.ITEMS_PER_PAGE + 1} to {Math.min(currentPage * CONSTANTS.ITEMS_PER_PAGE, data.length)} out of {data.length} entries
+            Showing {(currentPage - 1) * CONSTANTS.ITEMS_PER_PAGE + 1} to {Math.min(currentPage * CONSTANTS.ITEMS_PER_PAGE, total)} out of {total} entries
           </div>
 
           <div className="absolute left-1/2 -translate-x-1/2 flex gap-[80px]">
               <button
               disabled={currentPage === 1}
-              onClick={() => changePage(currentPage - 1)}
+              onClick={() => onPageChange(currentPage - 1)}
               className="w-[48px] h-[48px] flex items-center justify-center rounded-full border-[1.2px] text-[24px] border-[#0B57D0] text-[#0B57D0] disabled:border-[#999999] disabled:text-[#999999] cursor-pointer"
             >
               <IoIosArrowBack/>
             </button>
 
             <button
-              disabled={currentPage === totalPages}
-              onClick={() => changePage(currentPage + 1)}
+              // disabled={currentPage === totalPages}
+              // onClick={() => changePage(currentPage + 1)}
+               disabled={currentPage === totalPages}
+              onClick={() => onPageChange(currentPage + 1)}
               className="w-[48px] h-[48px] flex items-center justify-center rounded-full border-[1.2px] text-[24px] border-[#0B57D0] text-[#0B57D0] disabled:border-[#999999] disabled:text-[#999999] cursor-pointer"
             >
               <IoIosArrowForward/>
