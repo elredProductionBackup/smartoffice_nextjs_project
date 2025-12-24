@@ -5,6 +5,7 @@ import SectionHeader from "@/_components/SectionHeader";
 import MembersTable from "@/_components/Tables/MembersTable";
 import { useMembersData } from "@/hooks/useMembersData";
 import { useState } from "react";
+import MemberDetailsModal from "@/_components/MemberDetailsModal";
 
 export default function MembersPageClient() {
   const router = useRouter();
@@ -13,6 +14,16 @@ export default function MembersPageClient() {
   const tab = searchParams.get("tab") || "members";
   const page = Number(searchParams.get("page")) || 1;
   // const search = searchParams.get("search") || "";
+
+  const [selectedMember, setSelectedMember] = useState(null);
+
+  const openMember = (member) => {
+    setSelectedMember(member);
+  };
+
+  const closeMember = () => {
+    setSelectedMember(null);
+  };
 
   const updateParams = (params) => {
     const q = new URLSearchParams(searchParams.toString());
@@ -49,8 +60,15 @@ export default function MembersPageClient() {
           currentPage={page}
           loading={loading}
           onPageChange={(p) => updateParams({ page: p })}
+          onRowClick={openMember}
         />
       </div>
+        {selectedMember && (
+        <MemberDetailsModal
+          member={selectedMember}
+          onClose={closeMember}
+        />
+      )}
     </div>
   );
 }

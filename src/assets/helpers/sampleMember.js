@@ -8,6 +8,23 @@ export const sampleData = [
     image: userImage,
     email: "liamchen@gmail.com",
     phone: "9876543210",
+    location: "Mumbai, India",
+    spouse: "Nami",
+    children: ['Zoro','Luffy'],
+    documents: [
+      {
+        title:'PAN',
+        preview:'https://res.cloudinary.com/dtrv7p3gg/image/upload/v1766580942/69f271f9afe3082b4c6951472fba1e2df5f2feab_ckn42j.png'
+      },
+      {
+        title:'Aadhar',
+        preview:'https://res.cloudinary.com/dtrv7p3gg/image/upload/v1766580934/4bb602b89d35fdc1ee011b1a05474aab69e5b618_p8ytbx.png'
+      },
+      {
+        title:'Passport',
+        preview:'https://res.cloudinary.com/dtrv7p3gg/image/upload/v1766580921/d2d1e9111ec2537138bdb5e587c46857eec2d8a9_xbcm7f.png'
+      },
+    ],
   },
   {
     id: 2,
@@ -16,6 +33,10 @@ export const sampleData = [
     image: userImage,
     email: "ava.patel@gmail.com",
     phone: "9876501234",
+    location: "Mumbai, India",
+    spouse: "Nami",
+    children: [],
+    documents: [],
   },
   {
     id: 3,
@@ -24,6 +45,10 @@ export const sampleData = [
     image: userImage,
     email: "noah.kim@gmail.com",
     phone: "9876505678",
+    location: "Mumbai, India",
+    spouse: "Nami",
+    children: [],
+    documents: [],
   },
   {
     id: 4,
@@ -32,6 +57,10 @@ export const sampleData = [
     image: userImage,
     email: "isabella.garcia@gmail.com",
     phone: "9876512345",
+    location: "Mumbai, India",
+    spouse: "Nami",
+    children: [],
+    documents: [],
   },
   {
     id: 5,
@@ -40,6 +69,10 @@ export const sampleData = [
     image: userImage,
     email: "ethan.rod@gmail.com",
     phone: "9876554321",
+    location: "Mumbai, India",
+    spouse: "Nami",
+    children: [],
+    documents: [],
   },
   {
     id: 6,
@@ -48,6 +81,10 @@ export const sampleData = [
     image: userImage,
     email: "sophia.mehta@gmail.com",
     phone: "9876549870",
+    location: "Mumbai, India",
+    spouse: "Nami",
+    children: [],
+    documents: [],
   },
   {
     id: 7,
@@ -56,6 +93,10 @@ export const sampleData = [
     image: userImage,
     email: "arjun.reddy@gmail.com",
     phone: "9876598765",
+    location: "Mumbai, India",
+    spouse: "Nami",
+    children: [],
+    documents: [],
   },
   {
     id: 8,
@@ -64,6 +105,10 @@ export const sampleData = [
     image: userImage,
     email: "mia.thompson@gmail.com",
     phone: "9876524680",
+    location: "Mumbai, India",
+    spouse: "Nami",
+    children: [],
+    documents: [],
   },
   {
     id: 9,
@@ -72,6 +117,10 @@ export const sampleData = [
     image: userImage,
     email: "rahul.singh@gmail.com",
     phone: "9876581234",
+    location: "Mumbai, India",
+    spouse: "Nami",
+    children: [],
+    documents: [],
   },
   {
     id: 10,
@@ -80,6 +129,10 @@ export const sampleData = [
     image: userImage,
     email: "emily.johnson@gmail.com",
     phone: "9876567890",
+    location: "Mumbai, India",
+    spouse: "Nami",
+    children: [],
+    documents: [],
   },
   {
     id: 11,
@@ -88,6 +141,10 @@ export const sampleData = [
     image: userImage,
     email: "emily.johnson@gmail.com",
     phone: "9876567890",
+    location: "Mumbai, India",
+    spouse: "Nami",
+    children: [],
+    documents: [],
   },
   {
     id: 12,
@@ -96,6 +153,10 @@ export const sampleData = [
     image: userImage,
     email: "emily.johnson@gmail.com",
     phone: "9876567890",
+    location: "Mumbai, India",
+    spouse: "Nami",
+    children: [],
+    documents: [],
   },
 ];
 // ------------------------ 10 SAMPLE MEMBERS ------------------------
@@ -107,6 +168,10 @@ export const boardData = [
     image: userImage,
     email: "liamchen@gmail.com",
     phone: "9876543210",
+        location: "Mumbai, India",
+    spouse: "Robin",
+    children: [],
+    documents: [],
   },
   {
     id: 2,
@@ -115,6 +180,10 @@ export const boardData = [
     image: userImage,
     email: "ava.patel@gmail.com",
     phone: "9876501234",
+        location: "Mumbai, India",
+    spouse: "Robin",
+    children: [],
+    documents: [],
   },
   {
     id: 3,
@@ -123,6 +192,10 @@ export const boardData = [
     image: userImage,
     email: "noah.kim@gmail.com",
     phone: "9876505678",
+        location: "Mumbai, India",
+    spouse: "Robin",
+    children: [],
+    documents: [],
   },
   {
     id: 4,
@@ -131,6 +204,10 @@ export const boardData = [
     image: userImage,
     email: "isabella.garcia@gmail.com",
     phone: "9876512345",
+        location: "Mumbai, India",
+    spouse: "Robin",
+    children: [],
+    documents: [],
   },
   {
     id: 5,
@@ -139,6 +216,10 @@ export const boardData = [
     image: userImage,
     email: "ethan.rod@gmail.com",
     phone: "9876554321",
+        location: "Mumbai, India",
+    spouse: "Robin",
+    children: [],
+    documents: [],
   },
   {
     id: 6,
@@ -147,6 +228,10 @@ export const boardData = [
     image: userImage,
     email: "sophia.mehta@gmail.com",
     phone: "9876549870",
+        location: "Mumbai, India",
+    spouse: "Robin",
+    children: [],
+    documents: [],
   },
   {
     id: 7,
@@ -155,6 +240,10 @@ export const boardData = [
     image: userImage,
     email: "arjun.reddy@gmail.com",
     phone: "9876598765",
+        location: "Mumbai, India",
+    spouse: "Robin",
+    children: [],
+    documents: [],
   },
   {
     id: 8,
@@ -163,6 +252,10 @@ export const boardData = [
     image: userImage,
     email: "mia.thompson@gmail.com",
     phone: "9876524680",
+        location: "Mumbai, India",
+    spouse: "Robin",
+    children: [],
+    documents: [],
   },
   {
     id: 9,
@@ -171,5 +264,9 @@ export const boardData = [
     image: userImage,
     email: "rahul.singh@gmail.com",
     phone: "9876581234",
+        location: "Mumbai, India",
+    spouse: "Robin",
+    children: [],
+    documents: [],
   },
 ];

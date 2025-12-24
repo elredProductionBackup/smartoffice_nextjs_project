@@ -19,6 +19,10 @@ const sampleData = [
     image: userImage,
     email: "liamchen@gmail.com",
     phone: "9876543210",
+    location: "Bangalore, India",
+    spouse: "Emily Chen",
+    children: ["Noah Chen", "Olivia Chen"],
+    documents: ["Aadhar", "Passport"],
   },
   {
     id: 2,
@@ -27,10 +31,14 @@ const sampleData = [
     image: userImage,
     email: "ava.patel@gmail.com",
     phone: "9876501234",
+    location: "Mumbai, India",
+    spouse: "Rohan Patel",
+    children: [],
+    documents: [],
   },
 ];
 
-export default function MembersTable({ data = sampleData,total, document = false,currentPage,loading, onPageChange }) {
+export default function MembersTable({ data = sampleData,total, document = false,currentPage,loading, onPageChange,onRowClick }) {
   const open = useModalStore((state) => state.open);
 
   const [openPhoneFor, setOpenPhoneFor] = useState(null);
@@ -79,7 +87,7 @@ export default function MembersTable({ data = sampleData,total, document = false
               className={`flex flex-1 items-center py-[20px] px-[30px] bg-[#F2F7FF]  cursor-pointer
               ${index !== paginatedData.length - 1 ? "border-b border-b-[#D4DFF1]" : ""}
             `}
-              onClick={() => open(member)}
+              onClick={() => onRowClick(member)}
             >
               {/* LEFT - Name + title */}
               <div className="flex flex-3 items-center gap-4">
@@ -178,8 +186,6 @@ export default function MembersTable({ data = sampleData,total, document = false
             </button>
 
             <button
-              // disabled={currentPage === totalPages}
-              // onClick={() => changePage(currentPage + 1)}
                disabled={currentPage === totalPages}
               onClick={() => onPageChange(currentPage + 1)}
               className="w-[48px] h-[48px] flex items-center justify-center rounded-full border-[1.2px] text-[24px] border-[#0B57D0] text-[#0B57D0] disabled:border-[#999999] disabled:text-[#999999] cursor-pointer"

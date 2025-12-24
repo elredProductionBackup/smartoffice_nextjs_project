@@ -2,7 +2,7 @@ import { create } from "zustand";
 
 export const useModalStore = create((set) => ({
   isOpen: false,
-  modalData: null, // <-- dynamic data
+  modalData: null, 
 
   open: (data) =>
     set({

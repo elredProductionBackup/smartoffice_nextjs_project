@@ -26,7 +26,6 @@
 
     const handleSearchChange = (e) => {
       const value = e.target.value;
-      console.log("Search:", value);
       onSearch(value);
     };
 
