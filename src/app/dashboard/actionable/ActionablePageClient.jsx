@@ -13,13 +13,15 @@ export default function ActionablePageClient() {
   const currentTab = searchParams.get("tab") || "members";
 
   return (
-   <div className="h-[100%] flex flex-1 flex-col">
+   <div className="h-[calc(100vh-120px)] flex flex-col">
       <ActionableHeader
         title="Actionable"
         taskCount={24}
         refresh
       />
+
       <ActionableTabs />
+
       <ActionItems />
     </div>
   );

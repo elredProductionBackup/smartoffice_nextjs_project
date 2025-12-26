@@ -121,7 +121,7 @@ export default function MemberDetailsModal({ member, onClose }) {
                   target="_blank"
                   className="text-[#999999] cursor-pointer"
                 >
-                  <span class="material-symbols--download-rounded"></span>
+                  <span className="material-symbols--download-rounded"></span>
                 </a>
 
                  {/* Close */}

@@ -168,7 +168,7 @@ export default function ActionableHeader({
       <div>
         {/* Title Row */}
         <div className="flex items-center gap-[20px] mb-[20px]">
-          <h2 className="text-2xl font-semibold">{title}</h2>
+          <h2 className="text-[32px] font-semibold ">{title}</h2>
 
           {typeof taskCount === "number" && (
             <div className="flex items-center gap-2 h-[35px] px-[12px] rounded-[60px] bg-[#0B57D0] text-white text-[20px] font-medium">

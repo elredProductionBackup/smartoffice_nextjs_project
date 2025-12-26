@@ -9,6 +9,8 @@ import PastItems from "./PastItems";
 import EmptyState from "./EmptyState";
 import AllItems from "./AllItems";
 import moment from "moment";
+import { actionableData } from "@/assets/helpers/sampleActionable";
+import ActionableDetailsModal from "./ActionableDetailsModal";
 
 const TABS_ITEMS = ["Past", "Today", "All"];
 
@@ -21,41 +23,44 @@ export default function ActionItems() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
 
-  const todayISO = moment().format("YYYY-MM-DD");
-  // const formatDate = (dateStr) => moment(dateStr).format("DD MMM YYYY");
+  const [selectedTask, setSelectedTask] = useState(null);
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
 
-  const [items, setItems] = useState([
-  {
-    id: 1,
-    text: "Today meeting with channel partner at 5:00 PM",
-    date: "2025-12-23",
-    completed: false,
-    avatars:[{},{},{},{},{}],
-    completedAt: null,
-  },
-  {
-    id: 2,
-    text: "Your stay is confirmed at Hotel Gateway Grandeur",
-    date: "2025-12-19",
-    completed: false,
-    avatars:[{},{}],
-    completedAt: null,
-  },
-  {
-    id: 3,
-    text: "Meeting with Jason Statham",
-    date: "2025-12-19",
-    completed: true,
-    completedAt: new Date(),
-  },
-      {
-    id: 4,
-    text: "Old follow-up call",
-    date: "2025-12-15",
-    completed: true,
-    completedAt: new Date(),
-  },
-  ]);
+  const todayISO = moment().format("YYYY-MM-DD");
+
+  const [items, setItems] = useState(actionableData || []);
+  
+
+  const openTaskModal = (taskId) => {
+    setSelectedTask(taskId);
+    setIsTaskModalOpen(true);
+    console.log(selectedTask, isTaskModalOpen)
+  };
+
+  const closeTaskModal = () => {
+    setSelectedTask(null);
+    setIsTaskModalOpen(false);
+  };
+
+  const addSubtask = (taskId, subtask) => {
+    setItems((prev) =>
+      prev.map((item) =>
+        item.id === taskId
+          ? {
+              ...item,
+              subtasks: [
+                ...(item.subtasks || []),
+                {
+                  id: Date.now(),
+                  completed: false,
+                  ...subtask,
+                },
+              ],
+            }
+          : item
+      )
+    );
+  };
 
   /** TAB CHANGE */
   const handleTabChange = (tab) => {
@@ -121,46 +126,28 @@ export default function ActionItems() {
 
 
   return (
-    <div className="flex flex-col h-[calc(100vh-235px)] rounded-[20px] bg-[#F5F9FF] px-[30px] pt-[30px] mt-[20px] gap-[20px]">
+    <div className="flex-1 flex flex-col gap-[20px] min-h-0 bg-[#F5F9FF] px-[30px] pt-[30px] mt-[20px] rounded-[20px]">
       <ActionHeader
-        activeItem={activeItem}
-        tabs={TABS_ITEMS}
-        // weekDate={weekDate}         
-        // setWeekDate={setWeekDate}    
-        searchOpen={searchOpen}
-        searchValue={searchValue}
-        onSearchOpen={() => setSearchOpen(true)}
+        activeItem={activeItem} tabs={TABS_ITEMS}  
+        searchOpen={searchOpen} searchValue={searchValue} onSearchOpen={() => setSearchOpen(true)} 
         onSearchClose={() => {
           setSearchOpen(false);
           setSearchValue("");
         }}
         onSearchChange={setSearchValue}
         onAdd={() => setAdding(true)}
-        onTabChange={handleTabChange}
-      />
-
+        onTabChange={handleTabChange} />
       <div className="flex flex-1 w-full overflow-y-auto">
         {activeItem === "today" && (
           <TodayItems
-            items={todayItems} // may be empty
+            items={todayItems} 
             adding={adding}
             onAdd={handleAdd}
             onToggle={toggleItem}
             onCancelAdding={() => setAdding(false)} 
+            onOpen={openTaskModal} 
           />
         )}
-
-        {/* {activeItem === "today" &&
-          (todayItems.length ? (
-            <TodayItems
-              items={todayItems}
-              adding={adding}
-              onAdd={handleAdd}
-              onToggle={toggleItem}
-            />
-          ) : (
-            <EmptyState />
-          ))} */}
 
         {activeItem === "past" &&
           (pastItems.length ? (
@@ -183,6 +170,13 @@ export default function ActionItems() {
           ))}
 
       </div>
+      {isTaskModalOpen && selectedTask && (
+          <ActionableDetailsModal
+            task={selectedTask}
+            onClose={closeTaskModal}
+            onAddSubtask={addSubtask}
+          />
+        )}
     </div>
   );
 }
