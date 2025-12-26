@@ -1,9 +1,8 @@
-// import { useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
-// import callIcon from "@/assets/logo/call.svg";
 
 export default function MemberDetailsModal({ member, onClose }) {
-  // const [showPhone, setShowPhone] = useState(false);
+  const [activeDoc, setActiveDoc] = useState(null);
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center" onClick={onClose}>
@@ -87,8 +86,8 @@ export default function MemberDetailsModal({ member, onClose }) {
               {member?.documents?.length? 
               <div className="flex gap-[20px]">
                 {member.documents?.map((item,index)=>{
-                  return <div key={index} className="flex flex-col gap-[8px] items-center text-[#666666] font-[500]">
-                      <div className="flex items-center overflow-hidden text-center w-[90px] h-[100px] bg-[#E3EEFF] border-2 border-[#E6E6FF] rounded-[10px] text-[14px] text-[#666666] font-[500] relative cursor-pointer">
+                  return <div key={index} className="flex flex-col gap-[8px] items-center text-[#666666] font-[500]" >
+                      <div className="flex items-center overflow-hidden text-center w-[90px] h-[100px] bg-[#E3EEFF] border-2 border-[#E6E6FF] rounded-[10px] text-[14px] text-[#666666] font-[500] relative cursor-pointer" onClick={() => setActiveDoc(item)}>
                         <div className="absolute t-0 l-0 w-[100%] h-[100%] bg-[#0002]"></div>
                         <Image src={item.preview} alt="Preview Image" className="w-[100%] h-[100%] object-cover" width={500} height={500}/>
                       </div>
@@ -104,14 +103,49 @@ export default function MemberDetailsModal({ member, onClose }) {
         </div>
 
         {/* Nested popup example */}
-        {/* {showPhone && (
-          <div className="absolute right-6 bottom-6 bg-white shadow-lg rounded-xl p-4">
-            <div className="flex items-center gap-2">
-              <Image src={callIcon} alt="" width={20} />
-              <span className="font-semibold">{member.phone}</span>
+        {activeDoc && <div className="fixed inset-0 z-[59]" onClick={() => setActiveDoc(null)}></div>}
+        {activeDoc && (
+          <div
+            className="absolute h-[100%] inset-0 bg-black/0 z-[60] flex items-center justify-center "
+            onClick={() => setActiveDoc(null)}
+          >
+            <div
+              className="flex flex-col bg-[#111] w-[100%] h-[100%] rounded-[20px] relative p-[40px] flex overflow-scroll"
+              onClick={(e) => e.stopPropagation()}
+              >
+              <div className="actions-nested-popup sticky top-[0px] right-[0px] flex gap-[20px] items-center justify-end">
+                {/* Download */}
+                <a
+                  href={activeDoc.preview}
+                  download
+                  target="_blank"
+                  className="text-[#999999] cursor-pointer"
+                >
+                  <span class="material-symbols--download-rounded"></span>
+                </a>
+
+                 {/* Close */}
+                <button
+                  onClick={() => setActiveDoc(null)}
+                  className="text-[#999999] cursor-pointer"
+                >
+                  <span className="akar-icons--cross"></span>
+                </button>
+              </div>
+              {/* Image */}
+              <div className="image-box flex flex-col gap-[20px] flex-1 items-center justify-center px-[30px] text-[#FFFFFF] font-[500]">
+                <Image
+                src={activeDoc.preview}
+                alt="Document Preview"
+                width={500}
+                height={500}
+                className="w-[100%] object-contain rounded-[12px]"
+                />
+                {activeDoc.title}
+              </div>
             </div>
           </div>
-        )} */}
+        )}
       </div>
     </div>
   );
