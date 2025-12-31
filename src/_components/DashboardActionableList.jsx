@@ -11,7 +11,7 @@ export default function DashboardActionableList({ data=[] }) {
   }
 
   return (
-    <div className="flex flex-col mt-6 rounded-2xl bg-[#F2F6FC] px-[24px] pt-[24px] max-h-[527px]">
+    <div className="flex flex-col mt-6 rounded-2xl bg-[#F2F6FC] px-[24px] pt-[24px] max-h-[527px] ">
       {/* Header */}
       <div className="flex items-center justify-between mb-[20px]">
         <h3 className="text-[20px] font-[700] text-[#333]">Actionable</h3>
@@ -21,7 +21,7 @@ export default function DashboardActionableList({ data=[] }) {
       </div>
 
       {/* List */}
-      <div className="flex-1 flex flex-col gap-4 ">
+      <div className="flex-1 flex flex-col gap-4 overflow-y-auto min-mh-0">
         {data.length === 0 && (
           <div className="flex-1 flex flex-col gap-[10px] items-center justify-center">
             <div className="h-[60px] w-[60px] bg-[#D3E3FD] rounded-full mb-[10px] grid place-items-center">
@@ -48,7 +48,7 @@ export default function DashboardActionableList({ data=[] }) {
           >
             {/* Left */}
             <div className="flex gap-3">
-              <div className="mt-[7px] h-[8px] w-[8px] rounded-full bg-[#333]" />
+              <div className="mt-[7px] h-[8px] min-w-[8px] rounded-full bg-[#333]" />
 
               <div className="flex flex-col gap-[6px]">
                 <p className="text-[16px] leading-[21px] font-[500] text-[#333] line-clamp-2">
