@@ -1,12 +1,14 @@
 import Image from "next/image";
 import searchIcon from "@/assets/logo/search.svg";
+import DashboardActionableList from "@/_components/DashboardActionableList";
+import { actionableData } from "@/assets/helpers/sampleActionable";
 
 export default function ProfilePage() {
   return (
-    <div>
-      <div className="mx-50 mt-5">
+    <div className="flex flex-col h-[calc(100vh-120px)]">
+      <div className="mx-50">
         {/* SAME size wrapper, just relative for icon */}
-        <div className="relative border outline-none w-full h-15 border-[#E1E2E6] bg-[#F2F6FC] rounded-full px-6">
+        <div className="relative border outline-none w-full h-15 border-[#E1E2E6] bg-[#F2F6FC] rounded-full px-6 ">
 
           {/* icon inside input */}
           <Image
@@ -23,6 +25,9 @@ export default function ProfilePage() {
           />
         </div>
       </div>
+      <div className="dashboard-items mt-[20px] grid grid-cols-2 gap-4 flex-1 min-h-0 w-full overflow-y-auto">
+        <DashboardActionableList data={actionableData}/>
+     </div>
     </div>
   );
 }

@@ -2,7 +2,7 @@ export const actionableData=[
   {
     id: 1,
     text: "Today meeting with channel partner at 5:00 PM ",
-    date: "2025-12-26",
+    date: "2025-12-30",
     completed: false,
     avatars:[{},{},{},{},{}],
     completedAt: null,
@@ -11,7 +11,7 @@ export const actionableData=[
     subtasks: [
       {
         id: "1-1",
-        text: "Prepare agenda ",
+        text: "Prepare agenda Prepare agenda Prepare agenda Prepare agenda Prepare agenda Prepare agenda Prepare agenda Prepare agenda ",
         completed: false,
         addedBy: "Meezan",
         createdAt: "2025-12-23T10:35:00",
@@ -30,28 +30,23 @@ export const actionableData=[
         addedBy: "Ali",
         createdAt: "2025-12-23T10:40:00",
       },
-      {
-        id: "1-3",
-        text: "Send calendar invite",
-        completed: true,
-        addedBy: "Ali",
-        createdAt: "2025-12-23T10:40:00",
-      },
-      {
-        id: "1-3",
-        text: "Send calendar invite",
-        completed: true,
-        addedBy: "Ali",
-        createdAt: "2025-12-23T10:40:00",
-      },
-      {
-        id: "1-3",
-        text: "Send calendar invite",
-        completed: true,
-        addedBy: "Ali",
-        createdAt: "2025-12-23T10:40:00",
-      },
     ],
+    notes: "",
+    collaborators: [],
+    comments: [
+      {
+        id: 1,
+        text: "This is a comment",
+        author: "Meezan",
+        createdAt: "2025-12-29T10:30:00Z",
+      }
+      ,
+      { id: 2,
+        author: "Tashaf", 
+        text: "Need to follow up tomorrow" ,
+        createdAt: "2025-12-29T10:30:00Z",
+      }
+    ]
   },
   {
     id: 2,
@@ -60,6 +55,9 @@ export const actionableData=[
     completed: false,
     avatars:[{},{}],
     completedAt: null,
+        notes: "",
+    collaborators: [],
+    comments: [],
   },
   {
     id: 3,
@@ -67,6 +65,9 @@ export const actionableData=[
     date: "2025-12-19",
     completed: true,
     completedAt: new Date(),
+        notes: "",
+    collaborators: [],
+    comments: [],
   },
       {
     id: 4,
@@ -74,5 +75,15 @@ export const actionableData=[
     date: "2025-12-15",
     completed: true,
     completedAt: new Date(),
+        notes: "",
+    collaborators: [],
+    comments: [],
   },
   ]
+
+  export const DUMMY_COLLABORATORS = [
+  { id: 1, name: "Ayaan Khan" },
+  { id: 2, name: "Sarah Ali" },
+  { id: 3, name: "John Doe" },
+  { id: 4, name: "Ritika Sharma" },
+];

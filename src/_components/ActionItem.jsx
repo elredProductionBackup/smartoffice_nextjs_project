@@ -28,7 +28,10 @@ export default function ActionItem({ text, subtasks = [], addedBy, time, created
         {/* Checkbox */}
         <div className="h-[30px] flex items-center">
           <div
-            onClick={onCheck}
+             onClick={(e) => {
+                e.stopPropagation();
+                onCheck();
+              }}
             className={`h-[18px] w-[18px] rounded-[4px] border-[2px] flex items-center justify-center cursor-pointer transition-colors
               ${
                 completed
@@ -49,7 +52,7 @@ export default function ActionItem({ text, subtasks = [], addedBy, time, created
               }`}>{text}</div>
 
           {subtasks.length > 0 && (
-            <ul className="ml-[20px] flex flex-col gap-[8px] list-disc text-[20px] font-[500] text-[#333333]">
+            <ul className="ml-[30px] flex flex-col gap-[8px] list-disc text-[20px] font-[500] text-[#333333]">
               {subtasks.slice(0, 2).map((sub, index) => {
                 const isLastVisible = index === 1 && subtasks.length > 2;
 
@@ -117,7 +120,10 @@ export default function ActionItem({ text, subtasks = [], addedBy, time, created
         <BsThreeDotsVertical
           size={22}
           className="text-gray-500 cursor-pointer"
-          onClick={() => setOpenMenu((prev) => !prev)}
+            onClick={(e) => {
+            e.stopPropagation(); // 🚫 prevent opening modal
+            setOpenMenu((prev) => !prev)
+          }}
         />
 
         {openMenu && (

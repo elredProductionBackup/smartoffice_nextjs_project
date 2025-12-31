@@ -141,7 +141,7 @@ export default function DashboardLayout({ children }) {
         </div>
 
         {/* Nested Page */}
-        <div className="flex-1 my-5 mx-5 overflow-y-auto">{children}</div>
+        <div className="flex-1 flex flex-col my-5 mx-5 overflow-y-auto">{children}</div>
       </div>
     </div>
   );
