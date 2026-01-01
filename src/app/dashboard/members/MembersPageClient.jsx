@@ -38,6 +38,7 @@ export default function MembersPageClient() {
     limit: 10,
   });
 
+  // console.log(data,'data.....')
   return (
     <div className="h-[calc(100vh-120px)] flex flex-col">
       <SectionHeader

@@ -39,7 +39,7 @@ const sampleData = [
   },
 ];
 
-export default function MembersTable({ data = sampleData,total, document = false,currentPage,loading, onPageChange,onRowClick }) {
+export default function MembersTable({ data=sampleData, total, document = false,currentPage,loading, onPageChange,onRowClick }) {
   const open = useModalStore((state) => state.open);
 
   const [openPhoneFor, setOpenPhoneFor] = useState(null);
@@ -84,21 +84,26 @@ export default function MembersTable({ data = sampleData,total, document = false
 
           return (
             <div
+<<<<<<< Updated upstream
               key={member.id}
               className={`flex flex-1 items-center py-[20px] mx-[30px] bg-[#F2F7FF]  cursor-pointer
+=======
+              key={index}
+              className={`flex flex-1 items-center py-[20px] px-[30px] bg-[#F2F7FF]  cursor-pointer
+>>>>>>> Stashed changes
               ${index !== paginatedData.length - 1 ? "border-b border-b-[#D4DFF1]" : ""}
             `}
               onClick={() => onRowClick(member)}
             >
               {/* LEFT - Name + title */}
               <div className="flex flex-3 items-center gap-4">
-                <Image
-                  src={member.image}
+                {/* <Image
+                  src={member?.dpURL}
                   alt={member.name}
                   width={48}
                   height={48}
                   className="rounded-full border border-[#CCCCCC]"
-                />
+                /> */}
                 <div>
                   <p className="font-semibold text-xl text-[#333333]">
                     {member.name}

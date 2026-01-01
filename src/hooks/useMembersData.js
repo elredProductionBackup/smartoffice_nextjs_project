@@ -32,3 +32,59 @@ export function useMembersData({ tab, page, search, limit = 10 }) {
 
   return { data, total, loading };
 }
+
+
+// "use client";
+
+// import { getMembersList } from "@/services/member.service";
+// import { useEffect, useState } from "react";
+
+// export const useMembersData = ({
+//   tab = "member",
+//   page = 1,
+//   search = "",
+//   limit = 10,
+// }) => {
+//   const [data, setData] = useState([]);
+//   const [total, setTotal] = useState(0);
+//   const [loading, setLoading] = useState(false);
+
+//   useEffect(() => {
+//     const fetchMembers = async () => {
+//       setLoading(true);
+
+//       try {
+//         const res = await getMembersList({
+//           networkClusterCode: localStorage.getItem("networkClusterCode"),
+
+//           // pagination
+//           start: page,
+//           offset: limit,
+
+//           // defaults + mapping
+//           filterBy: tab === "board" ? "board" : "member",
+//           searchBy: "name", // default
+//           searchKey: search,
+//         });
+
+//         if (res?.data?.success) {
+//           setData(res.data.result || []);
+//           setTotal(res.data.total || 0);
+//         } else {
+//           setData([]);
+//           setTotal(0);
+//         }
+//       } catch (err) {
+//         console.error("Members fetch failed:", err);
+//         setData([]);
+//         setTotal(0);
+//       } finally {
+//         setLoading(false);
+//       }
+//     };
+
+//     fetchMembers();
+//   }, [tab, page, search, limit]);
+
+//   return { data, total, loading };
+// };

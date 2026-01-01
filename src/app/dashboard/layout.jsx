@@ -12,7 +12,6 @@
 // import Image from 'next/image'
 // import Header from "@/_components/Header";
 
-
 // export default function DashboardLayout({ children }) {
 //   const pathname = usePathname();
 
@@ -42,12 +41,11 @@
 //               {menu.map((item) => {
 //                 const active = pathname === item.path;
 
-
 //                 return (
 //                   <li key={item.path}>
 //                     <Link
 //                       href={item.path}
-//                       className={` h-11 w-11 flex items-center justify-center rounded-md transition 
+//                       className={` h-11 w-11 flex items-center justify-center rounded-md transition
 //                       ${
 //                         active
 //                           ? "bg-[#D3E3FD] text-white font-medium"
@@ -71,7 +69,6 @@
 //   );
 // }
 
-
 "use client";
 
 import Link from "next/link";
@@ -86,9 +83,17 @@ import alliancesLogo from "@/assets/logo/la_handshake.svg";
 import actionableLogo from "@/assets/logo/actionable.svg";
 import Image from "next/image";
 import Header from "@/_components/Header";
+import useGlobalLoader from "@/store/useGlobalLoader";
+import { useEffect } from "react";
+import ProtectedRoute from "@/_components/ProtectedRoute";
 
 export default function DashboardLayout({ children }) {
   const pathname = usePathname();
+  const { hideLoader } = useGlobalLoader.getState();
+
+  useEffect(() => {
+    hideLoader();
+  }, []);
 
   function removeAllParams(url) {
     return url.split("?")[0];
@@ -98,7 +103,11 @@ export default function DashboardLayout({ children }) {
     { name: "Dashboard", path: "/dashboard/profile", logo: dashboardLogo },
     { name: "Checklist", path: "/dashboard/checklist", logo: checklistLogo },
     { name: "Vendors", path: "/dashboard/actionable", logo: actionableLogo },
-    { name: "Members", path: "/dashboard/members?tab=members", logo: memberLogo },  // ⬅ FIXED
+    {
+      name: "Members",
+      path: "/dashboard/members?tab=members",
+      logo: memberLogo,
+    }, // ⬅ FIXED
     // { name: "Vendors", path: "/dashboard/vendors?tab=hotels", logo: vendorsLogo },
     // { name: "Resources", path: "/dashboard/resources", logo: resourcesLogo },
     // { name: "Archive", path: "/dashboard/archive", logo: archiveLogo },
@@ -106,43 +115,49 @@ export default function DashboardLayout({ children }) {
   ];
 
   return (
-    <div className="h-screen flex flex-col">
-      {/* Navbar */}
-      <Header />
+    <ProtectedRoute>
+      <div className="h-screen flex flex-col">
+        {/* Navbar */}
+        <Header />
 
-      {/* Main */}
-      <div className="flex flex-1 max-h-[calc(100vh - 80px)]">
-        <div className="p-5">
-          <div className="w-21 bg-[#F2F7FF] h-full p-5 rounded-2xl">
-            <ul className="space-y-10">
-              {menu.map((item) => {
-                
-                // ⭐ Correct Active Logic
-                // const active = pathname.startsWith(item.path);
-                const active = pathname == removeAllParams(item.path);
-                return (
-                  <li key={item.path}>
-                    <Link
-                      href={item.path}
-                      className={`h-11 w-11 flex items-center justify-center rounded-md transition
+        {/* Main */}
+        <div className="flex flex-1 max-h-[calc(100vh - 80px)]">
+          <div className="p-5">
+            <div className="w-21 bg-[#F2F7FF] h-full p-5 rounded-2xl">
+              <ul className="space-y-10">
+                {menu.map((item) => {
+                  // ⭐ Correct Active Logic
+                  // const active = pathname.startsWith(item.path);
+                  const active = pathname == removeAllParams(item.path);
+                  return (
+                    <li key={item.path}>
+                      <Link
+                        href={item.path}
+                        className={`h-11 w-11 flex items-center justify-center rounded-md transition
                         ${
                           active
                             ? "bg-[#D3E3FD] font-medium"
                             : "hover:bg-blue-100"
                         }`}
-                    >
-                      <Image src={item.logo} alt={item.name} />
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
+                      >
+                        <Image src={item.logo} alt={item.name} />
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
           </div>
-        </div>
 
+<<<<<<< Updated upstream
         {/* Nested Page */}
         <div className="flex-1 flex flex-col my-5 mx-5 overflow-y-auto">{children}</div>
+=======
+          {/* Nested Page */}
+          <div className="flex-1 my-5 mx-5 overflow-y-auto">{children}</div>
+        </div>
+>>>>>>> Stashed changes
       </div>
-    </div>
+    </ProtectedRoute>
   );
 }
