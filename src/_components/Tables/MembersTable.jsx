@@ -9,6 +9,7 @@ import userImage from "@/assets/image/user.jpeg";
 import { CONSTANTS } from "@/utils/data";
 import { useModalStore } from "@/store/useModalStore";
 import { useState } from "react";
+import MembersTableShimmer from "../Shimmer/MembersTableShimmer";
 
 
 const sampleData = [
@@ -52,14 +53,14 @@ export default function MembersTable({ data = sampleData,total, document = false
   const paginatedData = data;
   const totalPages = Math.ceil(total / CONSTANTS.ITEMS_PER_PAGE);
 
-  if (loading) return null;
+  if (loading) return <MembersTableShimmer/>;
 
   return (
     <div className="flex-1 min-h-0 mt-[20px] rounded-[20px] bg-[#F2F7FF]  overflow-y-auto relative flex flex-col">
 
       {/* Table Header */}
       <div
-        className={`flex items-center font-bold text-lg text-[#333333] px-[30px] pt-[30px] pb-[20px] sticky top-0 bg-[#F2F7FF] py-3 pt-6 z-10`}
+        className={`flex items-center font-bold text-lg text-[#333333] px-[30px] pt-[30px] sticky top-0 bg-[#F2F7FF] py-3 pt-6 z-10`}
       >
         <div className="flex-3">Name/Title</div>
         {document && <div className="text-center">Documents</div>}
@@ -76,7 +77,7 @@ export default function MembersTable({ data = sampleData,total, document = false
       )}
 
       {/* Rows */}
-      <div className=" flex-1">
+      <div className="flex-1">
         {paginatedData.map((member, index) => {
 
           const openUpwards = index >= paginatedData.length - 2;
@@ -84,7 +85,7 @@ export default function MembersTable({ data = sampleData,total, document = false
           return (
             <div
               key={member.id}
-              className={`flex flex-1 items-center py-[20px] px-[30px] bg-[#F2F7FF]  cursor-pointer
+              className={`flex flex-1 items-center py-[20px] mx-[30px] bg-[#F2F7FF]  cursor-pointer
               ${index !== paginatedData.length - 1 ? "border-b border-b-[#D4DFF1]" : ""}
             `}
               onClick={() => onRowClick(member)}
