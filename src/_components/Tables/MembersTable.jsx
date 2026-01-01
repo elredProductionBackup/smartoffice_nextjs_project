@@ -84,13 +84,8 @@ export default function MembersTable({ data=sampleData, total, document = false,
 
           return (
             <div
-<<<<<<< Updated upstream
-              key={member.id}
-              className={`flex flex-1 items-center py-[20px] mx-[30px] bg-[#F2F7FF]  cursor-pointer
-=======
               key={index}
               className={`flex flex-1 items-center py-[20px] px-[30px] bg-[#F2F7FF]  cursor-pointer
->>>>>>> Stashed changes
               ${index !== paginatedData.length - 1 ? "border-b border-b-[#D4DFF1]" : ""}
             `}
               onClick={() => onRowClick(member)}
