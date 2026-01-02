@@ -2,12 +2,27 @@ import moment from "moment";
 import { useRef, useEffect, useState } from "react";
 import { BsCheck, BsThreeDotsVertical } from "react-icons/bs";
 
-export default function ActionItem({ text, subtasks = [], addedBy, time, createdAt, link, avatars = [], date, completed = false, onCheck, today = false, onOpen }) {
+export default function ActionItem({
+  item,
+  onCheck,
+  onOpen,
+  today = false
+})  {
+    const {
+    actionableId,
+    title,
+    isCompleted,
+    subTask = [],
+    createdBy,
+    dueDate,
+    dueTime,
+    collaborators = [],
+  } = item;
   const [openMenu, setOpenMenu] = useState(false);
   const menuRef = useRef(null);
 
-  const visibleAvatars = avatars.slice(0, 3);
-  const remainingCount = avatars.length - 3;
+  const visibleAvatars = collaborators.slice(0, 3);
+  const remainingCount = collaborators.length - 3;
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -34,13 +49,13 @@ export default function ActionItem({ text, subtasks = [], addedBy, time, created
               }}
             className={`h-[18px] w-[18px] rounded-[4px] border-[2px] flex items-center justify-center cursor-pointer transition-colors
               ${
-                completed
+                    isCompleted
                   ? "bg-[#E72D38] border-[#E72D38]"
                   : "border-[#666666] bg-transparent"
               }
             `}
           >
-            {completed && <BsCheck size={18} color="#fff" />}
+            {    isCompleted && <BsCheck size={18} color="#fff" />}
           </div>
         </div>
 
@@ -48,27 +63,27 @@ export default function ActionItem({ text, subtasks = [], addedBy, time, created
         <div
           className={`flex flex-col text-[20px] font-medium mt-[5px] gap-[6px] text-[#333333] `}  >
           <div className={`line-clamp-1 leading-[22px] ${
-                completed ? "line-through" : ""
-              }`}>{text}</div>
+                    isCompleted ? "line-through" : ""
+              }`}>{title}</div>
 
-          {subtasks.length > 0 && (
+          {subTask.length > 0 && (
             <ul className="ml-[30px] flex flex-col gap-[8px] list-disc text-[20px] font-[500] text-[#333333]">
-              {subtasks.slice(0, 2).map((sub, index) => {
-                const isLastVisible = index === 1 && subtasks.length > 2;
+              {subTask.slice(0, 2).map((sub, index) => {
+                const isLastVisible = index === 1 && subTask.length > 2;
 
                 return (
-                  <li key={sub.id} className={`leading-[20px] ${completed ? "line-through" : ""}`}>
+                  <li key={sub.id} className={`leading-[20px] ${    isCompleted ? "line-through" : ""}`}>
                     <div className="flex items-center gap-[60px]">
                       {/* TEXT */}
                       <span className={`line-clamp-1 ${!isLastVisible && 'flex-1'}`}>
                         {sub.text}
                       </span>
 
-                      {/* +X SUBTASKS (only on last visible item) */}
+                      {/* +X subTask (only on last visible item) */}
                       {isLastVisible && (
                         <span className="flex items-center gap-[6px] text-[16px] font-[700] text-[#333] whitespace-nowrap">
                           <span className="text-[#999]"></span>
-                          +{subtasks.length - 2} subtask{subtasks.length - 2 > 1 ? "s" : ""}
+                          +{subTask.length - 2} subtask{subTask.length - 2 > 1 ? "s" : ""}
                         </span>
                       )}
                     </div>
@@ -78,24 +93,24 @@ export default function ActionItem({ text, subtasks = [], addedBy, time, created
             </ul>
           )}
 
-         {addedBy && time && (
+         {    createdBy && dueTime && (
             <div className="text-[16px] font-[600] text-[#666666]">
-              {addedBy} | {time.toLowerCase()} IST
+              {    createdBy?.name} | {dueTime.toLowerCase()} IST
             </div>
           )}
         </div>
       </div>
 
       {/* RIGHT — Date + Avatars */}
-      {(date || avatars.length > 0) && (
+      {(dueDate || collaborators.length > 0) && (
         <div className="flex items-center gap-[60px] flex-1">
-          {date && (
+          {dueDate && (
             <div className="text-[16px] font-[600] text-[#333333] whitespace-nowrap">
-             {!today && moment(date).format("DD MMM YYYY")}
+             {!today && moment(dueDate).format("DD MMM YYYY")}
             </div>
           )}
 
-          {avatars.length > 0 && (
+          {collaborators.length > 0 && (
             <div className="flex items-center gap-[8px]">
               {visibleAvatars.map((_, i) => (
                 <div
@@ -115,13 +130,13 @@ export default function ActionItem({ text, subtasks = [], addedBy, time, created
       )}
 
       {/* Menu — ENABLED for both Today & Past */}
-      {!completed &&
+      {!    isCompleted &&
       <div className="relative" ref={menuRef}>
         <BsThreeDotsVertical
           size={22}
           className="text-gray-500 cursor-pointer"
             onClick={(e) => {
-            e.stopPropagation(); // 🚫 prevent opening modal
+            e.stopPropagation(); 
             setOpenMenu((prev) => !prev)
           }}
         />

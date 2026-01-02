@@ -53,22 +53,21 @@ export default function TodayItems({ items, adding, onAdd, onToggle, onCancelAdd
           />
         </div>
       )}
-
       {/* Show tasks if exist */}
       {items.length > 0 ? (
         items.map((item) => (
-          <ActionItem
-            key={item.id}
-            {...item}
-            completed={false}
-            onCheck={() => onToggle(item.id)}
-            onOpen={()=>onOpen(item)}
-            today
-          />
+        <ActionItem
+          key={item.actionableId}
+          item={item}
+          onCheck={() => onToggle(item.actionableId)}
+          onOpen={() => onOpen(item)}
+          today
+        />
         ))
       ) : (
         !adding && <EmptyState />
       )}
+
     </div>
   );
 }

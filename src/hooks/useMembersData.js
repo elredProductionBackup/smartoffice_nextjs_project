@@ -1,90 +1,79 @@
 import { useEffect, useState } from "react";
-import { sampleData } from "@/assets/helpers/sampleMember";
-import { boardData } from "@/assets/helpers/sampleMember";
-export function useMembersData({ tab, page, search, limit = 10 }) {
+import api from "@/services/axios";
+
+export function useMembersData({
+  tab,
+  page,
+  search,
+  searchBy,
+  limit = 10,
+}) {
   const [data, setData] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setLoading(true); 
+    let isMounted = true;
 
-    const timer = setTimeout(() => {
-      let source = tab === "board" ? boardData : sampleData;
-      let result = source;
+    const fetchMembers = async () => {
+      setLoading(true);
 
-      if (search.trim().length >= 3) {
-        const value = search.toLowerCase();
-        result = source.filter(
-          (item) =>
-            item.name.toLowerCase().includes(value) ||
-            item.title.toLowerCase().includes(value)
-        );
+
+      const isSearching = Boolean(search?.trim());
+      const effectivePage = isSearching ? 1 : page;
+
+      const start = (effectivePage - 1) * limit + 1;
+      const offset = effectivePage * limit;
+
+      try {
+        const response = await api.get("/smartOfficeGetMembersList", {
+          params: {
+            networkClusterCode: "68621c02a45b0d59a58e6fa9",
+            start,
+            offset,
+            filterBy: tab === "board" ? "board" : "member",
+            searchBy: searchBy.toLowerCase(),
+            searchKey: search?.trim() || "",
+          },
+        });
+
+        if (!isMounted) return;
+
+        if (response.status === 200 && response.data?.success) {
+          const result = response.data.result || [];
+
+          const formattedData = result.map((item) => ({
+            id: item.userCode,
+            name: `${item.firstname} ${item.lastname}`.trim(),
+            email: item.email,
+            phone: item.phoneNumber,
+            userType: item.userType,
+            title: item.title?.[0]?.value || "",
+            avatar: item.dpURL,
+            location: item.location,
+          }));
+
+          setData(formattedData);
+          setTotal(response.data.totalCount || 0);
+        } else {
+          setData([]);
+          setTotal(0);
+        }
+      } catch (error) {
+        console.error("Failed to fetch members:", error);
+        setData([]);
+        setTotal(0);
+      } finally {
+        if (isMounted) setLoading(false);
       }
+    };
 
-      setTotal(result.length);
-      setData(result.slice((page - 1) * limit, page * limit));
-      setLoading(false);
-    }, 1200); 
+    fetchMembers();
 
-    return () => clearTimeout(timer);
+    return () => {
+      isMounted = false;
+    };
   }, [tab, page, search, limit]);
 
   return { data, total, loading };
 }
-
-
-// "use client";
-
-// import { getMembersList } from "@/services/member.service";
-// import { useEffect, useState } from "react";
-
-// export const useMembersData = ({
-//   tab = "member",
-//   page = 1,
-//   search = "",
-//   limit = 10,
-// }) => {
-//   const [data, setData] = useState([]);
-//   const [total, setTotal] = useState(0);
-//   const [loading, setLoading] = useState(false);
-
-//   useEffect(() => {
-//     const fetchMembers = async () => {
-//       setLoading(true);
-
-//       try {
-//         const res = await getMembersList({
-//           networkClusterCode: localStorage.getItem("networkClusterCode"),
-
-//           // pagination
-//           start: page,
-//           offset: limit,
-
-//           // defaults + mapping
-//           filterBy: tab === "board" ? "board" : "member",
-//           searchBy: "name", // default
-//           searchKey: search,
-//         });
-
-//         if (res?.data?.success) {
-//           setData(res.data.result || []);
-//           setTotal(res.data.total || 0);
-//         } else {
-//           setData([]);
-//           setTotal(0);
-//         }
-//       } catch (err) {
-//         console.error("Members fetch failed:", err);
-//         setData([]);
-//         setTotal(0);
-//       } finally {
-//         setLoading(false);
-//       }
-//     };
-
-//     fetchMembers();
-//   }, [tab, page, search, limit]);
-
-//   return { data, total, loading };
-// };

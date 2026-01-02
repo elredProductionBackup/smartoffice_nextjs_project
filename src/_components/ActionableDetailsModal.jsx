@@ -349,8 +349,8 @@ export default function ActionableDetailsModal({
         className="relative bg-white w-[600px] max-h-[90vh] rounded-[20px] px-[40px]  flex flex-col gap-[20px] overflow-y-auto"
       >
         <ModalHeader
-          title={draft.text}
-          addedBy={draft.addedBy}
+          title={draft.title}
+          addedBy={draft.createdBy?.name}
           onClose={onClose}
           onUpdateTitle={(text) =>
             setDraft({

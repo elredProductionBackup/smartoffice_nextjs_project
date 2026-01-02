@@ -2,46 +2,18 @@ import Image from "next/image";
 import { IoIosArrowBack,IoIosArrowForward  } from "react-icons/io";
 import { SiGoogledocs } from "react-icons/si";
 
-import noMember from "@/assets/logo/no-member.svg";
+// import noMember from "@/assets/logo/no-member.svg";
 import callIcon from "@/assets/logo/call.svg";
-import userImage from "@/assets/image/user.jpeg";
+// import userImage from "@/assets/image/user.jpeg";
 
 import { CONSTANTS } from "@/utils/data";
-import { useModalStore } from "@/store/useModalStore";
-import { useState } from "react";
+// import { useModalStore } from "@/store/useModalStore";
+import { useEffect, useRef, useState } from "react";
 import MembersTableShimmer from "../Shimmer/MembersTableShimmer";
 
-
-const sampleData = [
-  {
-    id: 1,
-    name: "Liam Chen",
-    title: "UX Designer",
-    image: userImage,
-    email: "liamchen@gmail.com",
-    phone: "9876543210",
-    location: "Bangalore, India",
-    spouse: "Emily Chen",
-    children: ["Noah Chen", "Olivia Chen"],
-    documents: ["Aadhar", "Passport"],
-  },
-  {
-    id: 2,
-    name: "Ava Patel",
-    title: "Marketing Specialist",
-    image: userImage,
-    email: "ava.patel@gmail.com",
-    phone: "9876501234",
-    location: "Mumbai, India",
-    spouse: "Rohan Patel",
-    children: [],
-    documents: [],
-  },
-];
-
-export default function MembersTable({ data=sampleData, total, document = false,currentPage,loading, onPageChange,onRowClick }) {
-  const open = useModalStore((state) => state.open);
-
+export default function MembersTable({ data=[], total, documents = false,currentPage,loading, onPageChange,onRowClick,search = "",tab }) {
+  // const open = useModalStore((state) => state.open);
+ const phonePopupRef = useRef(null);
   const [openPhoneFor, setOpenPhoneFor] = useState(null);
 
   const showPhoneDetails = (e, member) => {
@@ -52,6 +24,25 @@ export default function MembersTable({ data=sampleData, total, document = false,
 
   const paginatedData = data;
   const totalPages = Math.ceil(total / CONSTANTS.ITEMS_PER_PAGE);
+  const isSearching = search?.length >= 3;
+  const isEmpty = data.length === 0;
+
+    useEffect(() => {
+    function handleClickOutside(e) {
+      if (
+        openPhoneFor &&
+        phonePopupRef.current &&
+        !phonePopupRef.current.contains(e.target)
+      ) {
+        setOpenPhoneFor(null);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [openPhoneFor]);
+
+
 
   if (loading) return <MembersTableShimmer/>;
 
@@ -63,18 +54,44 @@ export default function MembersTable({ data=sampleData, total, document = false,
         className={`flex items-center font-bold text-lg text-[#333333] px-[30px] pt-[30px] sticky top-0 bg-[#F2F7FF] py-3 pt-6 z-10`}
       >
         <div className="flex-3">Name/Title</div>
-        {document && <div className="text-center">Documents</div>}
+        {documents && <div className="text-center">Documents</div>}
         <div className="flex-1">Actions</div>
       </div>
 
       {/* Empty State */}
-      {data.length === 0 && (
-        <div className="flex flex-col justify-center items-center h-[calc(100vh-340px)] text-xl font-medium text-[#666]">
-          <Image src={noMember} alt="" className="mb-8" />
-          <div className="mb-5 text-2xl font-semibold">No members yet</div>
-          <div className="text-base font-normal">{CONSTANTS.NO_USER}</div>
+      {isEmpty && !loading && (
+        <div className="flex flex-col justify-center items-center h-[calc(100vh-340px)] text-center">
+          <div className="h-[80px] w-[80px] rounded-full bg-[#D3E3FD] grid place-items-center mb-[30px]">
+              <Image
+              src={isSearching?'/logo/no-search.svg':'/logo/no-member.svg'}
+              alt="Fallback logo"
+              width={50}
+              height={50}
+            />
+          </div>
+
+          {isSearching ? (
+            <>
+              <div className="mb-3 text-2xl font-semibold text-[#333333]">
+                No search result found
+              </div>
+              <div className="text-base font-normal text-[#666666]">
+                Try adjusting your search or filters.
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="mb-3 text-2xl font-semibold text-[#333333]">
+                No {tab} yet
+              </div>
+              <div className="text-base font-normal text-[#666666]">
+                Looks like you haven’t added any {tab==='members' ? tab?.slice(0,-1):tab} yet
+              </div>
+            </>
+          )}
         </div>
       )}
+
 
       {/* Rows */}
       <div className="flex-1">
@@ -83,22 +100,34 @@ export default function MembersTable({ data=sampleData, total, document = false,
           const openUpwards = index >= paginatedData.length - 2;
 
           return (
-            <div
-              key={index}
-              className={`flex flex-1 items-center py-[20px] px-[30px] bg-[#F2F7FF]  cursor-pointer
-              ${index !== paginatedData.length - 1 ? "border-b border-b-[#D4DFF1]" : ""}
-            `}
-              onClick={() => onRowClick(member)}
-            >
+              <div
+                key={index}
+                className={`
+                  flex flex-1 items-center py-[20px] px-[30px]
+                  bg-[#F2F7FF] cursor-pointer transition-all duration-200
+
+                  hover:bg-[#E7F0FF]
+                  hover:shadow-[0px_4px_4px_0px_#C7C7C740]
+                  hover:border-transparent
+
+                  ${
+                    index !== paginatedData.length - 1
+                      ? "border-b border-b-[#D4DFF1]"
+                      : ""
+                  }
+                `}
+                onClick={() => onRowClick(member)}
+              >
+
               {/* LEFT - Name + title */}
               <div className="flex flex-3 items-center gap-4">
-                {/* <Image
-                  src={member?.dpURL}
+                {member.avatar ? <Image
+                  src={member?.avatar}
                   alt={member.name}
                   width={48}
                   height={48}
-                  className="rounded-full border border-[#CCCCCC]"
-                /> */}
+                  className="rounded-full min-w-[48px] max-h-[48px] border border-[#CCCCCC]"
+                />: <div className="min-w-[48px] h-[48px] bg-[#D4DFF1] grid place-items-center text-[22px] font-[600] rounded-full">{member.name?.slice(0,1)}</div>}
                 <div>
                   <p className="font-semibold text-xl text-[#333333]">
                     {member.name}
@@ -110,7 +139,7 @@ export default function MembersTable({ data=sampleData, total, document = false,
               </div>
 
               {/* CENTER - Document Icon */}
-              {document && (
+              {documents && (
                 <div className="flex justify-center">
                   <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
                     <SiGoogledocs size={24} color="#666666" />
@@ -133,7 +162,7 @@ export default function MembersTable({ data=sampleData, total, document = false,
                 {/* PHONE ICON + POPUP */}
                 <div
                   className="w-10 h-10 bg-[#E6EBF2] rounded-full flex items-center justify-center cursor-pointer relative"
-                  onClick={(e) => showPhoneDetails(e, member)}
+                  onClick={(e) => showPhoneDetails(e, member)}  ref={phonePopupRef}
                 >
                   {/* <FaPhone size={24} color="#666666" /> */}
                   <span className="proicons--call"></span>

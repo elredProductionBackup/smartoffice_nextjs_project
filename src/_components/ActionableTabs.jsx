@@ -5,7 +5,6 @@ import { useState } from "react";
 
 const DEFAULT_TABS = [
   { label: "All", value: "all" },
-  // { label: "Board", value: "board" },
 ];
 
 export default function ActionableTabs() {
@@ -50,20 +49,6 @@ export default function ActionableTabs() {
           {tab.label}
         </button>
       ))}
-
-      {/* + Button */}
-      {/* <button
-        onClick={() => setShowModal(true)}
-        className="
-          px-[16px] py-[5px]
-          text-[20px] font-[700]
-          text-blue-600
-          hover:text-blue-800
-          transition
-        "
-      >
-        +
-      </button> */}
 
       {/* Modal */}
       {showModal && (

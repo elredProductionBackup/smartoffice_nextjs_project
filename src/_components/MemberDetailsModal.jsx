@@ -1,14 +1,103 @@
 import { useState } from "react";
 import Image from "next/image";
 
+const MembersDetailsShimmer = () => {
+  return (
+    <>
+      {/* Close button shimmer */}
+      <div className="absolute right-[40px] top-[40px] h-[24px] w-[24px] rounded-full bg-[#D4DFF1] animate-pulse" />
+
+      {/* Header */}
+      <div className="flex flex-col gap-[20px] items-start animate-pulse">
+        {/* Avatar */}
+        <div className="w-[100px] h-[100px] rounded-full bg-[#D4DFF1]" />
+
+        {/* Name + title */}
+        <div className="w-full flex flex-col gap-[10px]">
+          <div className="flex items-center justify-between">
+            <div className="h-[32px] w-[220px] rounded bg-[#D4DFF1]" />
+            <div className="h-[24px] w-[24px] rounded-full bg-[#D4DFF1]" />
+          </div>
+
+          <div className="h-[20px] w-[180px] rounded bg-[#D4DFF1]" />
+
+          {/* Location */}
+          <div className="flex items-center gap-[8px]">
+            <div className="h-[24px] w-[24px] rounded-full bg-[#D4DFF1]" />
+            <div className="h-[16px] w-[160px] rounded bg-[#D4DFF1]" />
+          </div>
+        </div>
+      </div>
+
+      {/* Details grid */}
+      <div className="grid grid-cols-2 gap-x-10 gap-y-[40px] animate-pulse">
+        {/* Email */}
+        <div className="flex flex-col gap-[12px]">
+          <div className="h-[20px] w-[80px] rounded bg-[#D4DFF1]" />
+          <div className="flex items-center gap-[8px]">
+            <div className="h-[24px] w-[24px] rounded-full bg-[#D4DFF1]" />
+            <div className="h-[16px] w-[180px] rounded bg-[#D4DFF1]" />
+          </div>
+        </div>
+
+        {/* Phone */}
+        <div className="flex flex-col gap-[12px] justify-self-end w-[230px]">
+          <div className="h-[20px] w-[80px] rounded bg-[#D4DFF1]" />
+          <div className="flex items-center gap-[8px]">
+            <div className="h-[24px] w-[24px] rounded-full bg-[#D4DFF1]" />
+            <div className="h-[16px] w-[140px] rounded bg-[#D4DFF1]" />
+          </div>
+        </div>
+
+        {/* Spouse */}
+        <div className="flex flex-col gap-[12px]">
+          <div className="h-[20px] w-[130px] rounded bg-[#D4DFF1]" />
+          <div className="h-[16px] w-[160px] rounded bg-[#D4DFF1]" />
+        </div>
+
+        {/* Children */}
+        <div className="flex flex-col gap-[12px] justify-self-end w-[230px]">
+          <div className="h-[20px] w-[150px] rounded bg-[#D4DFF1]" />
+          <div className="h-[16px] w-[180px] rounded bg-[#D4DFF1]" />
+        </div>
+      </div>
+
+      {/* Documents */}
+      <div className="flex flex-col gap-[12px] animate-pulse">
+        <div className="h-[20px] w-[200px] rounded bg-[#D4DFF1]" />
+
+        <div className="flex gap-[20px]">
+          {[1, 2, 3].map((_, i) => (
+            <div key={i} className="flex flex-col gap-[8px] items-center">
+              <div className="w-[90px] h-[100px] rounded-[10px] bg-[#D4DFF1]" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+};
+
+
+
 export default function MemberDetailsModal({ member, onClose }) {
+
+  // const [avatarLoaded, setAvatarLoaded] = useState(false);
   const [activeDoc, setActiveDoc] = useState(null);
+
+  const formatLocation = (location) => {
+    if (!location) return "";
+    const { city, state, country } = location;
+    return [city, state, country].filter(Boolean).join(", ");
+  };
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center" onClick={onClose}>
       <div className="bg-white w-[650px] rounded-[20px] p-[40px] relative flex flex-col gap-[40px]" onClick={(e) => e.stopPropagation()}>
 
-        {/* Close */}
+        {/* {!avatarLoaded && member.avatar && <MembersDetailsShimmer/>} */}
+
+        {/* {avatarLoaded && <> */}
         <button
           onClick={onClose}
           className="absolute h-[24px] w-[24px] bg-[#EEEEEE] rounded-full right-[40px] top-[40px] grid place-items-center cursor-pointer"
@@ -18,8 +107,9 @@ export default function MemberDetailsModal({ member, onClose }) {
 
         {/* Header */}
         <div className="flex flex-col gap-[20px] items-start">
-          <Image src={member.image} alt="" width={100} height={100}
-            className="rounded-full" />
+          {member.avatar ? <Image src={member.avatar} alt="" width={100} height={100}
+            className="rounded-full max-h-[100]" />:
+            <div className="min-w-[100px] h-[100px] bg-[#D4DFF1] grid place-items-center text-[42px] font-[600] rounded-full">{member.name?.slice(0,1)}</div>}
 
           <div className="w-[100%] flex flex-col gap-[6px]">
             <div className="w-[100%] flex items-center justify-between">
@@ -27,10 +117,14 @@ export default function MemberDetailsModal({ member, onClose }) {
               <span className="logos--whatsapp-icon"></span>
             </div>
             <p className="text-[20px] text-[#666666] font-[500]">{member.title}</p>
-            {member.location && <div className="flex items-center gap-[8px] text-[16px] text-[#666666] font-[600]">
-              <span className="h-[24px] w-[24px] rounded-full bg-[#E6EBF2] grid place-items-center"><span className="weui--location-outlined"></span></span> 
-              {member.location}
-            </div>}
+              {formatLocation(member.location) && (
+                  <div className="flex items-center gap-[8px] text-[16px] text-[#666666] font-[600]">
+                    <span className="h-[24px] w-[24px] rounded-full bg-[#E6EBF2] grid place-items-center">
+                      <span className="weui--location-outlined"></span>
+                    </span>
+                    {formatLocation(member.location)}
+                  </div>
+                )}
           </div>
         </div>
 
@@ -146,6 +240,7 @@ export default function MemberDetailsModal({ member, onClose }) {
             </div>
           </div>
         )}
+        {/* </>} */}
       </div>
     </div>
   );
