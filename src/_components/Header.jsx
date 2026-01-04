@@ -4,12 +4,13 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import logo from "@/assets/logo/logo.svg";
 import bell from "@/assets/logo/bell.svg";
+import { useRouter } from "next/navigation";
 
 const Header = () => {
   const [open, setOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const meRef = useRef(null);
-
+  const router = useRouter();
   // close dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -28,8 +29,24 @@ const Header = () => {
 
   const confirmLogout = () => {
     setShowLogoutConfirm(false);
-    console.log("Logged out");
-    // 👉 call logout API / clear token / router.push("/login")
+
+    const networkClusterCode =
+      typeof window !== "undefined"
+        ? localStorage.getItem("networkClusterCode")
+        : null;
+
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("networkData");
+      localStorage.removeItem("networkClusterCode");
+      localStorage.removeItem("token");
+      localStorage.removeItem("userEmail");
+    }
+
+    if (networkClusterCode) {
+      router.push(`/?networkClusterCode=${networkClusterCode}`);
+    } else {
+      router.push("/");
+    }
   };
 
   return (

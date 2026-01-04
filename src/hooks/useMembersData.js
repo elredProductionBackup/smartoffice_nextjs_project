@@ -24,11 +24,11 @@ export function useMembersData({
 
       const start = (effectivePage - 1) * limit + 1;
       const offset = effectivePage * limit;
-
+      const networkClusterCode = localStorage.getItem("networkClusterCode");
       try {
         const response = await api.get("/smartOfficeGetMembersList", {
           params: {
-            networkClusterCode: "68621c02a45b0d59a58e6fa9",
+            networkClusterCode: networkClusterCode,
             start,
             offset,
             filterBy: tab === "board" ? "board" : "member",

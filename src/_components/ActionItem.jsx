@@ -1,11 +1,14 @@
+import { removeActionable } from "@/store/actionable/actionableThunks";
 import moment from "moment";
 import { useRef, useEffect, useState } from "react";
 import { BsCheck, BsThreeDotsVertical } from "react-icons/bs";
+import { useDispatch, useSelector } from "react-redux";
 
 export default function ActionItem({
   item,
   onCheck,
   onOpen,
+  handleDelete,
   today = false
 })  {
     const {
@@ -18,6 +21,7 @@ export default function ActionItem({
     dueTime,
     collaborators = [],
   } = item;
+
   const [openMenu, setOpenMenu] = useState(false);
   const menuRef = useRef(null);
 
@@ -34,6 +38,13 @@ export default function ActionItem({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+    const deletingId = useSelector(
+      (state) => state.actionable.deletingId
+    );
+
+    const isDeleting = deletingId === item.actionableId;
+
 
   return (
     <div className="flex items-start justify-between gap-[20px] border-b border-[#D4DFF1] pb-[20px] last:border-b-0 relative cursor-pointer" onClick={onOpen}>
@@ -55,7 +66,7 @@ export default function ActionItem({
               }
             `}
           >
-            {    isCompleted && <BsCheck size={18} color="#fff" />}
+            {isCompleted && <BsCheck size={18} color="#fff" />}
           </div>
         </div>
 
@@ -93,9 +104,9 @@ export default function ActionItem({
             </ul>
           )}
 
-         {    createdBy && dueTime && (
+         {createdBy && dueTime && (
             <div className="text-[16px] font-[600] text-[#666666]">
-              {    createdBy?.name} | {dueTime.toLowerCase()} IST
+              <span className="capitalize">{createdBy?.name}</span> | {dueTime.toLowerCase()} IST
             </div>
           )}
         </div>
@@ -161,12 +172,13 @@ export default function ActionItem({
 
             <button
               className="flex items-center gap-[6px] w-[180px] px-[14px] py-[10px] text-[18px] font-[500] text-[#333]"
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation();
                 setOpenMenu(false);
-                console.log("Delete item");
+                handleDelete();
               }}
             >
-              <span className="fluent--delete-16-regular"></span> Delete item
+              <span className="fluent--delete-16-regular"></span> {isDeleting ? "Deleting..." : "Delete"} item
             </button>
           </div>
         )}

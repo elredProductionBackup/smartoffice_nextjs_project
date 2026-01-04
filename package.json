@@ -9,12 +9,14 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@reduxjs/toolkit": "^2.11.2",
     "axios": "^1.13.2",
     "moment": "^2.30.1",
     "next": "16.0.3",
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "react-icons": "^5.5.0",
+    "react-redux": "^9.2.0",
     "zustand": "^5.0.8"
   },
   "devDependencies": {

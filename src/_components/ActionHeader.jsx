@@ -3,6 +3,7 @@ import { FaPlus } from "react-icons/fa6";
 import { IoChevronBack, IoChevronForward } from "react-icons/io5";
 
 import { addWeeks, formatWeekRange } from "@/utils/week";
+import { useEffect } from "react";
 
 export default function ActionHeader({
   activeItem,
@@ -16,9 +17,11 @@ export default function ActionHeader({
   onSearchChange,
   onAdd,
   onTabChange,
+  debounceRef,
 }) {
   const isWeekly = activeItem === "weekly";
   const week = formatWeekRange(weekDate);
+  
 
   return (
     <div className="flex items-center justify-between mb-[20px]">
@@ -72,7 +75,8 @@ export default function ActionHeader({
 
           {searchOpen && (
             <>
-              <input
+              <input 
+                ref={debounceRef}
                 autoFocus
                 value={searchValue}
                 onChange={(e) => onSearchChange(e.target.value)}

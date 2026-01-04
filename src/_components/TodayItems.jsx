@@ -2,7 +2,7 @@ import { useState } from "react";
 import ActionItem from "./ActionItem";
 import EmptyState from "./EmptyState";
 
-export default function TodayItems({ items, adding, onAdd, onToggle, onCancelAdding, onOpen }) {
+export default function TodayItems({ items, adding, onAdd,handleDelete, onToggle, onCancelAdding, onOpen }) {
   const MAX_CHARS = 60;
   const [value, setValue] = useState("");
 
@@ -59,8 +59,9 @@ export default function TodayItems({ items, adding, onAdd, onToggle, onCancelAdd
         <ActionItem
           key={item.actionableId}
           item={item}
-          onCheck={() => onToggle(item.actionableId)}
+          onCheck={() => onToggle(item)}
           onOpen={() => onOpen(item)}
+          handleDelete={()=>handleDelete(item.actionableId)}
           today
         />
         ))

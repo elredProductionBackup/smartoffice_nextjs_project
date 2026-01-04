@@ -5,10 +5,10 @@ export default function PastItems({ items, onToggle }) {
     <div className="flex flex-col gap-[20px] w-full">
       {items.map((item) => (
         <ActionItem
-          key={item.id}
-          {...item}
+           key={item.actionableId}
+          item={item}
           completed
-          onCheck={() => onToggle(item.id)} 
+          onCheck={() => onToggle(item)} 
         />
       ))}
     </div>
