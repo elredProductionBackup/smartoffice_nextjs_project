@@ -394,33 +394,36 @@ useEffect(() => {
 const handleTabChange = (tab) => {
   const params = new URLSearchParams(searchParams.toString());
   params.set("item", tab.toLowerCase());
-  params.set("page", 1); // 👈 reset page
+  params.set("page", 1);
   router.push(`?${params.toString()}`);
 };
 
-const handleAdd = async (text) => {
+const handleAdd = (text) => {
   if (!text.trim()) {
     setAdding(false);
     return;
   }
 
-    const networkClusterCode = localStorage.getItem("networkClusterCode");
+  const networkClusterCode = localStorage.getItem("networkClusterCode");
+  const tempId = `temp-${Date.now()}`;
 
-    dispatch(
-      createActionable({
-        actionableId: "",
-        networkClusterCode,
-        title: text,
-        isCompleted: false,
-        category: "all",
-        notes: "",
-        linkedEvent: [],
-        dueDateTimeStamp: moment().endOf("day").toISOString(),
-      })
-    );
+  dispatch(
+    createActionable({
+      tempId,
+      actionableId: tempId,
+      networkClusterCode,
+      title: text,
+      isCompleted: false,
+      category: "all",
+      notes: "",
+      linkedEvent: [],
+      dueDateTimeStamp: moment.utc().toISOString(),
+    })
+  );
 
-    setAdding(false);
-  };
+
+  setAdding(false);
+};
 
   
   const handleDelete = (actionableId) => {
