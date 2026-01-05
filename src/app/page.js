@@ -48,9 +48,7 @@ const Login = () => {
     }
   };
 
-  // useEffect(()=>{
-  //   showLoader()
-  // },[])
+
   return (
     <GuestRoute>
       <div className="h-screen flex items-center justify-center">
