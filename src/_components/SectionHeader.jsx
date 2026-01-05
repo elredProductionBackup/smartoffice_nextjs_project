@@ -1,209 +1,152 @@
-// "use client";
-
-// import Image from "next/image";
-// import searchIcon from "@/assets/logo/search.svg";
-// import { useSearchParams, useRouter } from "next/navigation";
-
-// export default function SectionHeader({
-//   title = "Members",
-//   tabs = [],
-//   searchPlaceholder = "Search",
-//   onSearch = () => {},
-// }) {
-//   const searchParams = useSearchParams();
-//   const router = useRouter();
-
-//   const activeTab = searchParams.get("tab") || tabs[0].key;
-
-//   const handleTabClick = (key) => {
-//     router.replace(`?tab=${key}`);
-//   };
-
-//   return (
-//     <div className="flex items-center justify-between w-full">
-//       {/* LEFT — Title + Tabs */}
-//       <div>
-//         <h2 className="text-2xl font-semibold mb-3">{title}</h2>
-
-//         <div className="flex gap-3">
-//           {tabs.map((tab) => (
-//             <button
-//               key={tab.key}
-//               onClick={() => handleTabClick(tab.key)}
-//               className={`px-4 py-2 rounded-full text-sm font-medium transition cursor-pointer
-//                 ${
-//                   activeTab === tab.key
-//                     ? "bg-[#344F88] text-white"
-//                     : "bg-[#F4F5F7] text-gray-600"
-//                 }
-//               `}
-//             >
-//               {tab.label}
-//             </button>
-//           ))}
-//         </div>
-//       </div>
-
-//       {/* RIGHT — Search */}
-//       <div className="w-[350px] relative">
-//         <div className="relative bg-[#F2F6FC] border border-[#E1E2E6] h-14 rounded-full px-6">
-
-//           <Image
-//             src={searchIcon}
-//             alt="search"
-//             className="absolute left-6 top-1/2 -translate-y-1/2"
-//           />
-
-//           <input
-//             type="text"
-//             placeholder={searchPlaceholder}
-//             onChange={(e) => onSearch(e.target.value)}
-//             className="w-full h-full bg-transparent pl-10 outline-none"
-//           />
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }
-
-
 "use client";
 
-import Image from "next/image";
-import searchIcon from "@/assets/logo/search.svg";
+import { useState, useEffect, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 
-// export default function SectionHeader({
-//   title = "Members",
-//   tabs = [],
-//   searchPlaceholder = "Search",
-//   onSearch = () => {},
-// }) {
-//   const searchParams = useSearchParams();
-//   const router = useRouter();
-
-//   // Check if tabs exist
-//   const hasTabs = Array.isArray(tabs) && tabs.length > 0;
-
-//   // Active tab only if tabs exist
-//   const activeTab = hasTabs ? (searchParams.get("tab") || tabs[0].key) : null;
-
-//   const handleTabClick = (key) => {
-//     router.replace(`?tab=${key}`);
-//   };
-
-//   return (
-//     <div className="flex items-center justify-between w-full">
-//       {/* LEFT — Title + Tabs */}
-//       <div>
-//         <h2 className="text-2xl font-semibold mb-3">{title}</h2>
-
-//         {hasTabs && (
-//           <div className="flex gap-3">
-//             {tabs.map((tab) => (
-//               <button
-//                 key={tab.key}
-//                 onClick={() => handleTabClick(tab.key)}
-//                 className={`px-4 py-2 rounded-full text-sm font-medium transition cursor-pointer
-//                   ${
-//                     activeTab === tab.key
-//                       ? "bg-[#344F88] text-white"
-//                       : "bg-[#F4F5F7] text-gray-600"
-//                   }
-//                 `}
-//               >
-//                 {tab.label}
-//               </button>
-//             ))}
-//           </div>
-//         )}
-//       </div>
-
-//       {/* RIGHT — Search */}
-//       <div className="w-[350px] relative">
-//         <div className="relative bg-[#F2F6FC] border border-[#E1E2E6] h-14 rounded-full px-6">
-
-//           <Image
-//             src={searchIcon}
-//             alt="search"
-//             className="absolute left-6 top-1/2 -translate-y-1/2"
-//           />
-
-//           <input
-//             type="text"
-//             placeholder={searchPlaceholder}
-//             onChange={(e) => onSearch(e.target.value)}
-//             className="w-full h-full bg-transparent pl-10 outline-none"
-//           />
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }
-
 export default function SectionHeader({
-    title = "Members",
-    tabs = [],
-    searchPlaceholder = "Search",
-    onSearch = () => {},
-  }) {
-    const searchParams = useSearchParams();
-    const router = useRouter();
-  
-    const activeTab = tabs.length > 0
-      ? (searchParams.get("tab") || tabs[0].key)
-      : null;
-  
-    const handleTabClick = (key) => {
-      router.replace(`?tab=${key}`);
+  title = "Members",
+  tabs = [],
+  search = "",
+  onSearch = () => {},
+  searchBy="Name",
+  setSearchBy=()=>{}
+}) {
+  const dropdownRef = useRef(null);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  const activeTab =
+    tabs.length > 0 ? searchParams.get("tab") || "members" : null;
+
+  const handleTabChange = (key) => {
+    router.replace(`?tab=${key}`);
+  };
+
+  /* ---------- DROPDOWN STATE ---------- */
+  const [openDropdown, setOpenDropdown] = useState(false);
+
+
+  /* ---------- SEARCH STATE ---------- */
+  const [localSearch, setLocalSearch] = useState(search);
+  const debounceRef = useRef(null);
+
+  /* ---------- HANDLE INPUT ---------- */
+  const handleSearchChange = (e) => {
+    setLocalSearch(e.target.value);
+  };
+
+  const clearSearch = () => {
+    setLocalSearch("");
+    onSearch(""); 
+  };
+
+  /* ---------- DEBOUNCE EFFECT ---------- */
+  useEffect(() => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+
+    debounceRef.current = setTimeout(() => {
+      if (localSearch.length >= 3 || localSearch.length === 0) {
+        onSearch(localSearch);
+      }
+    }, 300); 
+
+    return () => clearTimeout(debounceRef.current);
+  }, [localSearch, onSearch]);
+
+  /* ---------- OUTSIDE CLICK ---------- */
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setOpenDropdown(false);
+      }
     };
-  
-    return (
-      <div className="flex items-center justify-between w-full min-h-[80px]">
-        
-        {/* LEFT — Title + Tabs */}
-        <div>
-          <h2 className="text-2xl font-semibold mb-3">{title}</h2>
-  
-          {tabs.length > 0 && (
-            <div className="flex gap-3">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.key}
-                  onClick={() => handleTabClick(tab.key)}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition cursor-pointer
-                    ${
-                      activeTab === tab.key
-                        ? "bg-[#344F88] text-white"
-                        : "bg-[#F4F5F7] text-gray-600"
-                    }
-                  `}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  return (
+    <div className="flex flex-col w-full relative">
+      {/* Title */}
+      <h2 className="text-[32px] font-semibold mb-[20px]">{title}</h2>
+
+      {/* Tabs */}
+       {tabs.length > 0 && (
+         <div className="action-tabs flex items-center gap-[10px] border-b border-[#E5E7EB]">
+           {tabs.map((tab) => (
+             <button
+               key={tab.key}
+               onClick={() => handleTabChange(tab.key)}
+               className={`tab-item px-[20px] py-[5px] text-[20px] font-[700] relative cursor-pointer
+                 ${activeTab === tab.key ? "bordered text-[20px] text-[#0B57D0]" : "text-[#666666]"}`}
+             >
+               {tab.label}
+             </button>
+           ))}
+         </div>
+       )}
+
+      {/* Search */}
+      <div className="w-[500px] absolute right-0 top-1/2 -translate-y-1/2 z-30">
+        <div className="relative flex items-center h-[60px] bg-[#F7F9FC] border border-[#E1E2E6] rounded-full px-[20px] gap-3">
+
+          {/* Dropdown */}
+          <div ref={dropdownRef} className="relative">
+            <button
+              type="button"
+              onClick={() => setOpenDropdown((v) => !v)}
+              className="flex items-center gap-2 font-[600] cursor-pointer"
+            >
+              {searchBy}
+              <span className="icon-park-outline--down text-[#999999]" />
+            </button>
+
+               {openDropdown && (
+                 <div className="absolute p-[10px] top-[46px] left-[-20px] bg-white border border-[#F2F6FC] rounded-[20px] shadow-md w-[120px] z-20 ">
+                   {["Name", "Title"].map((item) => (
+                     <button
+                       key={item}
+                       onClick={() => {
+                         setSearchBy(item);
+                         setOpenDropdown(false);
+                       }}
+                       className={`w-full cursor-pointer text-left pl-[12px] py-[8px] text-[16px] rounded-[10px] font-medium 
+                         ${searchBy === item?'bg-[#F2F6FC]':''}`}
+
+                     >
+                       {item}
+                     </button>
+                   ))}
+                 </div>
+               )}
+          </div>
+
+          {/* Divider */}
+          <div className="h-[40px] w-[1px] bg-[#D4DFF1]" />
+
+          {/* Input */}
+          <input
+            type="text"
+            value={localSearch}
+            placeholder={`Search by ${searchBy.toLowerCase()} (Min 3 chars)`}
+            onChange={handleSearchChange}
+            className="flex-1 bg-transparent outline-none"
+          />
+
+          {/* Clear / Search Icon */}
+          {localSearch ? (
+            <button onClick={clearSearch} className="grid place-items-center cursor-pointer">
+              <span className="akar-icons--cross" />
+            </button>
+          ) : (
+            <span className="iconamoon--search-light" />
           )}
         </div>
-  
-        {/* RIGHT — Search */}
-        <div className="w-[350px] relative">
-          <div className="relative bg-[#F2F6FC] border border-[#E1E2E6] h-14 rounded-full px-6">
-            <Image
-              src={searchIcon}
-              alt="search"
-              className="absolute left-6 top-1/2 -translate-y-1/2"
-            />
-  
-            <input
-              type="text"
-              placeholder={searchPlaceholder}
-              onChange={(e) => onSearch(e.target.value)}
-              className="w-full h-full bg-transparent pl-10 outline-none"
-            />
-          </div>
-        </div>
       </div>
-    );
-  }
-  
+    </div>
+  );
+}

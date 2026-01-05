@@ -1,52 +1,32 @@
 "use client";
 
+// import SectionHeader from "@/_components/SectionHeader";
+// import MembersTable from "@/_components/Tables/MembersTable";
 import { useSearchParams } from "next/navigation";
-import SectionHeader from "@/_components/SectionHeader";
-import MembersTable from "@/_components/Tables/MembersTable";
 import ActionableHeader from "@/_components/ActionableHeader";
-import { useDatepicker } from "@/store/useDatePicker";
+import ActionableTabs from "@/_components/ActionableTabs";
+import ActionItems from "@/_components/ActionItems";
+import { useSelector } from "react-redux";
+
 
 export default function ActionablePageClient() {
   const openDatepicker = useDatepicker((s) => s.openDatepicker);
 
   const searchParams = useSearchParams();
-  const currentTab = searchParams.get("tab") || "members";
+  const currentTab = searchParams.get("tab") || "all";
+    const { total } = useSelector((state) => state.actionable);
 
   return (
-    <div>
+   <div className="h-[calc(100vh-120px)] flex flex-col">
       <ActionableHeader
         title="Actionable"
-       
-        // searchPlaceholder="Search member"
+        taskCount={total}
+        refresh
       />
 
-      <div>
-      <button
-      onClick={() =>
-        openDatepicker({
-          date: new Date(),
-          onConfirm: (date) => {
-            console.log("Selected:", date);
-          },
-        })
-      }
-      className="px-4 py-2 bg-blue-600 text-white rounded"
-    >
-      Move
-    </button>
-      </div>
-      {/* <div className="mt-6">
-        {currentTab === "members" && (
-          <div>
-            <MembersTable />
-          </div>
-        )}
-        {currentTab === "board" && (
-          <div>
-            <MembersTable document={false} />
-          </div>
-        )}
-      </div> */}
+      <ActionableTabs />
+
+      <ActionItems />
     </div>
   );
 }

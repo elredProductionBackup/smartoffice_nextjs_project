@@ -28,3 +28,21 @@ body {
 
 *::-webkit-scrollbar{
     display: none;}
+
+.action-tabs::before{
+  position: absolute;
+  content: "";
+  bottom: 0;
+  width: 100%;
+  height: 1px;
+  background-color: #D4DFF1;
+}
+.tab-item.bordered::before{
+  position: absolute;
+  content: "";
+  bottom: -1px;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background-color: #0B57D0;
+}
