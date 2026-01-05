@@ -81,7 +81,7 @@
 import { Suspense } from "react";
 import Login from "./Login";
 
-console.log('login')
+console.log('login added')
 export default function Page() {
   return (
     <Suspense fallback={null}>
