@@ -6,6 +6,7 @@ import LoginComponent from "@/_components/LoginComponent";
 import OTPComponent from "@/_components/OTPComponent";
 import { useState } from "react";
 
+console.log('testing')
 const Login = () => {
   const [login, setLogin] = useState(true);
 
