@@ -19,7 +19,6 @@ export const fetchActionables = createAsyncThunk(
       const networkClusterCode = localStorage.getItem("networkClusterCode");
 
       const start = (page - 1) * limit + 1;
-      console.log(start)
       const offset = page * limit;
 
       const res = await getActionables({
@@ -39,42 +38,58 @@ export const fetchActionables = createAsyncThunk(
     }
   }
 );
-
 export const createActionable = createAsyncThunk(
   "actionable/createActionable",
-  async (payload, { dispatch, rejectWithValue }) => {
+  async (payload, { rejectWithValue }) => {
     try {
-      await addActionable(payload);
-      dispatch(fetchActionables({ page: 1, limit: 10, search: "", dueSearchKey: "today" }));
+      const { tempId, ...rest } = payload;
+
+      const apiPayload = {
+        ...rest,
+        actionableId: "",
+      };
+
+      const res = await addActionable(apiPayload);
+
+      if (!res.data.success) {
+        return rejectWithValue({
+          message: res.data.message,
+          tempId,
+        });
+      }
+
+      return {
+        item: res.data.result[0],
+        tempId,
+      };
     } catch (err) {
-      return rejectWithValue(err.message);
+      return rejectWithValue({
+        message: err.message,
+        tempId: payload.tempId,
+      });
     }
   }
 );
 
-/** DELETE ACTIONABLE */
-/** DELETE ACTIONABLE */
+
 export const removeActionable = createAsyncThunk(
   "actionable/deleteActionable",
-  async (payload, { dispatch, getState, rejectWithValue }) => {
+  async (payload, { getState, rejectWithValue }) => {
+    const state = getState().actionable;
+
+    const item = state.items.find(
+      (i) => i.actionableId === payload.actionableId
+    );
+
+    if (item?.isOptimistic) {
+      return {
+        actionableId: payload.actionableId,
+        skipApi: true,
+      };
+    }
+
     try {
       await deleteActionable(payload);
-
-      const {
-        page,
-        limit,
-        activeTab,
-        search,
-      } = getState().actionable;
-
-      dispatch(
-        fetchActionables({
-          page,
-          limit,
-          search,
-          dueSearchKey: activeTab, 
-        })
-      );
 
       return { actionableId: payload.actionableId };
     } catch (err) {
@@ -82,6 +97,8 @@ export const removeActionable = createAsyncThunk(
     }
   }
 );
+
+
 
 
 export const toggleActionable = createAsyncThunk(

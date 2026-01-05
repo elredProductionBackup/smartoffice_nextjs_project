@@ -52,10 +52,11 @@ export default function ActionItem({
       {/* LEFT */}
       <div className="flex w-[55%] items-start gap-[14px] pr-[40px]">
         {/* Checkbox */}
-        <div className="h-[30px] flex items-center">
+        <div className="h-[30px] flex items-center" >
           <div
              onClick={(e) => {
                 e.stopPropagation();
+                 if (item.isOptimistic) return; 
                 onCheck();
               }}
             className={`h-[18px] w-[18px] rounded-[4px] border-[2px] flex items-center justify-center cursor-pointer transition-colors
@@ -171,7 +172,7 @@ export default function ActionItem({
             </button>
 
             <button
-              className="flex items-center gap-[6px] w-[180px] px-[14px] py-[10px] text-[18px] font-[500] text-[#333]"
+              className="flex items-center gap-[6px] w-[180px] px-[14px] py-[10px] text-[18px] font-[500] text-[#333] cursor-pointer"
               onClick={(e) => {
                 e.stopPropagation();
                 setOpenMenu(false);

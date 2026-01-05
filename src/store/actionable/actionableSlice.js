@@ -4,6 +4,7 @@ import {
   toggleActionable,
   fetchComments,
   removeActionable,
+  createActionable,
 } from "./actionableThunks";
 
 const initialState = {
@@ -52,7 +53,6 @@ const actionableSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-
     .addCase(toggleActionable.fulfilled, (state, action) => {
     const { actionableId, isCompleted } = action.payload;
 
@@ -93,23 +93,72 @@ const actionableSlice = createSlice({
           item.comments = action.payload.comments;
         }
       })
+            .addCase(createActionable.pending, (state, action) => {
+        const tempItem = {
+          ...action.meta.arg,
+          actionableId: action.meta.arg.tempId, 
+          isOptimistic: true,
+        };
+
+        if (state.page === 1) {
+          state.items.unshift(tempItem);
+
+          if (state.items.length > state.limit) {
+            state.items.pop();
+          }
+        }
+
+        state.total += 1;
+      })
+
+      .addCase(createActionable.fulfilled, (state, action) => {
+        const { item, tempId } = action.payload;
+
+        if (!item || !tempId) return;
+
+        const index = state.items.findIndex(
+          (i) => i && i.actionableId === tempId
+        );
+
+        if (index !== -1) {
+          state.items[index] = item;
+        }
+      })
+
+      .addCase(createActionable.rejected, (state, action) => {
+        const tempId = action.payload?.tempId;
+
+        if (tempId) {
+          state.items = state.items.filter(
+            (i) => i && i.actionableId !== tempId
+          );
+          state.total -= 1;
+        }
+
+        state.error = action.payload?.message;
+      })
       .addCase(removeActionable.pending, (state, action) => {
         state.deletingId = action.meta.arg.actionableId;
       })
-
       .addCase(removeActionable.fulfilled, (state, action) => {
         const { actionableId } = action.payload;
-        console.log(actionableId)
+
         state.items = state.items.filter(
           (i) => i.actionableId !== actionableId
         );
-        state.deletingId = null;
-      })
 
+        state.total -= 1;
+        state.deletingId = null;
+
+        if (state.items.length === 0 && state.page > 1) {
+          state.page -= 1;
+        }
+      })
       .addCase(removeActionable.rejected, (state, action) => {
         state.deletingId = null;
         state.error = action.payload;
-      })
+      });
+
   },
 });
 
