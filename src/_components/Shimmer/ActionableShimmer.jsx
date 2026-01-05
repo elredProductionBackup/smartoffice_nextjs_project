@@ -39,7 +39,7 @@ const ActionableShimmer = () => {
         </div>
       </div>
 
-      {/* Rows */}
+      {/*  */}
       <div className="flex-1">
         {Array.from({ length: 4 }).map((_, index) => (
           <ShimmerRow key={index} />
