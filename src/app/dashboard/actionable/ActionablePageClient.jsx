@@ -10,8 +10,6 @@ import { useSelector } from "react-redux";
 
 
 export default function ActionablePageClient() {
-  const searchParams = useSearchParams();
-  const currentTab = searchParams.get("tab") || "all";
     const { total } = useSelector((state) => state.actionable);
 
   return (

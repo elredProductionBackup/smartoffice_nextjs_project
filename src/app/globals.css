@@ -46,3 +46,36 @@ body {
   height: 4px;
   background-color: #0B57D0;
 }
+.loader {
+  width: 18px;
+  height: 18px;
+  display: inline-block;
+  position: relative;
+  border: 2px solid;
+  border-color: #0B57D0 #0000 #D3E3FD #0000;
+  border-radius: 50%;
+  box-sizing: border-box;
+  animation: rotate 1s linear infinite;
+}
+
+.loader::before,
+.loader::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  border: 4px solid transparent;
+  border-bottom-color: #D3E3FD;
+  transform: translate(-4px, 7px) rotate(-35deg);
+}
+
+.loader::after {
+  border-color: #0B57D0 #0000 #F5F9FF #0000;
+  transform: translate(12px, 1px) rotate(-35deg);
+}
+
+@keyframes rotate {
+  100% {
+    transform: rotate(360deg);
+  }
+}

@@ -200,7 +200,7 @@ export default function MembersTable({ data=[], total, documents = false,current
       </div>
 
       {/* Pagination */}
-      {totalPages > 1 && (
+      {!isEmpty && totalPages > 1 && (
         <div className="flex justify-between gap-2 mt-6 bg-[#F2F7FF] px-[30px] pt-[20px] pb-[33px] sticky bottom-0">
           <div className="h-[48px] flex items-center text-lg font-semibold text-[#333333]">
             Showing {(currentPage - 1) * CONSTANTS.ITEMS_PER_PAGE + 1} to {Math.min(currentPage * CONSTANTS.ITEMS_PER_PAGE, total)} out of {total} entries
