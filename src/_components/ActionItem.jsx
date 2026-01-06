@@ -73,7 +73,7 @@ export default function ActionItem({
       <div className="flex w-[55%] items-start gap-[14px] pr-[40px]">
         {/* Checkbox */}
         <div className="h-[30px] flex items-center" >
-        {item.isOptimistic ?<span class="loader"></span>:
+        {item.isOptimistic ?<span className="loader"></span>:
           <div onClick={(e) => {
                 e.stopPropagation();
                  if (item.isOptimistic) return; 
