@@ -11,7 +11,7 @@ export default function DashboardActionableList({ data = [], loading = false, })
   }
 
   return (
-    <div className="flex flex-col mt-6 rounded-2xl bg-[#F2F6FC] px-[24px] pt-[24px] max-h-[450px] ">
+    <div className="flex flex-col mt-6 rounded-2xl bg-[#F2F7FF] px-[24px] pt-[24px] max-h-[450px] ">
 
       {/* SHIMMER */}
       {loading ?
@@ -50,7 +50,7 @@ export default function DashboardActionableList({ data = [], loading = false, })
               <div className="flex flex-col gap-[20px]">
                 {data.map((item) => (
                   <div
-                    key={item.id}
+                    key={item.actionableId}
                     className="flex items-start justify-between gap-[34px] border-b border-[#D4DFF1] pb-[20px] last:border-none"
                   >
                     {/* Left */}
@@ -59,12 +59,12 @@ export default function DashboardActionableList({ data = [], loading = false, })
 
                       <div className="flex flex-col gap-[6px]">
                         <p className="text-[16px] leading-[21px] font-[500] text-[#333] line-clamp-2">
-                          {item.text ?? "--"}
+                          {item.title ?? "—"}
                         </p>
 
-                        {(item.addedBy || item.time) &&
-                          <p className="text-[14px] text-[#666666] font-[600]">
-                            {item.addedBy ?? "—"} | {item.time ?? "--"}
+                        {(item?.createdBy || item?.dueTime) &&
+                          <p className="text-[14px] text-[#666666] font-[600] capitalize">
+                            {item.createdBy?.name ?? "—"} | {item.dueTime ?? "—"}
                           </p>
                         }
                       </div>
@@ -73,18 +73,18 @@ export default function DashboardActionableList({ data = [], loading = false, })
                     {/* Right */}
                     <div className="flex items-center gap-[34px]">
                       <span className="w-[100px] text-[14px] text-[#333333] font-[600] whitespace-nowrap">
-                        {item.date
-                          ? new Date(item.date).toLocaleDateString("en-GB", {
+                        {item?.dueDate
+                          ? new Date(item.dueDate).toLocaleDateString("en-GB", {
                             day: "2-digit",
                             month: "short",
                           })
-                          : "--"}
+                          : "—"}
                       </span>
 
                       {/* Avatars */}
                       <div className="flex -space-x-2 h-[24px] w-[24px]">
-                        {Array.isArray(item.avatars) &&
-                          item.avatars.slice(0, 1).map((_, index) => (
+                        {Array.isArray(item.collaborators) &&
+                          item.collaborators.slice(0, 1).map((_, index) => (
                             <div
                               key={index}
                               className="h-[24px] w-[24px] rounded-full bg-[#D1D5DB] border-2 border-[#F2F6FC]"

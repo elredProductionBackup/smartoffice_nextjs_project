@@ -142,20 +142,28 @@ import { IoIosArrowForward, IoIosArrowBack } from "react-icons/io";
 import { useDispatch, useSelector } from "react-redux";
 import { closeModal } from "@/store/actionable/actionableUiSlice";
 import { useState } from "react";
+import moment from "moment";
+import { changeDueDateTime } from "@/store/actionable/actionableThunks";
 
 const DAYS = ["S", "M", "T", "W", "T", "F", "S"];
 
-export default function DatepickerModal() {
+export default function DatepickerModal({ selectedTask }) {
   const dispatch = useDispatch();
-
   const { modal } = useSelector((state) => state.actionableUi);
 
   const isOpen = modal.type === "MOVE";
+  if (!isOpen) return null;
 
-  // 🔹 LOCAL STATE (calendar-only)
-  const [viewDate, setViewDate] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState(null);
+  // 🔹 Parse existing due date
+  const initialDate = selectedTask?.dueDate
+    ? moment(selectedTask.dueDate, "DD MMM YYYY").toDate()
+    : new Date();
+
+  // 🔹 LOCAL STATE
+  const [viewDate, setViewDate] = useState(initialDate);
+  const [selectedDate, setSelectedDate] = useState(initialDate);
   const [hoveredDate, setHoveredDate] = useState(null);
+
 
   if (!isOpen) return null;
 
@@ -179,7 +187,7 @@ export default function DatepickerModal() {
           <h2 className="text-2xl font-bold">Move</h2>
           <button
             onClick={() => dispatch(closeModal())}
-            className="text-3xl text-gray-400"
+            className="text-3xl text-gray-400 cursor-pointer"
           >
             ×
           </button>
@@ -198,10 +206,10 @@ export default function DatepickerModal() {
             </h3>
 
             <div className="flex gap-6 text-2xl">
-              <button onClick={() => changeMonth(-1)}>
+              <button onClick={() => changeMonth(-1)} className="cursor-pointer">
                 <IoIosArrowBack />
               </button>
-              <button onClick={() => changeMonth(1)}>
+              <button onClick={() => changeMonth(1)} className="cursor-pointer">
                 <IoIosArrowForward />
               </button>
             </div>
@@ -231,7 +239,9 @@ export default function DatepickerModal() {
               const isSelected =
                 selectedDate &&
                 selectedDate.getDate() === day &&
-                selectedDate.getMonth() === month;
+                selectedDate.getMonth() === month &&
+                selectedDate.getFullYear() === year;
+
 
               return (
                 <button
@@ -241,7 +251,7 @@ export default function DatepickerModal() {
                   onClick={() =>
                     setSelectedDate(new Date(year, month, day))
                   }
-                  className={`mx-auto h-11 w-11 rounded-lg
+                  className={`mx-auto h-11 w-11 rounded-lg cursor-pointer
                     ${isSelected ? "bg-blue-700 text-white" : ""}
                     ${hoveredDate === day ? "bg-blue-100" : ""}
                   `}
@@ -266,8 +276,20 @@ export default function DatepickerModal() {
             onClick={() => {
               if (!selectedDate) return;
 
-              // 🔥 FOR NOW: just log
-              console.log("Selected date:", selectedDate);
+              const dueDate = moment(selectedDate).format("YYYY-MM-DD");
+
+              const dueTime = moment(
+                selectedTask.dueTime,
+                "hh:mm A"
+              ).format("HH:mm");
+
+              dispatch(
+                changeDueDateTime({
+                  actionableId: selectedTask.actionableId,
+                  dueDate,
+                  dueTime,
+                })
+              );
 
               dispatch(closeModal());
             }}
@@ -275,6 +297,7 @@ export default function DatepickerModal() {
           >
             Move
           </button>
+
         </div>
       </div>
     </div>

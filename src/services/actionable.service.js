@@ -68,9 +68,10 @@ export const addSubTask = (payload) => {
   return api.patch("/smartOffice/addSubTask", payload);
 };
 
-/** DELETE subtask */
 export const deleteSubTask = (payload) => {
-  return api.patch("/smartOffice/deleteSubTask", payload);
+  return api.delete("/smartOffice/deleteSubTask", {
+    data: payload,
+  });
 };
 
 /* ===================== COLLABORATORS ===================== */

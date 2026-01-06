@@ -1,11 +1,12 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { fetchActionables, toggleActionable, fetchComments, removeActionable, createActionable,} from "./actionableThunks";
+import { fetchActionables, toggleActionable, fetchComments, removeActionable, createActionable, changeDueDateTime, removeSubTask, createSubTask, updateSubTask, updateActionable, } from "./actionableThunks";
+import moment from "moment";
 
 const initialState = {
   items: [],
   loading: false,
-  creating: false, 
-  deletingId: null, 
+  creating: false,
+  deletingId: null,
   error: null,
   page: 1,
   limit: 10,
@@ -37,7 +38,6 @@ const actionableSlice = createSlice({
         state.loading = true;
       })
       .addCase(fetchActionables.fulfilled, (state, action) => {
-        console.log(action)
         state.loading = false;
         state.items = action.payload.list;
         state.total = action.payload.total;
@@ -48,36 +48,74 @@ const actionableSlice = createSlice({
       })
       /* TOGGLE ACTIONABLES */
       .addCase(toggleActionable.fulfilled, (state, action) => {
-      const { actionableId, isCompleted } = action.payload;
+        const { actionableId, isCompleted } = action.payload;
 
-      if (state.activeTab === "all" && isCompleted) {
+        if (state.activeTab === "all" && isCompleted) {
           state.items = state.items.filter(
-          (i) => i.actionableId !== actionableId
+            (i) => i.actionableId !== actionableId
           );
           return;
-      }
-      if (state.activeTab === "today" && isCompleted) {
+        }
+
+        if (state.activeTab === "today" && isCompleted) {
           state.items = state.items.filter(
-          (i) => i.actionableId !== actionableId
+            (i) => i.actionableId !== actionableId
           );
           return;
-      }
+        }
 
-      if (state.activeTab === "past" && !isCompleted) {
+        if (state.activeTab === "past" && !isCompleted) {
           state.items = state.items.filter(
-          (i) => i.actionableId !== actionableId
+            (i) => i.actionableId !== actionableId
           );
           return;
-      }
+        }
 
-      const item = state.items.find(
+        const item = state.items.find(
           (i) => i.actionableId === actionableId
-      );
-      if (item) {
+        );
+
+        if (item) {
           item.isCompleted = isCompleted;
-      }
+        }
       })
 
+      .addCase(toggleActionable.rejected, (state, action) => {
+        state.error = action.payload;
+      })
+      /* CHANGE DUE DATE TIME */
+      .addCase(changeDueDateTime.fulfilled, (state, action) => {
+        const {
+          actionableId,
+          dueDateTimeStamp,
+          dueDate,
+          dueTime,
+        } = action.payload;
+
+        const itemIndex = state.items.findIndex(
+          (i) => i.actionableId === actionableId
+        );
+
+        if (itemIndex === -1) return;
+
+        const item = state.items[itemIndex];
+
+        item.dueDateTimeStamp = dueDateTimeStamp;
+        item.dueDate = dueDate;
+        item.dueTime = dueTime;
+
+        if (state.activeTab === "today") {
+          const today = moment().utc().format("DD MMM YYYY");
+
+          if (dueDate !== today) {
+            state.items.splice(itemIndex, 1);
+          }
+        }
+      })
+
+      .addCase(changeDueDateTime.rejected, (state, action) => {
+        state.error = action.payload; // show error, NO mutation
+      })
       /* COMMENTS */
       .addCase(fetchComments.fulfilled, (state, action) => {
         const item = state.items.find(
@@ -88,34 +126,10 @@ const actionableSlice = createSlice({
         }
       })
       /* CREATE ACTIONABLE */
-      // .addCase(createActionable.pending, (state) => {
-      //   state.creating = true;
-      //   state.error = null;
-      // })
-
-      // .addCase(createActionable.fulfilled, (state, action) => {
-      //   state.creating = false;
-
-      //   // Insert only when success
-      //   if (state.page === 1) {
-      //     state.items.unshift(action.payload);
-
-      //     if (state.items.length > state.limit) {
-      //       state.items.pop();
-      //     }
-      //   }
-
-      //   state.total += 1;
-      // })
-
-      // .addCase(createActionable.rejected, (state, action) => {
-      //   state.creating = false;
-      //   state.error = action.payload;
-      // })
       .addCase(createActionable.pending, (state, action) => {
         const tempItem = {
           ...action.meta.arg,
-          actionableId: action.meta.arg.tempId, 
+          actionableId: action.meta.arg.tempId,
           isOptimistic: true,
         };
 
@@ -156,6 +170,29 @@ const actionableSlice = createSlice({
 
         state.error = action.payload?.message;
       })
+      // UPDATE ACTIONABLE
+      .addCase(updateActionable.fulfilled, (state, action) => {
+        const {
+          actionableId,
+          title,
+          notes,
+          collaborators,
+        } = action.payload;
+
+        const item = state.items.find(
+          (i) => i.actionableId === actionableId
+        );
+
+        if (!item) return;
+
+        if (title !== undefined) item.title = title;
+        if (notes !== undefined) item.notes = notes;
+        if (collaborators !== undefined)
+          item.collaborators = collaborators;
+      })
+      .addCase(updateActionable.rejected, (state, action) => {
+        state.error = action.payload;
+      })
       /* REMOVE ACTIONABLE */
       .addCase(removeActionable.pending, (state, action) => {
         state.deletingId = action.meta.arg.actionableId;
@@ -177,10 +214,141 @@ const actionableSlice = createSlice({
       .addCase(removeActionable.rejected, (state, action) => {
         state.deletingId = null;
         state.error = action.payload;
-      });
+      })
+      // Subtask
+      /* ================= CREATE SUBTASK ================= */
+      .addCase(createSubTask.pending, (state, action) => {
+        const { tempId, actionableId, title } = action.meta.arg;
+
+        const parent = state.items.find(
+          (i) => i.actionableId === actionableId
+        );
+        if (!parent) return;
+
+        if (!parent.subTask) parent.subTask = [];
+
+        parent.subTask.unshift({
+          _id: tempId,
+          clientId: tempId,  
+          title,
+          isCompleted: false,
+          isOptimistic: true,
+        });
+
+        parent.subTaskCount = (parent.subTaskCount || 0) + 1;
+      })
+      .addCase(createSubTask.fulfilled, (state, action) => {
+        const { actionableId, subTask, tempId } = action.payload;
+
+        const parent = state.items.find(
+          (i) => i.actionableId === actionableId
+        );
+        if (!parent) return;
+
+        const index = parent.subTask.findIndex(
+          (s) => s.clientId === tempId
+        );
+
+        if (index !== -1) {
+          parent.subTask[index] = {
+            ...subTask,
+            clientId: tempId,
+            isOptimistic: false,
+          };
+        }
+      })
+      .addCase(createSubTask.rejected, (state, action) => {
+        const { actionableId, tempId } = action.payload || {};
+        const parent = state.items.find(
+          (i) => i.actionableId === actionableId
+        );
+        if (!parent) return;
+
+        parent.subTask = parent.subTask.filter(
+          (s) => s.clientId !== tempId
+        );
+
+        parent.subTaskCount = Math.max(
+          (parent.subTaskCount || 1) - 1,
+          0
+        );
+      })
+      .addCase(updateSubTask.pending, (state, action) => {
+        const { actionableId, _id, title, isCompleted } =
+          action.meta.arg;
+
+        const parent = state.items.find(
+          (i) => i.actionableId === actionableId
+        );
+        if (!parent) return;
+
+        const sub = parent.subTask.find((s) => s._id === _id);
+        if (!sub) return;
+
+        // store previous for rollback
+        sub._previous = {
+          title: sub.title,
+          isCompleted: sub.isCompleted,
+        };
+
+        if (title !== undefined) sub.title = title;
+        if (isCompleted !== undefined) sub.isCompleted = isCompleted;
+      })
+      .addCase(updateSubTask.fulfilled, (state, action) => {
+        const { actionableId, subTask } = action.payload;
+
+        const parent = state.items.find(
+          (i) => i.actionableId === actionableId
+        );
+        if (!parent) return;
+
+        const index = parent.subTask.findIndex(
+          (s) => s._id === subTask._id
+        );
+
+        if (index !== -1) {
+          parent.subTask[index] = {
+            ...parent.subTask[index],
+            ...subTask,
+          };
+        }
+      })
+      .addCase(updateSubTask.rejected, (state, action) => {
+        const { actionableId, subTaskId } = action.payload || {};
+
+        const parent = state.items.find(
+          (i) => i.actionableId === actionableId
+        );
+        if (!parent) return;
+
+        const sub = parent.subTask.find((s) => s._id === subTaskId);
+        if (!sub || !sub._previous) return;
+
+        sub.title = sub._previous.title;
+        sub.isCompleted = sub._previous.isCompleted;
+        delete sub._previous;
+      })
+      .addCase(removeSubTask.fulfilled, (state, action) => {
+        const { actionableId, subTaskId } = action.payload;
+
+        const parent = state.items.find(
+          (i) => i.actionableId === actionableId
+        );
+        if (!parent || !parent.subTask) return;
+
+        parent.subTask = parent.subTask.filter(
+          (s) => s._id !== subTaskId
+        );
+
+        parent.subTaskCount = Math.max(
+          (parent.subTaskCount || 1) - 1,
+          0
+        );
+      })
+
 
   },
 });
 
-export const { setPage, setSearch, setActiveTab } = actionableSlice.actions;
+export const { setPage, setSearch, setActiveTab, addSubTaskOptimistic, updateSubTaskOptimistic, removeSubTaskOptimistic } = actionableSlice.actions;
 export default actionableSlice.reducer;

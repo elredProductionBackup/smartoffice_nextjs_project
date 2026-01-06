@@ -15,35 +15,36 @@ export default function SubtaskItem({
     <div className="flex items-center gap-[10px]">
       {/* Checkbox */}
       <div className="h-[30px] flex items-center" >
+        {subtask.isOptimistic ?<span className="loader"></span>:
         <div
-          onClick={() => onToggle(taskId, subtask.id)}
+          onClick={() => onToggle(taskId, subtask)}
           className={`h-[18px] w-[18px] rounded-[4px] border-[2px] flex items-center justify-center cursor-pointer transition-colors
-                     ${subtask.completed
+                     ${subtask.isCompleted
               ? "bg-[#E72D38] border-[#E72D38]"
               : "border-[#999999] bg-transparent"
             }
                    `}
         >
-          {subtask.completed && <BsCheck size={18} color="#fff" />}
-        </div>
+          {subtask.isCompleted && <BsCheck size={18} color="#fff" />}
+        </div>}
       </div>
 
       {/* TEXT / EDIT INPUT */}
-      {editingId === subtask.id ? (
+      {editingId === subtask._id ? (
         <input
           autoFocus
           value={editingValue}
           onChange={(e) => setEditingValue(e.target.value)}
-          onBlur={() => onCommitEdit(subtask.id)}
-          onKeyDown={(e) => e.key === "Enter" && onCommitEdit(subtask.id)}
+          onBlur={() => onCommitEdit(subtask._id)}
+          onKeyDown={(e) => e.key === "Enter" && onCommitEdit(subtask._id)}
           className="flex-1 bg-transparent outline-none text-[16px] font-[600] mr-[22px]"
         />
       ) : (
         <span
-          className={`flex-1 text-[16px] font-[600] line-clamp-1 mr-[22px] ${subtask.completed ? "line-through " : ""
+          className={`flex-1 text-[16px] font-[600] line-clamp-1 mr-[22px] ${subtask.isCompleted ? "line-through " : ""
             }`}
         >
-          {subtask.text}
+          {subtask.title}
         </span>
       )}
 
@@ -52,8 +53,8 @@ export default function SubtaskItem({
         {/* Edit */}
         <button
           onClick={() => {
-            setEditingId(subtask.id);
-            setEditingValue(subtask.text);
+            setEditingId(subtask._id);
+            setEditingValue(subtask.title);
           }}
           className="text-[#666666] cursor-pointer"
         >
@@ -62,7 +63,7 @@ export default function SubtaskItem({
 
         {/* Delete */}
         <button
-          onClick={() => onDelete(taskId, subtask.id)}
+          onClick={() => onDelete(taskId, subtask._id)}
           className="text-[#666666] cursor-pointer"
         >
           <span className="fluent--delete-16-regular"></span>

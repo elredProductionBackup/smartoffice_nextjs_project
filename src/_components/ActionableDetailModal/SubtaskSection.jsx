@@ -15,14 +15,14 @@ export default function SubtaskSection({
 
   const commitAdd = () => {
     if (!value.trim()) return setShowInput(false);
-    onAddSubtask(task.id, value.trim());
+    onAddSubtask(task.actionableId, value.trim());
     setValue("");
     setShowInput(false);
   };
 
   const commitEdit = (subtaskId) => {
     if (!editingValue.trim()) return setEditingId(null);
-    onUpdateSubtask(task.id, subtaskId, editingValue.trim());
+    onUpdateSubtask(task.actionableId, subtaskId, editingValue.trim());
     setEditingId(null);
   };
 
@@ -33,11 +33,11 @@ export default function SubtaskSection({
            <span className="uppercase font-[700]">Subtask</span> <span className="text-[14px] font-[500]">(Max. 10 subtask can be added)</span>
         </span>
         <button
-          disabled={task.subtasks?.length >= 10}
+          disabled={task.subTask?.length >= 10}
           onClick={() => setShowInput(true)}
           className={`w-[24px] h-[24px] rounded-full flex items-center justify-center text-white text-[24px] cursor-pointer
                ${
-                 (task.subtasks?.length || 0) >= 10
+                 (task.subTask?.length || 0) >= 10
                    ? "cursor-not-allowed"
                    : "bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)]"
                }`}
@@ -47,20 +47,11 @@ export default function SubtaskSection({
       </div>
 
       {showInput && (
-        // <input
-        //   autoFocus
-        //   placeholder="Add a new subtask"
-        //   value={value}
-        //   onChange={(e) => setValue(e.target.value)}
-        //   onBlur={commitAdd}
-        //   onKeyDown={(e) => e.key === "Enter" && commitAdd()}
-        //   className="subtask-input"
-        // />
-                    <div className="flex items-center gap-[10px]">
+              <div className="flex items-center gap-[10px]">
               {/* Disabled checkbox */}
               <div className="h-[30px] flex items-center" >
                 <div
-                onClick={() => onToggleSubtask(task?.id, subtask.id)}
+                onClick={() => onToggleSubtask(task?.actionableId, subtask)}
                   className={`h-[18px] w-[18px] rounded-[4px] border-[2px] flex items-center justify-center cursor-pointer border-[#999999] bg-transparent`}
                 >
                 </div>
@@ -79,11 +70,11 @@ export default function SubtaskSection({
             </div>
       )}
 
-      {task.subtasks?.map((s) => (
+      {task.subTask?.map((s) => (
         <SubtaskItem
-          key={s.id}
+          key={s.clientId || s._id} 
           subtask={s}
-          taskId={task.id}
+          taskId={task.actionableId}
           editingId={editingId}
           editingValue={editingValue}
           setEditingId={setEditingId}

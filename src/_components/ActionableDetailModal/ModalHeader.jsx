@@ -89,7 +89,7 @@ useEffect(() => {
         <div className="absolute right-[0px] top-[40px] flex flex-col gap-[40px]">
           <button
             onClick={onClose}
-            className="h-[24px] min-w-[24px] rounded-full grid place-items-center bg-[#eee] text-[#999999]"
+            className="h-[24px] min-w-[24px] rounded-full grid place-items-center bg-[#eee] text-[#999999] cursor-pointer"
           >
             <span className="akar-icons--cross small-cross" />
           </button>
@@ -108,7 +108,7 @@ useEffect(() => {
       {/* ADDED BY */}
       <div className="flex items-center gap-[10px]">
         <div className="w-[32px] h-[32px] rounded-full bg-[#ccc]" />
-        <span className="font-[600]">{addedBy}</span>
+        <span className="font-[600] capitalize">{addedBy}</span>
       </div>
     </div>
   );
