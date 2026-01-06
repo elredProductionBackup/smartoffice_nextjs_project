@@ -38,6 +38,28 @@ export const fetchActionables = createAsyncThunk(
     }
   }
 );
+// export const createActionable = createAsyncThunk(
+//   "actionable/createActionable",
+//   async (payload, { rejectWithValue }) => {
+//     try {
+//       const apiPayload = {
+//         ...payload,
+//         actionableId: "", 
+//       };
+
+//       const res = await addActionable(apiPayload);
+
+//       if (!res.data.success) {
+//         return rejectWithValue(res.data.message);
+//       }
+
+//       return res.data.result[0];
+//     } catch (err) {
+//       return rejectWithValue(err.message);
+//     }
+//   }
+// );
+
 export const createActionable = createAsyncThunk(
   "actionable/createActionable",
   async (payload, { rejectWithValue }) => {

@@ -1,4 +1,5 @@
-import { removeActionable } from "@/store/actionable/actionableThunks";
+// import { removeActionable } from "@/store/actionable/actionableThunks";
+import { openModal } from "@/store/actionable/actionableUiSlice";
 import moment from "moment";
 import { useRef, useEffect, useState } from "react";
 import { BsCheck, BsThreeDotsVertical } from "react-icons/bs";
@@ -8,6 +9,7 @@ export default function ActionItem({
   item,
   onCheck,
   onOpen,
+  onMove,
   handleDelete,
   today = false
 })  {
@@ -21,6 +23,24 @@ export default function ActionItem({
     dueTime,
     collaborators = [],
   } = item;
+    const dispatch = useDispatch();
+
+  const openTaskModal = (actionableId) => {
+    dispatch(
+      openModal({
+        type: "DETAILS",
+        taskId: actionableId,
+      })
+    );
+  };
+  const openMoveModal = (actionableId) => {
+    dispatch(
+      openModal({
+        type: "MOVE",
+        taskId: actionableId,
+      })
+    );
+  };
 
   const [openMenu, setOpenMenu] = useState(false);
   const menuRef = useRef(null);
@@ -47,36 +67,30 @@ export default function ActionItem({
 
 
   return (
-    <div className="flex items-start justify-between gap-[20px] border-b border-[#D4DFF1] pb-[20px] last:border-b-0 relative cursor-pointer" onClick={onOpen}>
+    <div className="flex items-start justify-between gap-[20px] border-b border-[#D4DFF1] pb-[20px] last:border-b-0 relative cursor-pointer" onClick={()=>{ if (item.isOptimistic) return; openTaskModal(actionableId)}}>
 
       {/* LEFT */}
       <div className="flex w-[55%] items-start gap-[14px] pr-[40px]">
         {/* Checkbox */}
         <div className="h-[30px] flex items-center" >
-          <div
-             onClick={(e) => {
+        {item.isOptimistic ?<span className="loader"></span>:
+          <div onClick={(e) => {
                 e.stopPropagation();
                  if (item.isOptimistic) return; 
                 onCheck();
               }}
             className={`h-[18px] w-[18px] rounded-[4px] border-[2px] flex items-center justify-center cursor-pointer transition-colors
-              ${
-                    isCompleted
+              ${ isCompleted
                   ? "bg-[#E72D38] border-[#E72D38]"
-                  : "border-[#666666] bg-transparent"
-              }
-            `}
-          >
+                  : "border-[#666666] bg-transparent"}`} >
             {isCompleted && <BsCheck size={18} color="#fff" />}
-          </div>
+          </div>}
         </div>
 
         {/* Text */}
         <div
           className={`flex flex-col text-[20px] font-medium mt-[5px] gap-[6px] text-[#333333] `}  >
-          <div className={`line-clamp-1 leading-[22px] ${
-                    isCompleted ? "line-through" : ""
-              }`}>{title}</div>
+          <div className={`line-clamp-1 leading-[22px] ${ isCompleted ? "line-through" : ""}`}>{title}</div>
 
           {subTask.length > 0 && (
             <ul className="ml-[30px] flex flex-col gap-[8px] list-disc text-[20px] font-[500] text-[#333333]">
@@ -105,7 +119,9 @@ export default function ActionItem({
             </ul>
           )}
 
-         {createdBy && dueTime && (
+          {item.isOptimistic &&  <div className="h-[12px] w-[200px] rounded-full bg-[#E1E8F6]" />}
+
+         {!item.isOptimistic && createdBy && dueTime && (
             <div className="text-[16px] font-[600] text-[#666666]">
               <span className="capitalize">{createdBy?.name}</span> | {dueTime.toLowerCase()} IST
             </div>
@@ -142,13 +158,15 @@ export default function ActionItem({
       )}
 
       {/* Menu — ENABLED for both Today & Past */}
-      {!    isCompleted &&
+      {!isCompleted &&
       <div className="relative" ref={menuRef}>
         <BsThreeDotsVertical
           size={22}
-          className="text-gray-500 cursor-pointer"
+          className={`text-gray-500  ${item.isOptimistic ? 'opacity-50':'cursor-pointer'}`}
             onClick={(e) => {
+              
             e.stopPropagation(); 
+             if (item.isOptimistic) return; 
             setOpenMenu((prev) => !prev)
           }}
         />
@@ -161,12 +179,14 @@ export default function ActionItem({
               padding: "20px",
             }}
           >
-            <button
-              className="flex items-center gap-[6px] w-[180px] px-[14px] py-[10px] text-[18px] font-[500] text-[#333]"
-              onClick={() => {
-                setOpenMenu(false);
-                console.log("Move item");
-              }}
+              <button
+                className="flex items-center gap-[6px] w-[180px] px-[14px] py-[10px] text-[18px] font-[500] text-[#333]"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setOpenMenu(false);
+                  openMoveModal(actionableId);
+                  console.log("Move item");
+                }}
             >
               <span className="tabler--calendar-star"></span> Move item
             </button>

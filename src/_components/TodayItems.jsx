@@ -2,7 +2,7 @@ import { useState } from "react";
 import ActionItem from "./ActionItem";
 import EmptyState from "./EmptyState";
 
-export default function TodayItems({ items, adding, onAdd,handleDelete, onToggle, onCancelAdding, onOpen }) {
+export default function TodayItems({ items, adding, onAdd,handleDelete, onToggle, onCancelAdding, onOpen, onMove }) {
   const MAX_CHARS = 60;
   const [value, setValue] = useState("");
 
@@ -27,6 +27,7 @@ export default function TodayItems({ items, adding, onAdd,handleDelete, onToggle
     e.target.style.height = "auto";
     e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
   };
+
 
 
   return (
@@ -60,7 +61,8 @@ export default function TodayItems({ items, adding, onAdd,handleDelete, onToggle
           key={item.actionableId}
           item={item}
           onCheck={() => onToggle(item)}
-          onOpen={() => onOpen(item)}
+          // onOpen={() => onOpen(item)}
+          onMove={() => onMove(item)}
           handleDelete={()=>handleDelete(item.actionableId)}
           today
         />

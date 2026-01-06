@@ -3,9 +3,9 @@ import api from "@/services/axios";
 export const getActionables = ({
   networkClusterCode,
   start = 1,
-  offset = 20,
+  offset = 10,
   search = "",
-  dueSearchKey = "today", // past | today | all
+  dueSearchKey = "today",
 }) => {
   return api.get("/smartOffice/actionables", {
     params: {

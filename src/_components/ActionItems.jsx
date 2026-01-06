@@ -309,14 +309,19 @@ import PastItems from "./PastItems";
 import AllItems from "./AllItems";
 import EmptyState from "./EmptyState";
 import ActionableDetailsModal from "./ActionableDetailsModal";
-
 import { createActionable, fetchActionables, removeActionable, toggleActionable } from "@/store/actionable/actionableThunks";
 import { setActiveTab,setPage } from "@/store/actionable/actionableSlice";
 import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
 import ActionableShimmer from "./Shimmer/ActionableShimmer";
+import { openModal, closeModal } from "@/store/actionable/actionableUiSlice";
+import DatepickerModal from "./DatepickerModal";
+import useGlobalLoader from "@/store/useGlobalLoader";
 const TABS_ITEMS = ["Past", "Today", "All"];
 
 export default function ActionItems() {
+
+  const { modal } = useSelector((state) => state.actionableUi);
+
   const router = useRouter();
   const searchParams = useSearchParams();
   const dispatch = useDispatch();
@@ -328,8 +333,6 @@ export default function ActionItems() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
 
-  const [selectedTaskId, setSelectedTaskId] = useState(null);
-  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const debounceRef = useRef(null);
 
@@ -337,18 +340,17 @@ export default function ActionItems() {
   const {
     items = [],
     loading,
+    creating,
     page=pageParam,
     limit = 10,
     total,
     activeTab,
   } = useSelector((state) => state.actionable);
 
-
-
-useEffect(() => {
-  dispatch(setActiveTab(activeItem));
-  dispatch(setPage(pageParam));
-}, [activeItem, pageParam, dispatch]);
+  useEffect(() => {
+    dispatch(setActiveTab(activeItem));
+    dispatch(setPage(pageParam));
+  }, [activeItem, pageParam, dispatch]);
 
   /**  Fetch actionables */
   useEffect(() => {
@@ -364,41 +366,40 @@ useEffect(() => {
 
  const totalPages = Math.max(1, Math.ceil(total / limit));
 
-
   const changePage = (newPage) => {
-  if (newPage < 1 || newPage > totalPages) return;
+    if (newPage < 1 || newPage > totalPages) return;
 
-  const params = new URLSearchParams(searchParams.toString());
-  params.set("page", newPage);
-  router.push(`?${params.toString()}`);
-};
-
-
-  /** OPEN MODAL */
-  const openTaskModal = (task) => {
-    setSelectedTaskId(task.actionableId || task._id);
-    setIsTaskModalOpen(true);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("page", newPage);
+    router.push(`?${params.toString()}`);
   };
 
-  const closeTaskModal = () => {
-    setSelectedTaskId(null);
-    setIsTaskModalOpen(false);
-  };
+
+  // /** OPEN MODAL */
+  // const openTaskModal = (task) => {
+  //   console.log(task)
+  //   dispatch(
+  //     openModal({
+  //       type: "DETAILS",
+  //       taskId: task.actionableId || task._id,
+  //     })
+  //   );
+  // };
 
   const selectedTask = items.find(
     (i) =>
-      i.actionableId === selectedTaskId || i._id === selectedTaskId
+      i.actionableId === modal.taskId || i._id === modal.taskId
   );
 
   /** TAB CHANGE */
-const handleTabChange = (tab) => {
-  const params = new URLSearchParams(searchParams.toString());
-  params.set("item", tab.toLowerCase());
-  params.set("page", 1);
-  router.push(`?${params.toString()}`);
-};
+  const handleTabChange = (tab) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("item", tab.toLowerCase());
+    params.set("page", 1);
+    router.push(`?${params.toString()}`);
+  };
 
-const handleAdd = (text) => {
+  const handleAdd = (text) => {
   if (!text.trim()) {
     setAdding(false);
     return;
@@ -430,7 +431,6 @@ const handleAdd = (text) => {
     const networkClusterCode = localStorage.getItem("networkClusterCode");
     dispatch(removeActionable({ actionableId: actionableId,networkClusterCode }));
   };
-  
 
   const toggleItem = (item) => {
     dispatch(
@@ -460,135 +460,133 @@ const handleAdd = (text) => {
 
 
   useEffect(() => {
-  if (debounceRef.current) {
-    clearTimeout(debounceRef.current);
-  }
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
 
-  debounceRef.current = setTimeout(() => {
-    if (searchValue.length >= 3 || searchValue === "") {
-      setDebouncedSearch(searchValue);
+    debounceRef.current = setTimeout(() => {
+      if (searchValue.length >= 3 || searchValue === "") {
+        setDebouncedSearch(searchValue);
+        const params = new URLSearchParams(searchParams.toString());
+        params.set("page", 1);
+        router.replace(`?${params.toString()}`);
+      }
+    }, 300);
 
-      // reset page on new search
+    return () => clearTimeout(debounceRef.current);
+  }, [searchValue]);
+
+
+  useEffect(() => {
+    if (!loading && page > 1 && total > 0 && items.length === 0) {
       const params = new URLSearchParams(searchParams.toString());
-      params.set("page", 1);
+      params.set("page", page - 1);
       router.replace(`?${params.toString()}`);
     }
-  }, 300);
-
-  return () => clearTimeout(debounceRef.current);
-}, [searchValue]);
-
-
-useEffect(() => {
-  if (!loading && page > 1 && total > 0 && items.length === 0) {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("page", page - 1);
-    router.replace(`?${params.toString()}`);
-  }
-}, [items, page, loading, total]);
+  }, [items, page, loading, total]);
 
 
   return (
     <div className="flex-1 flex flex-col  min-h-0 bg-[#F5F9FF] px-[30px] pt-[30px] mt-[20px] rounded-[20px]">
        {loading && !searchValue ? 
-       <>
-        <ActionableShimmer/>
-       </>
-      :
+       <><ActionableShimmer/></>:
       <>
-      <ActionHeader
-        activeItem={activeItem}
-        tabs={TABS_ITEMS}
-        searchOpen={searchOpen}
-        searchValue={searchValue}
-        onSearchOpen={() => setSearchOpen(true)}
-        onSearchClose={() => {
-          setSearchOpen(false);
-          setSearchValue("");
-        }}
-        onSearchChange={setSearchValue}
-        onAdd={() => setAdding(true)}
-        onTabChange={handleTabChange}
-        debounceRef={debounceRef}
-      />
+        <ActionHeader
+          activeItem={activeItem}
+          tabs={TABS_ITEMS}
+          searchOpen={searchOpen}
+          searchValue={searchValue}
+          onSearchOpen={() => setSearchOpen(true)}
+          onSearchClose={() => {
+            setSearchOpen(false);
+            setSearchValue("");
+          }}
+          onSearchChange={setSearchValue}
+          onAdd={() => setAdding(true)}
+          onTabChange={handleTabChange}
+          debounceRef={debounceRef}
+        />
 
-        <div className="flex flex-1 w-full overflow-y-auto pt-[20px]">
-          {activeItem === "today" && (
-            <TodayItems
-            items={items}
-            adding={adding}
-            onAdd={handleAdd}
-            handleDelete={handleDelete}
-            onToggle={toggleItem}
-            onCancelAdding={() => setAdding(false)}
-            onOpen={openTaskModal}
-            />
-          )}
-
-          {activeItem === "past" &&
-            (items.length ? (
-              <PastItems items={items} onToggle={toggleItem} />
-            ) : (
-              <EmptyState />
-            ))}
-
-          {activeItem === "all" &&
-            (items.length ? (
-              <AllItems 
-              items={items} 
-              onToggle={toggleItem}
+          <div className="flex flex-1 w-full overflow-y-auto pt-[20px]">
+            {activeItem === "today" && (
+              <TodayItems
+              items={items}
+              adding={adding}
+              onAdd={handleAdd}
               handleDelete={handleDelete}
-              onOpen={openTaskModal}
+              onToggle={toggleItem}
+              onCancelAdding={() => setAdding(false)}
               />
-            ) : (
-              <EmptyState />
-            ))}
-        </div>
-        {total > 10 && (
-          <div className="flex justify-between gap-2 bg-[#F2F7FF] pt-[20px] px-[30px] pb-[33px] sticky bottom-0">
-            <div className="h-[48px] flex items-center text-lg font-semibold text-[#333333]">
-              Showing {(page - 1) * CONSTANTS.ITEMS_PER_PAGE + 1} to {Math.min(page * CONSTANTS.ITEMS_PER_PAGE, total)} out of {total} entries
-            </div>
+            )}
 
-            <div className="absolute left-1/2 -translate-x-1/2 flex gap-[80px]">
-              <button
-                disabled={page === 1}
-                onClick={() => changePage(page - 1)}
-                className="w-[48px] h-[48px] flex items-center justify-center rounded-full border-[1.2px] text-[24px]
-                  border-[#0B57D0] text-[#0B57D0]
-                  disabled:border-[#999999] disabled:text-[#999999]"
-              >
-                <IoIosArrowBack />
-              </button>
+            {activeItem === "past" &&
+              (items.length ? (
+                <PastItems items={items} onToggle={toggleItem} />
+              ) : (
+                <EmptyState />
+              ))}
 
-              <button
-                disabled={page === totalPages}
-                onClick={() => changePage(page + 1)}
-                className="w-[48px] h-[48px] flex items-center justify-center rounded-full border-[1.2px] text-[24px]
-                  border-[#0B57D0] text-[#0B57D0]
-                  disabled:border-[#999999] disabled:text-[#999999]"
-              >
-                <IoIosArrowForward />
-              </button>
-            </div>
-
-            <div />
+            {activeItem === "all" &&
+              (items.length ? (
+                <AllItems 
+                items={items} 
+                onToggle={toggleItem}
+                handleDelete={handleDelete}
+                />
+              ) : (
+                <EmptyState />
+              ))}
           </div>
-        )}
+          {total > 10 && (
+            <div className="flex justify-between gap-2 bg-[#F2F7FF] pt-[20px] px-[30px] pb-[33px] sticky bottom-0">
+              <div className="h-[48px] flex items-center text-lg font-semibold text-[#333333]">
+                Showing {(page - 1) * CONSTANTS.ITEMS_PER_PAGE + 1} to {Math.min(page * CONSTANTS.ITEMS_PER_PAGE, total)} out of {total} entries
+              </div>
 
+              <div className="absolute left-1/2 -translate-x-1/2 flex gap-[80px]">
+                <button
+                  disabled={page === 1}
+                  onClick={() => changePage(page - 1)}
+                  className="w-[48px] h-[48px] flex items-center justify-center rounded-full border-[1.2px] text-[24px]
+                    border-[#0B57D0] text-[#0B57D0]
+                    disabled:border-[#999999] disabled:text-[#999999]"
+                >
+                  <IoIosArrowBack />
+                </button>
+
+                <button
+                  disabled={page === totalPages}
+                  onClick={() => changePage(page + 1)}
+                  className="w-[48px] h-[48px] flex items-center justify-center rounded-full border-[1.2px] text-[24px]
+                    border-[#0B57D0] text-[#0B57D0]
+                    disabled:border-[#999999] disabled:text-[#999999]"
+                >
+                  <IoIosArrowForward />
+                </button>
+              </div>
+              <div />
+            </div>
+          )}
       </>
       }
 
-      {isTaskModalOpen && selectedTask && (
+      {modal.type === "DETAILS" && selectedTask && (
         <ActionableDetailsModal
           task={selectedTask}
-          onClose={closeTaskModal}
+          onClose={() => dispatch(closeModal())}
           onAddSubtask={addSubtask}
           onToggleSubtask={toggleSubtask}
           onUpdateSubtask={onUpdateSubtask}
           onDeleteSubtask={onDeleteSubtask}
         />
       )}
+      {modal.type === "MOVE" && selectedTask && (
+        // <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center"
+          // onClick={(e) => dispatch(closeModal())}>
+            <DatepickerModal />
+        // </div>
+      )}
+
     </div>
   );
 }

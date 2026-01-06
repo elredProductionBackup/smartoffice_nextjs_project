@@ -1,22 +1,15 @@
 import { createSlice } from "@reduxjs/toolkit";
-import {
-  fetchActionables,
-  toggleActionable,
-  fetchComments,
-  removeActionable,
-  createActionable,
-} from "./actionableThunks";
+import { fetchActionables, toggleActionable, fetchComments, removeActionable, createActionable,} from "./actionableThunks";
 
 const initialState = {
   items: [],
   loading: false,
+  creating: false, 
   deletingId: null, 
   error: null,
-
   page: 1,
   limit: 10,
   total: 0,
-
   activeTab: null,
   search: "",
 };
@@ -53,36 +46,37 @@ const actionableSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-    .addCase(toggleActionable.fulfilled, (state, action) => {
-    const { actionableId, isCompleted } = action.payload;
+      /* TOGGLE ACTIONABLES */
+      .addCase(toggleActionable.fulfilled, (state, action) => {
+      const { actionableId, isCompleted } = action.payload;
 
-    if (state.activeTab === "all" && isCompleted) {
-        state.items = state.items.filter(
-        (i) => i.actionableId !== actionableId
-        );
-        return;
-    }
-    if (state.activeTab === "today" && isCompleted) {
-        state.items = state.items.filter(
-        (i) => i.actionableId !== actionableId
-        );
-        return;
-    }
+      if (state.activeTab === "all" && isCompleted) {
+          state.items = state.items.filter(
+          (i) => i.actionableId !== actionableId
+          );
+          return;
+      }
+      if (state.activeTab === "today" && isCompleted) {
+          state.items = state.items.filter(
+          (i) => i.actionableId !== actionableId
+          );
+          return;
+      }
 
-    if (state.activeTab === "past" && !isCompleted) {
-        state.items = state.items.filter(
-        (i) => i.actionableId !== actionableId
-        );
-        return;
-    }
+      if (state.activeTab === "past" && !isCompleted) {
+          state.items = state.items.filter(
+          (i) => i.actionableId !== actionableId
+          );
+          return;
+      }
 
-    const item = state.items.find(
-        (i) => i.actionableId === actionableId
-    );
-    if (item) {
-        item.isCompleted = isCompleted;
-    }
-    })
+      const item = state.items.find(
+          (i) => i.actionableId === actionableId
+      );
+      if (item) {
+          item.isCompleted = isCompleted;
+      }
+      })
 
       /* COMMENTS */
       .addCase(fetchComments.fulfilled, (state, action) => {
@@ -93,7 +87,32 @@ const actionableSlice = createSlice({
           item.comments = action.payload.comments;
         }
       })
-            .addCase(createActionable.pending, (state, action) => {
+      /* CREATE ACTIONABLE */
+      // .addCase(createActionable.pending, (state) => {
+      //   state.creating = true;
+      //   state.error = null;
+      // })
+
+      // .addCase(createActionable.fulfilled, (state, action) => {
+      //   state.creating = false;
+
+      //   // Insert only when success
+      //   if (state.page === 1) {
+      //     state.items.unshift(action.payload);
+
+      //     if (state.items.length > state.limit) {
+      //       state.items.pop();
+      //     }
+      //   }
+
+      //   state.total += 1;
+      // })
+
+      // .addCase(createActionable.rejected, (state, action) => {
+      //   state.creating = false;
+      //   state.error = action.payload;
+      // })
+      .addCase(createActionable.pending, (state, action) => {
         const tempItem = {
           ...action.meta.arg,
           actionableId: action.meta.arg.tempId, 
@@ -137,6 +156,7 @@ const actionableSlice = createSlice({
 
         state.error = action.payload?.message;
       })
+      /* REMOVE ACTIONABLE */
       .addCase(removeActionable.pending, (state, action) => {
         state.deletingId = action.meta.arg.actionableId;
       })
