@@ -52,6 +52,7 @@ export default function SubtaskItem({
       <div className="flex gap-[10px] ">
         {/* Edit */}
         <button
+          disabled={subtask?.isOptimistic}
           onClick={() => {
             setEditingId(subtask._id);
             setEditingValue(subtask.title);
@@ -63,6 +64,7 @@ export default function SubtaskItem({
 
         {/* Delete */}
         <button
+          disabled={subtask?.isOptimistic}
           onClick={() => onDelete(taskId, subtask._id)}
           className="text-[#666666] cursor-pointer"
         >

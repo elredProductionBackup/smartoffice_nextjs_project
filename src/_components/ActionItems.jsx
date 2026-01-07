@@ -232,6 +232,7 @@ export default function ActionItems() {
             onAdd={() => setAdding(true)}
             onTabChange={handleTabChange}
             debounceRef={debounceRef}
+            disableWhileAdd={adding}
           />
 
           <div className="flex flex-1 w-full overflow-y-auto pt-[20px]">

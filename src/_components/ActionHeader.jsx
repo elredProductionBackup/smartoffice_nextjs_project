@@ -18,6 +18,7 @@ export default function ActionHeader({
   onAdd,
   onTabChange,
   debounceRef,
+  disableWhileAdd
 }) {
   const isWeekly = activeItem === "weekly";
   const week = formatWeekRange(weekDate);
@@ -33,9 +34,13 @@ export default function ActionHeader({
 
         {activeItem === "today" && (
           <button
-            onClick={onAdd}
-            className="w-[50px] h-[36px] rounded-full bg-gradient-to-r from-[#5597ED] to-[#00449C] text-white flex items-center justify-center cursor-pointer"
-          >
+            onClick={!disableWhileAdd ? onAdd : undefined}
+            disabled={disableWhileAdd}
+            className={`w-[50px] h-[36px] rounded-full bg-gradient-to-r from-[#5597ED] to-[#00449C] text-white flex items-center justify-center cursor-pointer       
+            ${ disableWhileAdd
+                ? "opacity-50 cursor-not-allowed pointer-events-none"
+                : "cursor-pointer"
+            }`}>
             <FaPlus size={16} />
           </button>
         )}
