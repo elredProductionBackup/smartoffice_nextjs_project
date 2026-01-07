@@ -1,4 +1,3 @@
-// import { removeActionable } from "@/store/actionable/actionableThunks";
 import { openModal } from "@/store/actionable/actionableUiSlice";
 import moment from "moment";
 import { useRef, useEffect, useState } from "react";
@@ -96,13 +95,12 @@ export default function ActionItem({
             <ul className="ml-[30px] flex flex-col gap-[8px] list-disc text-[20px] font-[500] text-[#333333]">
               {subTask.slice(0, 2).map((sub, index) => {
                 const isLastVisible = index === 1 && subTask.length > 2;
-
                 return (
-                  <li key={sub.id} className={`leading-[20px] ${    isCompleted ? "line-through" : ""}`}>
+                  <li key={`preview-${sub._id}`} className={`leading-[20px] ${isCompleted || sub?.isCompleted ? "line-through" : ""}`}>
                     <div className="flex items-center gap-[60px]">
                       {/* TEXT */}
                       <span className={`line-clamp-1 ${!isLastVisible && 'flex-1'}`}>
-                        {sub.text}
+                        {sub.title}
                       </span>
 
                       {/* +X subTask (only on last visible item) */}
@@ -180,12 +178,11 @@ export default function ActionItem({
             }}
           >
               <button
-                className="flex items-center gap-[6px] w-[180px] px-[14px] py-[10px] text-[18px] font-[500] text-[#333]"
+                className="flex items-center gap-[6px] w-[180px] px-[14px] py-[10px] text-[18px] font-[500] text-[#333] cursor-pointer"
                 onClick={(e) => {
                   e.stopPropagation();
                   setOpenMenu(false);
                   openMoveModal(actionableId);
-                  console.log("Move item");
                 }}
             >
               <span className="tabler--calendar-star"></span> Move item

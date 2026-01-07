@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import logo from "@/assets/logo/logo.svg";
+// import logo from "@/assets/logo/logo.svg";
 import bell from "@/assets/logo/bell.svg";
 import { useRouter } from "next/navigation";
 
@@ -52,7 +52,7 @@ const Header = () => {
   return (
     <>
       <div className="min-h-20 bg-[#F2F7FF] flex items-center justify-between px-[50px]">
-        <Image src={logo} alt="logo" width={96} height={40} />
+        <Image src={'/logo/smart-networks.svg'} alt="logo" width={155} height={40} className="object-contain" />
 
         <div className="flex gap-10">
           {/* Notification */}

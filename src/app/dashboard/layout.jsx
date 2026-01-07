@@ -126,8 +126,6 @@ export default function DashboardLayout({ children }) {
             <div className="w-21 bg-[#F2F7FF] h-full p-5 rounded-2xl">
               <ul className="space-y-10">
                 {menu.map((item) => {
-                  // ⭐ Correct Active Logic
-                  // const active = pathname.startsWith(item.path);
                   const active = pathname == removeAllParams(item.path);
                   return (
                     <li key={item.path}>

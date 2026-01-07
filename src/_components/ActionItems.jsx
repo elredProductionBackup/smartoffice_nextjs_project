@@ -1,301 +1,3 @@
-//   "use client";
-
-//   import { useEffect, useState } from "react";
-//   import { useRouter, useSearchParams } from "next/navigation";
-
-//   import ActionHeader from "./ActionHeader";
-//   import TodayItems from "./TodayItems";
-//   import PastItems from "./PastItems";
-//   import EmptyState from "./EmptyState";
-//   import AllItems from "./AllItems";
-//   import moment from "moment";
-//   // import { actionableData } from "@/assets/helpers/sampleActionable";
-//   // import { addActionable,getActionables  } from "@/services/actionable.service";
-//   import ActionableDetailsModal from "./ActionableDetailsModal";
-//   import { useDispatch, useSelector } from "react-redux";
-// import { fetchActionables } from "@/store/actionable/actionableThunks";
-// import { setActiveTab } from "@/store/actionable/actionableSlice";
-
-
-//   const TABS_ITEMS = ["Past", "Today", "All"];
-
-//   export default function ActionItems() {
-//     const router = useRouter();
-//     const searchParams = useSearchParams();
-//     const activeItem = searchParams.get("item") || "today";
-    
-//     const [adding, setAdding] = useState(false);
-//     const [searchOpen, setSearchOpen] = useState(false);
-//     const [searchValue, setSearchValue] = useState("");
-
-//     const [selectedTaskId, setSelectedTaskId] = useState(null);
-
-//     const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
-
-//     const todayISO = moment().format("YYYY-MM-DD");
-
-// const dispatch = useDispatch();
-
-// const {
-//   items,
-//   loading,
-//   page,
-//   limit,
-//   total,
-//   activeTab: storeActiveTab,
-// } = useSelector((state) => state.actionable);
-
-// const openTaskModal = (task) => {
-//   setSelectedTaskId(task.id);
-//   setIsTaskModalOpen(true);
-// };
-
-//     const closeTaskModal = () => {
-//       setSelectedTaskId(null);
-//       setIsTaskModalOpen(false);
-//     };
-
-//     const selectedTask = items.find((i) => i.id === selectedTaskId);
-
-
-//   const addSubtask = (taskId, text) => {
-//     setItems((prev) =>
-//       prev.map((item) =>
-//         item.id === taskId
-//           ? {
-//               ...item,
-//               subtasks: [
-//                 {
-//                   id: Date.now().toString(),
-//                   text,
-//                   completed: false,
-//                 },
-//                 ...(item.subtasks || []),
-//               ],
-//             }
-//           : item
-//       )
-//     );
-//   };
-
-//   const toggleSubtask = (taskId, subtaskId) => {
-//     setItems((prev) =>
-//       prev.map((item) =>
-//         item.id === taskId
-//           ? {
-//               ...item,
-//               subtasks: item.subtasks.map((s) =>
-//                 s.id === subtaskId
-//                   ? { ...s, completed: !s.completed }
-//                   : s
-//               ),
-//             }
-//           : item
-//       )
-//     );
-//   };
-
-
-//     /** TAB CHANGE */
-//     const handleTabChange = (tab) => {
-//       const params = new URLSearchParams(searchParams.toString());
-//       params.set("item", tab.toLowerCase());
-//       router.push(`?${params.toString()}`);
-//     };
-
-
-
-// const handleAdd = async (text) => {
-//   if (!text.trim()) {
-//     setAdding(false);
-//     return;
-//   }
-
-//   const networkClusterCode =
-//     typeof window !== "undefined"
-//       ? localStorage.getItem("networkClusterCode")
-//       : null;
-
-//   if (!networkClusterCode) {
-//     console.error("Missing networkClusterCode");
-//     return;
-//   }
-
-//   // Temporary ID for optimistic UI
-//   const tempId = `temp-${Date.now()}`;
-
-//   const optimisticItem = {
-//     id: tempId,
-//     text,
-//     title: text,
-//     date: moment().format("YYYY-MM-DD"),
-//     completed: false,
-//     addedBy: "Meezan",
-//     time: moment().format("hh:mm A"),
-//     completedAt: null,
-//     notes: "",
-//     collaborators: [],
-//     comments: [],
-//   };
-
-
-//   setItems((prev) => [optimisticItem, ...prev]);
-//   setAdding(false);
-
-//   try {
-//     const payload = {
-//       actionableId: "",
-//       networkClusterCode,
-//       title: text,
-//       isCompleted: false,
-//       category: "all",
-//       notes: "",
-//       linkedEvent: [],
-//       dueDateTimeStamp: moment().endOf("day").toISOString(),
-//       collaborators: [],
-//     };
-
-//     const res = await addActionable(payload);
-
-//     if (res.status >= 200 && res.status < 300) {
-//       const savedItem = res.data?.data || res.data;
-
-//       setItems((prev) =>
-//         prev.map((item) =>
-//           item.id === tempId
-//             ? {
-//                 ...item,
-//                 id: savedItem._id,
-//                 text: savedItem.title ?? item.text,
-//               }
-//             : item
-//         )
-//       );
-
-//     } else {
-//       throw new Error("API failed");
-//     }
-//   } catch (err) {
-//     console.error("Add actionable failed:", err);
-
-//     // ❌ Rollback optimistic update
-//     setItems((prev) => prev.filter((item) => item.id !== tempId));
-//   }
-// };
-
-
-//     /** TOGGLE CHECK */
-//     const toggleItem = (id) => {
-//       console.log("ID",id)
-//       setItems((prev) =>
-//         prev.map((item) =>
-//           item.id === id
-//             ? {
-//                 ...item,
-//                 completed: !item.completed,
-//                 completedAt: !item.completed ? new Date() : null,
-//               }
-//             : item
-//         )
-//       );
-//     };
-
-//     const onUpdateSubtask = (taskId, subtaskId, text) => {
-//       setItems((prev) =>
-//         prev.map((t) =>
-//           t.id === taskId
-//             ? {
-//                 ...t,
-//                 subtasks: t.subtasks.map((s) =>
-//                   s.id === subtaskId ? { ...s, text } : s
-//                 ),
-//               }
-//             : t
-//         )
-//       );
-//     };
-
-//     const onDeleteSubtask = (taskId, subtaskId) => {
-//       setItems((prev) =>
-//         prev.map((t) =>
-//           t.id === taskId
-//             ? {
-//                 ...t,
-//                 subtasks: t.subtasks.filter((s) => s.id !== subtaskId),
-//               }
-//             : t
-//         )
-//       );
-//     };
-
-
-// useEffect(() => {
-//   dispatch(
-//     fetchActionables({
-//       page,
-//       limit,
-//       search: searchValue,
-//       dueSearchKey: storeActiveTab,
-//     })
-//   );
-// }, [dispatch, page, limit, storeActiveTab, searchValue]);
-
-
-//     return (
-//       <div className="flex-1 flex flex-col gap-[20px] min-h-0 bg-[#F5F9FF] px-[30px] pt-[30px] mt-[20px] rounded-[20px]">
-//         <ActionHeader
-//           activeItem={activeItem} tabs={TABS_ITEMS}  
-//           searchOpen={searchOpen} searchValue={searchValue} onSearchOpen={() => setSearchOpen(true)} 
-//           onSearchClose={() => {
-//             setSearchOpen(false);
-//             setSearchValue("");
-//           }}
-//           onSearchChange={setSearchValue}
-//           onAdd={() => setAdding(true)}
-//           onTabChange={handleTabChange} />
-
-//         <div className="flex flex-1 w-full overflow-y-auto">
-//           {activeItem === "today" && (
-//             <TodayItems
-//               items={items}
-//               adding={adding}
-//               onAdd={handleAdd}
-//               onToggle={toggleItem}
-//               onCancelAdding={() => setAdding(false)}
-//               onOpen={openTaskModal}
-//             />
-//           )}
-
-//           {activeItem === "past" &&
-//             (items.length ? (
-//               <PastItems items={items} onToggle={toggleItem} />
-//             ) : (
-//               <EmptyState />
-//             ))}
-
-//           {activeItem === "all" &&
-//             (items.length ? (
-//               <AllItems items={items} onToggle={toggleItem} />
-//             ) : (
-//               <EmptyState />
-//             ))}
-//         </div>
-
-//         {isTaskModalOpen && selectedTask && (
-//           <ActionableDetailsModal
-//             task={selectedTask}
-//             onClose={closeTaskModal}
-//             onAddSubtask={addSubtask}
-//             onToggleSubtask={toggleSubtask}
-//             onUpdateSubtask={onUpdateSubtask}
-//             onDeleteSubtask={onDeleteSubtask}
-//           />
-//         )}
-//       </div>
-//     );
-//   }
-
-
 "use client";
 
 import { useEffect, useRef, useState } from "react";
@@ -309,13 +11,12 @@ import PastItems from "./PastItems";
 import AllItems from "./AllItems";
 import EmptyState from "./EmptyState";
 import ActionableDetailsModal from "./ActionableDetailsModal";
-import { createActionable, fetchActionables, removeActionable, toggleActionable } from "@/store/actionable/actionableThunks";
-import { setActiveTab,setPage } from "@/store/actionable/actionableSlice";
+import { createActionable, createSubTask, fetchActionables, removeActionable, removeSubTask, toggleActionable, updateActionable, updateSubTask, upsertSubTask } from "@/store/actionable/actionableThunks";
+import { addSubTaskOptimistic, removeSubTaskOptimistic, setActiveTab, setPage, updateSubTaskOptimistic } from "@/store/actionable/actionableSlice";
 import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
 import ActionableShimmer from "./Shimmer/ActionableShimmer";
-import { openModal, closeModal } from "@/store/actionable/actionableUiSlice";
+import { closeModal } from "@/store/actionable/actionableUiSlice";
 import DatepickerModal from "./DatepickerModal";
-import useGlobalLoader from "@/store/useGlobalLoader";
 const TABS_ITEMS = ["Past", "Today", "All"];
 
 export default function ActionItems() {
@@ -340,8 +41,7 @@ export default function ActionItems() {
   const {
     items = [],
     loading,
-    creating,
-    page=pageParam,
+    page = pageParam,
     limit = 10,
     total,
     activeTab,
@@ -364,7 +64,7 @@ export default function ActionItems() {
     );
   }, [dispatch, page, limit, activeTab, debouncedSearch]);
 
- const totalPages = Math.max(1, Math.ceil(total / limit));
+  const totalPages = Math.max(1, Math.ceil(total / limit));
 
   const changePage = (newPage) => {
     if (newPage < 1 || newPage > totalPages) return;
@@ -373,18 +73,6 @@ export default function ActionItems() {
     params.set("page", newPage);
     router.push(`?${params.toString()}`);
   };
-
-
-  // /** OPEN MODAL */
-  // const openTaskModal = (task) => {
-  //   console.log(task)
-  //   dispatch(
-  //     openModal({
-  //       type: "DETAILS",
-  //       taskId: task.actionableId || task._id,
-  //     })
-  //   );
-  // };
 
   const selectedTask = items.find(
     (i) =>
@@ -400,36 +88,36 @@ export default function ActionItems() {
   };
 
   const handleAdd = (text) => {
-  if (!text.trim()) {
+    if (!text.trim()) {
+      setAdding(false);
+      return;
+    }
+
+    const networkClusterCode = localStorage.getItem("networkClusterCode");
+    const tempId = `temp-${Date.now()}`;
+
+    dispatch(
+      createActionable({
+        tempId,
+        actionableId: tempId,
+        networkClusterCode,
+        title: text,
+        isCompleted: false,
+        category: "all",
+        notes: "",
+        linkedEvent: [],
+        dueDateTimeStamp: moment.utc().toISOString(),
+      })
+    );
+
+
     setAdding(false);
-    return;
-  }
-
-  const networkClusterCode = localStorage.getItem("networkClusterCode");
-  const tempId = `temp-${Date.now()}`;
-
-  dispatch(
-    createActionable({
-      tempId,
-      actionableId: tempId,
-      networkClusterCode,
-      title: text,
-      isCompleted: false,
-      category: "all",
-      notes: "",
-      linkedEvent: [],
-      dueDateTimeStamp: moment.utc().toISOString(),
-    })
-  );
+  };
 
 
-  setAdding(false);
-};
-
-  
   const handleDelete = (actionableId) => {
     const networkClusterCode = localStorage.getItem("networkClusterCode");
-    dispatch(removeActionable({ actionableId: actionableId,networkClusterCode }));
+    dispatch(removeActionable({ actionableId: actionableId, networkClusterCode }));
   };
 
   const toggleItem = (item) => {
@@ -442,21 +130,60 @@ export default function ActionItems() {
   };
 
   const addSubtask = (actionableId, title) => {
-    const networkClusterCode = localStorage.getItem("networkClusterCode");
+    if (!title.trim()) return;
+
+    const tempId = `temp-sub-${Date.now()}`;
 
     dispatch(
       createSubTask({
+        tempId,
         actionableId,
-        networkClusterCode,
         title,
-        isCompleted: false,
       })
     );
   };
 
-  const toggleSubtask = () => {};
-  const onUpdateSubtask = () => {};
-  const onDeleteSubtask = () => {};
+  const toggleSubtask = (actionableId, subTask) => {
+    dispatch(
+      updateSubTask({
+        _id: subTask._id,
+        actionableId,
+        isCompleted: !subTask.isCompleted,
+        title: subTask.title,
+      })
+    );
+  };
+
+  const onUpdateSubtask = (actionableId, subTaskId, title) => {
+    dispatch(
+      updateSubTask({
+        _id: subTaskId,
+        actionableId,
+        title,
+      })
+    );
+  };
+
+  // Delete Subtask
+  const onDeleteSubtask = (actionableId, subTaskId) => {
+    dispatch(
+      removeSubTask({
+        actionableId,
+        subTaskId,
+      })
+    );
+  };
+
+  const onSaveActionable = (actionableId, updates) => {
+    dispatch(
+      updateActionable({
+        actionableId,
+        ...updates,
+      })
+    );
+  };
+
+
 
 
   useEffect(() => {
@@ -465,7 +192,7 @@ export default function ActionItems() {
     }
 
     debounceRef.current = setTimeout(() => {
-      if (searchValue.length >= 3 || searchValue === "") {
+      if (searchValue.length >= 1 || searchValue === "") {
         setDebouncedSearch(searchValue);
         const params = new URLSearchParams(searchParams.toString());
         params.set("page", 1);
@@ -488,34 +215,34 @@ export default function ActionItems() {
 
   return (
     <div className="flex-1 flex flex-col  min-h-0 bg-[#F5F9FF] px-[30px] pt-[30px] mt-[20px] rounded-[20px]">
-       {loading && !searchValue ? 
-       <><ActionableShimmer/></>:
-      <>
-        <ActionHeader
-          activeItem={activeItem}
-          tabs={TABS_ITEMS}
-          searchOpen={searchOpen}
-          searchValue={searchValue}
-          onSearchOpen={() => setSearchOpen(true)}
-          onSearchClose={() => {
-            setSearchOpen(false);
-            setSearchValue("");
-          }}
-          onSearchChange={setSearchValue}
-          onAdd={() => setAdding(true)}
-          onTabChange={handleTabChange}
-          debounceRef={debounceRef}
-        />
+      {loading && !searchValue ?
+        <><ActionableShimmer /></> :
+        <>
+          <ActionHeader
+            activeItem={activeItem}
+            tabs={TABS_ITEMS}
+            searchOpen={searchOpen}
+            searchValue={searchValue}
+            onSearchOpen={() => setSearchOpen(true)}
+            onSearchClose={() => {
+              setSearchOpen(false);
+              setSearchValue("");
+            }}
+            onSearchChange={setSearchValue}
+            onAdd={() => setAdding(true)}
+            onTabChange={handleTabChange}
+            debounceRef={debounceRef}
+          />
 
           <div className="flex flex-1 w-full overflow-y-auto pt-[20px]">
             {activeItem === "today" && (
               <TodayItems
-              items={items}
-              adding={adding}
-              onAdd={handleAdd}
-              handleDelete={handleDelete}
-              onToggle={toggleItem}
-              onCancelAdding={() => setAdding(false)}
+                items={items}
+                adding={adding}
+                onAdd={handleAdd}
+                handleDelete={handleDelete}
+                onToggle={toggleItem}
+                onCancelAdding={() => setAdding(false)}
               />
             )}
 
@@ -528,10 +255,10 @@ export default function ActionItems() {
 
             {activeItem === "all" &&
               (items.length ? (
-                <AllItems 
-                items={items} 
-                onToggle={toggleItem}
-                handleDelete={handleDelete}
+                <AllItems
+                  items={items}
+                  onToggle={toggleItem}
+                  handleDelete={handleDelete}
                 />
               ) : (
                 <EmptyState />
@@ -567,7 +294,7 @@ export default function ActionItems() {
               <div />
             </div>
           )}
-      </>
+        </>
       }
 
       {modal.type === "DETAILS" && selectedTask && (
@@ -578,13 +305,11 @@ export default function ActionItems() {
           onToggleSubtask={toggleSubtask}
           onUpdateSubtask={onUpdateSubtask}
           onDeleteSubtask={onDeleteSubtask}
+          onSave={onSaveActionable}
         />
       )}
       {modal.type === "MOVE" && selectedTask && (
-        // <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center"
-          // onClick={(e) => dispatch(closeModal())}>
-            <DatepickerModal />
-        // </div>
+        <DatepickerModal selectedTask={selectedTask} />
       )}
 
     </div>
