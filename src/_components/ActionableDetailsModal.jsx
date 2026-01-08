@@ -59,7 +59,7 @@ useEffect(() => {
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative bg-white w-[600px] max-h-[90vh] rounded-[20px] px-[40px]  flex flex-col gap-[20px] overflow-y-auto"
+        className="relative bg-white w-[600px] max-h-[90vh] rounded-[20px] px-[20px] flex flex-col gap-[20px] overflow-y-auto"
       >
         <ModalHeader
           title={draft.title}
@@ -74,7 +74,7 @@ useEffect(() => {
         />
 
         {/* Link to Event (Disabled) */}
-         <div className="flex flex-col gap-[12px] opacity-50 ">
+         <div className="flex flex-col gap-[12px] opacity-50 px-[20px]">
            <span className="text-[20px] text-[#333333] font-[700] uppercase">
              Link to event
            </span>

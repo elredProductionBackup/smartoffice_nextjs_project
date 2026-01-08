@@ -113,7 +113,7 @@ function timeAgo(date) {
 
 
   return (
-    <div className="flex flex-col gap-[14px] pt-[20px]">
+    <div className="flex flex-col gap-[14px] pt-[20px] px-[20px]">
       <span className="text-[20px] text-[#333333] font-[700] uppercase">
         Comments
       </span>

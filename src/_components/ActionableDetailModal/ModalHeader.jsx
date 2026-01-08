@@ -54,7 +54,7 @@ useEffect(() => {
   };
 
   return (
-    <div className="flex flex-col gap-[20px] pt-[40px] pb-[20px] sticky top-[0px] bg-white z-[2]">
+    <div className="flex flex-col gap-[20px] pt-[40px] px-[20px] pb-[20px] sticky top-[0px] bg-white z-[10]">
       <div className="flex justify-between items-start">
         {/* TITLE */}
         {!isEditing ? (
@@ -87,7 +87,7 @@ useEffect(() => {
         )}
 
         {/* ACTIONS */}
-        <div className="absolute right-[0px] top-[40px] flex flex-col gap-[40px]">
+        <div className="absolute right-[20px] top-[40px] flex flex-col gap-[40px]">
           <button
             onClick={onClose}
             className="h-[24px] min-w-[24px] rounded-full grid place-items-center bg-[#eee] text-[#999999] cursor-pointer"

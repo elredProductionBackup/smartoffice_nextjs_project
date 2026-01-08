@@ -88,7 +88,7 @@ export default function CollaboratorSection({ task, collaborators = [], onChange
 
   /* -------------------- UI -------------------- */
   return (
-    <div className="relative flex flex-col gap-[8px] pt-[20px]" >
+    <div className="relative flex flex-col gap-[8px] pt-[20px] px-[20px]" >
       <span className="text-[20px] text-[#333333] font-[700] uppercase">
         Collaborators
       </span>
@@ -118,7 +118,7 @@ export default function CollaboratorSection({ task, collaborators = [], onChange
                 e.stopPropagation();
                 removeUser(u.userCode);
               }}
-              className="pr-[6px]"
+              className="pr-[6px] cursor-pointer"
             >
               ✕
             </button>
@@ -140,7 +140,7 @@ export default function CollaboratorSection({ task, collaborators = [], onChange
       {query.length >= 3 && (
         <div
           className="absolute left-0 top-[calc(100%+2px)] min-h-[250px] w-full
-            rounded-[4px] bg-white z-[10] overflow-auto"
+            rounded-[4px] bg-white z-[7] overflow-auto"
           style={{ boxShadow: "0px 4px 4px 0px #A4A3A340" }}
         >
           {filteredCollaborators.length > 0 ?

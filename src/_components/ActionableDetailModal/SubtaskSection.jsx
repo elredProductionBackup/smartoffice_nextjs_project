@@ -27,7 +27,7 @@ export default function SubtaskSection({
   };
 
   return (
-    <div className="flex flex-col gap-[12px] pt-[20px]">
+    <div className="flex flex-col gap-[12px] pt-[20px] px-[20px]">
       <div className="flex justify-between items-center">
         <span className="flex items-center gap-[10px] text-[20px] text-[#333333]">
            <span className="uppercase font-[700]">Subtask</span> <span className="text-[14px] font-[500]">(Max. 10 subtask can be added)</span>

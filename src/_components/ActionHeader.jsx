@@ -17,7 +17,7 @@ export default function ActionHeader({
   onSearchChange,
   onAdd,
   onTabChange,
-  debounceRef,
+  // debounceRef,
   disableWhileAdd
 }) {
   const isWeekly = activeItem === "weekly";
@@ -25,7 +25,7 @@ export default function ActionHeader({
   
 
   return (
-    <div className="flex items-center justify-between mb-[20px]">
+    <div className="flex items-center justify-between mb-[20px] mx-[30px]">
       {/* LEFT */}
       <div className="flex items-center gap-[20px]">
         <h2 className="text-[24px] font-[700] text-[#666]">
@@ -80,8 +80,7 @@ export default function ActionHeader({
 
           {searchOpen && (
             <>
-              <input 
-                ref={debounceRef}
+              <input
                 autoFocus
                 value={searchValue}
                 onChange={(e) => onSearchChange(e.target.value)}

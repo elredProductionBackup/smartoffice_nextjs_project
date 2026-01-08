@@ -16,7 +16,7 @@ export default function NotesSection({ value, onChange }) {
   }, [value]);
 
   return (
-    <div className="flex flex-col gap-[12px] pt-[20px]">
+    <div className="flex flex-col gap-[12px] pt-[20px] px-[20px]">
       <span className="text-[20px] text-[#333333] font-[700] uppercase">
         Notes
       </span>

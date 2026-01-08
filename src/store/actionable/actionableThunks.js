@@ -237,13 +237,6 @@ export const fetchComments = createAsyncThunk(
   }
 );
 
-// export const createComment = createAsyncThunk(
-//   "actionable/createComment",
-//   async (payload, { dispatch }) => {
-//     await addComment(payload);
-//     dispatch(fetchComments({ actionableId: payload.actionableId }));
-//   }
-// );
 
 /* ================= SUBTASK ================= */
 
