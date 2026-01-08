@@ -93,6 +93,7 @@ export default function ActionableDetailsModal({
           onDeleteSubtask={onDeleteSubtask}
         />
         <CollaboratorSection 
+          task={actionable}
           collaborators={draft.collaborators}
           onChange={(collaborators) =>
             setDraft({ ...draft, collaborators })

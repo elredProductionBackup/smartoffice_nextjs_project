@@ -77,8 +77,16 @@ export const deleteSubTask = (payload) => {
 /* ===================== COLLABORATORS ===================== */
 
 /** GET collaborators */
-export const getCollaborators = ({ networkClusterCode }) => {
+export const getCollaborators = ({
+  networkClusterCode,
+  offset = 0,
+  search = "",
+}) => {
   return api.get("/smartOffice/collaborators", {
-    params: { networkClusterCode },
+    params: {
+      networkClusterCode,
+      offset,
+      search,
+    },
   });
 };

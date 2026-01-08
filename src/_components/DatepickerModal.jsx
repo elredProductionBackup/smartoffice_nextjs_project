@@ -177,10 +177,12 @@ export default function DatepickerModal({ selectedTask }) {
   const changeMonth = (offset) => {
     setViewDate(new Date(year, month + offset, 1));
   };
+  const today = moment().startOf("day").toDate();
+
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="w-[480px] rounded-[28px] bg-white p-[30px] shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => dispatch(closeModal())}>
+      <div className="w-[480px] rounded-[28px] bg-white p-[30px] shadow-xl" onClick={(e) => e.stopPropagation()}>
 
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
@@ -234,32 +236,42 @@ export default function DatepickerModal({ selectedTask }) {
 
             {/* Current month */}
             {[...Array(daysInMonth)].map((_, i) => {
-              const day = i + 1;
+                const day = i + 1;
+                const dateObj = new Date(year, month, day);
 
-              const isSelected =
-                selectedDate &&
-                selectedDate.getDate() === day &&
-                selectedDate.getMonth() === month &&
-                selectedDate.getFullYear() === year;
+                const isPastDate = dateObj < today;
 
+                const isSelected =
+                  selectedDate &&
+                  selectedDate.getDate() === day &&
+                  selectedDate.getMonth() === month &&
+                  selectedDate.getFullYear() === year;
 
-              return (
-                <button
-                  key={day}
-                  onMouseEnter={() => setHoveredDate(day)}
-                  onMouseLeave={() => setHoveredDate(null)}
-                  onClick={() =>
-                    setSelectedDate(new Date(year, month, day))
-                  }
-                  className={`mx-auto h-11 w-11 rounded-lg cursor-pointer
-                    ${isSelected ? "bg-blue-700 text-white" : ""}
-                    ${hoveredDate === day ? "bg-blue-100" : ""}
-                  `}
-                >
-                  {day}
-                </button>
-              );
-            })}
+                return (
+                  <button
+                    key={day}
+                    disabled={isPastDate}
+                    onMouseEnter={() => !isPastDate && setHoveredDate(day)}
+                    onMouseLeave={() => setHoveredDate(null)}
+                    onClick={() => {
+                      if (isPastDate) return;
+                      setSelectedDate(dateObj);
+                    }}
+                    className={`mx-auto h-11 w-11 rounded-lg
+                      ${
+                        isPastDate
+                          ? "text-gray-300 cursor-not-allowed"
+                          : "cursor-pointer"
+                      }
+                      ${isSelected ? "bg-blue-700 text-white" : ""}
+                      ${hoveredDate === day && !isPastDate ? "bg-blue-100" : ""}
+                    `}
+                  >
+                    {day}
+                  </button>
+                );
+              })}
+
           </div>
         </div>
 

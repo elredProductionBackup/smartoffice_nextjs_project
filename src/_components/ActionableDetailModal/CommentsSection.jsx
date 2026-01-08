@@ -61,7 +61,7 @@ const handlePost = () => {
     id: Date.now(),
     text: comment.trim(),
     author: "Meezan",
-    createdAt: new Date().toISOString(), // ✅ TIMESTAMP
+    createdAt: new Date().toISOString(), 
   });
 
   setComment("");

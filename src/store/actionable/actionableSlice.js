@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { fetchActionables, toggleActionable, fetchComments, removeActionable, createActionable, changeDueDateTime, removeSubTask, createSubTask, updateSubTask, updateActionable, } from "./actionableThunks";
+import { fetchActionables, toggleActionable, fetchComments, removeActionable, createActionable, changeDueDateTime, removeSubTask, createSubTask, updateSubTask, updateActionable, fetchCollaborators, } from "./actionableThunks";
 import moment from "moment";
 
 const initialState = {
@@ -12,6 +12,8 @@ const initialState = {
   limit: 10,
   total: 0,
   activeTab: null,
+  collaboratorsList:[],
+  collaboratorsLoading:false,
   search: "",
 };
 
@@ -285,7 +287,6 @@ const actionableSlice = createSlice({
         const sub = parent.subTask.find((s) => s._id === _id);
         if (!sub) return;
 
-        // store previous for rollback
         sub._previous = {
           title: sub.title,
           isCompleted: sub.isCompleted,
@@ -345,6 +346,21 @@ const actionableSlice = createSlice({
           0
         );
       })
+
+      // Collaborators 
+      .addCase(fetchCollaborators.pending, (state, action) => {
+          state.collaboratorsLoading = true;
+        })
+
+        .addCase(fetchCollaborators.fulfilled, (state, action) => {
+          state.collaboratorsLoading = false;
+          state.collaboratorsList = action.payload || [];
+        })
+
+        .addCase(fetchCollaborators.rejected, (state, action) => {
+          state.collaboratorsLoading = false;
+        });
+
 
 
   },

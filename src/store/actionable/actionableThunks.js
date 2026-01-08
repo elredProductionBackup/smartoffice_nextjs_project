@@ -7,6 +7,7 @@ import {
   addSubTask,
   deleteSubTask,
   deleteActionable,
+  getCollaborators,
 } from "@/services/actionable.service";
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import moment from "moment";
@@ -88,7 +89,9 @@ export const updateActionable = createAsyncThunk(
         networkClusterCode,
         title,
         notes,
-        collaborators,
+        collaborators:collaborators.map(
+        (c) => c.userCode
+        ),
       });
 
       if (!res.data?.success) {
@@ -162,20 +165,25 @@ export const toggleActionable = createAsyncThunk(
   }
 );
 
-
 export const changeDueDateTime = createAsyncThunk(
   "actionable/changeDueDateTime",
-  async (
-    { actionableId, dueDate, dueTime },
-    { rejectWithValue }
-  ) => {
+  async ({ actionableId, dueDate, dueTime }, { rejectWithValue }) => {
     try {
       const networkClusterCode = localStorage.getItem("networkClusterCode");
 
-      const utcMoment = moment.utc(
+      const istMoment = moment(
         `${dueDate} ${dueTime}`,
         "YYYY-MM-DD HH:mm"
       );
+
+      if (!istMoment.isValid()) {
+        return rejectWithValue("Invalid due date or time");
+      }
+
+      const utcMoment = istMoment
+        .clone()
+        .subtract(5, "hours")
+        .subtract(30, "minutes");
 
       const dueDateTimeStamp = utcMoment.format(
         "YYYY-MM-DDTHH:mm:ss.SSS[Z]"
@@ -194,8 +202,10 @@ export const changeDueDateTime = createAsyncThunk(
       return {
         actionableId,
         dueDateTimeStamp,
-        dueDate: utcMoment.format("DD MMM YYYY"),
-        dueTime: utcMoment.format("hh:mm A"),
+
+        dueDate: istMoment.format("DD MMM YYYY"),
+        dueTime: istMoment.format("h:mm A"),
+
         message: "Due date updated successfully",
       };
     } catch (err) {
@@ -329,6 +339,27 @@ export const removeSubTask = createAsyncThunk(
       return { actionableId, subTaskId };
     } catch (err) {
       return rejectWithValue(err.response?.data || err.message);
+    }
+  }
+);
+
+// Fetch Collaborators
+export const fetchCollaborators = createAsyncThunk(
+  "actionable/fetchCollaborators",
+  async ({ search = "", offset = 0 }, { rejectWithValue }) => {
+    try {
+      const networkClusterCode =
+        localStorage.getItem("networkClusterCode");
+
+      const res = await getCollaborators({
+        networkClusterCode,
+        search,
+        offset,
+      });
+
+      return res?.data?.result; 
+    } catch (err) {
+      return rejectWithValue(err?.response?.data);
     }
   }
 );

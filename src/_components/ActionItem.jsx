@@ -1,5 +1,6 @@
 import { openModal } from "@/store/actionable/actionableUiSlice";
 import moment from "moment";
+import Image from "next/image";
 import { useRef, useEffect, useState } from "react";
 import { BsCheck, BsThreeDotsVertical } from "react-icons/bs";
 import { useDispatch, useSelector } from "react-redux";
@@ -138,10 +139,14 @@ export default function ActionItem({
 
           {collaborators.length > 0 && (
             <div className="flex items-center gap-[8px]">
-              {visibleAvatars.map((_, i) => (
-                <div
-                  key={i}
+              {visibleAvatars.map((collaborators,index) => (
+                <Image
+                  key={index}
                   className="h-[32px] w-[32px] rounded-full bg-[#E5E7EB] border border-[#CCCCCC]"
+                  src={collaborators.dp || collaborators.dpURL}
+                  alt="Collaborators Image"
+                  height={32}
+                  width={32}
                 />
               ))}
 
