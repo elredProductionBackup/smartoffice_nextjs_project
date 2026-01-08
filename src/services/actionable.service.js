@@ -58,7 +58,9 @@ export const getComments = ({
 
 /** DELETE comment */
 export const deleteComment = (payload) => {
-  return api.patch("/smartOffice/deleteComment", payload);
+  return api.delete("/smartOffice/deleteComment", {
+    data: payload,
+  });
 };
 
 /* ===================== SUB TASK ===================== */

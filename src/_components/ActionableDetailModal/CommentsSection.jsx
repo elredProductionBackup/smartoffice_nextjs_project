@@ -46,24 +46,47 @@
 
 
 
-import { useState } from "react";
+import Image from "next/image";
+import { useEffect, useState } from "react";
 
 export default function CommentsSection({ comments = [], onAdd, onDelete }) {
   const [comment, setComment] = useState("");
   const [showAll, setShowAll] = useState(false);
+
+    const [userData, setUserData] = useState({
+    firstname: "",
+    lastname: "",
+    dpURL: "",
+  });
+
+  useEffect(() => {
+    try {
+      const storedData = localStorage.getItem("networkData");
+
+      if (storedData) {
+        const parsedData = JSON.parse(storedData);
+
+        const user = {
+          firstname: parsedData?.firstname || "",
+          lastname: parsedData?.lastname || "",
+          dpURL: parsedData?.dpURL || "",
+        };
+
+        setUserData(user);
+
+        console.log("User Data from localStorage:", user);
+      }
+    } catch (error) {
+      console.error("Failed to parse networkData", error);
+    }
+  }, []);
 
   const isDisabled = !comment.trim();
 
 const handlePost = () => {
   if (isDisabled) return;
 
-  onAdd({
-    id: Date.now(),
-    text: comment.trim(),
-    author: "Meezan",
-    createdAt: new Date().toISOString(), 
-  });
-
+  onAdd(comment.trim());
   setComment("");
 };
 
@@ -97,7 +120,8 @@ function timeAgo(date) {
 
       {/* INPUT */}
       <div className="flex gap-[10px] items-center border-[1.4px] border-[#CCCCCC] rounded-[8px] p-[10px]">
-        <div className="w-[32px] h-[32px] bg-gray-300 rounded-full" />
+        {/* <div className="w-[32px] h-[32px] bg-gray-300 rounded-full" /> */}
+        <Image src={userData?.dpURL || `/logo/user-icon.svg`} alt="Created By Image" width={32} height={32} className="w-[32px] h-[32px] rounded-full bg-[#ccc]"/>
 
         <input
           value={comment}
@@ -143,17 +167,18 @@ function timeAgo(date) {
         <div className="flex flex-col gap-[20px] pt-[20px]">
           {comments.map((c) => (
             <div
-              key={c.id}
+              key={c._id}
              className="flex gap-[10px] items-start border-b border-[#D4DFF1] pb-[20px] last:border-b-0 last:pb-0"
 
             >
-              <div className="w-[32px] h-[32px] bg-gray-300 rounded-full shrink-0" />
+              <Image src={c.dpURL || `/logo/user-icon.svg`} alt="Author Image" width={32} height={32} className="w-[32px] h-[32px] bg-gray-300 rounded-full shrink-0"/>
+              {/* <div className="w-[32px] h-[32px] bg-gray-300 rounded-full shrink-0" /> */}
 
               <div className="flex-1">
                 {/* AUTHOR */}
                <div className="flex items-center gap-[20px] h-[32px]">
-                  <span className="text-[18px] font-[700] text-[#333333]">
-                    {c.author}
+                  <span className="text-[18px] font-[700] text-[#333333] capitalize">
+                    {c.name}
                   </span>
 
                   <span className="text-[12px] text-[#999999]">
@@ -163,12 +188,12 @@ function timeAgo(date) {
 
                 {/* TEXT */}
                 <p className="font-[500] text-[#333] mt-[2px]">
-                  {c.text}
+                  {c.comment}
                 </p>
               </div>
 
               <button
-                onClick={() => onDelete(c.id)}
+                onClick={() => onDelete(c._id)}
                 className="text-[#666666] cursor-pointer"
               >
                 <span className="fluent--delete-16-regular"></span>

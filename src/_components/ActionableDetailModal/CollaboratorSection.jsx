@@ -88,12 +88,13 @@ export default function CollaboratorSection({ task, collaborators = [], onChange
 
   /* -------------------- UI -------------------- */
   return (
-    <div className="relative flex flex-col gap-[8px] pt-[20px]" ref={collaboratorContainerRef}>
+    <div className="relative flex flex-col gap-[8px] pt-[20px]" >
       <span className="text-[20px] text-[#333333] font-[700] uppercase">
         Collaborators
       </span>
 
-      {/* CLICKABLE CONTAINER */}
+      <div className="relative flex flex-col" ref={collaboratorContainerRef}>
+              {/* CLICKABLE CONTAINER */}
       <div
         onClick={() => setIsActive(true)}
         className="border-[1.4px] border-[#CCCCCC] rounded-[4px] p-[8px] flex items-center flex-wrap gap-x-[8px] gap-y-[10px] cursor-text min-h-[48px]"
@@ -125,13 +126,6 @@ export default function CollaboratorSection({ task, collaborators = [], onChange
         ))}
 
         {isActive && (
-          // <input
-          //   ref={inputRef}
-          //   value={query}
-          //   onChange={(e) => setQuery(e.target.value)}
-          //   onBlur={() => !query && setIsActive(false)}
-          //   className="flex-1 outline-none min-w-[120px] pl-[8px]"
-          // />
           <input
             ref={inputRef}
             value={query}
@@ -173,12 +167,8 @@ export default function CollaboratorSection({ task, collaborators = [], onChange
         </div>
       )}
 
-      {/* OPTIONAL UX */}
-      {/* {query.length > 0 && query.length < 3 && (
-        <span className="text-[12px] text-[#999999]">
-          Type at least 3 characters to search
-        </span>
-      )} */}
+      </div>
+
     </div>
   );
 }

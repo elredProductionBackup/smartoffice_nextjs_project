@@ -9,6 +9,7 @@ export default function DashboardActionableList({ data = [], loading = false, })
     console.error("DashboardActionableList expected array, got:", data);
     return null;
   }
+  console.log(data)
 
   return (
     <div className="flex flex-col mt-6 rounded-2xl bg-[#F2F7FF] px-[24px] pt-[24px] max-h-[450px] ">
@@ -85,8 +86,12 @@ export default function DashboardActionableList({ data = [], loading = false, })
                       <div className="flex -space-x-2 h-[24px] w-[24px]">
                         {Array.isArray(item.collaborators) &&
                           item.collaborators.slice(0, 1).map((_, index) => (
-                            <div
+                            <Image
                               key={index}
+                              src={_?.dpURL}
+                              alt="Collaborator Avatar"
+                              height={24}
+                              width={24}
                               className="h-[24px] w-[24px] rounded-full bg-[#D1D5DB] border-2 border-[#F2F6FC]"
                             />
                           ))}

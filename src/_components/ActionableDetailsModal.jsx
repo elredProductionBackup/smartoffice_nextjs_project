@@ -7,33 +7,34 @@ import CommentsSection from "./ActionableDetailModal/CommentsSection";
 import FooterActions from "./ActionableDetailModal/FooterActions";
 import CollaboratorSection from "./ActionableDetailModal/CollaboratorSection";
 import { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { createComment, removeComment } from "@/store/actionable/actionableThunks";
 
 export default function ActionableDetailsModal({
-  task,
-  onClose,
-  onSave,
-  onAddSubtask,
-  onToggleSubtask,
-  onUpdateSubtask,
+  task, onClose, onSave, onAddSubtask,
+  onToggleSubtask, onUpdateSubtask,
   onDeleteSubtask,
 }) {
   if (!task) return null;
+
+  const dispatch = useDispatch();
+
   const [draft, setDraft] = useState({
     title: task.title,
     collaborators: task.collaborators || [],
     notes: task.notes || "",
-    comments: task.comments || [],
+    // comments: task.comments || [],
   });
 
-  useEffect(() => {
-    setDraft({
-      title: task.title,
-      collaborators: task.collaborators || [],
-      notes: task.notes || "",
-      comments: task.comments || [],
-    });
-  }, [task]);
+useEffect(() => {
+  setDraft({
+    title: task.title,
+    collaborators: task.collaborators || [],
+    notes: task.notes || "",
+    // comments: task.comments || [],
+  });
+}, [task.actionableId]);
+
 
   const actionable = useSelector((state) =>
     state.actionable.items.find((i) => i.actionableId === task.actionableId)
@@ -51,8 +52,6 @@ export default function ActionableDetailsModal({
     onClose();
   };
 
-
-
   return (
     <div
       className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center"
@@ -64,7 +63,7 @@ export default function ActionableDetailsModal({
       >
         <ModalHeader
           title={draft.title}
-          addedBy={actionable.createdBy?.name}
+          addedBy={actionable.createdBy}
           onClose={onClose}
           onUpdateTitle={(title) =>
             setDraft((prev) => ({
@@ -108,20 +107,30 @@ export default function ActionableDetailsModal({
           }
         />
         <CommentsSection
-          comments={draft.comments}
-          onAdd={(newComment) =>
-            setDraft({
-              ...draft,
-              comments: [newComment, ...draft.comments],
-            })
-          }
+          comments={actionable.comments}
+          onAdd={(value) => {
+            const tempId = `temp-comment-${Date.now()}`;
+
+            dispatch(
+              createComment({
+                tempId,
+                actionableId: actionable.actionableId,
+                comment: value,
+              })
+            );
+          }}
           onDelete={(id) =>
-            setDraft({
-              ...draft,
-              comments: draft.comments.filter((c) => c.id !== id),
-            })
+            dispatch(
+              removeComment({
+                actionableId: actionable.actionableId,
+                commentId: id,
+              })
+            )
           }
         />
+
+
+
 
         <FooterActions onClose={onClose} onSave={handleSave}/>
       </div>

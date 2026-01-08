@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 
 export default function ModalHeader({
@@ -107,8 +108,8 @@ useEffect(() => {
 
       {/* ADDED BY */}
       <div className="flex items-center gap-[10px]">
-        <div className="w-[32px] h-[32px] rounded-full bg-[#ccc]" />
-        <span className="font-[600] capitalize">{addedBy}</span>
+        <Image src={addedBy?.dpURL || `/logo/user-icon.svg`} alt="Created By Image" width={32} height={32} className="w-[32px] h-[32px] rounded-full bg-[#ccc]"/>
+        <span className="font-[600] capitalize">{addedBy?.name}</span>
       </div>
     </div>
   );

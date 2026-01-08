@@ -237,21 +237,13 @@ export const fetchComments = createAsyncThunk(
   }
 );
 
-export const createComment = createAsyncThunk(
-  "actionable/createComment",
-  async (payload, { dispatch }) => {
-    await addComment(payload);
-    dispatch(fetchComments({ actionableId: payload.actionableId }));
-  }
-);
-
-export const removeComment = createAsyncThunk(
-  "actionable/removeComment",
-  async ({ actionableId, commentId, networkClusterCode }, { dispatch }) => {
-    await deleteComment({ actionableId, commentId, networkClusterCode });
-    dispatch(fetchComments({ actionableId }));
-  }
-);
+// export const createComment = createAsyncThunk(
+//   "actionable/createComment",
+//   async (payload, { dispatch }) => {
+//     await addComment(payload);
+//     dispatch(fetchComments({ actionableId: payload.actionableId }));
+//   }
+// );
 
 /* ================= SUBTASK ================= */
 
@@ -360,6 +352,81 @@ export const fetchCollaborators = createAsyncThunk(
       return res?.data?.result; 
     } catch (err) {
       return rejectWithValue(err?.response?.data);
+    }
+  }
+);
+
+// Comments
+/* ================= CREATE COMMENT ================= */
+export const createComment = createAsyncThunk(
+  "actionable/createComment",
+  async (payload, { rejectWithValue }) => {
+    try {
+      const { tempId, actionableId, comment } = payload;
+      const networkClusterCode = localStorage.getItem("networkClusterCode");
+
+      const res = await addComment({
+        _id: "",
+        comment,
+        actionableId,
+        networkClusterCode,
+      });
+
+      if (!res.data?.success) {
+        return rejectWithValue({
+          message: res.data.message,
+          tempId,
+          actionableId,
+        });
+      }
+
+      return {
+        actionableId,
+        comment: res.data.result[0],
+        tempId,
+      };
+    } catch (err) {
+      return rejectWithValue({
+        message: err.message,
+        tempId: payload.tempId,
+        actionableId: payload.actionableId,
+      });
+    }
+  }
+);
+
+/* ================= REMOVE COMMENT ================= */
+export const removeComment = createAsyncThunk(
+  "actionable/removeComment",
+  async (payload, { rejectWithValue }) => {
+    try {
+      const { actionableId, commentId } = payload;
+      const networkClusterCode = localStorage.getItem("networkClusterCode");
+
+      const res = await deleteComment({
+        commentId: commentId,
+        actionableId,
+        networkClusterCode,
+      });
+
+      if (!res.data?.success) {
+        return rejectWithValue({
+          message: res.data.message,
+          actionableId,
+          commentId,
+        });
+      }
+
+      return {
+        actionableId,
+        commentId,
+      };
+    } catch (err) {
+      return rejectWithValue({
+        message: err.message,
+        actionableId: payload.actionableId,
+        commentId: payload.commentId,
+      });
     }
   }
 );
