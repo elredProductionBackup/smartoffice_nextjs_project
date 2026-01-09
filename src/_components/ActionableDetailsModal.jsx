@@ -9,6 +9,7 @@ import CollaboratorSection from "./ActionableDetailModal/CollaboratorSection";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { createComment, removeComment } from "@/store/actionable/actionableThunks";
+import Image from "next/image";
 
 export default function ActionableDetailsModal({
   task, onClose, onSave, onAddSubtask,
@@ -86,7 +87,8 @@ useEffect(() => {
            </span>
            <div className="flex border-[1.4px] border-[#CCCCCC] rounded-[4px] p-[8px] cursor-not-allowed">
              <div className="flex items-center gap-[6px] border-1 border-[#B1B1B1] p-[4px] text-[14px] rounded-[100px]">
-               <span className="h-[24px] w-[24px] bg-[#CCCCCC] rounded-full"></span> Figma Config <span className="akar-icons--cross small-cross mr-[10px]"></span></div>
+               <Image src={'/images/figma-config.webp'} alt="Events" height={24} width={24} className="min-h-[24px] max-h-[24px] shrink-0 min-w-[24px] bg-[#CCCCCC] rounded-full object-cover"/>
+               Figma Config <span className="akar-icons--cross small-cross mr-[10px]"></span></div>
            </div>
          </div>
 
