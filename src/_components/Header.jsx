@@ -5,9 +5,17 @@ import Image from "next/image";
 // import logo from "@/assets/logo/logo.svg";
 import bell from "@/assets/logo/bell.svg";
 import { useRouter } from "next/navigation";
+import { useDispatch, useSelector } from "react-redux";
+import { logout } from "@/store/auth/authSlice";
 
 const Header = () => {
   const [open, setOpen] = useState(false);
+  const dispatch = useDispatch();
+
+  const { user } = useSelector((state) => state.auth);
+
+  const firstName = user?.firstname ?? "Me";
+
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const meRef = useRef(null);
   const router = useRouter();
@@ -27,27 +35,24 @@ const Header = () => {
     setShowLogoutConfirm(true);
   };
 
-  const confirmLogout = () => {
-    setShowLogoutConfirm(false);
+const confirmLogout = () => {
+  setShowLogoutConfirm(false);
 
-    const networkClusterCode =
-      typeof window !== "undefined"
-        ? localStorage.getItem("networkClusterCode")
-        : null;
+  if (typeof window === "undefined") return;
 
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("networkData");
-      localStorage.removeItem("networkClusterCode");
-      localStorage.removeItem("token");
-      localStorage.removeItem("userEmail");
-    }
+  const networkClusterCode = localStorage.getItem("networkClusterCode");
 
+  dispatch(logout());
+
+  setTimeout(() => {
     if (networkClusterCode) {
-      router.push(`/?networkClusterCode=${networkClusterCode}`);
+      router.replace(`/?networkClusterCode=${networkClusterCode}`);
     } else {
-      router.push("/");
+      router.replace("/");
     }
-  };
+  }, 0);
+};
+
 
   return (
     <>
@@ -90,11 +95,11 @@ const Header = () => {
                 <div className="w-[250px] bg-white rounded-[20px] p-[20px]
                   shadow-[0px_4px_4px_0px_#99999940]">
                   <div className="flex flex-col gap-[10px]">
-                    <button className="flex gap-[6px] py-[8px] pl-[12px] text-[20px] text-[#333] rounded-lg cursor-pointer">
+                    <button className="flex gap-[6px] py-[8px] pl-[12px] text-[20px] text-[#333] rounded-lg cursor-pointer capitalize">
                       <span className="h-[30px] w-[30px] rounded-full bg-[#CCCCCC] flex items-center justify-center">
                         <Image src="/logo/user-icon.svg" alt="" width={30} height={30} />
                       </span>
-                      Your profile
+                      {firstName}
                     </button>
 
                     <button

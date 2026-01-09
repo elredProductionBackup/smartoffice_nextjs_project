@@ -1,95 +1,176 @@
 import { useState, useRef, useEffect } from "react";
-import { DUMMY_COLLABORATORS } from "../../assets/helpers/sampleActionable";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchCollaborators } from "@/store/actionable/actionableThunks";
+import Image from "next/image";
 
-export default function CollaboratorSection({ collaborators, onChange }) {
-  const [query, setQuery] = useState("");
-  const [isActive, setIsActive] = useState(false);
-  const inputRef = useRef(null);
+export default function CollaboratorSection({ task, collaborators = [], onChange,canEditOrDelete }) {
+  const dispatch = useDispatch();
+  const collaboratorContainerRef = useRef(null);
 
-  const filtered = DUMMY_COLLABORATORS.filter(
-    (u) =>
-      u.name.toLowerCase().includes(query.toLowerCase()) &&
-      !collaborators.some((c) => c.id === u.id)
+  const { collaboratorsList = [], collaboratorsLoading } = useSelector(
+    (state) => state.actionable
   );
 
+  const [query, setQuery] = useState("");
+  const [isActive, setIsActive] = useState(false);
+
+  const inputRef = useRef(null);
+  const debounceRef = useRef(null);
+
+  /* -------------------- FOCUS INPUT -------------------- */
   useEffect(() => {
     if (isActive) {
       inputRef.current?.focus();
     }
   }, [isActive]);
 
+  /* -------------------- DEBOUNCED SEARCH -------------------- */
+  useEffect(() => {
+    if (query.length < 3) return;
+
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+
+    debounceRef.current = setTimeout(() => {
+      dispatch(
+        fetchCollaborators({
+          actionableId: task?.actionableId,
+          search: query,
+          offset: 0,
+        })
+      );
+    }, 300);
+
+    return () => clearTimeout(debounceRef.current);
+  }, [query, dispatch, task?.actionableId]);
+
+  /* -------------------- FILTER OUT ADDED USERS -------------------- */
+  const filteredCollaborators = Array.isArray(collaboratorsList)
+    ? collaboratorsList.filter(
+        (u) =>
+          u?.userCode &&
+          !collaborators.some((c) => c.userCode === u.userCode)
+      )
+    : [];
+
+
+  /* -------------------- HANDLERS -------------------- */
   const addUser = (user) => {
     onChange([...collaborators, user]);
     setQuery("");
     setIsActive(false);
   };
 
-  const removeUser = (id) => {
-    onChange(collaborators.filter((c) => c.id !== id));
+  const removeUser = (userCode) => {
+    onChange(collaborators.filter((c) => c.userCode !== userCode));
   };
 
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        collaboratorContainerRef.current &&
+        !collaboratorContainerRef.current.contains(event.target)
+      ) {
+        setIsActive(false);
+        setQuery("");
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+
+  /* -------------------- UI -------------------- */
   return (
-    <div className="relative flex flex-col gap-[8px] pt-[20px]">
+    <div className="relative flex flex-col gap-[8px] pt-[20px] px-[20px]" >
       <span className="text-[20px] text-[#333333] font-[700] uppercase">
         Collaborators
       </span>
 
-      {/* CLICKABLE CONTAINER */}
+      <div className="relative flex flex-col" ref={collaboratorContainerRef}>
+              {/* CLICKABLE CONTAINER */}
       <div
-        onClick={() => setIsActive(true)}
-        className="border-[1.4px] border-[#CCCCCC] rounded-[4px] p-[8px] flex items-center flex-wrap gap-x-[8px] gap-y-[10px] cursor-text min-h-[48px]"
+        onClick={() => canEditOrDelete && setIsActive(true)}
+
+        className={`${canEditOrDelete && 'border-[1.4px] border-[#CCCCCC] rounded-[4px] px-[8px]'} py-[8px] flex items-center flex-wrap gap-x-[8px] gap-y-[10px] cursor-text min-h-[48px]`}
       >
-        {collaborators?.length === 0 && !isActive && <span className="h-[100%] pl-[8px] font-[500] text-[#999999]">Add Collaborator</span>}
-        {collaborators && collaborators?.map((u) => (
+        {collaborators.length === 0 && !isActive && (
+          <span className={`${canEditOrDelete && 'pl-[8px]'} font-[500] text-[#999999]`}>
+            {canEditOrDelete ? `Type at least 3 chars to see matching collaborators`:'No collaborators added yet'}
+          </span>
+        )}
+
+        {collaborators.map((u) => (
           <div
-            key={u.id}
-            className="flex items-center gap-[6px] border-1 border-[#B1B1B1] rounded-full px-[6px] py-[4px] h-[32px]"
+            key={u.userCode}
+            className="flex items-center gap-[6px] border border-[#B1B1B1] rounded-full px-[6px] py-[4px] h-[32px]"
           >
-            <div className="w-[24px] h-[24px] bg-[#CCCCCC] rounded-full" />
-            <span className="text-[14px] font-[500]">{u.name}</span>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                removeUser(u.id);
-              }}
-              className="pr-[6px] cursor-pointer"
-            >
-              <span className="akar-icons--cross small-cross"></span>
-            </button>
+            {/* <div className="w-[24px] h-[24px] bg-[#CCCCCC] rounded-full" /> */}
+            <Image src={u?.dp || u?.dpURL} alt="Collaborator Avatar" width={24} height={24} className="h-[24px] w-[24px] rounded-full bg-[#CCCCCC] object-cover" />
+            <span className={`text-[14px] font-[500] ${!canEditOrDelete && 'pr-[6px]'}`}>{u.name}</span>
+            {canEditOrDelete &&
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  removeUser(u.userCode);
+                }}
+                className="pr-[6px] cursor-pointer"
+              >
+                ✕
+              </button>
+            }
           </div>
         ))}
 
-        {/* INPUT APPEARS ONLY WHEN ACTIVE */}
         {isActive && (
           <input
             ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            onBlur={() => !query && setIsActive(false)}
             className="flex-1 outline-none min-w-[120px] pl-[8px]"
           />
+
         )}
       </div>
 
       {/* DROPDOWN */}
-      {query && filtered.length > 0 && (
-        <div className="absolute left-0 top-[calc(100%+2px)] max-h-[250px] w-full
-              rounded-[4px] bg-white text-[#333333] z-[1]"
-              style={{
-                boxShadow: "0px 4px 4px 0px #A4A3A340",
-              }}>
-          {filtered.map((u) => (
-            <div
-              key={u.id}
-              onClick={() => addUser(u)}
-              className="flex items-center gap-[8px] px-[20px] py-[20px] hover:bg-[#FAFAFA] cursor-pointer font-[500]"
-            >
-              <span className="min-h-[32px] min-w-[32px] rounded-full bg-[#CCCCCC]"></span>
-              {u.name}
-            </div>
-          ))}
+      {query.length >= 3 && (
+        <div
+          className="absolute left-0 top-[calc(100%+2px)] min-h-[250px] w-full
+            rounded-[4px] bg-white z-[7] overflow-auto"
+          style={{ boxShadow: "0px 4px 4px 0px #A4A3A340" }}
+        >
+          {filteredCollaborators.length > 0 ?
+            filteredCollaborators.map((u) => (
+              <div
+                key={u.userCode}
+                onClick={() => addUser(u)}
+                className="flex items-center gap-[8px] px-[20px] py-[12px] hover:bg-[#FAFAFA] cursor-pointer font-[500]"
+              > 
+                <Image src={u?.dpURL} alt="Collaborator Avatar" width={32} height={32} className="min-h-[32px] min-w-[32px] rounded-full bg-[#CCCCCC]" />
+                {u.name}
+              </div>
+            ))
+          :
+              <div className="w-full min-h-[250px] flex flex-col items-center gap-[10px] justify-center">
+                  <div className="bg-[#D3E3FD] h-[60px] w-[60px] rounded-full mb-[10px] grid place-items-center">
+                    <Image src={'/logo/no-search.svg'} alt="No Search" width={38} height={38}/>
+                  </div>
+                  <div className="text-[20px] font-[600]">No collaborator found</div>
+                  <div className="text-[14px] text-[#666666] leading-[30px]">Try adjusting your search or filters.</div>
+              </div>
+          }
+
         </div>
       )}
+
+      </div>
+
     </div>
   );
 }

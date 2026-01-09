@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 
 export default function ModalHeader({
@@ -6,6 +7,7 @@ export default function ModalHeader({
   addedBy,
   onClose,
   onUpdateTitle,
+  canEditOrDelete
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [value, setValue] = useState(title);
@@ -53,7 +55,7 @@ useEffect(() => {
   };
 
   return (
-    <div className="flex flex-col gap-[20px] pt-[40px] pb-[20px] sticky top-[0px] bg-white z-[2]">
+    <div className="flex flex-col gap-[20px] pt-[40px] px-[20px] pb-[20px] sticky top-[0px] bg-white z-[10]">
       <div className="flex justify-between items-start">
         {/* TITLE */}
         {!isEditing ? (
@@ -86,7 +88,7 @@ useEffect(() => {
         )}
 
         {/* ACTIONS */}
-        <div className="absolute right-[0px] top-[40px] flex flex-col gap-[40px]">
+        <div className="absolute right-[20px] top-[40px] flex flex-col gap-[40px]">
           <button
             onClick={onClose}
             className="h-[24px] min-w-[24px] rounded-full grid place-items-center bg-[#eee] text-[#999999] cursor-pointer"
@@ -94,7 +96,7 @@ useEffect(() => {
             <span className="akar-icons--cross small-cross" />
           </button>
 
-          {!isEditing && (
+          {!isEditing && canEditOrDelete && (
             <button
               onClick={() => setIsEditing(true)}
               className="text-[#666] cursor-pointer"
@@ -107,8 +109,8 @@ useEffect(() => {
 
       {/* ADDED BY */}
       <div className="flex items-center gap-[10px]">
-        <div className="w-[32px] h-[32px] rounded-full bg-[#ccc]" />
-        <span className="font-[600] capitalize">{addedBy}</span>
+        <Image src={addedBy?.dpURL || `/logo/user-icon.svg`} alt="Created By Image" width={32} height={32} className="w-[32px] h-[32px] rounded-full bg-[#ccc]"/>
+        <span className="font-[600] capitalize">{addedBy?.name}</span>
       </div>
     </div>
   );

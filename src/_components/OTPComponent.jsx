@@ -9,6 +9,9 @@ import useGlobalLoader from "@/store/useGlobalLoader";
 import { verifyOtp } from "@/services/auth.service";
 import { maskEmail } from "@/utils/functions";
 import { useRouter } from "next/navigation";
+import { useDispatch } from "react-redux";
+import { setAuth } from "@/store/auth/authSlice";
+
 
 const OTPComponent = ({ email, length = 6, networkClusterCode, data }) => {
   const [otp, setOtp] = useState(Array(length).fill(""));
@@ -16,6 +19,8 @@ const OTPComponent = ({ email, length = 6, networkClusterCode, data }) => {
 
   const { showLoader, hideLoader } = useGlobalLoader.getState();
   const router = useRouter();
+  const dispatch = useDispatch();
+
 
   const otpValue = otp.join("");
   const isOtpComplete = otpValue.length === length && !otp.includes("");
@@ -36,18 +41,19 @@ const OTPComponent = ({ email, length = 6, networkClusterCode, data }) => {
 
       const res = await verifyOtp(data);
       // console.log(res, "response");
-      localStorage.setItem('networkData',JSON.stringify(res?.data?.result?.[0]))
-      localStorage.setItem('token',res?.data?.result?.[0]?.token)
-      localStorage.setItem('networkClusterCode',res?.data?.result?.[0]?.networkClusterCode)
-
+      // Now using Redux Reducers for it
+      // localStorage.setItem('networkData',JSON.stringify(res?.data?.result?.[0]))
+      // localStorage.setItem('token',res?.data?.result?.[0]?.token)
+      // localStorage.setItem('networkClusterCode',res?.data?.result?.[0]?.networkClusterCode)
 
       if (res?.data?.success) {
-        router.push(`/dashboard`);
-        return;
+          const user = res?.data?.result?.[0];
+          dispatch(setAuth(user));
+
+          router.push("/dashboard");
+          return;
       }
 
-
-      // // ❌ Business error (OTP mismatch)
       if (res?.data?.errorCode === -1) {
         setError(true);
         hideLoader();

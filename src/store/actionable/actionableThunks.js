@@ -7,6 +7,7 @@ import {
   addSubTask,
   deleteSubTask,
   deleteActionable,
+  getCollaborators,
 } from "@/services/actionable.service";
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import moment from "moment";
@@ -88,7 +89,9 @@ export const updateActionable = createAsyncThunk(
         networkClusterCode,
         title,
         notes,
-        collaborators,
+        collaborators:collaborators.map(
+        (c) => c.userCode
+        ),
       });
 
       if (!res.data?.success) {
@@ -162,24 +165,24 @@ export const toggleActionable = createAsyncThunk(
   }
 );
 
-
 export const changeDueDateTime = createAsyncThunk(
   "actionable/changeDueDateTime",
-  async (
-    { actionableId, dueDate, dueTime },
-    { rejectWithValue }
-  ) => {
+  async ({ actionableId, dueDate, dueTime }, { rejectWithValue }) => {
     try {
       const networkClusterCode = localStorage.getItem("networkClusterCode");
+      
+      const currentUtcTime = moment.utc();
 
       const utcMoment = moment.utc(
-        `${dueDate} ${dueTime}`,
-        "YYYY-MM-DD HH:mm"
+        `${dueDate} ${currentUtcTime.format("HH:mm:ss")}`,
+        "YYYY-MM-DD HH:mm:ss"
       );
 
       const dueDateTimeStamp = utcMoment.format(
         "YYYY-MM-DDTHH:mm:ss.SSS[Z]"
       );
+
+      const istMoment = utcMoment.clone().add(5, "hours").add(30, "minutes");
 
       const res = await addActionable({
         actionableId,
@@ -194,8 +197,10 @@ export const changeDueDateTime = createAsyncThunk(
       return {
         actionableId,
         dueDateTimeStamp,
-        dueDate: utcMoment.format("DD MMM YYYY"),
-        dueTime: utcMoment.format("hh:mm A"),
+
+        dueDate: istMoment.format("DD MMM YYYY"),
+        dueTime: istMoment.format("h:mm A"),
+
         message: "Due date updated successfully",
       };
     } catch (err) {
@@ -227,21 +232,6 @@ export const fetchComments = createAsyncThunk(
   }
 );
 
-export const createComment = createAsyncThunk(
-  "actionable/createComment",
-  async (payload, { dispatch }) => {
-    await addComment(payload);
-    dispatch(fetchComments({ actionableId: payload.actionableId }));
-  }
-);
-
-export const removeComment = createAsyncThunk(
-  "actionable/removeComment",
-  async ({ actionableId, commentId, networkClusterCode }, { dispatch }) => {
-    await deleteComment({ actionableId, commentId, networkClusterCode });
-    dispatch(fetchComments({ actionableId }));
-  }
-);
 
 /* ================= SUBTASK ================= */
 
@@ -329,6 +319,104 @@ export const removeSubTask = createAsyncThunk(
       return { actionableId, subTaskId };
     } catch (err) {
       return rejectWithValue(err.response?.data || err.message);
+    }
+  }
+);
+
+// Fetch Collaborators
+export const fetchCollaborators = createAsyncThunk(
+  "actionable/fetchCollaborators",
+  async ({ search = "", offset = 0 }, { rejectWithValue }) => {
+    try {
+      const networkClusterCode =
+        localStorage.getItem("networkClusterCode");
+
+      const res = await getCollaborators({
+        networkClusterCode,
+        search,
+        offset,
+      });
+
+      return res?.data?.result; 
+    } catch (err) {
+      return rejectWithValue(err?.response?.data);
+    }
+  }
+);
+
+// Comments
+/* ================= CREATE COMMENT ================= */
+export const createComment = createAsyncThunk(
+  "actionable/createComment",
+  async (payload, { rejectWithValue }) => {
+    try {
+      const { tempId, actionableId, comment,user } = payload;
+      const networkClusterCode = localStorage.getItem("networkClusterCode");
+
+
+      const res = await addComment({
+        _id: "",
+        comment,
+        actionableId,
+        networkClusterCode,
+      });
+
+      if (!res.data?.success) {
+        return rejectWithValue({
+          message: res.data.message,
+          tempId,
+          actionableId,
+        });
+      }
+
+      return {
+        actionableId,
+        comment: {...res.data.result[0], name: user?.firstname,
+          dpURL: user?.dpURL,email:user?.email  },
+        tempId,
+      };
+    } catch (err) {
+      return rejectWithValue({
+        message: err.message,
+        tempId: payload.tempId,
+        actionableId: payload.actionableId,
+      });
+    }
+  }
+);
+
+/* ================= REMOVE COMMENT ================= */
+export const removeComment = createAsyncThunk(
+  "actionable/removeComment",
+  async (payload, { rejectWithValue }) => {
+    try {
+      const { actionableId, commentId } = payload;
+      const networkClusterCode = localStorage.getItem("networkClusterCode");
+
+      const res = await deleteComment({
+        commentId: commentId,
+        actionableId,
+        networkClusterCode,
+      });
+
+      if (!res.data?.success) {
+        return rejectWithValue({
+          message: res.data.message,
+          actionableId,
+          commentId,
+        });
+      }
+
+      return {
+        actionableId,
+        commentId,
+      };
+    } catch (err) {
+      return rejectWithValue({
+        message: err.message,
+        actionableId: payload.actionableId,
+        commentId: payload.commentId,
+      });
     }
   }
 );

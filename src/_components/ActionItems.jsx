@@ -34,8 +34,10 @@ export default function ActionItems() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
 
+  const debounceTimerRef = useRef(null);
+  const isFirstRender = useRef(true); 
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const debounceRef = useRef(null);
+
 
   /** REDUX STATE */
   const {
@@ -187,35 +189,51 @@ export default function ActionItems() {
 
 
   useEffect(() => {
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
     }
 
-    debounceRef.current = setTimeout(() => {
-      if (searchValue.length >= 1 || searchValue === "") {
-        setDebouncedSearch(searchValue);
-        const params = new URLSearchParams(searchParams.toString());
-        params.set("page", 1);
-        router.replace(`?${params.toString()}`);
-      }
+    debounceTimerRef.current = setTimeout(() => {
+      setDebouncedSearch(searchValue);
     }, 300);
 
-    return () => clearTimeout(debounceRef.current);
+    return () => clearTimeout(debounceTimerRef.current);
   }, [searchValue]);
 
-
   useEffect(() => {
-    if (!loading && page > 1 && total > 0 && items.length === 0) {
-      const params = new URLSearchParams(searchParams.toString());
-      params.set("page", page - 1);
-      router.replace(`?${params.toString()}`);
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
     }
-  }, [items, page, loading, total]);
+
+    const currentSearch = searchParams.get("search") || "";
+    if (currentSearch === debouncedSearch) return;
+
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("page", "1");
+
+    if (debouncedSearch.trim()) {
+      params.set("search", debouncedSearch);
+    } else {
+      params.delete("search");
+    }
+
+    router.replace(`?${params.toString()}`, { scroll: false });
+  }, [debouncedSearch]);
+
+  // For changing page params when redirect to any empty page
+  // useEffect(() => {
+  //   if (!loading && page > 1 && total > 0 && items.length === 0) {
+  //     const params = new URLSearchParams(searchParams.toString());
+  //     params.set("page", page - 1);
+  //     router.replace(`?${params.toString()}`);
+  //   }
+  // }, [items, page, loading, total]);
 
 
   return (
-    <div className="flex-1 flex flex-col  min-h-0 bg-[#F5F9FF] px-[30px] pt-[30px] mt-[20px] rounded-[20px]">
-      {loading && !searchValue ?
+    <div className="flex-1 flex flex-col  min-h-0 bg-[#F2F7FF] pt-[30px] mt-[20px] rounded-[20px] overflow-hidden">
+      {loading && !debouncedSearch ?
         <><ActionableShimmer /></> :
         <>
           <ActionHeader
@@ -231,10 +249,10 @@ export default function ActionItems() {
             onSearchChange={setSearchValue}
             onAdd={() => setAdding(true)}
             onTabChange={handleTabChange}
-            debounceRef={debounceRef}
+            disableWhileAdd={adding}
           />
 
-          <div className="flex flex-1 w-full overflow-y-auto pt-[20px]">
+          <div className="flex flex-1 w-full overflow-y-auto pt-[20px] px-[30px]">
             {activeItem === "today" && (
               <TodayItems
                 items={items}
@@ -250,7 +268,7 @@ export default function ActionItems() {
               (items.length ? (
                 <PastItems items={items} onToggle={toggleItem} />
               ) : (
-                <EmptyState />
+                <EmptyState searchValue={debouncedSearch}/>
               ))}
 
             {activeItem === "all" &&
@@ -261,11 +279,11 @@ export default function ActionItems() {
                   handleDelete={handleDelete}
                 />
               ) : (
-                <EmptyState />
+                <EmptyState searchValue={debouncedSearch}/>
               ))}
           </div>
-          {total > 10 && (
-            <div className="flex justify-between gap-2 bg-[#F2F7FF] pt-[20px] px-[30px] pb-[33px] sticky bottom-0">
+          {total > 10 && items.length>0 && (
+            <div className="flex justify-between gap-2 bg-[#F2F7FF] pt-[20px] px-[30px] pb-[33px] sticky bottom-0 rounded-[0px 20px 20px 0px]">
               <div className="h-[48px] flex items-center text-lg font-semibold text-[#333333]">
                 Showing {(page - 1) * CONSTANTS.ITEMS_PER_PAGE + 1} to {Math.min(page * CONSTANTS.ITEMS_PER_PAGE, total)} out of {total} entries
               </div>
@@ -276,7 +294,7 @@ export default function ActionItems() {
                   onClick={() => changePage(page - 1)}
                   className="w-[48px] h-[48px] flex items-center justify-center rounded-full border-[1.2px] text-[24px]
                     border-[#0B57D0] text-[#0B57D0]
-                    disabled:border-[#999999] disabled:text-[#999999]"
+                    disabled:border-[#999999] disabled:text-[#999999] cursor-pointer"
                 >
                   <IoIosArrowBack />
                 </button>
@@ -286,7 +304,7 @@ export default function ActionItems() {
                   onClick={() => changePage(page + 1)}
                   className="w-[48px] h-[48px] flex items-center justify-center rounded-full border-[1.2px] text-[24px]
                     border-[#0B57D0] text-[#0B57D0]
-                    disabled:border-[#999999] disabled:text-[#999999]"
+                    disabled:border-[#999999] disabled:text-[#999999] cursor-pointer"
                 >
                   <IoIosArrowForward />
                 </button>

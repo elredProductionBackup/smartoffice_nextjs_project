@@ -1,6 +1,6 @@
 export default function FooterActions({ onClose, onSave }) {
   return (
-           <div className="sticky bottom-[0px] bg-[#fff] flex justify-center w-[100%] gap-[60px] pb-[20px] pt-[10px] z-[4]">
+           <div className="sticky bottom-[0px] bg-[#fff] flex justify-center w-[100%] gap-[60px] pb-[20px] pt-[10px] z-[10]">
           <button
             onClick={onClose}
             className="w-[150px] py-[8px] rounded-[20px] bg-[#999999] text-white cursor-pointer"

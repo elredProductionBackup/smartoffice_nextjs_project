@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { fetchActionables, toggleActionable, fetchComments, removeActionable, createActionable, changeDueDateTime, removeSubTask, createSubTask, updateSubTask, updateActionable, } from "./actionableThunks";
+import { fetchActionables, toggleActionable, fetchComments, removeActionable, createActionable, changeDueDateTime, removeSubTask, createSubTask, updateSubTask, updateActionable, fetchCollaborators, createComment, removeComment, } from "./actionableThunks";
 import moment from "moment";
 
 const initialState = {
@@ -14,8 +14,20 @@ const initialState = {
   total: 0,
 
   activeTab: null,
+  collaboratorsList:[],
+  collaboratorsLoading:false,
   search: "",
 };
+
+const getAuthorName = () => {
+  try {
+    const data = JSON.parse(localStorage.getItem("networkData"));
+    return data?.firstname || "Unknown";
+  } catch {
+    return "Unknown";
+  }
+};
+
 
 const actionableSlice = createSlice({
   name: "actionable",
@@ -287,7 +299,6 @@ const actionableSlice = createSlice({
         const sub = parent.subTask.find((s) => s._id === _id);
         if (!sub) return;
 
-        // store previous for rollback
         sub._previous = {
           title: sub.title,
           isCompleted: sub.isCompleted,
@@ -348,6 +359,104 @@ const actionableSlice = createSlice({
         );
       })
 
+      // Collaborators 
+      .addCase(fetchCollaborators.pending, (state, action) => {
+          state.collaboratorsLoading = true;
+        })
+
+        .addCase(fetchCollaborators.fulfilled, (state, action) => {
+          state.collaboratorsLoading = false;
+          state.collaboratorsList = action.payload || [];
+        })
+
+        .addCase(fetchCollaborators.rejected, (state, action) => {
+          state.collaboratorsLoading = false;
+        })
+        // Comments
+        .addCase(createComment.pending, (state, action) => {
+          const { tempId, actionableId, comment } = action.meta.arg;
+
+          const parent = state.items.find(
+            (i) => i.actionableId === actionableId
+          );
+          if (!parent) return;
+
+          if (!parent.comments) parent.comments = [];
+
+          parent.comments.unshift({
+            _id: tempId,
+            clientId: tempId,
+            comment,
+            name: getAuthorName(), 
+            createdAt: new Date().toISOString(),
+            isCompleted: false,
+            isOptimistic: true,
+          });
+        })
+
+        .addCase(createComment.fulfilled, (state, action) => {
+          const { actionableId, comment, tempId } = action.payload;
+
+          const parent = state.items.find(
+            (i) => i.actionableId === actionableId
+          );
+          if (!parent) return;
+
+          const index = parent.comments.findIndex(
+            (c) => c.clientId === tempId
+          );
+
+          if (index !== -1) {
+            parent.comments[index] = {
+              ...comment,
+              clientId: tempId,
+              isOptimistic: false,
+            };
+          }
+        })
+
+        .addCase(createComment.rejected, (state, action) => {
+          const { actionableId, tempId } = action.payload || {};
+
+          const parent = state.items.find(
+            (i) => i.actionableId === actionableId
+          );
+          if (!parent) return;
+
+          parent.comments = parent.comments.filter(
+            (c) => c.clientId !== tempId
+          );
+        })
+        .addCase(removeComment.pending, (state, action) => {
+          const { actionableId, commentId } = action.meta.arg;
+
+          const parent = state.items.find(
+            (i) => i.actionableId === actionableId
+          );
+          if (!parent || !parent.comments) return;
+
+          const index = parent.comments.findIndex(
+            (c) => c._id === commentId
+          );
+
+          if (index !== -1) {
+            parent._removedComment = parent.comments[index]; // backup
+            parent.comments.splice(index, 1);
+          }
+        })
+        .addCase(removeComment.fulfilled, (state) => {
+        })
+        .addCase(removeComment.rejected, (state, action) => {
+          const { actionableId } = action.payload || {};
+
+          const parent = state.items.find(
+            (i) => i.actionableId === actionableId
+          );
+          if (!parent || !parent._removedComment) return;
+
+          parent.comments.unshift(parent._removedComment);
+          delete parent._removedComment;
+        })
 
   },
 });
