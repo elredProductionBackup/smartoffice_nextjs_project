@@ -35,22 +35,23 @@ const Header = () => {
     setShowLogoutConfirm(true);
   };
 
-  const confirmLogout = () => {
-    setShowLogoutConfirm(false);
+const confirmLogout = () => {
+  setShowLogoutConfirm(false);
 
-    const networkClusterCode =
-      typeof window !== "undefined"
-        ? localStorage.getItem("networkClusterCode")
-        : null;
+  if (typeof window === "undefined") return;
 
-    dispatch(logout());
+  const networkClusterCode = localStorage.getItem("networkClusterCode");
 
+  dispatch(logout());
+
+  setTimeout(() => {
     if (networkClusterCode) {
-      router.push(`/?networkClusterCode=${networkClusterCode}`);
+      router.replace(`/?networkClusterCode=${networkClusterCode}`);
     } else {
-      router.push("/");
+      router.replace("/");
     }
-  };
+  }, 0);
+};
 
 
   return (

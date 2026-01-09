@@ -51,6 +51,7 @@ const authSlice = createSlice({
       localStorage.removeItem("networkData");
       localStorage.removeItem("token");
       localStorage.removeItem("userEmail");
+      localStorage.removeItem("networkClusterCode");
     },
   },
 });
