@@ -48,9 +48,12 @@ export function useMembersData({
             email: item.email,
             phone: item.phoneNumber,
             userType: item.userType,
-            title: item.title?.[0]?.value || "",
+            title: item.title || [],
             avatar: item.dpURL,
             location: item.location,
+            documents:item?.documents || [],
+            spouse:item?.spouseDetails?.name || "",
+            children: item?.childrenDetails || []
           }));
 
           setData(formattedData);

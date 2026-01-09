@@ -32,6 +32,10 @@ import Description from "./Description";
 import Heading from "./Heading";
 import LoginInput from "./LoginInput";
 
+
+const isValidEmail = (email) =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
 const LoginComponent = ({
   setLogin,
   email,
@@ -41,10 +45,15 @@ const LoginComponent = ({
   setInvalidEmail,
 }) => {
 
-  const handleSubmit = (e) => {
-    e.preventDefault(); // ⛔ prevent page reload
-    if (!email.length) return;
-    sendOTP(); // ✅ ENTER triggers this
+ const handleSubmit = (e) => {
+    e.preventDefault();
+
+    if (!isValidEmail(email)) {
+      setInvalidEmail(true);
+      return;
+    }
+
+    sendOTP();
   };
 
   return (
