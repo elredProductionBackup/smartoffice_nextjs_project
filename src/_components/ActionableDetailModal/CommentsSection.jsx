@@ -48,72 +48,52 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 
-export default function CommentsSection({ comments = [], onAdd, onDelete }) {
-  const [comment, setComment] = useState("");
+export default function CommentsSection({ comments = [], onAdd, onDelete, canEditOrDelete }) {
+   const [comment, setComment] = useState("");
   const [showAll, setShowAll] = useState(false);
 
-    const [userData, setUserData] = useState({
-    firstname: "",
-    lastname: "",
-    dpURL: "",
-  });
+  const { user } = useSelector((state) => state.auth);
 
-  useEffect(() => {
-    try {
-      const storedData = localStorage.getItem("networkData");
-
-      if (storedData) {
-        const parsedData = JSON.parse(storedData);
-
-        const user = {
-          firstname: parsedData?.firstname || "",
-          lastname: parsedData?.lastname || "",
-          dpURL: parsedData?.dpURL || "",
-        };
-
-        setUserData(user);
-
-        console.log("User Data from localStorage:", user);
-      }
-    } catch (error) {
-      console.error("Failed to parse networkData", error);
-    }
-  }, []);
+  const userData = {
+    firstname: user?.firstname || "",
+    lastname: user?.lastname || "",
+    dpURL: user?.dpURL || "",
+  };
 
   const isDisabled = !comment.trim();
 
-const handlePost = () => {
-  if (isDisabled) return;
+  const handlePost = () => {
+    if (isDisabled) return;
 
-  onAdd(comment.trim());
-  setComment("");
-};
+    onAdd(comment.trim(),user);
+    setComment("");
+  };
 
-function timeAgo(date) {
-  const seconds = Math.floor((Date.now() - new Date(date)) / 1000);
+  function timeAgo(date) {
+    const seconds = Math.floor((Date.now() - new Date(date)) / 1000);
 
-  const intervals = [
-    { label: "year", seconds: 31536000 },
-    { label: "month", seconds: 2592000 },
-    { label: "day", seconds: 86400 },
-    { label: "hour", seconds: 3600 },
-    { label: "min", seconds: 60 },
-  ];
+    const intervals = [
+      { label: "year", seconds: 31536000 },
+      { label: "month", seconds: 2592000 },
+      { label: "day", seconds: 86400 },
+      { label: "hour", seconds: 3600 },
+      { label: "min", seconds: 60 },
+    ];
 
-  for (const interval of intervals) {
-    const count = Math.floor(seconds / interval.seconds);
-    if (count >= 1) {
-      return `${count} ${interval.label}${count > 1 ? "s" : ""} ago`;
+    for (const interval of intervals) {
+      const count = Math.floor(seconds / interval.seconds);
+      if (count >= 1) {
+        return `${count} ${interval.label}${count > 1 ? "s" : ""} ago`;
+      }
     }
+
+    return "just now";
   }
 
-  return "just now";
-}
-
-
   return (
-    <div className="flex flex-col gap-[14px] pt-[20px] px-[20px]">
+    <div className={`flex flex-col gap-[14px] pt-[20px] ${!canEditOrDelete && 'pb-[40]'} px-[20px]`}>
       <span className="text-[20px] text-[#333333] font-[700] uppercase">
         Comments
       </span>
@@ -192,12 +172,14 @@ function timeAgo(date) {
                 </p>
               </div>
 
-              <button
-                onClick={() => onDelete(c._id)}
-                className="text-[#666666] cursor-pointer"
-              >
-                <span className="fluent--delete-16-regular"></span>
-              </button>
+              {(c?.email === user?.email || canEditOrDelete) && 
+                <button
+                  onClick={() => onDelete(c._id)}
+                  className="text-[#666666] cursor-pointer"
+                >
+                  <span className="fluent--delete-16-regular"></span>
+                </button>
+              }
             </div>
           ))}
         </div>

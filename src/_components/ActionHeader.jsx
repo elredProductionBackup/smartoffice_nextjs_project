@@ -4,6 +4,8 @@ import { IoChevronBack, IoChevronForward } from "react-icons/io5";
 
 import { addWeeks, formatWeekRange } from "@/utils/week";
 import { useEffect } from "react";
+import { useSelector } from "react-redux";
+
 
 export default function ActionHeader({
   activeItem,
@@ -22,6 +24,10 @@ export default function ActionHeader({
 }) {
   const isWeekly = activeItem === "weekly";
   const week = formatWeekRange(weekDate);
+  const { user } = useSelector((state) => state.auth);
+  const isAdmin = user?.userType?.toLowerCase() === "admin";
+
+  const canEditOrDelete = isAdmin;
   
 
   return (
@@ -32,7 +38,7 @@ export default function ActionHeader({
           Action Items
         </h2>
 
-        {activeItem === "today" && (
+        {activeItem === "today" && canEditOrDelete && (
           <button
             onClick={!disableWhileAdd ? onAdd : undefined}
             disabled={disableWhileAdd}

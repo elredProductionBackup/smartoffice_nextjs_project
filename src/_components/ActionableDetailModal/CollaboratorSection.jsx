@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { fetchCollaborators } from "@/store/actionable/actionableThunks";
 import Image from "next/image";
 
-export default function CollaboratorSection({ task, collaborators = [], onChange }) {
+export default function CollaboratorSection({ task, collaborators = [], onChange,canEditOrDelete }) {
   const dispatch = useDispatch();
   const collaboratorContainerRef = useRef(null);
 
@@ -28,7 +28,6 @@ export default function CollaboratorSection({ task, collaborators = [], onChange
   useEffect(() => {
     if (query.length < 3) return;
 
-    // clear previous debounce
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
     }
@@ -96,12 +95,13 @@ export default function CollaboratorSection({ task, collaborators = [], onChange
       <div className="relative flex flex-col" ref={collaboratorContainerRef}>
               {/* CLICKABLE CONTAINER */}
       <div
-        onClick={() => setIsActive(true)}
-        className="border-[1.4px] border-[#CCCCCC] rounded-[4px] p-[8px] flex items-center flex-wrap gap-x-[8px] gap-y-[10px] cursor-text min-h-[48px]"
+        onClick={() => canEditOrDelete && setIsActive(true)}
+
+        className={`${canEditOrDelete && 'border-[1.4px] border-[#CCCCCC] rounded-[4px] px-[8px]'} py-[8px] flex items-center flex-wrap gap-x-[8px] gap-y-[10px] cursor-text min-h-[48px]`}
       >
         {collaborators.length === 0 && !isActive && (
-          <span className="pl-[8px] font-[500] text-[#999999]">
-            Type at least 3 chars to see matching collaborators
+          <span className={`${canEditOrDelete && 'pl-[8px]'} font-[500] text-[#999999]`}>
+            {canEditOrDelete ? `Type at least 3 chars to see matching collaborators`:'No collaborators added yet'}
           </span>
         )}
 
@@ -112,16 +112,18 @@ export default function CollaboratorSection({ task, collaborators = [], onChange
           >
             {/* <div className="w-[24px] h-[24px] bg-[#CCCCCC] rounded-full" /> */}
             <Image src={u?.dp || u?.dpURL} alt="Collaborator Avatar" width={24} height={24} className="h-[24px] w-[24px] rounded-full bg-[#CCCCCC] object-cover" />
-            <span className="text-[14px] font-[500]">{u.name}</span>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                removeUser(u.userCode);
-              }}
-              className="pr-[6px] cursor-pointer"
-            >
-              ✕
-            </button>
+            <span className={`text-[14px] font-[500] ${!canEditOrDelete && 'pr-[6px]'}`}>{u.name}</span>
+            {canEditOrDelete &&
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  removeUser(u.userCode);
+                }}
+                className="pr-[6px] cursor-pointer"
+              >
+                ✕
+              </button>
+            }
           </div>
         ))}
 

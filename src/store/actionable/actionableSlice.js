@@ -371,91 +371,90 @@ const actionableSlice = createSlice({
           state.collaboratorsLoading = false;
         })
         // Comments
-.addCase(createComment.pending, (state, action) => {
-  const { tempId, actionableId, comment } = action.meta.arg;
+        .addCase(createComment.pending, (state, action) => {
+          const { tempId, actionableId, comment } = action.meta.arg;
 
-  const parent = state.items.find(
-    (i) => i.actionableId === actionableId
-  );
-  if (!parent) return;
+          const parent = state.items.find(
+            (i) => i.actionableId === actionableId
+          );
+          if (!parent) return;
 
-  if (!parent.comments) parent.comments = [];
+          if (!parent.comments) parent.comments = [];
 
-  parent.comments.unshift({
-    _id: tempId,
-    clientId: tempId,
-    comment,
-    name: getAuthorName(), 
-    createdAt: new Date().toISOString(),
-    isCompleted: false,
-    isOptimistic: true,
-  });
-})
+          parent.comments.unshift({
+            _id: tempId,
+            clientId: tempId,
+            comment,
+            name: getAuthorName(), 
+            createdAt: new Date().toISOString(),
+            isCompleted: false,
+            isOptimistic: true,
+          });
+        })
 
-.addCase(createComment.fulfilled, (state, action) => {
-  const { actionableId, comment, tempId } = action.payload;
+        .addCase(createComment.fulfilled, (state, action) => {
+          const { actionableId, comment, tempId } = action.payload;
 
-  const parent = state.items.find(
-    (i) => i.actionableId === actionableId
-  );
-  if (!parent) return;
+          const parent = state.items.find(
+            (i) => i.actionableId === actionableId
+          );
+          if (!parent) return;
 
-  const index = parent.comments.findIndex(
-    (c) => c.clientId === tempId
-  );
+          const index = parent.comments.findIndex(
+            (c) => c.clientId === tempId
+          );
 
-  if (index !== -1) {
-    parent.comments[index] = {
-      ...comment,
-      clientId: tempId,
-      isOptimistic: false,
-    };
-  }
-})
+          if (index !== -1) {
+            parent.comments[index] = {
+              ...comment,
+              clientId: tempId,
+              isOptimistic: false,
+            };
+          }
+        })
 
-.addCase(createComment.rejected, (state, action) => {
-  const { actionableId, tempId } = action.payload || {};
+        .addCase(createComment.rejected, (state, action) => {
+          const { actionableId, tempId } = action.payload || {};
 
-  const parent = state.items.find(
-    (i) => i.actionableId === actionableId
-  );
-  if (!parent) return;
+          const parent = state.items.find(
+            (i) => i.actionableId === actionableId
+          );
+          if (!parent) return;
 
-  parent.comments = parent.comments.filter(
-    (c) => c.clientId !== tempId
-  );
-})
-.addCase(removeComment.pending, (state, action) => {
-  const { actionableId, commentId } = action.meta.arg;
+          parent.comments = parent.comments.filter(
+            (c) => c.clientId !== tempId
+          );
+        })
+        .addCase(removeComment.pending, (state, action) => {
+          const { actionableId, commentId } = action.meta.arg;
 
-  const parent = state.items.find(
-    (i) => i.actionableId === actionableId
-  );
-  if (!parent || !parent.comments) return;
+          const parent = state.items.find(
+            (i) => i.actionableId === actionableId
+          );
+          if (!parent || !parent.comments) return;
 
-  const index = parent.comments.findIndex(
-    (c) => c._id === commentId
-  );
+          const index = parent.comments.findIndex(
+            (c) => c._id === commentId
+          );
 
-  if (index !== -1) {
-    parent._removedComment = parent.comments[index]; // backup
-    parent.comments.splice(index, 1);
-  }
-})
-.addCase(removeComment.fulfilled, (state) => {
-  // no-op: optimistic delete already done
-})
-.addCase(removeComment.rejected, (state, action) => {
-  const { actionableId } = action.payload || {};
+          if (index !== -1) {
+            parent._removedComment = parent.comments[index]; // backup
+            parent.comments.splice(index, 1);
+          }
+        })
+        .addCase(removeComment.fulfilled, (state) => {
+        })
+        .addCase(removeComment.rejected, (state, action) => {
+          const { actionableId } = action.payload || {};
 
-  const parent = state.items.find(
-    (i) => i.actionableId === actionableId
-  );
-  if (!parent || !parent._removedComment) return;
+          const parent = state.items.find(
+            (i) => i.actionableId === actionableId
+          );
+          if (!parent || !parent._removedComment) return;
 
-  parent.comments.unshift(parent._removedComment);
-  delete parent._removedComment;
-})
+          parent.comments.unshift(parent._removedComment);
+          delete parent._removedComment;
+        })
 
   },
 });

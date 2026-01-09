@@ -52,6 +52,11 @@ useEffect(() => {
     onClose();
   };
 
+  const { user } = useSelector((state) => state.auth);
+  const isAdmin = user?.userType?.toLowerCase() === "admin";
+
+  const canEditOrDelete = isAdmin;
+
   return (
     <div
       className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center"
@@ -71,6 +76,7 @@ useEffect(() => {
               title,
             }))
           }
+          canEditOrDelete={canEditOrDelete}
         />
 
         {/* Link to Event (Disabled) */}
@@ -90,13 +96,16 @@ useEffect(() => {
           onToggleSubtask={onToggleSubtask}
           onUpdateSubtask={onUpdateSubtask}
           onDeleteSubtask={onDeleteSubtask}
+          canEditOrDelete={canEditOrDelete}
         />
         <CollaboratorSection 
           task={actionable}
           collaborators={draft.collaborators}
           onChange={(collaborators) =>
             setDraft({ ...draft, collaborators })
-          }/>
+          }
+          canEditOrDelete={canEditOrDelete}
+          />
         <NotesSection
           value={draft.notes}
           onChange={(notes) =>
@@ -105,10 +114,11 @@ useEffect(() => {
               notes,
             }))
           }
+          canEditOrDelete={canEditOrDelete}
         />
         <CommentsSection
           comments={actionable.comments}
-          onAdd={(value) => {
+          onAdd={(value,user) => {
             const tempId = `temp-comment-${Date.now()}`;
 
             dispatch(
@@ -116,6 +126,7 @@ useEffect(() => {
                 tempId,
                 actionableId: actionable.actionableId,
                 comment: value,
+                user:user
               })
             );
           }}
@@ -127,12 +138,9 @@ useEffect(() => {
               })
             )
           }
+          canEditOrDelete={canEditOrDelete}
         />
-
-
-
-
-        <FooterActions onClose={onClose} onSave={handleSave}/>
+        {canEditOrDelete && <FooterActions onClose={onClose} onSave={handleSave}/>}
       </div>
     </div>
   );

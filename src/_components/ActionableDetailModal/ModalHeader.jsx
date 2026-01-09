@@ -7,6 +7,7 @@ export default function ModalHeader({
   addedBy,
   onClose,
   onUpdateTitle,
+  canEditOrDelete
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [value, setValue] = useState(title);
@@ -95,7 +96,7 @@ useEffect(() => {
             <span className="akar-icons--cross small-cross" />
           </button>
 
-          {!isEditing && (
+          {!isEditing && canEditOrDelete && (
             <button
               onClick={() => setIsEditing(true)}
               className="text-[#666] cursor-pointer"

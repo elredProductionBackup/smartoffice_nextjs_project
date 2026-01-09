@@ -170,24 +170,19 @@ export const changeDueDateTime = createAsyncThunk(
   async ({ actionableId, dueDate, dueTime }, { rejectWithValue }) => {
     try {
       const networkClusterCode = localStorage.getItem("networkClusterCode");
+      
+      const currentUtcTime = moment.utc();
 
-      const istMoment = moment(
-        `${dueDate} ${dueTime}`,
-        "YYYY-MM-DD HH:mm"
+      const utcMoment = moment.utc(
+        `${dueDate} ${currentUtcTime.format("HH:mm:ss")}`,
+        "YYYY-MM-DD HH:mm:ss"
       );
-
-      if (!istMoment.isValid()) {
-        return rejectWithValue("Invalid due date or time");
-      }
-
-      const utcMoment = istMoment
-        .clone()
-        .subtract(5, "hours")
-        .subtract(30, "minutes");
 
       const dueDateTimeStamp = utcMoment.format(
         "YYYY-MM-DDTHH:mm:ss.SSS[Z]"
       );
+
+      const istMoment = utcMoment.clone().add(5, "hours").add(30, "minutes");
 
       const res = await addActionable({
         actionableId,
@@ -355,8 +350,10 @@ export const createComment = createAsyncThunk(
   "actionable/createComment",
   async (payload, { rejectWithValue }) => {
     try {
-      const { tempId, actionableId, comment } = payload;
+      const { tempId, actionableId, comment,user } = payload;
       const networkClusterCode = localStorage.getItem("networkClusterCode");
+
+      console.log(user)
 
       const res = await addComment({
         _id: "",
@@ -375,7 +372,8 @@ export const createComment = createAsyncThunk(
 
       return {
         actionableId,
-        comment: res.data.result[0],
+        comment: {...res.data.result[0], name: user?.firstname,
+          dpURL: user?.dpURL,email:user?.email  },
         tempId,
       };
     } catch (err) {

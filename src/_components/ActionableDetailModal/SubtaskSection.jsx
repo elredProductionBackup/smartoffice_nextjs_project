@@ -7,6 +7,7 @@ export default function SubtaskSection({
   onToggleSubtask,
   onUpdateSubtask,
   onDeleteSubtask,
+  canEditOrDelete
 }) {
   const [showInput, setShowInput] = useState(false);
   const [value, setValue] = useState("");
@@ -32,18 +33,20 @@ export default function SubtaskSection({
         <span className="flex items-center gap-[10px] text-[20px] text-[#333333]">
            <span className="uppercase font-[700]">Subtask</span> <span className="text-[14px] font-[500]">(Max. 10 subtask can be added)</span>
         </span>
-        <button
-          disabled={task.subTask?.length >= 10}
-          onClick={() => setShowInput(true)}
-          className={`w-[24px] h-[24px] rounded-full flex items-center justify-center text-white text-[24px] cursor-pointer
-               ${
-                 (task.subTask?.length || 0) >= 10
-                   ? "cursor-not-allowed"
-                   : "bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)]"
-               }`}
-        >
-          +
-        </button>
+        {canEditOrDelete &&
+          <button
+            disabled={task.subTask?.length >= 10}
+            onClick={() => setShowInput(true)}
+            className={`w-[24px] h-[24px] rounded-full flex items-center justify-center text-white text-[24px] cursor-pointer
+                ${
+                  (task.subTask?.length || 0) >= 10
+                    ? "cursor-not-allowed"
+                    : "bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)]"
+                }`}
+          >
+            +
+          </button>
+        }
       </div>
 
       {showInput && (
@@ -82,6 +85,7 @@ export default function SubtaskSection({
           onToggle={onToggleSubtask}
           onDelete={onDeleteSubtask}
           onCommitEdit={commitEdit}
+          canEditOrDelete={canEditOrDelete}
         />
       ))}
     </div>

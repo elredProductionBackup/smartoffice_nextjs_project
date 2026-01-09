@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 
-export default function NotesSection({ value, onChange }) {
+export default function NotesSection({ value, onChange, canEditOrDelete }) {
   const textareaRef = useRef(null);
 
   const adjustHeight = () => {
@@ -23,10 +23,12 @@ export default function NotesSection({ value, onChange }) {
 
       <textarea
         ref={textareaRef}
-        value={value}
+        value={
+          canEditOrDelete ? value : value || "No notes added yet"
+        } 
         placeholder="Write your notes here"
         rows={1}
-        className="
+        className={`
           border-transparent
           min-h-[22px]
           max-h-[88px]
@@ -35,9 +37,11 @@ export default function NotesSection({ value, onChange }) {
           text-[16px]
           font-[600]
           resize-none
-        "
-        onChange={(e) => onChange(e.target.value)}
+          ${!canEditOrDelete ? "text-[#999999] cursor-default" : "text-[#000000]"}
+        `}
+        onChange={(e) => canEditOrDelete && onChange(e.target.value)}
         onInput={adjustHeight}
+        readOnly={!canEditOrDelete}
       />
     </div>
   );
