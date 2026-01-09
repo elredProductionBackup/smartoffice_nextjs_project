@@ -5,11 +5,10 @@ import Link from "next/link";
 import DashboardActionableShimmer from "./Shimmer/DashboardActionableShimmer";
 
 export default function DashboardActionableList({ data = [], loading = false, }) {
-  if (!Array.isArray(data)) {
-    console.error("DashboardActionableList expected array, got:", data);
-    return null;
-  }
-  console.log(data)
+  // if (!Array.isArray(data)) {
+  //   console.error("DashboardActionableList expected array, got:", data);
+  //   return null;
+  // }
 
   return (
     <div className="flex flex-col mt-6 rounded-2xl bg-[#F2F7FF] px-[24px] pt-[24px] max-h-[450px] ">

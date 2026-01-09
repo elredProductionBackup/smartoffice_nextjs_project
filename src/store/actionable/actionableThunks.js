@@ -353,7 +353,6 @@ export const createComment = createAsyncThunk(
       const { tempId, actionableId, comment,user } = payload;
       const networkClusterCode = localStorage.getItem("networkClusterCode");
 
-      console.log(user)
 
       const res = await addComment({
         _id: "",
