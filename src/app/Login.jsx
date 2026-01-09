@@ -55,7 +55,7 @@ const Login = () => {
     <GuestRoute>
       <div className="h-screen flex items-center justify-center">
         <div className="w-full sm:max-w-lg mx-5 flex flex-col items-center">
-          <Image src={logo} alt="smart-office" className="mb-15" />
+          <Image src={'/logo/smart-networks.svg'} alt="smart-office" className="mb-15" width={239} height={62}/>
 
           {login ? (
             <LoginComponent
