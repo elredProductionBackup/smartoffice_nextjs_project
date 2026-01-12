@@ -108,7 +108,8 @@ export default function ActionItems() {
         category: "all",
         notes: "",
         linkedEvent: [],
-        dueDateTimeStamp: moment.utc().toISOString(),
+        // dueDateTimeStamp: moment.utc().toISOString(),
+        dueDateTimeStamp: "",
       })
     );
 

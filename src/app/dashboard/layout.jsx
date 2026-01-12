@@ -104,7 +104,7 @@ export default function DashboardLayout({ children }) {
 
   const adminMenu = [
   { name: "Dashboard", path: "/dashboard/profile", logo: dashboardLogo },
-  { name: "Checklist", path: "/dashboard/checklist", logo: checklistLogo },
+  // { name: "Checklist", path: "/dashboard/checklist", logo: checklistLogo },
   { name: "Vendors", path: "/dashboard/actionable", logo: actionableLogo },
   {
     name: "Members",

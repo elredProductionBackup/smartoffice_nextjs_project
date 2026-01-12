@@ -149,13 +149,13 @@ export default function MemberDetailsModal({ member, onClose }) {
                   {/* Title tool tip  */}
                   <div className="relative flex"  ref={tooltipRef}>
                     <p
-                      className="text-[20px] text-[#666666] font-[500] capitalize cursor-pointer"
+                      className={`text-[20px] text-[#666666] font-[500] capitalize ${formattedTitles.length > 2 && 'cursor-pointer'}`}
                       onClick={() => setTooltipOpen(prev => !prev)}
                     >
                       {display}
                     </p>
 
-                    {tooltipOpen && (
+                    {tooltipOpen && formattedTitles.length > 2 && (
                       <div className="absolute z-50 w-max min-w-[200px] bg-[#ffffff] text-[#333] text-[16px] font-[500] p-[10px] rounded-[20px] whitespace-nowrap top-[100%] right-[0%] flex flex-col gap-[4px] mt-1" style={{boxShadow: `0px 4px 4px 0px #99999940`}} >
                         {formattedTitles.map((title, index) => {
                           return (
@@ -287,7 +287,7 @@ export default function MemberDetailsModal({ member, onClose }) {
               >
               <div className="actions-nested-popup sticky top-[0px] right-[0px] flex gap-[20px] items-center justify-end">
                 {/* Download */}
-               <Link
+               {/* <a
                   href={activeDoc.fileUrl}
                   target="_blank"
                   download
@@ -297,7 +297,17 @@ export default function MemberDetailsModal({ member, onClose }) {
                   title="Download file"
                 >
                   <span className="material-symbols--download-rounded"></span>
-                </Link>
+                </a> */}
+                <a
+                  href={`/api/download?fileUrl=${encodeURIComponent(activeDoc.fileUrl)}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="text-[#333] bg-[#EEEEEE] cursor-pointer flex items-center justify-center rounded-full h-[35px] w-[35px]"
+                  title="Download file"
+                >
+                  <span className="material-symbols--download-rounded"></span>
+                </a>
+
+
 
                  {/* Close */}
                 <button
