@@ -156,11 +156,11 @@ export default function CommentsSection({ comments = [], onAdd, onDelete, canEdi
 
               <div className="flex-1">
                 {/* AUTHOR */}
-               <div className="flex items-center gap-[20px] h-[32px]">
+               <div className="flex items-center gap-[6px] h-[32px] items-center">
                   <span className="text-[18px] font-[700] text-[#333333] capitalize">
                     {c.name}
                   </span>
-
+                  <span className="min-h-[4px] w-[4px] rounded-[50px] bg-[#999999] ml-[4px]"></span>
                   <span className="text-[12px] text-[#999999]">
                     {timeAgo(c.createdAt)}
                   </span>

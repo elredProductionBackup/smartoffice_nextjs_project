@@ -21,7 +21,7 @@ export default function DashboardActionableList({ data = [], loading = false, })
           {/* Header */}
           <div className="flex items-center justify-between mb-[20px]">
             <h3 className="text-[20px] font-[700] text-[#333]">Actionable</h3>
-            <Link href={`/dashboard/actionable`} className="text-[14px] font-[600] text-[#0B57D0] border border-[#0B57D0] px-[14px] py-[4px] rounded-full cursor-pointer">
+            <Link href={`/dashboard/actionable?item=all&page=1`} className="text-[14px] font-[600] text-[#0B57D0] border border-[#0B57D0] px-[14px] py-[4px] rounded-full cursor-pointer">
               {data.length ? `View all` : `Go to actionable`}
             </Link>
           </div>
@@ -82,6 +82,7 @@ export default function DashboardActionableList({ data = [], loading = false, })
                       </span>
 
                       {/* Avatars */}
+                      {/* <div className="flex -space-x-2 h-[24px] w-[72px]"> */}
                       <div className="flex -space-x-2 h-[24px] w-[24px]">
                         {Array.isArray(item.collaborators) &&
                           item.collaborators.slice(0, 1).map((_, index) => (

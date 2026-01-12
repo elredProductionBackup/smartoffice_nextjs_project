@@ -33,15 +33,15 @@ export default function SubtaskSection({
         <span className="flex items-center gap-[10px] text-[20px] text-[#333333]">
            <span className="uppercase font-[700]">Subtask</span> <span className="text-[14px] font-[500]">(Max. 10 subtask can be added)</span>
         </span>
-        {canEditOrDelete &&
+        {canEditOrDelete && 
           <button
-            disabled={task.subTask?.length >= 10}
+            disabled={task.subTask?.length >= 10 || showInput}
             onClick={() => setShowInput(true)}
-            className={`w-[24px] h-[24px] rounded-full flex items-center justify-center text-white text-[24px] cursor-pointer
+            className={`w-[24px] h-[24px] rounded-full flex items-center justify-center text-white text-[24px] 
                 ${
                   (task.subTask?.length || 0) >= 10
-                    ? "cursor-not-allowed"
-                    : "bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)]"
+                    ? "cursor-not-allowed bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)] opacity-50"
+                    : "bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)] cursor-pointer"
                 }`}
           >
             +
