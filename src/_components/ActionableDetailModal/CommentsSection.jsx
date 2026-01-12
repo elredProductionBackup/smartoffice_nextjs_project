@@ -106,6 +106,12 @@ export default function CommentsSection({ comments = [], onAdd, onDelete, canEdi
         <input
           value={comment}
           onChange={(e) => setComment(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              handlePost();
+            }
+          }}
           className="flex-1 border-none outline-none bg-transparent"
           placeholder="Add a comment"
         />

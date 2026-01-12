@@ -18,6 +18,20 @@ export default function MembersTable({ data=[], total, documents = false,current
  const [openTooltipFor, setOpenTooltipFor] = useState(null);
   //  const tooltipTableRef = useRef(null);
   const [openPhoneFor, setOpenPhoneFor] = useState(null);
+  const [copiedPhoneFor, setCopiedPhoneFor] = useState(null);
+
+  const handleCopyPhone = (e, phone, memberId) => {
+    e.stopPropagation();
+
+    navigator.clipboard.writeText(phone);
+    setCopiedPhoneFor(memberId);
+
+    setTimeout(() => {
+      setCopiedPhoneFor(null);
+    }, 2000);
+  };
+
+
 
   const showPhoneDetails = (e, member) => {
     e.stopPropagation();
@@ -260,6 +274,7 @@ export default function MembersTable({ data=[], total, documents = false,current
                     <div
                       className={`w-[250px] bg-white z-30 p-5 rounded-[20px] absolute w-52 shadow-[0px_3px_4px_rgba(190,190,190,0.25)]
                       ${openUpwards ? "bottom-12" : "top-12"} -right-2`} ref={phonePopupRef}
+                      onClick={(e)=>e.stopPropagation()}
                     >
                       <div
                         className={`bg-white w-[24px] h-[24px] rotate-45 absolute right-4 
@@ -271,23 +286,35 @@ export default function MembersTable({ data=[], total, documents = false,current
                       </div>
 
                       <div className="min-w-[180px] flex gap-2.5 items-center justify-between">
-                        <div className="flex items-center gap-[6px]">
-                          <div className="bg-[#E6EBF2] rounded-full h-8 w-8 flex items-center justify-center">
-                            <Image src={callIcon} alt="call" width={20} />
-                          </div>
-                          <div className="text-[#333333] text-base font-semibold">
-                            {member.phone}
-                          </div>
-                        </div>
-                        <button
+                            <div className="flex items-center gap-[6px] hover:underline" onClick={(e) => handleCopyPhone(e, member.phone, member.id)}>
+                              <div className="bg-[#E6EBF2] rounded-full h-8 w-8 flex items-center justify-center">
+                                <Image src={callIcon} alt="call" width={20} />
+                              </div>
+                              <div className="text-[#333333] text-base font-semibold">
+                                {/* Copy */}
+                                {member.phone}
+                              </div>
+                            </div>
+                          <div className="relative">
+                          {/* COPIED TOOLTIP */}
+                          {copiedPhoneFor === member.id && (
+                            <div className="absolute -top-8 left-1/2 -translate-x-1/2
+                                        bg-[#333] text-white text-xs px-2 py-1
+                                        rounded-md whitespace-nowrap shadow-md z-50"
+                            >
+                              Copied
+                            </div>
+                          )}
+                          <button
                             type="button"
-                            onClick={(e) => {e.stopPropagation(); navigator.clipboard.writeText(member.phone)}}
-                            className="cursor-pointer flex items-center"
+                            
+                            className="cursor-pointer flex items-center justify-center"
                             title="Copy phone number"
                           >
                             <span className="lucide--copy"></span>
                           </button>
-                      </div>
+                        </div>
+                        </div>
                     </div>
                   )}
                 </div>
