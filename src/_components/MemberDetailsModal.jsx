@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 
 const MembersDetailsShimmer = () => {
   return (
@@ -81,6 +82,8 @@ const MembersDetailsShimmer = () => {
 
 
 export default function MemberDetailsModal({ member, onClose }) {
+  const [tooltipOpen, setTooltipOpen] = useState(false);
+  const tooltipRef = useRef(null);
 
   // const [avatarLoaded, setAvatarLoaded] = useState(false);
   const [activeDoc, setActiveDoc] = useState(null);
@@ -90,6 +93,22 @@ export default function MemberDetailsModal({ member, onClose }) {
     const { city, state, country } = location;
     return [city, state, country].filter(Boolean).join(", ");
   };
+
+  const formattedTitles = member?.title?.map(t => t.value[0].toUpperCase() + t.value.slice(1)) || [];
+  const display = formattedTitles.length <= 2
+    ? formattedTitles.join(" | ")
+    : `${formattedTitles.slice(0, 2).join(" | ")} | +${formattedTitles.length - 2}`;
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (tooltipRef.current && !tooltipRef.current.contains(e.target)) {
+        setTooltipOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center" onClick={onClose}>
@@ -111,12 +130,44 @@ export default function MemberDetailsModal({ member, onClose }) {
             className="rounded-full max-h-[100]" />:
             <div className="min-w-[100px] h-[100px] bg-[#D4DFF1] grid place-items-center text-[42px] font-[600] rounded-full">{member.name?.slice(0,1)}</div>}
 
-          <div className="w-[100%] flex flex-col gap-[6px]">
+          <div className="w-[100%] flex flex-col items-start gap-[6px]">
             <div className="w-[100%] flex items-center justify-between">
               <h2 className="text-[32px] text-[#333333] font-[600]">{member.name}</h2>
-              <span className="logos--whatsapp-icon"></span>
+              {/* <span className="logos--whatsapp-icon"></span> */}
+                <Link
+                    href={`https://wa.me/${member?.phone}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    title="Chat on WhatsApp"
+                    className="cursor-pointer"
+                  >
+                    <span className="logos--whatsapp-icon"></span>
+                  </Link>
             </div>
-            <p className="text-[20px] text-[#666666] font-[500]">{member.title}</p>
+                  {/* Title tool tip  */}
+                  <div className="relative flex"  ref={tooltipRef}>
+                    <p
+                      className="text-[20px] text-[#666666] font-[500] capitalize cursor-pointer"
+                      onClick={() => setTooltipOpen(prev => !prev)}
+                    >
+                      {display}
+                    </p>
+
+                    {tooltipOpen && (
+                      <div className="absolute z-50 w-max min-w-[200px] bg-[#ffffff] text-[#333] text-[16px] font-[500] p-[10px] rounded-[20px] whitespace-nowrap top-[100%] right-[0%] flex flex-col gap-[4px] mt-1" style={{boxShadow: `0px 4px 4px 0px #99999940`}} >
+                        {formattedTitles.map((title, index) => {
+                          return (
+                            <div key={index} className={`pl-[12px] h-[30px] w-[180px] `}>
+                              {title}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
               {formatLocation(member.location) && (
                   <div className="flex items-center gap-[8px] text-[16px] text-[#666666] font-[600]">
                     <span className="h-[24px] w-[24px] rounded-full bg-[#E6EBF2] grid place-items-center">
@@ -166,7 +217,7 @@ export default function MemberDetailsModal({ member, onClose }) {
             <span className="text-[20px] font-[700] uppercase">Children Name</span>
             <span className="text-[16px] font-[600]">
               {member?.children?.length
-                ? member.children.join(", ")
+                ? member.children.map(child => child.name).join(", ")
                 : "—"}
             </span>
           </div>
@@ -177,23 +228,50 @@ export default function MemberDetailsModal({ member, onClose }) {
         {/* Documents */}
         <div className="flex flex-col gap-[12px]">
             <div className="text-[20px] font-[700] uppercase">Documents Uploaded</div>{" "}
-              {member?.documents?.length? 
-              <div className="flex gap-[20px]">
-                {member.documents?.map((item,index)=>{
-                  return <div key={index} className="flex flex-col gap-[8px] items-center text-[#666666] font-[500]" >
-                      <div className="flex items-center overflow-hidden text-center w-[90px] h-[100px] bg-[#E3EEFF] border-2 border-[#E6E6FF] rounded-[10px] text-[14px] text-[#666666] font-[500] relative cursor-pointer" onClick={() => setActiveDoc(item)}>
-                        <div className="absolute t-0 l-0 w-[100%] h-[100%] bg-[#0002]"></div>
-                        <Image src={item.preview} alt="Preview Image" className="w-[100%] h-[100%] object-cover" width={500} height={500}/>
-                      </div>
-                      {item.title}
+          {member?.documents?.length ? (
+            <div className="flex gap-[20px]">
+              {member.documents.map((item, index) => {
+                const imageSrc =
+                  item.docType === "pdf" ? item?.pdfPreview : item?.fileUrl;
+
+                const hasImage = imageSrc && imageSrc.trim() !== "";
+
+                return (
+                  <div
+                    key={index}
+                    className="flex flex-col gap-[8px] items-center text-[#666666] font-[500] capitalize"
+                  >
+                    <div
+                      className="flex items-center justify-center overflow-hidden text-center w-[90px] h-[100px] bg-[#E3EEFF] border-2 border-[#E6E6FF] rounded-[10px] text-[14px] text-[#666666] font-[500] relative cursor-pointer"
+                      onClick={() => hasImage && setActiveDoc(item)}
+                    >
+                      <div className="absolute top-0 left-0 w-full h-full bg-[#0002]"></div>
+
+                      {hasImage ? (
+                        <Image
+                          src={imageSrc}
+                          alt="Preview Image"
+                          className="w-full h-full object-cover"
+                          width={500}
+                          height={500}
+                        />
+                      ) : (
+                        <span className="z-10 text-[12px] text-[#333] ">
+                          No Image Found
+                        </span>
+                      )}
+                    </div>
+                    {item.docType}
                   </div>
-                })}
-              </div>
-              :
-              <div className="flex items-center px-[13px] text-center w-[90px] h-[100px] bg-[#F8F8F8] border-2 border-[#ECECEC] rounded-[10px] text-[14px] text-[#666666] font-[500]">
-                No document
-              </div>
-              }
+                );
+              })}
+            </div>
+          ) : (
+            <div className="flex items-center justify-center px-[13px] text-center w-[90px] h-[100px] bg-[#F8F8F8] border-2 border-[#ECECEC] rounded-[10px] text-[14px] text-[#666666] font-[500]">
+              No document
+            </div>
+          )}
+
         </div>
 
         {/* Nested popup example */}
@@ -209,19 +287,22 @@ export default function MemberDetailsModal({ member, onClose }) {
               >
               <div className="actions-nested-popup sticky top-[0px] right-[0px] flex gap-[20px] items-center justify-end">
                 {/* Download */}
-                <a
-                  href={activeDoc.preview}
-                  download
+               <Link
+                  href={activeDoc.fileUrl}
                   target="_blank"
-                  className="text-[#999999] cursor-pointer"
+                  download
+                  onClick={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  className="text-[#333] bg-[#EEEEEE] cursor-pointer flex items-center justify-center rounded-full h-[35px] w-[35px]"
+                  title="Download file"
                 >
                   <span className="material-symbols--download-rounded"></span>
-                </a>
+                </Link>
 
                  {/* Close */}
                 <button
                   onClick={() => setActiveDoc(null)}
-                  className="text-[#999999] cursor-pointer"
+                  className="text-[#333] bg-[#EEEEEE] cursor-pointer flex items-center justify-center rounded-full h-[35px] w-[35px]"
                 >
                   <span className="akar-icons--cross"></span>
                 </button>
@@ -229,13 +310,13 @@ export default function MemberDetailsModal({ member, onClose }) {
               {/* Image */}
               <div className="image-box flex flex-col gap-[20px] flex-1 items-center justify-center px-[30px] text-[#FFFFFF] font-[500]">
                 <Image
-                src={activeDoc.preview}
+                src={activeDoc.fileUrl}
                 alt="Document Preview"
                 width={500}
                 height={500}
                 className="w-[100%] object-contain rounded-[12px]"
                 />
-                {activeDoc.title}
+                {activeDoc.docType}
               </div>
             </div>
           </div>

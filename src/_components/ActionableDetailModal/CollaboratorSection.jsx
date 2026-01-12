@@ -26,7 +26,7 @@ export default function CollaboratorSection({ task, collaborators = [], onChange
 
   /* -------------------- DEBOUNCED SEARCH -------------------- */
   useEffect(() => {
-    if (query.length < 3) return;
+    if (query.length < 0) return;
 
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
@@ -101,7 +101,7 @@ export default function CollaboratorSection({ task, collaborators = [], onChange
       >
         {collaborators.length === 0 && !isActive && (
           <span className={`${canEditOrDelete && 'pl-[8px]'} font-[500] text-[#999999]`}>
-            {canEditOrDelete ? `Type at least 3 chars to see matching collaborators`:'No collaborators added yet'}
+            {canEditOrDelete ? `Add collaborator`:'No collaborators added yet'}
           </span>
         )}
 
@@ -139,7 +139,7 @@ export default function CollaboratorSection({ task, collaborators = [], onChange
       </div>
 
       {/* DROPDOWN */}
-      {query.length >= 3 && (
+      {query.length >= 0 && isActive && (
         <div
           className="absolute left-0 top-[calc(100%+2px)] min-h-[250px] w-full
             rounded-[4px] bg-white z-[7] overflow-auto"

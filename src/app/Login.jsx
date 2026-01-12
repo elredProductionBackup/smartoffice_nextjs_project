@@ -1,6 +1,5 @@
 "use client";
 
-import logo from "@/assets/logo/logo.svg";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import LoginComponent from "@/_components/LoginComponent";

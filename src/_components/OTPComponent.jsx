@@ -34,7 +34,7 @@ const OTPComponent = ({ email, length = 6, networkClusterCode, data }) => {
       otp: otpValue,
       networkClusterCode,
     };
-    setError(false); // ✅ reset error on retry
+    setError(false);
 
     try {
       showLoader();
@@ -56,12 +56,14 @@ const OTPComponent = ({ email, length = 6, networkClusterCode, data }) => {
 
       if (res?.data?.errorCode === -1) {
         setError(true);
+        setOtp(Array(length).fill(""));
         hideLoader();
         return;
       }
     } catch (err) {
       console.error("Verify OTP error:", err);
       setError(true);
+      setOtp(Array(length).fill(""));
       hideLoader()
     } 
   };

@@ -10,10 +10,13 @@ import { CONSTANTS } from "@/utils/data";
 // import { useModalStore } from "@/store/useModalStore";
 import { useEffect, useRef, useState } from "react";
 import MembersTableShimmer from "../Shimmer/MembersTableShimmer";
+import Link from "next/link";
 
 export default function MembersTable({ data=[], total, documents = false,currentPage,loading, onPageChange,onRowClick,search = "",tab }) {
   // const open = useModalStore((state) => state.open);
  const phonePopupRef = useRef(null);
+ const [openTooltipFor, setOpenTooltipFor] = useState(null);
+  //  const tooltipTableRef = useRef(null);
   const [openPhoneFor, setOpenPhoneFor] = useState(null);
 
   const showPhoneDetails = (e, member) => {
@@ -27,7 +30,7 @@ export default function MembersTable({ data=[], total, documents = false,current
   const isSearching = search?.length >= 3;
   const isEmpty = data.length === 0;
 
-    useEffect(() => {
+  useEffect(() => {
     function handleClickOutside(e) {
       if (
         openPhoneFor &&
@@ -43,6 +46,34 @@ export default function MembersTable({ data=[], total, documents = false,current
   }, [openPhoneFor]);
 
 
+  useEffect(() => {
+  const handleClickOutside = (e) => {
+    if (!openTooltipFor) return;
+
+    const tooltipEl = document.getElementById(
+      `tooltip-${openTooltipFor}`
+    );
+
+    // click happened outside tooltip
+    if (tooltipEl && !tooltipEl.contains(e.target)) {
+      setOpenTooltipFor(null);
+    }
+  };
+
+  document.addEventListener("mousedown", handleClickOutside);
+  return () => document.removeEventListener("mousedown", handleClickOutside);
+}, [openTooltipFor]);
+
+
+
+
+  function formatTitles(titles) {
+    if (!titles?.length) return "";
+    const vals = titles.map(t => t.value);
+    if (vals.length <= 2) return vals.map(v => v[0].toUpperCase() + v.slice(1)).join(" | ");
+    const firstTwo = vals.slice(0, 2).map(v => v[0].toUpperCase() + v.slice(1));
+    return `${firstTwo.join(" | ")} | +${vals.length - 2}`;
+  }
 
   if (loading) return <MembersTableShimmer/>;
 
@@ -97,6 +128,10 @@ export default function MembersTable({ data=[], total, documents = false,current
       <div className="flex-1">
         {paginatedData.map((member, index) => {
 
+          const display = formatTitles(member?.title);
+
+          const formattedTitles = member?.title?.map(t => t.value[0].toUpperCase() + t.value.slice(1)) || [];
+
           const openUpwards = index >= paginatedData.length - 2;
 
           return (
@@ -132,9 +167,51 @@ export default function MembersTable({ data=[], total, documents = false,current
                   <p className="font-semibold text-xl text-[#333333]">
                     {member.name}
                   </p>
-                  <p className="text-base font-medium text-[#666666]">
-                    {member.title}
+                {/* Title tool tip  */}
+                <div className="relative inline-block" >
+                  <p
+                    className="text-[20px] text-[#666666] font-[500] capitalize cursor-pointer"
+                    onClick={(e) => {
+                      
+
+                      // only open if more than 2 titles
+                      if (formattedTitles.length > 2) {
+                        e.stopPropagation();
+                        setOpenTooltipFor(prev =>
+                          prev === member.id ? null : member.id
+                        );
+                      }
+                    }}
+                  >
+                    {display}
                   </p>
+
+                  {openTooltipFor === member.id && formattedTitles.length > 2 && (
+                    <div id={`tooltip-${member.id}`}
+                      className="absolute z-50 w-max min-w-[200px] bg-[#ffffff] text-[#333]
+                                text-[16px] font-[500] p-[10px] rounded-[20px]
+                                whitespace-nowrap top-[calc(100%+8px)] right-0
+                                flex flex-col gap-[4px]"
+                      style={{ boxShadow: "0px 4px 4px 0px #99999940" }}
+                    >
+                      {/* Arrow */}
+                      <div
+                        className="absolute w-[16px] h-[8px] bg-[#ffffff] right-4 top-[-8px]"
+                        style={{
+                          clipPath: "polygon(50% 0%, 0% 100%, 100% 100%)",
+                        }}
+                      />
+
+                      {formattedTitles.map((title, idx) => (
+                        <div key={idx} className="pl-[12px] h-[30px] w-[180px]">
+                          {title}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+
                 </div>
               </div>
 
@@ -149,15 +226,27 @@ export default function MembersTable({ data=[], total, documents = false,current
 
               {/* RIGHT - Action Icons */}
               <div className="flex flex-1  gap-4 text-[#666666]">
-                <div className="w-10 h-10 bg-[#E6EBF2] rounded-full flex items-center justify-center cursor-pointer">
-                  {/* <FaWhatsapp size={24} color="#666666" /> */}
-                  <span className="ic--baseline-whatsapp"></span>
-                </div>
+                    {/* WhatsApp */}
+                    <Link
+                      href={`https://wa.me/${member?.phone}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="w-10 h-10 bg-[#E6EBF2] rounded-full flex items-center justify-center cursor-pointer"
+                      title="Chat on WhatsApp"
+                    >
+                      <span className="ic--baseline-whatsapp"></span>
+                    </Link>
 
-                <div className="w-10 h-10 bg-[#E6EBF2] rounded-full flex items-center justify-center cursor-pointer">
-                  {/* <FaEnvelope size={24} color="#666666" /> */}
-                  <span className="oui--email"></span>
-                </div>
+                    {/* Email */}
+                    <Link
+                      href={`mailto:${member?.email}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="w-10 h-10 bg-[#E6EBF2] rounded-full flex items-center justify-center cursor-pointer"
+                      title="Send Email"
+                    >
+                      <span className="oui--email"></span>
+                    </Link>
 
                 {/* PHONE ICON + POPUP */}
                 <div
@@ -169,11 +258,11 @@ export default function MembersTable({ data=[], total, documents = false,current
                   {/* PHONE POPUP */}
                   {openPhoneFor === member.id && (
                     <div
-                      className={`bg-white z-30 p-5 rounded-[20px] absolute w-52 shadow-[0px_3px_4px_rgba(190,190,190,0.25)]
-                      ${openUpwards ? "bottom-12" : "top-12"} -right-2`}
+                      className={`w-[250px] bg-white z-30 p-5 rounded-[20px] absolute w-52 shadow-[0px_3px_4px_rgba(190,190,190,0.25)]
+                      ${openUpwards ? "bottom-12" : "top-12"} -right-2`} ref={phonePopupRef}
                     >
                       <div
-                        className={`bg-white w-5 h-5 rotate-45 absolute right-4 
+                        className={`bg-white w-[24px] h-[24px] rotate-45 absolute right-4 
                         ${openUpwards ? "-bottom-2" : "-top-2"}`}
                       ></div>
 
@@ -181,13 +270,23 @@ export default function MembersTable({ data=[], total, documents = false,current
                         Phone
                       </div>
 
-                      <div className="flex gap-2.5 items-center">
-                        <div className="bg-[#E6EBF2] rounded-full h-8 w-8 flex items-center justify-center">
-                          <Image src={callIcon} alt="call" width={20} />
+                      <div className="min-w-[180px] flex gap-2.5 items-center justify-between">
+                        <div className="flex items-center gap-[6px]">
+                          <div className="bg-[#E6EBF2] rounded-full h-8 w-8 flex items-center justify-center">
+                            <Image src={callIcon} alt="call" width={20} />
+                          </div>
+                          <div className="text-[#333333] text-base font-semibold">
+                            {member.phone}
+                          </div>
                         </div>
-                        <div className="text-[#333333] text-base font-semibold">
-                          {member.phone}
-                        </div>
+                        <button
+                            type="button"
+                            onClick={(e) => {e.stopPropagation(); navigator.clipboard.writeText(member.phone)}}
+                            className="cursor-pointer flex items-center"
+                            title="Copy phone number"
+                          >
+                            <span className="lucide--copy"></span>
+                          </button>
                       </div>
                     </div>
                   )}

@@ -12,7 +12,7 @@ export default function ModalHeader({
   const [isEditing, setIsEditing] = useState(false);
   const [value, setValue] = useState(title);
   const textareaRef = useRef(null);
-
+  const MAX_CHARS = 60;
   useEffect(() => {
     setValue(title);
   }, [title]);
@@ -67,8 +67,10 @@ useEffect(() => {
             ref={textareaRef}
             value={value}
             rows={1}
+            maxLength={MAX_CHARS}
             onChange={(e) => {
-              setValue(e.target.value);
+              const text = e.target.value.slice(0, MAX_CHARS);
+              setValue(text);
               autoResize();
             }}
             onBlur={save}
