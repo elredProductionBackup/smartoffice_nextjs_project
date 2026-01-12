@@ -17,6 +17,7 @@ import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
 import ActionableShimmer from "./Shimmer/ActionableShimmer";
 import { closeModal } from "@/store/actionable/actionableUiSlice";
 import DatepickerModal from "./DatepickerModal";
+import DeleteConfirm from "./ConfirmationPopups/DeleteConfirm";
 const TABS_ITEMS = ["Past", "Today", "All"];
 
 export default function ActionItems() {
@@ -267,7 +268,7 @@ export default function ActionItems() {
 
             {activeItem === "past" &&
               (items.length ? (
-                <PastItems items={items} onToggle={toggleItem} />
+                <PastItems items={items} onToggle={toggleItem}/>
               ) : (
                 <EmptyState searchValue={debouncedSearch}/>
               ))}
@@ -329,6 +330,9 @@ export default function ActionItems() {
       )}
       {modal.type === "MOVE" && selectedTask && (
         <DatepickerModal selectedTask={selectedTask} />
+      )}
+      {modal.type === "DELETE" && selectedTask && (
+        <DeleteConfirm selectedTask={selectedTask} handleDelete={()=>handleDelete(selectedTask?.actionableId)} />
       )}
 
     </div>

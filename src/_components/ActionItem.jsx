@@ -8,6 +8,7 @@ import { useDispatch, useSelector } from "react-redux";
 export default function ActionItem({
   item,
   onCheck,
+  past=false,
   handleDelete,
   today = false
 })  {
@@ -35,6 +36,14 @@ export default function ActionItem({
     dispatch(
       openModal({
         type: "MOVE",
+        taskId: actionableId,
+      })
+    );
+  };
+  const openDeleteModal = (actionableId) => {
+    dispatch(
+      openModal({
+        type: "DELETE",
         taskId: actionableId,
       })
     );
@@ -165,11 +174,23 @@ export default function ActionItem({
         </div>
       )}
 
+      {past && canEditOrDelete && <button
+              className="flex items-center justify-end gap-[6px] w-[180px] px-[14px] text-[18px] font-[500] text-[#666666] cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation();
+                openDeleteModal(actionableId)
+                // handleDelete();
+              }}
+            >
+              <span className="fluent--delete-16-regular"></span>
+            </button>}
+
       {/* Menu — ENABLED for both Today & Past */}
       {!isCompleted && canEditOrDelete &&
       <div className="relative" ref={menuRef}>
-        <BsThreeDotsVertical
-          size={22}
+        <div className="h-[24px] w-[24px] rounded-[8px] hover:bg-[#D3E3FD] grid place-items-center">
+          <BsThreeDotsVertical
+          size={20}
           className={`text-gray-500  ${item.isOptimistic ? 'opacity-50':'cursor-pointer'}`}
             onClick={(e) => {
               
@@ -178,6 +199,7 @@ export default function ActionItem({
             setOpenMenu((prev) => !prev)
           }}
         />
+        </div>
 
         {openMenu && (
           <div
@@ -202,8 +224,8 @@ export default function ActionItem({
               className="flex items-center gap-[6px] w-[180px] px-[14px] py-[10px] text-[18px] font-[500] text-[#333] cursor-pointer"
               onClick={(e) => {
                 e.stopPropagation();
-                setOpenMenu(false);
-                handleDelete();
+                openDeleteModal(actionableId)
+                // handleDelete();
               }}
             >
               <span className="fluent--delete-16-regular"></span> {isDeleting ? "Deleting..." : "Delete"} item

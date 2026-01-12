@@ -154,12 +154,12 @@ export default function DatepickerModal({ selectedTask }) {
   const isOpen = modal.type === "MOVE";
   if (!isOpen) return null;
 
-  // 🔹 Parse existing due date
+  // Parse existing due date
   const initialDate = selectedTask?.dueDate
     ? moment(selectedTask.dueDate, "DD MMM YYYY").toDate()
     : new Date();
 
-  // 🔹 LOCAL STATE
+  // LOCAL STATE
   const [viewDate, setViewDate] = useState(initialDate);
   const [selectedDate, setSelectedDate] = useState(initialDate);
   const [hoveredDate, setHoveredDate] = useState(null);
