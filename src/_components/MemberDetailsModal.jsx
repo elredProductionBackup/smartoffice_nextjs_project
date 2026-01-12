@@ -287,7 +287,7 @@ export default function MemberDetailsModal({ member, onClose }) {
               >
               <div className="actions-nested-popup sticky top-[0px] right-[0px] flex gap-[20px] items-center justify-end">
                 {/* Download */}
-               <Link
+               {/* <a
                   href={activeDoc.fileUrl}
                   target="_blank"
                   download
@@ -297,7 +297,17 @@ export default function MemberDetailsModal({ member, onClose }) {
                   title="Download file"
                 >
                   <span className="material-symbols--download-rounded"></span>
-                </Link>
+                </a> */}
+                <a
+                  href={`/api/download?fileUrl=${encodeURIComponent(activeDoc.fileUrl)}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="text-[#333] bg-[#EEEEEE] cursor-pointer flex items-center justify-center rounded-full h-[35px] w-[35px]"
+                  title="Download file"
+                >
+                  <span className="material-symbols--download-rounded"></span>
+                </a>
+
+
 
                  {/* Close */}
                 <button
