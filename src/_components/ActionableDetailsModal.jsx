@@ -6,9 +6,9 @@ import NotesSection from "./ActionableDetailModal/NotesSection";
 import CommentsSection from "./ActionableDetailModal/CommentsSection";
 import FooterActions from "./ActionableDetailModal/FooterActions";
 import CollaboratorSection from "./ActionableDetailModal/CollaboratorSection";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { createComment, removeComment } from "@/store/actionable/actionableThunks";
+import { createComment, fetchComments, removeComment } from "@/store/actionable/actionableThunks";
 import Image from "next/image";
 
 export default function ActionableDetailsModal({
@@ -18,21 +18,33 @@ export default function ActionableDetailsModal({
 }) {
   if (!task) return null;
 
+  const scrollRef = useRef(null);
+  const [showAllComments, setShowAllComments] = useState(false);
   const dispatch = useDispatch();
 
   const [draft, setDraft] = useState({
     title: task.title,
     collaborators: task.collaborators || [],
     notes: task.notes || "",
-    // comments: task.comments || [],
   });
+
+const commentsState = useSelector(
+  (state) =>
+    state.actionable.comments.byActionableId[task.actionableId]
+) || {
+  list: [],
+  page: 0,
+  total: 0,
+  hasMore: true,
+  loading: false,
+};
+
 
 useEffect(() => {
   setDraft({
     title: task.title,
     collaborators: task.collaborators || [],
     notes: task.notes || "",
-    // comments: task.comments || [],
   });
 }, [task.actionableId]);
 
@@ -57,16 +69,75 @@ useEffect(() => {
   const isAdmin = user?.userType?.toLowerCase() === "admin";
 
   const canEditOrDelete = isAdmin;
+  // --- Initial fetch ---
+  useEffect(() => {
+    if (!actionable) return;
+    if (commentsState.page === 0) {
+      dispatch(fetchComments({
+        actionableId: actionable.actionableId,
+        page: 1,
+        limit: 10,
+      }));
+    }
+  }, [actionable?.actionableId]);
+
+  // --- Infinite Scroll ---
+  const isFetchingRef = useRef(false);
+  const commentsStateRef = useRef(commentsState);
+
+  useEffect(() => {
+    commentsStateRef.current = commentsState;
+  }, [commentsState]);
+useEffect(() => {
+  const scrollEl = scrollRef.current;
+  if (!scrollEl || !showAllComments) return;
+
+  const handleScroll = () => {
+    const state = commentsStateRef.current;
+    const offset = 10;
+    const maxPage = Math.ceil(state.total / offset); 
+
+    if (isFetchingRef.current || state.loading || state.page >= maxPage) return;
+
+    const scrollTop = scrollEl.scrollTop;
+    const scrollHeight = scrollEl.scrollHeight;
+    const clientHeight = scrollEl.clientHeight;
+
+    if (scrollHeight - scrollTop - clientHeight < 50) {
+      isFetchingRef.current = true;
+
+      const nextPage = state.page + 1;
+
+      dispatch(fetchComments({
+        actionableId: actionable.actionableId,
+        page: nextPage,
+        limit: offset,
+      })).finally(() => {
+        isFetchingRef.current = false;
+      });
+    }
+  };
+
+  scrollEl.addEventListener("scroll", handleScroll);
+  handleScroll();
+
+  return () => scrollEl.removeEventListener("scroll", handleScroll);
+}, [showAllComments, actionable?.actionableId]);
+
+
 
   return (
     <div
       className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center"
       onClick={onClose}
     >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="relative bg-white w-[600px] max-h-[90vh] rounded-[20px] px-[20px] flex flex-col gap-[20px] overflow-y-auto"
-      >
+      <div className="bg-white w-[600px] rounded-[20px] flex flex-col items-center pr-[8px]">
+        <div
+          onClick={(e) => e.stopPropagation()}
+           ref={scrollRef}
+          id="custom-scroll"
+          className="relative w-[100%] max-h-[90vh] rounded-[20px] pl-[20px] pr-[7px] flex flex-col gap-[20px] overflow-y-auto"
+        >
         <ModalHeader
           title={draft.title}
           addedBy={actionable.createdBy}
@@ -119,30 +190,32 @@ useEffect(() => {
           canEditOrDelete={canEditOrDelete}
         />
         <CommentsSection
-          comments={actionable.comments}
-          onAdd={(value,user) => {
-            const tempId = `temp-comment-${Date.now()}`;
-
-            dispatch(
-              createComment({
+            comments={commentsState.list}
+            total={commentsState.total}
+            loading={commentsState.loading}
+            hasMore={commentsState.hasMore}
+            // loadMoreRef={loadMoreRef}
+            showAll={showAllComments}
+            setShowAll={setShowAllComments}
+            canEditOrDelete={canEditOrDelete}
+            onAdd={(value, user) => {
+              const tempId = `temp-comment-${Date.now()}`;
+              dispatch(createComment({
                 tempId,
                 actionableId: actionable.actionableId,
                 comment: value,
-                user:user
-              })
-            );
-          }}
-          onDelete={(id) =>
-            dispatch(
-              removeComment({
-                actionableId: actionable.actionableId,
-                commentId: id,
-              })
-            )
-          }
-          canEditOrDelete={canEditOrDelete}
-        />
+                user,
+              }));
+            }}
+            onDelete={(id) => dispatch(removeComment({
+              actionableId: actionable.actionableId,
+              commentId: id,
+            }))}
+          />
+
+
         {canEditOrDelete && <FooterActions onClose={onClose} onSave={handleSave}/>}
+      </div>
       </div>
     </div>
   );

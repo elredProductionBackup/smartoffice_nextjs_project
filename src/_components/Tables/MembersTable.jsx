@@ -295,7 +295,7 @@ export default function MembersTable({ data=[], total, documents = false,current
                                 {member.phone}
                               </div>
                             </div>
-                          <div className="relative">
+                          <div className="relative" >
                           {/* COPIED TOOLTIP */}
                           {copiedPhoneFor === member.id && (
                             <div className="absolute -top-8 left-1/2 -translate-x-1/2
@@ -307,7 +307,7 @@ export default function MembersTable({ data=[], total, documents = false,current
                           )}
                           <button
                             type="button"
-                            
+                            onClick={(e) => handleCopyPhone(e, member.phone, member.id)}
                             className="cursor-pointer flex items-center justify-center"
                             title="Copy phone number"
                           >

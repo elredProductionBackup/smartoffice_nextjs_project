@@ -8,6 +8,9 @@ import ActionableTabs from "@/_components/ActionableTabs";
 import ActionItems from "@/_components/ActionItems";
 import { useSelector } from "react-redux";
 
+const ACTION_TABS = [
+  { label: "All", value: "all" },
+];
 
 export default function ActionablePageClient() {
     const { total } = useSelector((state) => state.actionable);
@@ -20,7 +23,8 @@ export default function ActionablePageClient() {
         refresh
       />
 
-      <ActionableTabs />
+      <ActionableTabs tabs={ACTION_TABS}
+          defaultTab="all"/>
 
       <ActionItems />
     </div>

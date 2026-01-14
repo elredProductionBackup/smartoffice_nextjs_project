@@ -74,12 +74,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import dashboardLogo from "@/assets/logo/mage_dashboard.svg";
-import checklistLogo from "@/assets/logo/mage_shop.svg";
+// import checklistLogo from "@/assets/logo/mage_shop.svg";
 import memberLogo from "@/assets/logo/tdesign_member.svg";
 // import vendorsLogo from "@/assets/logo/vendors.svg";
 // import resourcesLogo from "@/assets/logo/mynaui_database.svg";
 // import archiveLogo from "@/assets/logo/ion_archive-outline.svg";
-// import alliancesLogo from "@/assets/logo/la_handshake.svg";
+import eventsLogo from "@/assets/logo/events.svg";
 import actionableLogo from "@/assets/logo/actionable.svg";
 import Image from "next/image";
 import Header from "@/_components/Header";
@@ -105,7 +105,8 @@ export default function DashboardLayout({ children }) {
   const adminMenu = [
   { name: "Dashboard", path: "/dashboard/profile", logo: dashboardLogo },
   // { name: "Checklist", path: "/dashboard/checklist", logo: checklistLogo },
-  { name: "Vendors", path: "/dashboard/actionable", logo: actionableLogo },
+  { name: "Events", path: "/dashboard/events", logo: eventsLogo },
+  { name: "Actionable", path: "/dashboard/actionable", logo: actionableLogo },
   {
     name: "Members",
     path: "/dashboard/members?tab=members",

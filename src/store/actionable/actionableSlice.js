@@ -15,6 +15,9 @@ const initialState = {
   collaboratorsList:[],
   collaboratorsLoading:false,
   search: "",
+  comments: {
+    byActionableId: {},
+  },
 };
 
 const getAuthorName = () => {
@@ -129,14 +132,14 @@ const actionableSlice = createSlice({
         state.error = action.payload; // show error, NO mutation
       })
       /* COMMENTS */
-      .addCase(fetchComments.fulfilled, (state, action) => {
-        const item = state.items.find(
-          (i) => i.actionableId === action.payload.actionableId
-        );
-        if (item) {
-          item.comments = action.payload.comments;
-        }
-      })
+      // .addCase(fetchComments.fulfilled, (state, action) => {
+      //   const item = state.items.find(
+      //     (i) => i.actionableId === action.payload.actionableId
+      //   );
+      //   if (item) {
+      //     item.comments = action.payload.comments;
+      //   }
+      // })
       /* CREATE ACTIONABLE */
       .addCase(createActionable.pending, (state, action) => {
         const tempItem = {
@@ -371,17 +374,77 @@ const actionableSlice = createSlice({
           state.collaboratorsLoading = false;
         })
         // Comments
+        // .addCase(createComment.pending, (state, action) => {
+        //   const { tempId, actionableId, comment } = action.meta.arg;
+
+        //   const parent = state.items.find(
+        //     (i) => i.actionableId === actionableId
+        //   );
+        //   if (!parent) return;
+
+        //   if (!parent.comments) parent.comments = [];
+
+        //   parent.comments.unshift({
+        //     _id: tempId,
+        //     clientId: tempId,
+        //     comment,
+        //     name: getAuthorName(), 
+        //     createdAt: new Date().toISOString(),
+        //     isCompleted: false,
+        //     isOptimistic: true,
+        //   });
+        // })
+
+        // .addCase(createComment.fulfilled, (state, action) => {
+        //   const { actionableId, comment, tempId } = action.payload;
+
+        //   const parent = state.items.find(
+        //     (i) => i.actionableId === actionableId
+        //   );
+        //   if (!parent) return;
+
+        //   const index = parent.comments.findIndex(
+        //     (c) => c.clientId === tempId
+        //   );
+
+        //   if (index !== -1) {
+        //     parent.comments[index] = {
+        //       ...comment,
+        //       clientId: tempId,
+        //       isOptimistic: false,
+        //     };
+        //   }
+        // })
+
+        // .addCase(createComment.rejected, (state, action) => {
+        //   const { actionableId, tempId } = action.payload || {};
+
+        //   const parent = state.items.find(
+        //     (i) => i.actionableId === actionableId
+        //   );
+        //   if (!parent) return;
+
+        //   parent.comments = parent.comments.filter(
+        //     (c) => c.clientId !== tempId
+        //   );
+        // })
+        // --- Optimistic Comment Creation ---
         .addCase(createComment.pending, (state, action) => {
           const { tempId, actionableId, comment } = action.meta.arg;
 
-          const parent = state.items.find(
-            (i) => i.actionableId === actionableId
-          );
-          if (!parent) return;
+          if (!state.comments.byActionableId[actionableId]) {
+            state.comments.byActionableId[actionableId] = {
+              list: [],
+              page: 0,
+              total: 0,
+              hasMore: true,
+              loading: false,
+            };
+          }
 
-          if (!parent.comments) parent.comments = [];
+          const store = state.comments.byActionableId[actionableId];
 
-          parent.comments.unshift({
+          store.list.unshift({
             _id: tempId,
             clientId: tempId,
             comment,
@@ -390,71 +453,107 @@ const actionableSlice = createSlice({
             isCompleted: false,
             isOptimistic: true,
           });
-        })
 
+          store.total += 1;
+        })
         .addCase(createComment.fulfilled, (state, action) => {
           const { actionableId, comment, tempId } = action.payload;
 
-          const parent = state.items.find(
-            (i) => i.actionableId === actionableId
-          );
-          if (!parent) return;
+          const store = state.comments.byActionableId[actionableId];
+          if (!store) return;
 
-          const index = parent.comments.findIndex(
-            (c) => c.clientId === tempId
-          );
+          const index = store.list.findIndex((c) => c.clientId === tempId);
 
           if (index !== -1) {
-            parent.comments[index] = {
+            store.list[index] = {
               ...comment,
               clientId: tempId,
               isOptimistic: false,
             };
           }
         })
-
         .addCase(createComment.rejected, (state, action) => {
           const { actionableId, tempId } = action.payload || {};
+          const store = state.comments.byActionableId[actionableId];
+          if (!store) return;
 
-          const parent = state.items.find(
-            (i) => i.actionableId === actionableId
-          );
-          if (!parent) return;
+          store.list = store.list.filter((c) => c.clientId !== tempId);
 
-          parent.comments = parent.comments.filter(
-            (c) => c.clientId !== tempId
-          );
+          store.total = Math.max(store.total - 1, 0);
         })
         .addCase(removeComment.pending, (state, action) => {
           const { actionableId, commentId } = action.meta.arg;
 
-          const parent = state.items.find(
-            (i) => i.actionableId === actionableId
-          );
-          if (!parent || !parent.comments) return;
+          const store = state.comments.byActionableId[actionableId];
+          if (!store || !store.list) return;
 
-          const index = parent.comments.findIndex(
-            (c) => c._id === commentId
-          );
+          const index = store.list.findIndex((c) => c._id === commentId || c.clientId === commentId);
 
           if (index !== -1) {
-            parent._removedComment = parent.comments[index]; // backup
-            parent.comments.splice(index, 1);
+            store._removedComment = store.list[index];
+            store.list.splice(index, 1);
+
+            store.total = Math.max(store.total - 1, 0);
           }
         })
         .addCase(removeComment.fulfilled, (state) => {
         })
         .addCase(removeComment.rejected, (state, action) => {
           const { actionableId } = action.payload || {};
+          const store = state.comments.byActionableId[actionableId];
+          if (!store || !store._removedComment) return;
 
-          const parent = state.items.find(
-            (i) => i.actionableId === actionableId
-          );
-          if (!parent || !parent._removedComment) return;
+          store.list.unshift(store._removedComment);
+          store.total += 1;
 
-          parent.comments.unshift(parent._removedComment);
-          delete parent._removedComment;
+          delete store._removedComment;
         })
+        // --- Fetch Comments ---
+        .addCase(fetchComments.pending, (state, action) => {
+          const { actionableId } = action.meta.arg;
+
+          if (!state.comments.byActionableId[actionableId]) {
+            state.comments.byActionableId[actionableId] = {
+              list: [],
+              page: 0,
+              total: 0,
+              hasMore: true,
+              loading: true,
+            };
+          } else {
+            if (state.comments.byActionableId[actionableId].loading) return;
+            state.comments.byActionableId[actionableId].loading = true;
+          }
+        })
+        .addCase(fetchComments.fulfilled, (state, action) => {
+          const { actionableId, comments, page, total } = action.payload;
+          const store = state.comments.byActionableId[actionableId];
+
+          if (!store) return;
+
+          if (page === 1) {
+            store.list = comments; // first page overwrite
+          } else {
+            const existingIds = new Set(store.list.map(c => c._id));
+            const newComments = comments.filter(c => !existingIds.has(c._id));
+            store.list.push(...newComments);
+          }
+
+          store.page = page;
+          store.total = total;
+
+          // ✅ this is enough to stop further fetches
+          store.hasMore = store.list.length < total;
+
+          store.loading = false;
+        })
+        .addCase(fetchComments.rejected, (state, action) => {
+          const { actionableId } = action.meta.arg;
+          if (state.comments.byActionableId[actionableId]) {
+            state.comments.byActionableId[actionableId].loading = false;
+          }
+        });
+
 
   },
 });
