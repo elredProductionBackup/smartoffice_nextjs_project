@@ -166,7 +166,7 @@ export default function CommentsSection({
                 {/* AUTHOR */}
                <div className="flex items-center gap-[6px] h-[32px] items-center">
                   <span className="text-[18px] font-[700] text-[#333333] capitalize">
-                    {c.name}
+                    {c?.name || c?.firstname}
                   </span>
                   <span className="min-h-[4px] w-[4px] rounded-[50px] bg-[#999999] ml-[4px]"></span>
                   <span className="text-[12px] text-[#999999]">

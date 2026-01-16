@@ -1,6 +1,7 @@
 import { configureStore } from "@reduxjs/toolkit";
 import actionableReducer from "./actionable/actionableSlice";
 import actionableUiReducer from "./actionable/actionableUiSlice";
+import eventUiReducer from "./events/eventsUiSlice";
 import dashboardReducer from "./dashboard/dashboardSlice";
 import authReducer from "./auth/authSlice";
 
@@ -9,6 +10,7 @@ export const store = configureStore({
     auth: authReducer,
     actionable: actionableReducer,
     actionableUi: actionableUiReducer,
+    eventsUi: eventUiReducer,
     dashboard:dashboardReducer,
   },
 });

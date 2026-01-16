@@ -6,14 +6,19 @@ const COLORS = {
   green: "#43AE34",
 };
 
-export default function ProgressCircle({ value, color }) {
+export default function ProgressCircle({ value, color = "green" }) {
   const [completed, total] = value.split("/").map(Number);
-  const percentage = completed / total;
 
   const size = 50;
   const stroke = 5;
   const radius = (size - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
+
+  const percentage =
+    total > 0 && completed >= 0
+      ? Math.min(completed / total, 1)
+      : 0;
+
   const dashOffset = circumference * (1 - percentage);
 
   return (
@@ -30,17 +35,19 @@ export default function ProgressCircle({ value, color }) {
         />
 
         {/* Progress arc */}
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke={COLORS[color]}
-          strokeWidth={stroke}
-          strokeDasharray={circumference}
-          strokeDashoffset={dashOffset}
-          strokeLinecap="round"
-        />
+        {percentage > 0 && (
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            fill="none"
+            stroke={COLORS[color]}
+            strokeWidth={stroke}
+            strokeDasharray={circumference}
+            strokeDashoffset={dashOffset}
+            strokeLinecap="round"
+          />
+        )}
       </svg>
 
       {/* Center Text */}

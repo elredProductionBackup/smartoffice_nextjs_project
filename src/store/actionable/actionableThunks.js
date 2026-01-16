@@ -217,7 +217,6 @@ export const fetchComments = createAsyncThunk(
   async ({ actionableId, page = 1, limit = 5 }, { rejectWithValue }) => {
     try {
       const networkClusterCode = localStorage.getItem("networkClusterCode");
-      console.log(limit)
       // const start = (page - 1) * limit;
       const offset = limit;
 

@@ -91,6 +91,7 @@ export default function ActionableTabs({
   tabs = [],
   defaultTab,
   allowAdd = false,
+  onAddClick,
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -130,18 +131,19 @@ export default function ActionableTabs({
           onClick={() => handleTabChange(tab.value)}
           className={`tab-item relative
             px-[20px] py-[5px] cursor-pointer 
-            text-[20px] font-[500] transition
-            ${activeTab === tab.value ? "bordered text-[#0B57D0] font-[700]" : ""}`}
+            text-[20px] font-[700] transition
+            ${activeTab === tab.value ? "bordered text-[#0B57D0] " : ""}`}
         >
           {tab.label}
         </button>
       ))}
 
-      {allowAdd && (
-        <button className="px-[16px] py-[5px] text-[18px] font-[600]">
-          +
+      {/* {allowAdd && (
+        <button className="h-[24px] w-[24px] rounded-full text-[20px] text-white font-[600] bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)] cursor-pointer flex items-center justify-center outline-none border-none"
+        onClick={onAddClick}>
+          <span className="ic--round-plus"></span>
         </button>
-      )}
+      )} */}
     </div>
   );
 }
