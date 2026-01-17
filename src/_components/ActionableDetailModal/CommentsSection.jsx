@@ -47,12 +47,13 @@
 
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 
-export default function CommentsSection({ comments = [], onAdd, onDelete, canEditOrDelete }) {
+export default function CommentsSection({
+  comments = [], total = 0, loading, hasMore ,showAll, setShowAll , onLoadMore, onAdd, onDelete, canEditOrDelete,})
+ {
    const [comment, setComment] = useState("");
-  const [showAll, setShowAll] = useState(false);
 
   const { user } = useSelector((state) => state.auth);
 
@@ -132,10 +133,10 @@ export default function CommentsSection({ comments = [], onAdd, onDelete, canEdi
       {/* COUNT + TOGGLE */}
       <div className="flex justify-between items-center">
         <span className="text-[16px] font-[600] text-[#333]">
-          Comments ({comments.length})
+          Comments ({total})
         </span>
 
-        {comments.length > 0 && (
+        {total > 0 && (
           <button
             onClick={() => setShowAll((p) => !p)}
             className="flex items-center gap-[2px] text-[16px] font-[600] cursor-pointer"
@@ -151,6 +152,7 @@ export default function CommentsSection({ comments = [], onAdd, onDelete, canEdi
       {/* COMMENTS */}
       {showAll && comments.length > 0 && (
         <div className="flex flex-col gap-[20px] pt-[20px]">
+
           {comments.map((c) => (
             <div
               key={c._id}
@@ -164,7 +166,7 @@ export default function CommentsSection({ comments = [], onAdd, onDelete, canEdi
                 {/* AUTHOR */}
                <div className="flex items-center gap-[6px] h-[32px] items-center">
                   <span className="text-[18px] font-[700] text-[#333333] capitalize">
-                    {c.name}
+                    {c?.name || c?.firstname}
                   </span>
                   <span className="min-h-[4px] w-[4px] rounded-[50px] bg-[#999999] ml-[4px]"></span>
                   <span className="text-[12px] text-[#999999]">
@@ -188,6 +190,12 @@ export default function CommentsSection({ comments = [], onAdd, onDelete, canEdi
               }
             </div>
           ))}
+                  {showAll && loading && (
+                      <div className="flex justify-center py-[12px]">
+                        <span className="h-[18px] w-[18px] rounded-full border-2 border-[#ccc] border-t-[#5597ED] animate-spin" />
+                      </div>
+                    )}
+                {/* {showAll && hasMore && <div ref={loadMoreRef} style={{ height: 1 }} />} */}
         </div>
       )}
     </div>

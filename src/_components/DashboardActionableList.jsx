@@ -82,10 +82,10 @@ export default function DashboardActionableList({ data = [], loading = false, })
                       </span>
 
                       {/* Avatars */}
-                      {/* <div className="flex -space-x-2 h-[24px] w-[72px]"> */}
-                      <div className="flex -space-x-2 h-[24px] w-[24px]">
+                      <div className="flex -space-x-2 h-[24px] w-[72px]">
+                      {/* <div className="flex -space-x-2 h-[24px] w-[24px]"> */}
                         {Array.isArray(item.collaborators) &&
-                          item.collaborators.slice(0, 1).map((_, index) => (
+                          item.collaborators.slice(0, 3).map((_, index) => (
                             <Image
                               key={index}
                               src={_?.dpURL}

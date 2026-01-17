@@ -214,18 +214,25 @@ export const changeDueDateTime = createAsyncThunk(
 /* ================= COMMENTS ================= */
 export const fetchComments = createAsyncThunk(
   "actionable/fetchComments",
-  async ({ actionableId }, { rejectWithValue }) => {
+  async ({ actionableId, page = 1, limit = 5 }, { rejectWithValue }) => {
     try {
       const networkClusterCode = localStorage.getItem("networkClusterCode");
+      // const start = (page - 1) * limit;
+      const offset = limit;
 
       const res = await getComments({
         networkClusterCode,
         actionableId,
-        start: 1,
-        offset: 5,
+        start:page,
+        offset,
       });
 
-      return { actionableId, comments: res.data?.result || [] };
+      return {
+        actionableId,
+        comments: res.data?.result?.[0].comments || [],
+        total: res.data?.totalNumberofComments || 0,
+        page,
+      };
     } catch (err) {
       return rejectWithValue(err.message);
     }

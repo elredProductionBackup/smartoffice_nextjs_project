@@ -199,6 +199,7 @@
   mask-size: 100% 100%;
 }
 
+/* Edit */
 .iconamoon--edit-light {
   display: inline-block;
   width: 24px;
@@ -212,6 +213,7 @@
   -webkit-mask-size: 100% 100%;
   mask-size: 100% 100%;
 }
+/* Delete */
 
 .fluent--delete-16-regular {
   display: inline-block;
@@ -240,6 +242,10 @@
   -webkit-mask-size: 100% 100%;
   mask-size: 100% 100%;
 }
+.iconamoon--arrow-up-2-duotone.full{
+  height: 26px;
+  width: 26px;
+}
 
 /* copy */
 .lucide--copy {
@@ -254,4 +260,23 @@
   mask-repeat: no-repeat;
   -webkit-mask-size: 100% 100%;
   mask-size: 100% 100%;
+}
+
+/* Plus Icon */
+.ic--round-plus {
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  --svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23000' d='M18 12.998h-5v5a1 1 0 0 1-2 0v-5H6a1 1 0 0 1 0-2h5v-5a1 1 0 0 1 2 0v5h5a1 1 0 0 1 0 2'/%3E%3C/svg%3E");
+  background-color: currentColor;
+  -webkit-mask-image: var(--svg);
+  mask-image: var(--svg);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+}
+.ic--round-plus.full {
+  width: 24px;
+  height: 24px;
 }

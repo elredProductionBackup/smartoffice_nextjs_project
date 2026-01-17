@@ -241,6 +241,8 @@ export default function OtpInput({
         {Array.from({ length }).map((_, index) => (
           <input
             key={index}
+            type="tel"
+            inputMode="numeric"
             ref={(el) => (inputRefs.current[index] = el)}
             maxLength={1}
             value={otp[index] || ""}
