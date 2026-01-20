@@ -10,7 +10,7 @@ const FULL_MONTHS = [
 ];
 
 export default function Calendar({
-  value = new Date(), onChange, mode = "popup",
+  value = new Date(), onChange, mode = "inline",
   position = "relative", minDate, maxDate,
 }) {
   const [viewDate, setViewDate] = useState(value);
@@ -100,7 +100,7 @@ export default function Calendar({
         <div className="absolute top-[-8px] left-8 h-4 w-4 rotate-45 bg-white border-l border-t border-[#F3F4F6]" />
       )}
 
-      <div className={`${mode === "popup"?'w-[350px] border-[2.5px]':'w-[100%]'} bg-white rounded-2xl border-[1.27px] border-[#F3F4F6] py-6 px-9`}>
+      <div className={`${mode === "popup"?'w-[350px] border-[2.5px]  px-[14px]':'w-[100%]  px-9'} bg-white rounded-2xl border-[1.27px] border-[#F3F4F6] py-6`}>
         {/*  HEADER  */}
         <div className="flex items-center justify-between mb-6 text-2xl">
             {viewMode !== "date" && (

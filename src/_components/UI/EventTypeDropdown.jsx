@@ -44,7 +44,7 @@ export function EventTypeDropdown({
       <button
         type="button"
         onClick={() => setOpen((p) => !p)}
-        className={`${baseFieldClass} flex items-center justify-between ${
+        className={`${baseFieldClass} flex items-center justify-between cursor-pointer ${
           icon ? "pl-[50px] pr-4" : "px-4"
         } ${error ? "border-red-500" : ""}`}
       >
