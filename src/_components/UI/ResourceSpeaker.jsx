@@ -44,7 +44,7 @@ export function ResourceSpeaker({ value, onChange }) {
           {/* Name */}
           <div className="relative flex items-center">
             <div className="absolute left-[20px] text-gray-400  flex items-center">
-              <span className="uil--calendar"></span>
+              <span className="carbon--user-speaker"></span>
             </div>
             <input
               placeholder="Resource/speaker name"
@@ -59,7 +59,7 @@ export function ResourceSpeaker({ value, onChange }) {
           {/* Description (with icon) */}
           <div className="relative h-[80px]">
             <div className="absolute left-[20px] top-[14px] text-gray-400  flex items-center">
-              <span className="uil--calendar"></span>
+              <span className="solar--chat-line-outline"></span>
             </div>
             <textarea
               placeholder="Add details about resource/speaker"
@@ -99,7 +99,7 @@ export function ResourceSpeaker({ value, onChange }) {
           ) : (
             <>
               <IoCloudUploadOutline size={22} />
-              <span className="text-xs text-gray-600">
+              <span className="text-[14px] text-[#666666] font-[700]">
                 Upload photo
               </span>
             </>
@@ -121,7 +121,7 @@ export function ResourceSpeaker({ value, onChange }) {
           {(value.weblinks || []).map((link, index) => (
             <div key={index} className="relative w-full flex items-center ">
               <div className="absolute left-[20px] text-gray-400  flex items-center">
-                <span className="uil--calendar"></span>
+                <span className="bi--globe big"></span>
               </div>
               <input
                 placeholder="Weblink URL"

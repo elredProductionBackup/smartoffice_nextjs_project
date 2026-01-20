@@ -83,30 +83,12 @@ const CreateEvent = () => {
 
 
     const [form, setForm] = useState({
-    eventName: "",
-    eventType: "",
-    description: "",
-    startDate: new Date(),
-    endDate: new Date(),
-    reminder: null,
-    location: "",
-    attendees: {
-      member: true,
-      spouse: false,
-      children: false,
-      guests: false,
-    },
+    eventName: "", eventType: "", description: "", startDate: new Date(), endDate: new Date(),
+    reminder: null, location: "",
+    attendees: { member: true, spouse: false, children: false, guests: false },
     registrationOpen: true,
-    speaker: {
-      name: "",
-      description: "",
-      linkedin: "",
-      image: null ,
-    },
-    collaborators: [],
-    attachments: [],
-    travelInfo: "",
-    additionalNote: "",
+    speaker: { name: "", description: "", linkedin: "", image: null },
+    collaborators: [], attachments: [], travelInfo: "", additionalNote: "",
   });
 
   const validate = () => {
@@ -157,7 +139,7 @@ const handleCreateEvent = (e) => {
     setForm((p) => ({ ...p, [key]: value }));
 
   return (
-    <div className="h-[calc(100vh-80px)] flex justify-center py-5 gap-[80px] relative overflow-auto relative">
+    <div className="h-[calc(100vh-80px)] flex justify-center py-5 gap-[80px] overflow-auto relative">
       {/* <div className="flex  py-5"> */}
         {/* Left Sticky Image */}
         <EventImage value={image} onChange={setImage} />
@@ -180,7 +162,7 @@ const handleCreateEvent = (e) => {
                 value={form.eventType}
                 onChange={(v) => update("eventType", v)}
                 error={errors.eventType}
-                icon={<span className="uil--calendar"></span>}
+                icon={<span className="material-symbols--event-list-outline-rounded"></span>}
               />
 
               {/* Description */}
@@ -189,7 +171,7 @@ const handleCreateEvent = (e) => {
                 placeholder="Add event Description"
                 value={form.description}
                 onChange={(e) => update("description", e.target.value)}
-                icon={<span className="uil--calendar"></span>}
+                icon={<span className="solar--chat-line-outline"></span>}
               />
 
               <div>
@@ -263,7 +245,7 @@ const handleCreateEvent = (e) => {
                 value={form.travelInfo}
                 onChange={(e) => update("travelInfo", e.target.value)}
                 error={errors.travelInfo}
-                icon={<span className="uil--calendar"></span>}
+                icon={<span className="material-symbols-light--airplane-ticket-outline-rounded"></span>}
               />
 
               <EventsTextarea
@@ -271,7 +253,7 @@ const handleCreateEvent = (e) => {
                 placeholder="Additional note"
                 value={form.additionalNote}
                 onChange={(e) => update("additionalNote", e.target.value)}
-                icon={<span className="uil--calendar"></span>}
+                icon={<span className="meteor-icons--pencil"></span>}
               />
 
 

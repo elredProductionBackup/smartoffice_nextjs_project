@@ -19,7 +19,7 @@ export default function ProfilePage() {
     dispatch(fetchDashboardActionables());
   }, [dispatch]);
   return (
-    <div className="flex flex-col h-[calc(100vh-120px)]">
+    <div className="flex flex-col h-[calc(100vh-80px)] pt-5 overflow-auto relative">
       <div className="mx-50">
         <div className="relative border outline-none w-full h-15 border-[#E1E2E6] bg-[#F2F6FC] rounded-full px-6 ">
           <Image

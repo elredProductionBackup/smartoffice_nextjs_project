@@ -11,7 +11,7 @@ export default function DashboardActionableList({ data = [], loading = false, })
   // }
 
   return (
-    <div className="flex flex-col mt-6 rounded-2xl bg-[#F2F7FF] px-[24px] pt-[24px] max-h-[450px] ">
+    <div className="flex flex-col mt-6 rounded-2xl bg-[#F2F7FF] px-[24px] pt-[24px] min-h-[450px] max-h-[450px] ">
 
       {/* SHIMMER */}
       {loading ?
