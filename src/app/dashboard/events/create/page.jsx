@@ -4,7 +4,6 @@
 // import * as Yup from "yup";
 // import Calendar from "@/_components/UI/Calendar";
 import { useState } from "react";
-import Image from "next/image";
 import { EventsInput } from "@/_components/UI/EventsInput";
 import { EventTypeDropdown } from "@/_components/UI/EventTypeDropdown";
 import { EventsTextarea } from "@/_components/UI/EventsTextarea";
@@ -12,6 +11,8 @@ import { CheckboxGroup } from "@/_components/UI/CheckboxGroup";
 import { RegistrationToggle } from "@/_components/UI/RegistrationToggle";
 import { Attachments } from "@/_components/UI/Attachments";
 import { ResourceSpeaker } from "@/_components/UI/ResourceSpeaker";
+import DateTimeRangePicker from "@/_components/UI/DateTimeRangePicker";
+import { EventImage } from "@/_components/UI/EventImage";
 
 const buildFormData = (form) => {
   const fd = new FormData();
@@ -50,56 +51,36 @@ const buildFormData = (form) => {
 };
 
 
-const EventImage = ({ image, setImage }) => {
-  const handleImage = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setImage(URL.createObjectURL(file));
-  };
 
-  return (
-    <div className="sticky top-0 flex flex-col items-center gap-[30px]">
-      <div className="relative h-[600px]  aspect-[3/4] overflow-hidden rounded-[20px] bg-gray-200">
-        {image ? (
-          <Image
-            src={image}
-            alt="event"
-            fill
-            className="object-cover"
-            sizes="450px"
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center text-sm text-gray-500">
-            Event image preview
-          </div>
-        )}
-      </div>
+const mergeDateAndTime = (date, time) => {
+  const d = new Date(date);
 
-      <div className="flex flex-col gap-[20px] items-center">
-        <label className="cursor-pointer text-[18px]">
-          Change your event image
-          <input
-            type="file"
-            accept="image/*"
-            hidden
-            onChange={handleImage}
-          />
-        </label>
-        <div className="flex flex-col items-center gap-[8px] text-[18px] font-[600]">
-          <span className="h-[40px] w-[40px] rounded-full bg-[#147BFF1A] grid place-items-center">
-            <Image src={`/logo/gallery.svg`} alt="Gallery Logo" height={22.4} width={22.4}/>
-          </span>
-          Gallery
-        </div>
-      </div>
-    </div>
+  d.setHours(
+    parseInt(time.hour, 10),
+    parseInt(time.minute, 10),
+    0,
+    0
   );
+
+  return d;
 };
+
+
 
 const CreateEvent = () => {
   const [image, setImage] = useState(null);
   const [errors, setErrors] = useState({});
-  
+  const [startTime, setStartTime] = useState({
+    hour: "15",
+    minute: "00",
+  });
+
+  const [endTime, setEndTime] = useState({
+    hour: "15",
+    minute: "00",
+  });
+
+
 
     const [form, setForm] = useState({
     eventName: "",
@@ -179,7 +160,7 @@ const handleCreateEvent = (e) => {
     <div className="h-[calc(100vh-80px)] flex justify-center py-5 gap-[80px] relative overflow-auto relative">
       {/* <div className="flex  py-5"> */}
         {/* Left Sticky Image */}
-        <EventImage image={image} setImage={setImage} />
+        <EventImage value={image} onChange={setImage} />
 
         {/* Right Form */}
         <div className="flex-1 max-w-[500px]">
@@ -210,6 +191,31 @@ const handleCreateEvent = (e) => {
                 onChange={(e) => update("description", e.target.value)}
                 icon={<span className="uil--calendar"></span>}
               />
+
+              <div>
+                <DateTimeRangePicker
+                  startDate={form.startDate}
+                  endDate={form.endDate}
+                  startTime={startTime}
+                  endTime={endTime}
+                  onStartDateChange={(date) =>
+                    update("startDate", mergeDateAndTime(date, startTime))
+                  }
+                  onEndDateChange={(date) =>
+                    update("endDate", mergeDateAndTime(date, endTime))
+                  }
+                  onStartTimeChange={(time) => {
+                    setStartTime(time);
+                    update("startDate", mergeDateAndTime(form.startDate, time));
+                  }}
+                  onEndTimeChange={(time) => {
+                    setEndTime(time);
+                    update("endDate", mergeDateAndTime(form.endDate, time));
+                  }}
+                  error={errors.date}
+                />
+              </div>
+
 
               {/* Location */}
               <EventsInput

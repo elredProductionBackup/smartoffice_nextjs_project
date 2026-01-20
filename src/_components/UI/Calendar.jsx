@@ -84,7 +84,7 @@ export default function Calendar({
 
   const containerClass =
     mode === "popup"
-      ? `absolute z-50 ${position}`
+      ? `absolute z-50 top-[calc(100%+20px)]`
       : "relative";
 
   const canGoPrevMonth =
@@ -95,12 +95,12 @@ export default function Calendar({
       
 
   return (
-    <div className={containerClass}>
-      {/* {mode === "popup" && (
-        <div className="absolute top-2 left-8 h-4 w-4 rotate-45 bg-white border-l border-t border-gray-200" />
-      )} */}
+    <div className={`${containerClass}`}>
+      {mode === "popup" && (
+        <div className="absolute top-[-8px] left-8 h-4 w-4 rotate-45 bg-white border-l border-t border-[#F3F4F6]" />
+      )}
 
-      <div className="w-[100%]  bg-white rounded-2xl border-[1.27px] border-[#F3F4F6] py-6 px-9">
+      <div className={`${mode === "popup"?'w-[350px] border-[2.5px]':'w-[100%]'} bg-white rounded-2xl border-[1.27px] border-[#F3F4F6] py-6 px-9`}>
         {/*  HEADER  */}
         <div className="flex items-center justify-between mb-6 text-2xl">
             {viewMode !== "date" && (

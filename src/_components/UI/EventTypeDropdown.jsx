@@ -93,7 +93,7 @@ export function EventTypeDropdown({
 
       {/* Error (same as EventsInput) */}
       {error && (
-        <p className="absolute -bottom-[10px] text-[12px] text-red-500">
+        <p className="absolute -bottom-[20px] text-[12px] text-red-500">
           {error}
         </p>
       )}
