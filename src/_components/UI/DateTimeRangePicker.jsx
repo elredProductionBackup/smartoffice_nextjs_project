@@ -25,7 +25,7 @@ export default function DateTimeRangePicker({
         <span className="text-[15px] font-[500]">to</span>
 
         <div className="flex gap-[5px] flex-1">
-            <DateInput value={endDate} onChange={onEndDateChange} />
+            <DateInput value={endDate} onChange={onEndDateChange} right={true}/>
             <TimeInput value={endTime} onChange={onEndTimeChange} />
         </div>
       </div>

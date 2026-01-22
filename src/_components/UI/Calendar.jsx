@@ -11,7 +11,7 @@ const FULL_MONTHS = [
 
 export default function Calendar({
   value = new Date(), onChange, mode = "inline",
-  position = "relative", minDate, maxDate,
+  position = "relative",right = false, minDate, maxDate,
 }) {
   const [viewDate, setViewDate] = useState(value);
   const [selectedDate, setSelectedDate] = useState(value);
@@ -84,7 +84,7 @@ export default function Calendar({
 
   const containerClass =
     mode === "popup"
-      ? `absolute z-50 top-[calc(100%+20px)]`
+      ? `absolute z-50 top-[calc(100%+20px)] ${right && 'right-[0px]'}`
       : "relative";
 
   const canGoPrevMonth =
@@ -97,7 +97,7 @@ export default function Calendar({
   return (
     <div className={`${containerClass}`}>
       {mode === "popup" && (
-        <div className="absolute top-[-8px] left-8 h-4 w-4 rotate-45 bg-white border-l border-t border-[#F3F4F6]" />
+        <div className={`absolute top-[-8px] ${right?'right-8':'left-8'} h-4 w-4 rotate-45 bg-white border-l-2 border-t-2 border-[#F3F4F6]`} />
       )}
 
       <div className={`${mode === "popup"?'w-[350px] border-[2.5px]  px-[14px]':'w-[100%]  px-9'} bg-white rounded-2xl border-[1.27px] border-[#F3F4F6] py-6`}>

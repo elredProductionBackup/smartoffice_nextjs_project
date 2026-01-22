@@ -13,6 +13,14 @@ import { Attachments } from "@/_components/UI/Attachments";
 import { ResourceSpeaker } from "@/_components/UI/ResourceSpeaker";
 import DateTimeRangePicker from "@/_components/UI/DateTimeRangePicker";
 import { EventImage } from "@/_components/UI/EventImage";
+import ReminderField from "@/_components/EventsComps/ReminderField";
+import ReminderModal from "@/_components/EventsComps/ReminderModal";
+import { openEventFormModal } from "@/store/events/eventsUiSlice";
+import { useDispatch } from "react-redux";
+import LocationModal from "@/_components/EventsComps/LocationModal";
+import { useRouter } from "next/navigation";
+import TravelModal from "@/_components/EventsComps/TravelModal";
+import { Collaborators } from "@/_components/EventsComps/Collaborators";
 
 const buildFormData = (form) => {
   const fd = new FormData();
@@ -80,48 +88,43 @@ const CreateEvent = () => {
     minute: "00",
   });
 
+  const router = useRouter()
+
+  const dispatch = useDispatch();
 
 
     const [form, setForm] = useState({
     eventName: "", eventType: "", description: "", startDate: new Date(), endDate: new Date(),
-    reminder: null, location: "",
+    reminder: [], location: "",
     attendees: { member: true, spouse: false, children: false, guests: false },
     registrationOpen: true,
     speaker: { name: "", description: "", linkedin: "", image: null },
-    collaborators: [], attachments: [], travelInfo: "", additionalNote: "",
+    collaborators: [], attachments: [],   travelInfo: {
+    venueLink: "", hotelLink: "",
+    requiredInfo: {ticket: false, insurance: false, visa: false, },
+    deadline: null, reminders: [], note: "",
+  }, additionalNote: "",
   });
 
   const validate = () => {
-  const newErrors = {};
+    const newErrors = {};
 
-  if (!form.eventName.trim()) {
-    newErrors.eventName = "Event name is required";
-  }
+    if (!form.eventName.trim()) {
+      newErrors.eventName = "Event name is required";
+    }
 
-  if (!form.eventType) {
-    newErrors.eventType = "Please select event type";
-  }
+    if (!form.eventType) {
+      newErrors.eventType = "Please select event type";
+    }
 
-  // if (!form.startDate || !form.endDate) {
-  //   newErrors.date = "Start & end date are required";
-  // }
+    if (!form.location.trim()) {
+      newErrors.location = "Event location is required";
+    }
 
-  // if (form.startDate > form.endDate) {
-  //   newErrors.date = "End date cannot be before start date";
-  // }
+    setErrors(newErrors);
 
-  if (!form.location.trim()) {
-    newErrors.location = "Event location is required";
-  }
-
-  // if (form.speaker.name) {
-  //   newErrors.speakerLinkedin = "LinkedIn URL is required";
-  // }
-
-  setErrors(newErrors);
-
-  return Object.keys(newErrors).length === 0;
-};
+    return Object.keys(newErrors).length === 0;
+  };
 
 const handleCreateEvent = (e) => {
   e?.preventDefault?.();
@@ -140,13 +143,12 @@ const handleCreateEvent = (e) => {
 
   return (
     <div className="h-[calc(100vh-80px)] flex justify-center py-5 gap-[80px] overflow-auto relative">
-      {/* <div className="flex  py-5"> */}
-        {/* Left Sticky Image */}
         <EventImage value={image} onChange={setImage} />
 
         {/* Right Form */}
         <div className="flex-1 max-w-[500px]">
-          <h1 className="mb-[30px] text-[36px] font-[600]">Create event</h1>
+          <div className="mb-[30px] text-[36px] font-[600] flex items-center gap-[20px]">
+           <span className="maki--arrow rotate-180 inline-block cursor-pointer" onClick={()=>router.back()}></span> Create event</div>
             <div className="w-full flex flex-col gap-[30px]">
 
               <EventsInput
@@ -198,15 +200,18 @@ const handleCreateEvent = (e) => {
                 />
               </div>
 
+              <ReminderField reminders={form.reminder} />
 
               {/* Location */}
               <EventsInput
-                label="Event location"
-                placeholder="Add location/room or meeting link"
-                value={form.location}
-                onChange={(e) => update("location", e.target.value)}
-                error={errors.location}
-                icon={<span className="uil--calendar"></span>}
+                  label="Event location"
+                  placeholder="Add location/room or meeting link"
+                  value={form.location || ""}
+                  readOnly
+                  onClick={() =>
+                    dispatch(openEventFormModal({ type: "LOCATION" }))
+                  }
+                  icon={<span className="weui--location-outlined"></span>}
               />
 
               <CheckboxGroup
@@ -233,6 +238,9 @@ const handleCreateEvent = (e) => {
                 onChange={(v) => update("speaker", v)}
               />
 
+              <Collaborators  form={form}
+          setForm={setForm}/>
+
               <Attachments
                 value={form.attachments}
                 onChange={(files) => update("attachments", files)}
@@ -242,10 +250,17 @@ const handleCreateEvent = (e) => {
               <EventsInput
                 label="Add travel info"
                 placeholder="Travel ticket, hotels, insurance, visa, local transport"
-                value={form.travelInfo}
-                onChange={(e) => update("travelInfo", e.target.value)}
-                error={errors.travelInfo}
-                icon={<span className="material-symbols-light--airplane-ticket-outline-rounded"></span>}
+                value={
+                  form.travelInfo?.venueLink ||
+                  form.travelInfo?.hotelLink
+                    ? "Travel info added"
+                    : ""
+                }
+                readOnly
+                onClick={() =>
+                  dispatch(openEventFormModal({ type: "TRAVEL" }))
+                }
+                svg={"/logo/travel.svg"}
               />
 
               <EventsTextarea
@@ -268,6 +283,12 @@ const handleCreateEvent = (e) => {
               </div>
             </div>
         </div>
+        <ReminderModal
+          form={form}
+          setForm={setForm}
+        />
+        <LocationModal form={form} setForm={setForm} />
+        <TravelModal form={form} setForm={setForm} />
     </div>
   );
 };

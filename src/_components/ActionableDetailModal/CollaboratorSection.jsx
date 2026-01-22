@@ -35,7 +35,7 @@ export default function CollaboratorSection({ task, collaborators = [], onChange
     debounceRef.current = setTimeout(() => {
       dispatch(
         fetchCollaborators({
-          actionableId: task?.actionableId,
+          // actionableId: task?.actionableId,
           search: query,
           offset: 0,
         })

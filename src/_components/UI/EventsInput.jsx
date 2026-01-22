@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 const baseFieldClass =
   "w-full bg-[#F6F6F6] border-[1.4px] border-[#EAEAEA] rounded-lg outline-none h-[50px]";
 
@@ -5,6 +7,7 @@ export function EventsInput({
   label,
   icon,
   error,
+  svg,
   ...props
 }) {
   return (
@@ -21,11 +24,15 @@ export function EventsInput({
             {icon}
           </div>
         )}
+        { svg && (
+          <Image src={svg} alt="Icon" width={24} height={24} className="absolute left-[20px] text-gray-400 flex items-center"/>
+        )
+        }
 
         <input
           {...props}
           className={`${baseFieldClass} ${
-            icon ? "pl-[50px]" : "px-4"
+            icon || svg ? "pl-[50px]" : "px-4"
           } ${error ? "border-red-500" : ""}`}
         />
       </div>

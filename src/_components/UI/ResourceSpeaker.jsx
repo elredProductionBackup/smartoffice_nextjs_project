@@ -98,7 +98,7 @@ export function ResourceSpeaker({ value, onChange }) {
             </>
           ) : (
             <>
-              <IoCloudUploadOutline size={22} />
+              <span className="lucide--upload text-[#666666]"></span>
               <span className="text-[14px] text-[#666666] font-[700]">
                 Upload photo
               </span>
