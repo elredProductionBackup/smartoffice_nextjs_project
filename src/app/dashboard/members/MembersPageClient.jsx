@@ -41,7 +41,7 @@ export default function MembersPageClient() {
   });
 
   return (
-    <div className="h-[calc(100vh-120px)] flex flex-col">
+    <div className="h-[calc(100vh-120px)] my-5 flex flex-col">
       <SectionHeader
         title="Members"
         tabs={[

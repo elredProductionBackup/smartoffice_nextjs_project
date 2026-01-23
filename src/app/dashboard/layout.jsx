@@ -139,7 +139,9 @@ const userMenu = [
             <div className="w-21 bg-[#F2F7FF] h-full p-5 rounded-2xl">
               <ul className="space-y-10">
                 {menu.map((item) => {
-                  const active = pathname == removeAllParams(item.path);
+                    const basePath = removeAllParams(item.path);
+                    const active =
+                      pathname === basePath || pathname.startsWith(`${basePath}/`);
                   return (
                     <li key={item.path}>
                       <Link
@@ -161,7 +163,7 @@ const userMenu = [
           </div>
 
           {/* Nested Page */}
-          <div className="flex-1 flex flex-col my-5 mx-5 overflow-y-auto">{children}</div>
+          <div className="flex-1 flex flex-col mx-5 overflow-y-auto">{children}</div>
         </div>
       </div>
     </ProtectedRoute>

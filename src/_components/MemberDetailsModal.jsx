@@ -233,6 +233,7 @@ export default function MemberDetailsModal({ member, onClose }) {
               {member.documents.map((item, index) => {
                 const imageSrc =
                   item.docType === "pdf" ? item?.pdfPreview : item?.fileUrl;
+                  console.log(imageSrc)
 
                 const hasImage = imageSrc && imageSrc.trim() !== "";
 
@@ -309,7 +310,7 @@ export default function MemberDetailsModal({ member, onClose }) {
               {/* Image */}
               <div className="image-box flex flex-col gap-[20px] flex-1 items-center justify-center px-[30px] text-[#FFFFFF] font-[500]">
                 <Image
-                src={activeDoc.fileUrl}
+                src={activeDoc.docType === "pdf" ? activeDoc?.pdfPreview : activeDoc?.fileUrl}
                 alt="Document Preview"
                 width={500}
                 height={500}

@@ -136,6 +136,81 @@
 //   );
 // }
 
+        /* Calendar */
+        /* <div className="rounded-2xl border-[1.27px] border-[#F3F4F6] py-6 px-9">
+
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-xl font-semibold">
+              {viewDate.toLocaleString("default", {
+                month: "long",
+                year: "numeric",
+              })}
+            </h3>
+
+            <div className="flex gap-6 text-2xl">
+              <button onClick={() => changeMonth(-1)} className="cursor-pointer">
+                <IoIosArrowBack />
+              </button>
+              <button onClick={() => changeMonth(1)} className="cursor-pointer">
+                <IoIosArrowForward />
+              </button>
+            </div>
+          </div>
+
+            <div className="grid grid-cols-7 text-center mb-4 font-semibold text-gray-500">
+            {DAYS.map((d, idx) => (
+                <div key={idx}>{d}</div>
+            ))}
+            </div>
+
+          <div className="grid grid-cols-7 gap-y-2 text-center">
+
+            {[...Array(firstDay)].map((_, i) => (
+              <div key={i} className="text-gray-300 flex items-center justify-center">
+                {prevMonthDays - firstDay + i + 1}
+              </div>
+            ))}
+
+            {[...Array(daysInMonth)].map((_, i) => {
+                const day = i + 1;
+                const dateObj = new Date(year, month, day);
+
+                const isPastDate = dateObj < today;
+
+                const isSelected =
+                  selectedDate &&
+                  selectedDate.getDate() === day &&
+                  selectedDate.getMonth() === month &&
+                  selectedDate.getFullYear() === year;
+
+                return (
+                  <button
+                    key={day}
+                    disabled={isPastDate}
+                    onMouseEnter={() => !isPastDate && setHoveredDate(day)}
+                    onMouseLeave={() => setHoveredDate(null)}
+                    onClick={() => {
+                      if (isPastDate) return;
+                      setSelectedDate(dateObj);
+                    }}
+                    className={`mx-auto h-11 w-11 rounded-lg
+                      ${
+                        isPastDate
+                          ? "text-gray-300 cursor-not-allowed"
+                          : "cursor-pointer"
+                      }
+                      ${isSelected ? "bg-blue-700 text-white" : ""}
+                      ${hoveredDate === day && !isPastDate ? "bg-blue-100" : ""}
+                    `}
+                  >
+                    {day}
+                  </button>
+                );
+              })}
+
+          </div>
+        </div> */
+
 "use client";
 
 import { IoIosArrowForward, IoIosArrowBack } from "react-icons/io";
@@ -144,6 +219,7 @@ import { closeModal } from "@/store/actionable/actionableUiSlice";
 import { useState } from "react";
 import moment from "moment";
 import { changeDueDateTime } from "@/store/actionable/actionableThunks";
+import Calendar from "./UI/Calendar";
 
 const DAYS = ["S", "M", "T", "W", "T", "F", "S"];
 
@@ -195,85 +271,13 @@ export default function DatepickerModal({ selectedTask }) {
           </button>
         </div>
 
-        {/* Calendar */}
-        <div className="rounded-2xl border-[1.27px] border-[#F3F4F6] py-6 px-9">
 
-          {/* Month Header */}
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl font-semibold">
-              {viewDate.toLocaleString("default", {
-                month: "long",
-                year: "numeric",
-              })}
-            </h3>
+        <Calendar
+          value={selectedDate}
+          onChange={(d) => setSelectedDate(d)}
+        />
 
-            <div className="flex gap-6 text-2xl">
-              <button onClick={() => changeMonth(-1)} className="cursor-pointer">
-                <IoIosArrowBack />
-              </button>
-              <button onClick={() => changeMonth(1)} className="cursor-pointer">
-                <IoIosArrowForward />
-              </button>
-            </div>
-          </div>
 
-            {/* Weekdays */}
-            <div className="grid grid-cols-7 text-center mb-4 font-semibold text-gray-500">
-            {DAYS.map((d, idx) => (
-                <div key={idx}>{d}</div>
-            ))}
-            </div>
-
-          {/* Dates */}
-          <div className="grid grid-cols-7 gap-y-2 text-center">
-
-            {/* Previous month filler */}
-            {[...Array(firstDay)].map((_, i) => (
-              <div key={i} className="text-gray-300 flex items-center justify-center">
-                {prevMonthDays - firstDay + i + 1}
-              </div>
-            ))}
-
-            {/* Current month */}
-            {[...Array(daysInMonth)].map((_, i) => {
-                const day = i + 1;
-                const dateObj = new Date(year, month, day);
-
-                const isPastDate = dateObj < today;
-
-                const isSelected =
-                  selectedDate &&
-                  selectedDate.getDate() === day &&
-                  selectedDate.getMonth() === month &&
-                  selectedDate.getFullYear() === year;
-
-                return (
-                  <button
-                    key={day}
-                    disabled={isPastDate}
-                    onMouseEnter={() => !isPastDate && setHoveredDate(day)}
-                    onMouseLeave={() => setHoveredDate(null)}
-                    onClick={() => {
-                      if (isPastDate) return;
-                      setSelectedDate(dateObj);
-                    }}
-                    className={`mx-auto h-11 w-11 rounded-lg
-                      ${
-                        isPastDate
-                          ? "text-gray-300 cursor-not-allowed"
-                          : "cursor-pointer"
-                      }
-                      ${isSelected ? "bg-blue-700 text-white" : ""}
-                      ${hoveredDate === day && !isPastDate ? "bg-blue-100" : ""}
-                    `}
-                  >
-                    {day}
-                  </button>
-                );
-              })}
-
-          </div>
-        </div>
 
         {/* Footer */}
         <div className="mt-8 flex justify-between">

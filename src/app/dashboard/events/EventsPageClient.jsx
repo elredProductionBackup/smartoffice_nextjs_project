@@ -19,7 +19,7 @@ export default function EventsPageClient() {
   const tab = searchParams.get("tab") || "upcoming";
 
   return (
-    <div className="h-[calc(100vh-120px)] flex flex-col">
+    <div className="h-[calc(100vh-120px)] my-5 flex flex-col">
       <EventsHeader/>
 
       <ActionableTabs
