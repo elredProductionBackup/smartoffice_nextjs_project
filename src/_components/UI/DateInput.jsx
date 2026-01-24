@@ -1,21 +1,77 @@
+// import { useRef, useState } from "react";
+// import Calendar from "./Calendar";
+// import { useOutsideClick } from "@/hooks/useOutsideClick";
+// import moment from "moment";
+
+// export function DateInput({ value, onChange, right }) {
+//   const [open, setOpen] = useState(false);
+//   const ref = useRef(null);
+
+//   useOutsideClick(ref, () => setOpen(false));
+
+//   return (
+//     <div ref={ref} className="relative flex-1">
+//       <button
+//         onClick={() => setOpen((p) => !p)}
+//         className="h-[50px] w-full px-4 bg-[#F6F6F6] border-[1.4px] border-[#EAEAEA] rounded-lg font-[600] cursor-pointer whitespace-nowrap"
+//       >
+//         {moment(value).format("ddd, D MMM")}
+//       </button>
+
+//       {open && (
+//         <Calendar
+//           mode="popup"
+//           position="absolute"
+//           right={right}
+//           value={value}
+//           onChange={(date) => {
+//             onChange(date);
+//             setOpen(false);
+//           }}
+//         />
+//       )}
+//     </div>
+//   );
+// }
 import { useRef, useState } from "react";
 import Calendar from "./Calendar";
 import { useOutsideClick } from "@/hooks/useOutsideClick";
 import moment from "moment";
 
-export function DateInput({ value, onChange, right }) {
+export function DateInput({
+  value,
+  onChange,
+  right,
+  showYear = false,
+}) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
   useOutsideClick(ref, () => setOpen(false));
 
+  const dateValue =
+    value instanceof Date && !isNaN(value) ? value : null;
+
+  const format = showYear
+    ? "ddd, D MMM YYYY"
+    : "ddd, D MMM";
+
   return (
     <div ref={ref} className="relative flex-1">
       <button
+        type="button"
         onClick={() => setOpen((p) => !p)}
-        className="h-[50px] w-full px-4 bg-[#F6F6F6] border-[1.4px] border-[#EAEAEA] rounded-lg font-[600] cursor-pointer whitespace-nowrap"
+        className="h-[50px] w-full px-4 bg-[#F6F6F6]
+                   border-[1.4px] border-[#EAEAEA]
+                   rounded-lg font-[600]
+                   cursor-pointer whitespace-nowrap
+                   text-left"
       >
-        {moment(value).format("ddd, D MMM")}
+        {dateValue ? (
+          moment(dateValue).format(format)
+        ) : (
+          <span className="text-gray-400">Select date</span>
+        )}
       </button>
 
       {open && (
@@ -23,7 +79,7 @@ export function DateInput({ value, onChange, right }) {
           mode="popup"
           position="absolute"
           right={right}
-          value={value}
+          value={dateValue || new Date()}
           onChange={(date) => {
             onChange(date);
             setOpen(false);

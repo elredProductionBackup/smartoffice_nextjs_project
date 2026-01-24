@@ -4,86 +4,134 @@ import { useOutsideClick } from "@/hooks/useOutsideClick";
 import PointDropdown from "../UI/PointDropdown";
 
 export const DUMMY_COLLABORATORS = [
-  "jasonstatham@gmail.com",
-  "emma.watson@gmail.com",
-  "robert.downey@gmail.com",
-  "scarlett.j@gmail.com",
-  "chris.evans@gmail.com",
+  { id: 1, name: "Jason Statham" },
+  { id: 2, name: "Emma Watson" },
+  { id: 3, name: "Robert Downey Jr." },
+  { id: 4, name: "Scarlett Johansson" },
+  { id: 5, name: "Chris Evans" },
 ];
 
-const CollaboratorRow = ({ data = {}, onChange, onRemove, canRemove }) => {
+const CollaboratorRow = ({
+  data = {},
+  selectedNames = [],
+  onChange,
+  onRemove,
+  canRemove,
+}) => {
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef(null);
 
-  const email = data.email || "";
-  const debouncedValue = useDebounce(email);
+  const name = data.name || "";
+  const debouncedValue = useDebounce(name);
+  const isSelected = Boolean(name);
 
   useOutsideClick(wrapperRef, () => setOpen(false));
 
-  const suggestions = useMemo(() => {
-    if (!debouncedValue) return [];
-    return DUMMY_COLLABORATORS.filter((c) =>
-      c.toLowerCase().includes(debouncedValue.toLowerCase())
+  /** filter out already selected collaborators */
+  const filteredCollaborators = useMemo(() => {
+    return DUMMY_COLLABORATORS.filter(
+      (c) =>
+        !selectedNames.includes(c.name) &&
+        c.name.toLowerCase().includes(debouncedValue.toLowerCase())
     );
-  }, [debouncedValue]);
+  }, [debouncedValue, selectedNames]);
 
   return (
-    <div ref={wrapperRef} className="flex gap-2 items-start relative">
-      {/* Input */}
-      <div className="relative flex-1">
-        {/* Left icon */}
-        <div className="absolute left-[20px] top-1/2 -translate-y-1/2 text-gray-400 flex items-center">
-          <span className="la--handshake-solid text-[20px]" />
-        </div>
+    <div ref={wrapperRef} className="flex gap-[20px] items-center relative">
+      {/* LEFT */}
+      <div className="relative flex-1 flex items-center">
+        {/* SELECTED PILL */}
+        {isSelected ? (
+          <div className="w-full h-[50px] pl-[50px] pr-[20px] bg-[#F6F6F6] outline-none border border-[#EAEAEA] rounded-lg flex items-center ">
+            <div className="absolute left-[20px] flex items-center text-[#999]">
+              <span className="la--handshake-solid text-[20px]" />
+            </div>
+            <div className="flex items-center gap-[6px] border border-[#B1B1B1]
+                rounded-full px-[5px] py-[4px] h-[32px] w-fit" >
+              <div className="h-[24px] w-[24px] rounded-full bg-[#CCCCCC]" />
+              <span className="text-[14px] font-[500]">{name}</span>
 
-        <input
-          value={email}
-          onChange={(e) => {
-            onChange({ ...data, email: e.target.value });
-            setOpen(true);
-          }}
-          onFocus={() => setOpen(true)}
-          onBlur={() => {
-            if (!DUMMY_COLLABORATORS.includes(email)) {
-              onChange({ ...data, email: "" });
-            }
-          }}
-          placeholder="Officer or Day chair"
-          className="w-full h-[50px] pl-[50px] pr-4 bg-[#F6F6F6] outline-none border border-[#EAEAEA] rounded-lg"
-        />
-
-        {/* Suggestions */}
-        {open && suggestions.length > 0 && (
-          <div className="absolute z-30 mt-2 p-[10px] w-full bg-white rounded-[16px] shadow-lg border border-[#F2F6FC]">
-            {suggestions.map((item) => (
               <button
-                key={item}
                 type="button"
                 onClick={() => {
-                  onChange({ ...data, email: item });
+                  onChange({ ...data, name: "" });
                   setOpen(false);
                 }}
-                className="block w-full text-left px-3 py-2 rounded-lg hover:bg-[#F2F6FC]"
+                className="px-[4px] grid place-items-center cursor-pointer text-gray-500 hover:text-red-500"
               >
-                {item}
+                <span className="akar-icons--cross small-cross"></span>
               </button>
-            ))}
+            </div>
           </div>
+        ) : (
+          <>
+            {/* INPUT */}
+            <div className="absolute left-[20px] flex items-center text-[#999]">
+              <span className="la--handshake-solid text-[20px]" />
+            </div>
+
+            <input
+              value={name}
+              onChange={(e) => {
+                onChange({ ...data, name: e.target.value });
+                setOpen(true);
+              }}
+              onFocus={() => setOpen(true)}
+              placeholder="Officer or Day chair"
+              className="w-full h-[50px] pl-[50px] pr-[20px]
+                bg-[#F6F6F6] outline-none border border-[#EAEAEA] rounded-lg"
+            />
+
+            {/* DROPDOWN */}
+            {open && (
+              <div
+                className="absolute left-0 top-[calc(100%+2px)] w-full max-h-[180px]
+                  rounded-[4px] bg-white z-[7] overflow-auto"
+                style={{ boxShadow: "0px 4px 4px 0px #A4A3A340" }}
+              >
+                {filteredCollaborators.length > 0 ? (
+                  filteredCollaborators.map((u) => (
+                    <div
+                      key={u.id}
+                      onClick={() => {
+                        onChange({ ...data, name: u.name });
+                        setOpen(false);
+                      }}
+                      className="flex items-center gap-[8px] px-[20px] py-[12px]
+                        hover:bg-[#FAFAFA] cursor-pointer font-[500]"
+                    >
+                      <div className="h-[32px] w-[32px] rounded-full bg-[#CCCCCC]" />
+                      {u.name}
+                    </div>
+                  ))
+                ) : (
+                  <div className="w-full min-h-[180px] flex flex-col items-center justify-center gap-[10px]">
+                    <div className="text-[16px] font-[600]">
+                      No collaborator found
+                    </div>
+                    <div className="text-[14px] text-[#666]">
+                      Try adjusting your search.
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </>
         )}
       </div>
 
-      {/* Point */}
+      {/* POINTS */}
       <PointDropdown
         value={data.point}
         onChange={(p) => onChange({ ...data, point: p })}
       />
 
-      {/* Remove */}
+      {/* REMOVE ROW */}
       {canRemove && (
         <button
           type="button"
           onClick={onRemove}
-          className="text-gray-400 hover:text-red-500 mt-[12px]"
+          className="text-[#999] hover:text-red-500 mt-[4px]"
         >
           ✕
         </button>

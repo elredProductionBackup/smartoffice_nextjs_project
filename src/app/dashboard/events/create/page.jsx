@@ -94,7 +94,8 @@ const CreateEvent = () => {
 
 
     const [form, setForm] = useState({
-    eventName: "", eventType: "", description: "", startDate: new Date(), endDate: new Date(),
+    eventName: "",  eventType: { type: "", points: null},
+     description: "", startDate: new Date(), endDate: new Date(),
     reminder: [], location: "",
     attendees: { member: true, spouse: false, children: false, guests: false },
     registrationOpen: true,
@@ -102,7 +103,7 @@ const CreateEvent = () => {
     collaborators: [], attachments: [],   travelInfo: {
     venueLink: "", hotelLink: "",
     requiredInfo: {ticket: false, insurance: false, visa: false, },
-    deadline: null, reminders: [], note: "",
+    deadline: null, reminders: [],
   }, additionalNote: "",
   });
 
@@ -113,7 +114,7 @@ const CreateEvent = () => {
       newErrors.eventName = "Event name is required";
     }
 
-    if (!form.eventType) {
+    if (!form.eventType?.type) {
       newErrors.eventType = "Please select event type";
     }
 
@@ -141,6 +142,17 @@ const handleCreateEvent = (e) => {
   const update = (key, value) =>
     setForm((p) => ({ ...p, [key]: value }));
 
+  const updateEventType = (key, value) => {
+  setForm((prev) => ({
+    ...prev,
+    eventType: {
+      ...prev.eventType,
+      [key]: value,
+    },
+  }));
+};
+
+
   return (
     <div className="h-[calc(100vh-80px)] flex justify-center py-5 gap-[80px] overflow-auto relative">
         <EventImage value={image} onChange={setImage} />
@@ -161,11 +173,13 @@ const handleCreateEvent = (e) => {
               />
 
               <EventTypeDropdown
-                value={form.eventType}
-                onChange={(v) => update("eventType", v)}
-                error={errors.eventType}
-                icon={<span className="material-symbols--event-list-outline-rounded"></span>}
-              />
+              value={form.eventType}
+              onChange={updateEventType}
+              error={errors.eventType}
+              icon={
+                <span className="material-symbols--event-list-outline-rounded" />
+              }
+            />
 
               {/* Description */}
               <EventsTextarea
@@ -208,6 +222,7 @@ const handleCreateEvent = (e) => {
                   placeholder="Add location/room or meeting link"
                   value={form.location || ""}
                   readOnly
+                   error={errors.location}
                   onClick={() =>
                     dispatch(openEventFormModal({ type: "LOCATION" }))
                   }
@@ -238,8 +253,7 @@ const handleCreateEvent = (e) => {
                 onChange={(v) => update("speaker", v)}
               />
 
-              <Collaborators  form={form}
-          setForm={setForm}/>
+              <Collaborators form={form} setForm={setForm}/>
 
               <Attachments
                 value={form.attachments}

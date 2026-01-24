@@ -40,9 +40,18 @@ export const EventImage = ({ value, onChange }) => {
             className="object-cover border-[1.4px] border-[#EAEAEA] rounded-[20px]"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center text-sm text-gray-500">
-            Event image preview
-          </div>
+         <div className="
+            flex flex-col h-full w-full items-center justify-center
+            rounded-[20px] border-[1.4px] border-[#EAEAEA]
+            bg-gradient-to-b from-[#999999] to-[#333333] gap-[20px]"
+        >
+          <Image src={`/logo/no-eventimage.svg`} alt="Default Image" width={100} height={100}/>
+          <span className="text-white text-[20px] font-[600]">
+            No event image
+          </span>
+        </div>
+
+
         )}
       </div>
 
