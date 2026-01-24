@@ -224,6 +224,7 @@ const isFormValid =
                         updateReminder(r.id, "date", date)
                       }
                       right={true}
+                      mode={'fullscreen'}
                     />
 
                     <TimeInput

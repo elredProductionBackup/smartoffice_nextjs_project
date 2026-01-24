@@ -157,6 +157,7 @@ const removeReminder = (id) => {
                 value={draft.deadline}
                 showYear
                 onChange={(date) => update("deadline", date)}
+                mode={'fullscreen'}
               />
             </div>
           </div>
@@ -187,6 +188,7 @@ const removeReminder = (id) => {
                         onChange={(date) =>
                           updateReminder(r.id, "date", date)
                         }
+                        mode={'fullscreen'}
                       />
 
                       <TimeInput
