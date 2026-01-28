@@ -3,6 +3,7 @@ export const UPCOMING_EVENTS = [
     month: "December, 2025",
     items: [
       {
+        id: "figma-config",
         date: "22nd - 24th",
         name: "Figma Config",
         attendees: 102,
@@ -15,6 +16,7 @@ export const UPCOMING_EVENTS = [
         },
       },
       {
+        id: "webflow-advanced-workshop",
         date: "26th",
         name: "Webflow Advanced Workshop",
         attendees: 75,
@@ -30,6 +32,7 @@ export const UPCOMING_EVENTS = [
     month: "January, 2026",
     items: [
       {
+        id: "ux-research",
         date: "2nd - 4th",
         name: "UX Research & Testing Summit",
         attendees: 120,
@@ -42,6 +45,7 @@ export const UPCOMING_EVENTS = [
         },
       },
       {
+        id: "design-systems",
         date: "10th",
         name: "Design Systems Workshop",
         attendees: 68,
@@ -53,6 +57,7 @@ export const UPCOMING_EVENTS = [
         },
       },
       {
+        id: "product-thinking",
         date: "18th - 19th",
         name: "Product Thinking Bootcamp",
         attendees: 150,
@@ -63,6 +68,7 @@ export const UPCOMING_EVENTS = [
         },
       },
       {
+        id: "no-code-tools",
         date: "27th",
         name: "No-Code Tools Meetup",
         attendees: 54,
@@ -81,6 +87,7 @@ export const DRAFT_EVENTS = [
     month: "January, 2026",
     items: [
       {
+        id: "draft",
         date: "10th",
         name: "Draft Event",
         attendees: 0,
@@ -95,6 +102,7 @@ export const PAST_EVENTS = [
     month: "November, 2025",
     items: [
       {
+        id: "ux-design-bootcamp",
         date: "5th - 6th",
         name: "UX Design Bootcamp",
         attendees: 180,
@@ -107,6 +115,7 @@ export const PAST_EVENTS = [
         },
       },
       {
+        id: "product-strategy",
         date: "18th",
         name: "Product Strategy Workshop",
         attendees: 96,
@@ -123,6 +132,7 @@ export const PAST_EVENTS = [
     month: "December, 2025",
     items: [
       {
+        id: "design-systems-meetup",
         date: "3rd",
         name: "Design Systems Meetup",
         attendees: 65,
