@@ -11,7 +11,7 @@ const format24Hour = (value) => {
   return `${hour}:${minute}`;
 };
 
-export function TimeInput({ value, onChange }) {
+export function TimeInput({ value, onChange, size }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -41,6 +41,7 @@ export function TimeInput({ value, onChange }) {
             setOpen(false);
           }}
           is24Hour
+          size={size}
         />
       )}
     </div>

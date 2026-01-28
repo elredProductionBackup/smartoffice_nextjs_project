@@ -164,7 +164,7 @@ const removeReminder = (id) => {
 
 
           {/* Reminders */}
-          <div className="flex flex-col">
+          <div className="flex flex-col items-start w-[100%]">
             <label className="text-[16px] font-[700] mb-[6px]">
               Reminder
             </label>
@@ -172,7 +172,7 @@ const removeReminder = (id) => {
             {draft.reminders?.map((r, index) => (
               <div
                 key={r.id}
-                className={`relative ${
+                className={`relative w-[100%] ${
                   index !== draft.reminders.length - 1
                     ? "border-b border-[#EAEAEA] pb-[15px] mb-[15px]"
                     : "mb-[15px]"
@@ -196,6 +196,7 @@ const removeReminder = (id) => {
                         onChange={(time) =>
                           updateReminder(r.id, "time", time)
                         }
+                        size={'small'}
                       />
                     </div>
 
@@ -216,7 +217,7 @@ const removeReminder = (id) => {
                   <button
                     type="button"
                     onClick={() => removeReminder(r.id)}
-                    className="text-[#999] pt-[15px]"
+                    className="text-[#999] pt-[15px] cursor-pointer"
                   >
                     <span className="akar-icons--cross"></span>
                   </button>

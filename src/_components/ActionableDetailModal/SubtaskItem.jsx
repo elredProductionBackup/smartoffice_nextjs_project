@@ -1,17 +1,8 @@
 import { BsCheck } from "react-icons/bs";
 
 export default function SubtaskItem({
-  subtask,
-  taskId,
-  editingId,
-  editingValue,
-  setEditingId,
-  setEditingValue,
-  onToggle,
-  onDelete,
-  onCommitEdit,
-  canEditOrDelete
-}) {
+  subtask, taskId, editingId, editingValue, setEditingId,
+  setEditingValue, onToggle, onDelete, onCommitEdit, canEditOrDelete}) {
   return (
     <div className="flex items-center gap-[10px]">
       {/* Checkbox */}

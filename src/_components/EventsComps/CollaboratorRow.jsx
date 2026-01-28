@@ -86,7 +86,7 @@ const CollaboratorRow = ({
             {open && (
               <div
                 className="absolute left-0 top-[calc(100%+2px)] w-full max-h-[180px]
-                  rounded-[4px] bg-white z-[7] overflow-auto"
+                  rounded-[4px] bg-white z-[99] overflow-auto"
                 style={{ boxShadow: "0px 4px 4px 0px #A4A3A340" }}
               >
                 {filteredCollaborators.length > 0 ? (

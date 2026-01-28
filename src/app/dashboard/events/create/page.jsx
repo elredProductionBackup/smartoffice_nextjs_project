@@ -94,8 +94,9 @@ const CreateEvent = () => {
 
 
     const [form, setForm] = useState({
+    image: { file: null, previewUrl: null,},
     eventName: "",  eventType: { type: "", points: null},
-     description: "", startDate: new Date(), endDate: new Date(),
+    description: "", startDate: new Date(), endDate: new Date(),
     reminder: [], location: "",
     attendees: { member: true, spouse: false, children: false, guests: false },
     registrationOpen: true,
@@ -120,6 +121,9 @@ const CreateEvent = () => {
 
     if (!form.location.trim()) {
       newErrors.location = "Event location is required";
+    }
+    if(!form?.travelInfo?.hotelLink.trim()){
+      newErrors.travelInfo = "Event Travel Info is required";
     }
 
     setErrors(newErrors);
@@ -155,7 +159,10 @@ const handleCreateEvent = (e) => {
 
   return (
     <div className="h-[calc(100vh-80px)] flex justify-center py-5 gap-[80px] overflow-auto relative">
-        <EventImage value={image} onChange={setImage} />
+        <EventImage
+          value={form.image}
+          onChange={(files) => update("image", files)}
+        />
 
         {/* Right Form */}
         <div className="flex-1 max-w-[500px]">
@@ -274,6 +281,7 @@ const handleCreateEvent = (e) => {
                 onClick={() =>
                   dispatch(openEventFormModal({ type: "TRAVEL" }))
                 }
+                error={errors.travelInfo}
                 svg={"/logo/travel.svg"}
               />
 

@@ -1,4 +1,4 @@
-export function TimePicker({ value, onChange }) {
+export function TimePicker({ value, onChange, size='large' }) {
   const TIMES = Array.from({ length: 24 }, (_, h) => ({
     hour: String(h).padStart(2, "0"),
     minute: "00",
@@ -12,7 +12,7 @@ export function TimePicker({ value, onChange }) {
       <div className="absolute -top-2 h-4 w-4 rotate-45 bg-white border-l border-t border-[#F3F4F6]" />
 
       {/* Popup */}
-      <div className="bg-white border border-[#F3F4F6] rounded-xl shadow-lg w-[80px] max-h-[400px] overflow-y-auto pt-[20px] px-[4px]  cursor-pointer flex flex-col gap-[3px]">
+      <div className={`bg-white border border-[#F3F4F6] rounded-xl shadow-lg w-[80px] ${size ==='small'?'max-h-[150px]':'max-h-[400px]'} overflow-y-auto pt-[20px] px-[4px]  cursor-pointer flex flex-col gap-[3px]`}>
         {TIMES.map((t) => {
           const timeKey = `${t.hour}:00`;
           const isSelected = timeKey === selected;
