@@ -6,8 +6,11 @@ import { closeTopEventsModal } from "@/store/events/eventsUiSlice";
 import MasterChecklistModal from "./MasterChecklistModal";
 import ChecklistFormModal from "./ChecklistFormModal";
 import { useState } from "react";
+import PointSystemModal from "./PointSystemModal";
+
 
 export default function EventsPopups() {
+  const [pointSystem, setPointSystem] = useState(null);
   const dispatch = useDispatch();
   const modalStack = useSelector(
     (state) => state.eventsUi.modalStack
@@ -29,6 +32,11 @@ export default function EventsPopups() {
 
   dispatch(closeTopEventsModal());
 };
+  const handlePointSave = (data) => {
+    setPointSystem(data);
+    // dispatch(closeTopEventsModal());
+  };
+
 
 
   if (!modalStack.length) return null;
@@ -58,6 +66,14 @@ export default function EventsPopups() {
               {modal.type === "CHECKLIST_FORM" && (
                 <ChecklistFormModal {...modal.payload} onSubmit={handleSubmit} onClose={()=>dispatch(closeTopEventsModal())}/>
               )}
+              {modal.type === "POINT_SYSTEM" && (
+              <PointSystemModal
+                initialRules={pointSystem} 
+                onClose={() => dispatch(closeTopEventsModal())}
+                onSave={handlePointSave}
+              />
+            )}
+
             </div>
           </div>
         );

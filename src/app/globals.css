@@ -70,6 +70,18 @@ body {
   height: 4px;
   background-color: #0B57D0;
 }
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Firefox */
+input[type=number] {
+  -moz-appearance: textfield;
+}
+
 .loader {
   width: 18px;
   height: 18px;
