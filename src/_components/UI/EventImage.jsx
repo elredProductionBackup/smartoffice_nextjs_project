@@ -45,7 +45,7 @@ export const EventImage = ({ value, onChange }) => {
             rounded-[20px] border-[1.4px] border-[#EAEAEA]
             bg-gradient-to-b from-[#999999] to-[#333333] gap-[20px]"
         >
-          <Image src={`/logo/no-eventimage.svg`} alt="Default Image" width={100} height={100}/>
+          <Image src={`/logo/no-image.svg`} alt="Default Image" width={100} height={100}/>
           <span className="text-white text-[20px] font-[600]">
             No event image
           </span>

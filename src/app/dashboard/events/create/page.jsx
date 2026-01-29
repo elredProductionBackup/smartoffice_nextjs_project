@@ -1,8 +1,5 @@
 "use client";
 
-// import { Formik, Form, Field, ErrorMessage } from "formik";
-// import * as Yup from "yup";
-// import Calendar from "@/_components/UI/Calendar";
 import { useState } from "react";
 import { EventsInput } from "@/_components/UI/EventsInput";
 import { EventTypeDropdown } from "@/_components/UI/EventTypeDropdown";
@@ -15,7 +12,7 @@ import DateTimeRangePicker from "@/_components/UI/DateTimeRangePicker";
 import { EventImage } from "@/_components/UI/EventImage";
 import ReminderField from "@/_components/EventsComps/ReminderField";
 import ReminderModal from "@/_components/EventsComps/ReminderModal";
-import { openEventFormModal } from "@/store/events/eventsUiSlice";
+import { closeEventFormModal, openEventFormModal } from "@/store/events/eventsUiSlice";
 import { useDispatch } from "react-redux";
 import LocationModal from "@/_components/EventsComps/LocationModal";
 import { useRouter } from "next/navigation";
@@ -23,17 +20,30 @@ import TravelModal from "@/_components/EventsComps/TravelModal";
 import { Collaborators } from "@/_components/EventsComps/Collaborators";
 import moment from "moment";
 import api from "@/services/axios";
+import DraftApprovalModal from "@/_components/EventsComps/DraftApprovalModal";
+
+const isValidImageFile = (file) => {
+  if (!(file instanceof File)) return false;
+
+  const allowed = ["image/jpeg", "image/png", "image/jpg"];
+  const maxSize = 10 * 1024 * 1024;
+
+  return allowed.includes(file.type) && file.size <= maxSize;
+};
+
 
 export const buildEventPayload = (form, startTime, endTime, isDraft = false) => {
   const toUTC = (date) =>
     date ? moment(date).utc().format("YYYY-MM-DDTHH:mm:ss[Z]") : null;
 
-  return {
+  const payload = {
     eventId: "",
 
     eventName: form.eventName.trim(),
     eventType: form.eventType.type,
-    eventImage: form.image?.file || null,
+    ...(isValidImageFile(form.image?.file) && {
+      eventImage: form.image.file,
+    }),
     eventDescription: form.description || "",
 
     startDateTime: toUTC(form.startDate),
@@ -56,45 +66,40 @@ export const buildEventPayload = (form, startTime, endTime, isDraft = false) => 
 
     isRegistration: form.registrationOpen,
 
-    resource: {
-      resourceName: form.speaker.name,
-      resourceDescription: form.speaker.description,
-      resourceImageUrl: form.speaker.image || "",
-      webLink: form.speaker.weblinks || [],
-    },
+    resourceName: form.speaker.name,
+    resourceDescription: form.speaker.description,
+    uploadResourceImageUrl: form.speaker.image || "",
+    webLink: form.speaker.weblinks || [],
 
-    collaborators: [],
-    // collaborators: form.collaborators.map((c) => ({
-    //   userCode: c.userCode,
-    //   points: c.points,
-    // })),
-
-    attachment: form.attachments.reduce((acc, file, i) => {
-      acc[`uploadDocument${i + 1}`] = file;
-      return acc;
-    }, {}),
+    collaborators: form.collaborators
+      .filter((c) => c.userCode)
+      .map((c) => ({
+        userCode: c.userCode,
+        points: c.point,
+      })),
 
     travelInfo: {
       venueLink: form.travelInfo.venueLink,
       hotelLink: form.travelInfo.hotelLink,
-
       attendeesInfo: Object.entries(form.travelInfo.requiredInfo)
         .filter(([_, v]) => v)
         .map(([k]) => k),
-
-      deadLine: form.travelInfo.deadline
-        ? toUTC(form.travelInfo.deadline)
-        : null,
-
+      deadLine: form.travelInfo.deadline ? toUTC(form.travelInfo.deadline) : "",
       remainder: form.travelInfo.reminders.map((r) => ({
         reminderName: r.label,
         time: toUTC(r.time),
       })),
     },
 
-    additionalNotes: form.additionalNote,
+    additionalNotes: form.additionalNote || "",
     isDraft,
   };
+
+  form.attachments?.forEach((file, i) => {
+    payload[`uploadDocument${i + 1}`] = file;
+  });
+
+  return payload;
 };
 
 
@@ -117,6 +122,7 @@ const mergeDateAndTime = (date, time) => {
 
 const CreateEvent = () => {
   const [errors, setErrors] = useState({});
+  const [submitting, setSubmitting] = useState(false);
   const [startTime, setStartTime] = useState({
     hour: "15",
     minute: "00",
@@ -147,70 +153,69 @@ const CreateEvent = () => {
   }, additionalNote: "",
   });
 
-  const validateEvent = () => {
-    const errors = {};
-    const now = moment();
+const validateEvent = () => {
+  const errors = {};
+  const now = moment();
+  
+  if (!form.eventName?.trim()) errors.eventName = "Event name is required";
+  if (!form.eventType?.type) errors.eventType = "Select event type";
+  if (!form.location?.trim()) errors.location = "Location required";
+  if (form.image?.file && !isValidImageFile(form.image.file)) {
+    errors.image = "Image must be JPG/PNG and under 10MB";
+  }
 
-    if (!form.eventName.trim()) errors.eventName = "Event name is required";
-    if (!form.eventType?.type) errors.eventType = "Select event type";
-    if (!form.location.trim()) errors.location = "Location required";
+  if (moment(form.startDate).isBefore(now))
+    errors.date = "Start date & time cannot be in the past";
 
-    if (moment(form.startDate).isBefore(now))
-      errors.date = "Start date & time cannot be in the past";
+  if (moment(form.endDate).isSameOrBefore(form.startDate))
+    errors.date = "End time must be after start time";
 
-    if (moment(form.endDate).isSameOrBefore(form.startDate))
-      errors.date = "End time must be after start time";
-
-    setErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
+  return errors; 
+};
 
 
-  const handleCreateEvent = async (e, isDraft = false) => {
-    e?.preventDefault?.();
+const handleCreateEvent = async (e, isDraft = false) => {
+  e?.preventDefault?.();
 
-    const errors = validateEvent(form);
-    setErrors(errors);
+  const errors = validateEvent(form);
+  setErrors(errors);
+  if (Object.keys(errors).length > 0) return;
 
-    if (Object.keys(errors).length) return;
+  try {
+    setSubmitting(true);
 
-    try {
-      const payload = buildEventPayload(form, startTime, endTime, isDraft);
+    const payload = buildEventPayload(form, startTime, endTime, isDraft);
+    const formData = new FormData();
 
-      const formData = new FormData();
-      console.log(form)
-
-      Object.entries(payload).forEach(([key, value]) => {
-        if (value instanceof File) {
-          formData.append(key, value);
-        } 
-        else if (typeof value === "object" && value !== null) {
-          formData.append(key, JSON.stringify(value));
-        } 
-        else {
-          formData.append(key, value ?? "");
-        }
-      });
-
-      const res = await api.patch("/smartOffice/addEvents", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-
-      console.log(res)
-
-      if (res.status >= 200 && res.status < 300) {
-        router.push("/dashboard/events");
-      } else {
-        setErrors({ api: res.data?.message || "Failed to create event" });
+    Object.entries(payload).forEach(([key, value]) => {
+      if (value instanceof File) {
+        formData.append(key, value);
+      } 
+      else if (Array.isArray(value) || typeof value === "object") {
+        formData.append(key, JSON.stringify(value));
+      } 
+      else {
+        formData.append(key, value ?? "");
       }
+    });
 
-    } catch (err) {
-      console.error(err);
-      setErrors({ api: "Network error. Please try again." });
+
+    const res = await api.patch("/smartOffice/addEvents", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+
+    if (res.status >= 200 && res.status < 300) {
+      router.push("/dashboard/events");
+    } else {
+      setErrors({ api: res.data?.message || "Failed to create event" });
     }
-  };
+  } catch (err) {
+    console.error(err);
+    setErrors({ api: "Network error. Please try again." });
+  } finally {
+    setSubmitting(false);
+  }
+};
 
   const update = (key, value) =>
     setForm((p) => ({ ...p, [key]: value }));
@@ -365,15 +370,17 @@ const CreateEvent = () => {
 
               {/* Actions */}
               <div className="flex gap-3 mb-[25px]">
-                <button className="flex-1 h-[50px] text-[20px] font-[500] border border-[#0B57D0] text-[#0B57D0] rounded-full cursor-pointer">
+                <button className="flex-1 h-[50px] text-[20px] font-[500] border border-[#0B57D0] text-[#0B57D0] rounded-full cursor-pointer" disabled={submitting} onClick={()=> dispatch(openEventFormModal({ type: "APPROVAL" }))} 
+                >
                   Save as draft
                 </button>
-                <button className="flex-1 h-[50px] text-[20px] font-[500] bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)] cursor-pointer text-white rounded-full" type="button" onClick={handleCreateEvent}>
+                <button className="flex-1 h-[50px] text-[20px] font-[500] bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)] cursor-pointer text-white rounded-full" type="button" disabled={submitting} onClick={handleCreateEvent}>
                   Create event
                 </button>
               </div>
             </div>
         </div>
+        <DraftApprovalModal onConfirmCreate={() => dispatch(closeEventFormModal())} onSendForApproval={(e)=>handleCreateEvent(e, true)} />
         <ReminderModal form={form} setForm={setForm} />
         <LocationModal form={form} setForm={setForm} />
         <TravelModal form={form} setForm={setForm} />
