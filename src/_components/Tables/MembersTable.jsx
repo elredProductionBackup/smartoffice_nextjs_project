@@ -11,6 +11,7 @@ import { CONSTANTS } from "@/utils/data";
 import { useEffect, useRef, useState } from "react";
 import MembersTableShimmer from "../Shimmer/MembersTableShimmer";
 import Link from "next/link";
+import Pagination from "../UI/Pagination";
 
 export default function MembersTable({ data=[], total, documents = false,currentPage,loading, onPageChange,onRowClick,search = "",tab }) {
   // const open = useModalStore((state) => state.open);
@@ -327,30 +328,11 @@ export default function MembersTable({ data=[], total, documents = false,current
 
       {/* Pagination */}
       {!isEmpty && totalPages > 1 && (
-        <div className="flex justify-between gap-2 mt-6 bg-[#F2F7FF] px-[30px] pt-[20px] pb-[33px] sticky bottom-0">
-          <div className="h-[48px] flex items-center text-lg font-semibold text-[#333333]">
-            Showing {(currentPage - 1) * CONSTANTS.ITEMS_PER_PAGE + 1} to {Math.min(currentPage * CONSTANTS.ITEMS_PER_PAGE, total)} out of {total} entries
-          </div>
-
-          <div className="absolute left-1/2 -translate-x-1/2 flex gap-[80px]">
-              <button
-              disabled={currentPage === 1}
-              onClick={() => onPageChange(currentPage - 1)}
-              className="w-[48px] h-[48px] flex items-center justify-center rounded-full border-[1.2px] text-[24px] border-[#0B57D0] text-[#0B57D0] disabled:border-[#999999] disabled:text-[#999999] cursor-pointer"
-            >
-              <IoIosArrowBack/>
-            </button>
-
-            <button
-               disabled={currentPage === totalPages}
-              onClick={() => onPageChange(currentPage + 1)}
-              className="w-[48px] h-[48px] flex items-center justify-center rounded-full border-[1.2px] text-[24px] border-[#0B57D0] text-[#0B57D0] disabled:border-[#999999] disabled:text-[#999999] cursor-pointer"
-            >
-              <IoIosArrowForward/>
-            </button>
-          </div>
-          <div></div>
-        </div>
+        <Pagination
+          total={total}
+          currentPage={currentPage}
+          perPage={CONSTANTS.ITEMS_PER_PAGE}
+        />
       )}
 
     </div>

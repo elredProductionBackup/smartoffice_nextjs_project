@@ -13,12 +13,9 @@ export const fetchEvents = createAsyncThunk(
     try {
       const networkClusterCode = localStorage.getItem("networkClusterCode");
 
-      const safePage = Math.max(1, Number(page) || 1);
-      const safeLimit = Math.max(1, Number(limit) || 10);
-
-      const start = (safePage - 1) * safeLimit; 
-      const offset = safeLimit;  
-
+      const start = (page - 1) * limit + 1;
+      const offset = page * limit;
+      
       const res = await getEventsList({
         networkClusterCode,
         start,

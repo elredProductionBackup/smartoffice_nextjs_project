@@ -1,14 +1,15 @@
 "use client";
 
 import ActionableTabs from "@/_components/ActionableTabs";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import EventsList from "@/_components/EventsComps/EventsList";
 import EventsPopups from "@/_components/EventsComps/EventsPopups";
 import EventsHeader from "@/_components/EventsComps/EventsHeader";
 import { useDispatch, useSelector } from "react-redux";
 import { useEffect } from "react";
 import { fetchEvents } from "@/store/events/eventsThunks";
-import { setActiveTab } from "@/store/events/eventsSlice";
+import { setActiveTab,setPage  } from "@/store/events/eventsSlice";
+import Pagination from "@/_components/UI/Pagination";
 
 const EVENT_TABS = [
   { label: "Upcoming events", value: "upcoming" },
@@ -19,7 +20,7 @@ const EVENT_TABS = [
 export default function EventsPageClient() {
   const searchParams = useSearchParams();
   const tab = searchParams.get("tab") || "upcoming";
-
+  const urlPage = Number(searchParams.get("page")) || 1;
   const dispatch = useDispatch();
 
   const {
@@ -31,14 +32,30 @@ export default function EventsPageClient() {
     loading,
     error,  
   } = useSelector((state) => state.events);
-  
-useEffect(() => {
-  if (activeTab !== tab) {
-    dispatch(setActiveTab(tab));
-  }
+  // const router = useRouter();
 
-  dispatch(fetchEvents({ page, limit, search, filterBy: tab }));
-}, [tab, page, limit, search, dispatch]);
+//   useEffect(() => {
+//   if (activeTab && activeTab !== tab) {
+//     const params = new URLSearchParams(searchParams.toString());
+//     params.delete("page"); 
+//     router.replace(`?${params.toString()}`); 
+//     dispatch(setPage(1));
+//   }
+// }, [tab]);
+
+
+  useEffect(() => {
+    if (activeTab !== tab) {
+      dispatch(setActiveTab(tab));
+    }
+
+    if (page !== urlPage) {
+      dispatch(setPage(urlPage));
+    }
+
+    dispatch(fetchEvents({ page: urlPage, limit, search, filterBy: tab }));
+  }, [tab, urlPage, limit, search, dispatch]);
+
 
   return (
     <div className="h-[calc(100vh-120px)] my-5 flex flex-col">
@@ -58,7 +75,13 @@ useEffect(() => {
           showTasks={tab !== "past"}
           isDraft={tab === "draft"}
         />
+        <Pagination
+          total={useSelector((state) => state.events.total)}
+          currentPage={urlPage}
+          perPage={limit}
+        />
       </div>
+
 
       <EventsPopups />
     </div>
