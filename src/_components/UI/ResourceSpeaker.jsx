@@ -1,11 +1,5 @@
 import { useRef, useState } from "react";
-import {
-  IoPersonOutline,
-  IoClose,
-  IoLinkOutline,
-  IoCloudUploadOutline,
-  IoDocumentTextOutline,
-} from "react-icons/io5";
+import { IoClose } from "react-icons/io5";
 
 export function ResourceSpeaker({ value, onChange }) {
   const fileRef = useRef(null);

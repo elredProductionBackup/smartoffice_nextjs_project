@@ -1,14 +1,32 @@
+export const EVENTS_DETAILS = [
+  { id: "attendees", label: "Attendees",value: "attendees" },
+  { id: "memberMedia", label: "Member Media",value:"memberMedia" },
+  { id: "documents", label: "My document",value:"documents" },
+  { id: "logistics", label: "Logistics",value:"logistics" },
+  { id: "checklist", label: "Event checklist",value:"checklist" },
+];
+
 export const UPCOMING_EVENTS = [
   {
     month: "December, 2025",
     items: [
       {
         id: "figma-config",
-        date: "22nd - 24th",
         name: "Figma Config",
-        attendees: 102,
+        dateRange: "Mon 18 Feb 2026 - Fri 22 Aug 2026",
+        time: "12:00 - 1:00 PM",
+        shortDate: "22nd - 24th",
+        date: "22nd - 24th",
         location: "Hyderabad",
-        image: "/images/event1.png",
+        attendees: 102,
+        image: "/image/figma-config.webp",
+        speaker: {
+          name: "Ellen Dissinger",
+          title: "UX Research Lead",
+          avatar: "/images/speaker1.png",
+          bio: "Meet our speaker — a thought leader bringing fresh insights and real-world clarity.",
+        },
+        registrationOpen: true,
         tasks: {
           hard: { completed: 5, total: 8 },
           medium: { completed: 2, total: 10 },

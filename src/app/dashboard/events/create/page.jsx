@@ -21,42 +21,82 @@ import LocationModal from "@/_components/EventsComps/LocationModal";
 import { useRouter } from "next/navigation";
 import TravelModal from "@/_components/EventsComps/TravelModal";
 import { Collaborators } from "@/_components/EventsComps/Collaborators";
+import moment from "moment";
+import api from "@/services/axios";
 
-const buildFormData = (form) => {
-  const fd = new FormData();
+export const buildEventPayload = (form, startTime, endTime, isDraft = false) => {
+  const toUTC = (date) =>
+    date ? moment(date).utc().format("YYYY-MM-DDTHH:mm:ss[Z]") : null;
 
-  fd.append("eventName", form.eventName);
-  fd.append("eventType", form.eventType);
-  fd.append("description", form.description);
-  fd.append("startDate", form.startDate.toISOString());
-  fd.append("endDate", form.endDate.toISOString());
-  fd.append("location", form.location);
-  fd.append("registrationOpen", form.registrationOpen);
+  return {
+    eventId: "",
 
-  // Attendees (object)
-  Object.entries(form.attendees).forEach(([key, value]) => {
-    fd.append(`attendees[${key}]`, value);
-  });
+    eventName: form.eventName.trim(),
+    eventType: form.eventType.type,
+    eventImage: form.image?.file || null,
+    eventDescription: form.description || "",
 
-  // Speaker
-  fd.append("speaker[name]", form.speaker.name);
-  fd.append("speaker[description]", form.speaker.description);
-  fd.append("speaker[linkedin]", form.speaker.linkedin);
+    startDateTime: toUTC(form.startDate),
+    endDateTime: toUTC(form.endDate),
+    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
 
-  if (form.speaker.image) {
-    fd.append("speaker[image]", form.speaker.image);
-  }
+    reminder: form.reminder.map((r) => ({
+      reminderName: r.label,
+      time: toUTC(r.time),
+    })),
 
-  // Attachments (array of files)
-  form.attachments.forEach((file, index) => {
-    fd.append(`attachments[${index}]`, file);
-  });
+    eventLocation: form.location,
 
-  fd.append("travelInfo", form.travelInfo);
-  fd.append("additionalNote", form.additionalNote);
+    whoCanAttend: {
+      members: form.attendees.member,
+      spouce: form.attendees.spouse,
+      children: form.attendees.children,
+      guests: form.attendees.guests,
+    },
 
-  return fd;
+    isRegistration: form.registrationOpen,
+
+    resource: {
+      resourceName: form.speaker.name,
+      resourceDescription: form.speaker.description,
+      resourceImageUrl: form.speaker.image || "",
+      webLink: form.speaker.weblinks || [],
+    },
+
+    collaborators: [],
+    // collaborators: form.collaborators.map((c) => ({
+    //   userCode: c.userCode,
+    //   points: c.points,
+    // })),
+
+    attachment: form.attachments.reduce((acc, file, i) => {
+      acc[`uploadDocument${i + 1}`] = file;
+      return acc;
+    }, {}),
+
+    travelInfo: {
+      venueLink: form.travelInfo.venueLink,
+      hotelLink: form.travelInfo.hotelLink,
+
+      attendeesInfo: Object.entries(form.travelInfo.requiredInfo)
+        .filter(([_, v]) => v)
+        .map(([k]) => k),
+
+      deadLine: form.travelInfo.deadline
+        ? toUTC(form.travelInfo.deadline)
+        : null,
+
+      remainder: form.travelInfo.reminders.map((r) => ({
+        reminderName: r.label,
+        time: toUTC(r.time),
+      })),
+    },
+
+    additionalNotes: form.additionalNote,
+    isDraft,
+  };
 };
+
 
 
 
@@ -76,7 +116,6 @@ const mergeDateAndTime = (date, time) => {
 
 
 const CreateEvent = () => {
-  const [image, setImage] = useState(null);
   const [errors, setErrors] = useState({});
   const [startTime, setStartTime] = useState({
     hour: "15",
@@ -100,7 +139,7 @@ const CreateEvent = () => {
     reminder: [], location: "",
     attendees: { member: true, spouse: false, children: false, guests: false },
     registrationOpen: true,
-    speaker: { name: "", description: "", linkedin: "", image: null },
+    speaker: { name: "", description: "", weblinks: [], image: null },
     collaborators: [], attachments: [],   travelInfo: {
     venueLink: "", hotelLink: "",
     requiredInfo: {ticket: false, insurance: false, visa: false, },
@@ -108,40 +147,70 @@ const CreateEvent = () => {
   }, additionalNote: "",
   });
 
-  const validate = () => {
-    const newErrors = {};
+  const validateEvent = () => {
+    const errors = {};
+    const now = moment();
 
-    if (!form.eventName.trim()) {
-      newErrors.eventName = "Event name is required";
-    }
+    if (!form.eventName.trim()) errors.eventName = "Event name is required";
+    if (!form.eventType?.type) errors.eventType = "Select event type";
+    if (!form.location.trim()) errors.location = "Location required";
 
-    if (!form.eventType?.type) {
-      newErrors.eventType = "Please select event type";
-    }
+    if (moment(form.startDate).isBefore(now))
+      errors.date = "Start date & time cannot be in the past";
 
-    if (!form.location.trim()) {
-      newErrors.location = "Event location is required";
-    }
-    if(!form?.travelInfo?.hotelLink.trim()){
-      newErrors.travelInfo = "Event Travel Info is required";
-    }
+    if (moment(form.endDate).isSameOrBefore(form.startDate))
+      errors.date = "End time must be after start time";
 
-    setErrors(newErrors);
-
-    return Object.keys(newErrors).length === 0;
+    setErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
-const handleCreateEvent = (e) => {
-  e?.preventDefault?.();
 
-  const isValid = validate();
+  const handleCreateEvent = async (e, isDraft = false) => {
+    e?.preventDefault?.();
 
-  if (!isValid) return;
+    const errors = validateEvent(form);
+    setErrors(errors);
 
-  const formData = buildFormData(form);
+    if (Object.keys(errors).length) return;
 
-  console.log(form)
-};
+    try {
+      const payload = buildEventPayload(form, startTime, endTime, isDraft);
+
+      const formData = new FormData();
+      console.log(form)
+
+      Object.entries(payload).forEach(([key, value]) => {
+        if (value instanceof File) {
+          formData.append(key, value);
+        } 
+        else if (typeof value === "object" && value !== null) {
+          formData.append(key, JSON.stringify(value));
+        } 
+        else {
+          formData.append(key, value ?? "");
+        }
+      });
+
+      const res = await api.patch("/smartOffice/addEvents", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      console.log(res)
+
+      if (res.status >= 200 && res.status < 300) {
+        router.push("/dashboard/events");
+      } else {
+        setErrors({ api: res.data?.message || "Failed to create event" });
+      }
+
+    } catch (err) {
+      console.error(err);
+      setErrors({ api: "Network error. Please try again." });
+    }
+  };
 
   const update = (key, value) =>
     setForm((p) => ({ ...p, [key]: value }));
@@ -305,10 +374,7 @@ const handleCreateEvent = (e) => {
               </div>
             </div>
         </div>
-        <ReminderModal
-          form={form}
-          setForm={setForm}
-        />
+        <ReminderModal form={form} setForm={setForm} />
         <LocationModal form={form} setForm={setForm} />
         <TravelModal form={form} setForm={setForm} />
     </div>
