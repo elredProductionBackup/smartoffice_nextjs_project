@@ -1,89 +1,146 @@
-import { useState, useMemo, useRef } from "react";
+"use client";
+
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useOutsideClick } from "@/hooks/useOutsideClick";
 import PointDropdown from "../UI/PointDropdown";
+import Image from "next/image";
 
-export const DUMMY_COLLABORATORS = [
-  "jasonstatham@gmail.com",
-  "emma.watson@gmail.com",
-  "robert.downey@gmail.com",
-  "scarlett.j@gmail.com",
-  "chris.evans@gmail.com",
-];
-
-const CollaboratorRow = ({ data = {}, onChange, onRemove, canRemove }) => {
+const CollaboratorRow = ({
+  data = {},
+  collaborators = [],
+  selectedUserCodes = [],
+  onChange,
+  onRemove,
+  canRemove,
+  setQuery,
+}) => {
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef(null);
+  const inputRef = useRef(null);
 
-  const email = data.email || "";
-  const debouncedValue = useDebounce(email);
+  const name = data.name || "";
+  const avatar = data.dpURL || "";
+  const debouncedValue = useDebounce(name);
+  const isSelected = Boolean(data.userCode);
+
+  // Focus input when dropdown opens
+  useEffect(() => {
+    if (open) inputRef.current?.focus();
+  }, [open]);
 
   useOutsideClick(wrapperRef, () => setOpen(false));
 
-  const suggestions = useMemo(() => {
-    if (!debouncedValue) return [];
-    return DUMMY_COLLABORATORS.filter((c) =>
-      c.toLowerCase().includes(debouncedValue.toLowerCase())
-    );
-  }, [debouncedValue]);
+  // Filter dropdown to exclude selected collaborators
+  const filteredCollaborators = useMemo(
+    () =>
+      collaborators.filter(
+        (c) =>
+          !selectedUserCodes.includes(c.userCode) &&
+          c.userCode !== data.userCode &&
+          c.name.toLowerCase().includes(debouncedValue.toLowerCase())
+      ),
+    [debouncedValue, selectedUserCodes, collaborators, data.userCode]
+  );
 
   return (
-    <div ref={wrapperRef} className="flex gap-2 items-start relative">
-      {/* Input */}
-      <div className="relative flex-1">
-        {/* Left icon */}
-        <div className="absolute left-[20px] top-1/2 -translate-y-1/2 text-gray-400 flex items-center">
-          <span className="la--handshake-solid text-[20px]" />
-        </div>
+    <div ref={wrapperRef} className="flex gap-[20px] items-center relative">
+      <div className="relative flex-1 flex items-center">
+        {isSelected ? (
+          // Selected pill
+          <div className="w-full h-[50px] pl-[50px] pr-[20px] bg-[#F6F6F6] border border-[#EAEAEA] rounded-lg flex items-center">
+            <div className="absolute left-[20px] flex items-center text-[#999]">
+              <span className="la--handshake-solid text-[20px]" />
+            </div>
+            <div className="flex items-center gap-[6px] border border-[#B1B1B1] rounded-full px-[5px] py-[4px] h-[32px] w-fit">
+              {avatar ? (
+                <Image src={avatar} alt="Avatar" width={24} height={24} />
+              ) : (
+                <div className="h-[24px] w-[24px] rounded-full bg-[#CCCCCC]" />
+              )}
+              <span className="text-[14px] font-[500]">{name}</span>
 
-        <input
-          value={email}
-          onChange={(e) => {
-            onChange({ ...data, email: e.target.value });
-            setOpen(true);
-          }}
-          onFocus={() => setOpen(true)}
-          onBlur={() => {
-            if (!DUMMY_COLLABORATORS.includes(email)) {
-              onChange({ ...data, email: "" });
-            }
-          }}
-          placeholder="Officer or Day chair"
-          className="w-full h-[50px] pl-[50px] pr-4 bg-[#F6F6F6] outline-none border border-[#EAEAEA] rounded-lg"
-        />
-
-        {/* Suggestions */}
-        {open && suggestions.length > 0 && (
-          <div className="absolute z-30 mt-2 p-[10px] w-full bg-white rounded-[16px] shadow-lg border border-[#F2F6FC]">
-            {suggestions.map((item) => (
               <button
-                key={item}
                 type="button"
                 onClick={() => {
-                  onChange({ ...data, email: item });
-                  setOpen(false);
+                  onChange({ userCode: "", name: "", email: "", dpURL: "", point: 1 });
+                  setOpen(true);
+                  setQuery("");
                 }}
-                className="block w-full text-left px-3 py-2 rounded-lg hover:bg-[#F2F6FC]"
+                className="px-[4px] grid place-items-center cursor-pointer text-gray-500 hover:text-red-500"
               >
-                {item}
+                <span className="akar-icons--cross small-cross"></span>
               </button>
-            ))}
+            </div>
           </div>
+        ) : (
+          // Input + dropdown
+          <>
+            <div className="absolute left-[20px] flex items-center text-[#999]">
+              <span className="la--handshake-solid text-[20px]" />
+            </div>
+
+            <input
+              ref={inputRef}
+              value={data.name}
+              onChange={(e) => {
+                onChange({ ...data, name: e.target.value });
+                setOpen(true);
+                setQuery(e.target.value);
+              }}
+              onFocus={() => setOpen(true)}
+              placeholder="Officer or Day chair"
+              className="w-full h-[50px] pl-[50px] pr-[20px] bg-[#F6F6F6] border border-[#EAEAEA] rounded-lg outline-none"
+            />
+
+            {open && (
+              <div
+                className="absolute left-0 top-[calc(100%+2px)] w-full max-h-[180px] bg-white rounded-[4px] z-[99] overflow-auto shadow-sm"
+              >
+                {filteredCollaborators.length > 0 ? (
+                  filteredCollaborators.map((u) => (
+                    <div
+                      key={u.userCode}
+                      onClick={() => {
+                        onChange({
+                          userCode: u.userCode,
+                          name: u.name,
+                          email: u.email,
+                          dpURL: u.dpURL,
+                          point: data.point || 1,
+                        });
+                        setOpen(false);
+                        setQuery("");
+                      }}
+                      className="flex items-center gap-[8px] px-[20px] py-[12px] hover:bg-[#FAFAFA] cursor-pointer font-[500]"
+                    >
+                      {u.dpURL ? (
+                        <Image src={u.dpURL} alt="Avatar" width={32} height={32} />
+                      ) : (
+                        <div className="h-[32px] w-[32px] rounded-full bg-[#CCCCCC]" />
+                      )}
+                      {u.name}
+                    </div>
+                  ))
+                ) : (
+                  <div className="w-full min-h-[180px] flex flex-col items-center justify-center gap-[10px]">
+                    <div className="text-[16px] font-[600]">No collaborator found</div>
+                    <div className="text-[14px] text-[#666]">Try adjusting your search.</div>
+                  </div>
+                )}
+              </div>
+            )}
+          </>
         )}
       </div>
 
-      {/* Point */}
-      <PointDropdown
-        value={data.point}
-        onChange={(p) => onChange({ ...data, point: p })}
-      />
+      <PointDropdown value={data.point} onChange={(p) => onChange({ ...data, point: p })} />
 
-      {/* Remove */}
       {canRemove && (
         <button
           type="button"
           onClick={onRemove}
-          className="text-gray-400 hover:text-red-500 mt-[12px]"
+          className="text-[#999] hover:text-red-500 mt-[4px]"
         >
           ✕
         </button>

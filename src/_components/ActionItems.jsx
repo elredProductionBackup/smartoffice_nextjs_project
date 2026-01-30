@@ -18,6 +18,7 @@ import ActionableShimmer from "./Shimmer/ActionableShimmer";
 import { closeModal } from "@/store/actionable/actionableUiSlice";
 import DatepickerModal from "./DatepickerModal";
 import DeleteConfirm from "./ConfirmationPopups/DeleteConfirm";
+import Pagination from "./UI/Pagination";
 const TABS_ITEMS = ["Past", "Today", "All"];
 
 export default function ActionItems() {
@@ -285,34 +286,13 @@ export default function ActionItems() {
               ))}
           </div>
           {total > 10 && items.length>0 && (
-            <div className="flex justify-between gap-2 bg-[#F2F7FF] pt-[20px] px-[30px] pb-[33px] sticky bottom-0 rounded-[0px 20px 20px 0px]">
-              <div className="h-[48px] flex items-center text-lg font-semibold text-[#333333]">
-                Showing {(page - 1) * CONSTANTS.ITEMS_PER_PAGE + 1} to {Math.min(page * CONSTANTS.ITEMS_PER_PAGE, total)} out of {total} entries
-              </div>
+            <Pagination
+              total={total}
+              currentPage={page}
+              perPage={CONSTANTS.ITEMS_PER_PAGE}
+              rounded
+            />
 
-              <div className="absolute left-1/2 -translate-x-1/2 flex gap-[80px]">
-                <button
-                  disabled={page === 1}
-                  onClick={() => changePage(page - 1)}
-                  className="w-[48px] h-[48px] flex items-center justify-center rounded-full border-[1.2px] text-[24px]
-                    border-[#0B57D0] text-[#0B57D0]
-                    disabled:border-[#999999] disabled:text-[#999999] cursor-pointer"
-                >
-                  <IoIosArrowBack />
-                </button>
-
-                <button
-                  disabled={page === totalPages}
-                  onClick={() => changePage(page + 1)}
-                  className="w-[48px] h-[48px] flex items-center justify-center rounded-full border-[1.2px] text-[24px]
-                    border-[#0B57D0] text-[#0B57D0]
-                    disabled:border-[#999999] disabled:text-[#999999] cursor-pointer"
-                >
-                  <IoIosArrowForward />
-                </button>
-              </div>
-              <div />
-            </div>
           )}
         </>
       }

@@ -1,13 +1,32 @@
+export const EVENTS_DETAILS = [
+  { id: "attendees", label: "Attendees",value: "attendees" },
+  { id: "memberMedia", label: "Member Media",value:"memberMedia" },
+  { id: "documents", label: "My document",value:"documents" },
+  { id: "logistics", label: "Logistics",value:"logistics" },
+  { id: "checklist", label: "Event checklist",value:"checklist" },
+];
+
 export const UPCOMING_EVENTS = [
   {
     month: "December, 2025",
     items: [
       {
-        date: "22nd - 24th",
+        id: "figma-config",
         name: "Figma Config",
-        attendees: 102,
+        dateRange: "Mon 18 Feb 2026 - Fri 22 Aug 2026",
+        time: "12:00 - 1:00 PM",
+        shortDate: "22nd - 24th",
+        date: "22nd - 24th",
         location: "Hyderabad",
-        image: "/images/event1.png",
+        attendees: 102,
+        image: "/image/figma-config.webp",
+        speaker: {
+          name: "Ellen Dissinger",
+          title: "UX Research Lead",
+          avatar: "/images/speaker1.png",
+          bio: "Meet our speaker — a thought leader bringing fresh insights and real-world clarity.",
+        },
+        registrationOpen: true,
         tasks: {
           hard: { completed: 5, total: 8 },
           medium: { completed: 2, total: 10 },
@@ -15,6 +34,7 @@ export const UPCOMING_EVENTS = [
         },
       },
       {
+        id: "webflow-advanced-workshop",
         date: "26th",
         name: "Webflow Advanced Workshop",
         attendees: 75,
@@ -30,6 +50,7 @@ export const UPCOMING_EVENTS = [
     month: "January, 2026",
     items: [
       {
+        id: "ux-research",
         date: "2nd - 4th",
         name: "UX Research & Testing Summit",
         attendees: 120,
@@ -42,6 +63,7 @@ export const UPCOMING_EVENTS = [
         },
       },
       {
+        id: "design-systems",
         date: "10th",
         name: "Design Systems Workshop",
         attendees: 68,
@@ -53,6 +75,7 @@ export const UPCOMING_EVENTS = [
         },
       },
       {
+        id: "product-thinking",
         date: "18th - 19th",
         name: "Product Thinking Bootcamp",
         attendees: 150,
@@ -63,6 +86,7 @@ export const UPCOMING_EVENTS = [
         },
       },
       {
+        id: "no-code-tools",
         date: "27th",
         name: "No-Code Tools Meetup",
         attendees: 54,
@@ -81,6 +105,7 @@ export const DRAFT_EVENTS = [
     month: "January, 2026",
     items: [
       {
+        id: "draft",
         date: "10th",
         name: "Draft Event",
         attendees: 0,
@@ -95,6 +120,7 @@ export const PAST_EVENTS = [
     month: "November, 2025",
     items: [
       {
+        id: "ux-design-bootcamp",
         date: "5th - 6th",
         name: "UX Design Bootcamp",
         attendees: 180,
@@ -107,6 +133,7 @@ export const PAST_EVENTS = [
         },
       },
       {
+        id: "product-strategy",
         date: "18th",
         name: "Product Strategy Workshop",
         attendees: 96,
@@ -123,6 +150,7 @@ export const PAST_EVENTS = [
     month: "December, 2025",
     items: [
       {
+        id: "design-systems-meetup",
         date: "3rd",
         name: "Design Systems Meetup",
         attendees: 65,

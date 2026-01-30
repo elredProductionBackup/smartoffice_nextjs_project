@@ -131,18 +131,8 @@ const actionableSlice = createSlice({
       })
 
       .addCase(changeDueDateTime.rejected, (state, action) => {
-        state.error = action.payload; // show error, NO mutation
+        state.error = action.payload;
       })
-      /* COMMENTS */
-      // .addCase(fetchComments.fulfilled, (state, action) => {
-      //   const item = state.items.find(
-      //     (i) => i.actionableId === action.payload.actionableId
-      //   );
-      //   if (item) {
-      //     item.comments = action.payload.comments;
-      //   }
-      // })
-      /* CREATE ACTIONABLE */
       .addCase(createActionable.pending, (state, action) => {
         const tempItem = {
           ...action.meta.arg,
@@ -233,7 +223,6 @@ const actionableSlice = createSlice({
         state.error = action.payload;
       })
       // Subtask
-      /* ================= CREATE SUBTASK ================= */
       .addCase(createSubTask.pending, (state, action) => {
         const { tempId, actionableId, title } = action.meta.arg;
 
@@ -375,61 +364,6 @@ const actionableSlice = createSlice({
         .addCase(fetchCollaborators.rejected, (state, action) => {
           state.collaboratorsLoading = false;
         })
-        // Comments
-        // .addCase(createComment.pending, (state, action) => {
-        //   const { tempId, actionableId, comment } = action.meta.arg;
-
-        //   const parent = state.items.find(
-        //     (i) => i.actionableId === actionableId
-        //   );
-        //   if (!parent) return;
-
-        //   if (!parent.comments) parent.comments = [];
-
-        //   parent.comments.unshift({
-        //     _id: tempId,
-        //     clientId: tempId,
-        //     comment,
-        //     name: getAuthorName(), 
-        //     createdAt: new Date().toISOString(),
-        //     isCompleted: false,
-        //     isOptimistic: true,
-        //   });
-        // })
-
-        // .addCase(createComment.fulfilled, (state, action) => {
-        //   const { actionableId, comment, tempId } = action.payload;
-
-        //   const parent = state.items.find(
-        //     (i) => i.actionableId === actionableId
-        //   );
-        //   if (!parent) return;
-
-        //   const index = parent.comments.findIndex(
-        //     (c) => c.clientId === tempId
-        //   );
-
-        //   if (index !== -1) {
-        //     parent.comments[index] = {
-        //       ...comment,
-        //       clientId: tempId,
-        //       isOptimistic: false,
-        //     };
-        //   }
-        // })
-
-        // .addCase(createComment.rejected, (state, action) => {
-        //   const { actionableId, tempId } = action.payload || {};
-
-        //   const parent = state.items.find(
-        //     (i) => i.actionableId === actionableId
-        //   );
-        //   if (!parent) return;
-
-        //   parent.comments = parent.comments.filter(
-        //     (c) => c.clientId !== tempId
-        //   );
-        // })
         // --- Optimistic Comment Creation ---
         .addCase(createComment.pending, (state, action) => {
           const { tempId, actionableId, comment } = action.meta.arg;
@@ -534,7 +468,7 @@ const actionableSlice = createSlice({
           if (!store) return;
 
           if (page === 1) {
-            store.list = comments; // first page overwrite
+            store.list = comments; 
           } else {
             const existingIds = new Set(store.list.map(c => c._id));
             const newComments = comments.filter(c => !existingIds.has(c._id));
@@ -544,7 +478,6 @@ const actionableSlice = createSlice({
           store.page = page;
           store.total = total;
 
-          // ✅ this is enough to stop further fetches
           store.hasMore = store.list.length < total;
 
           store.loading = false;

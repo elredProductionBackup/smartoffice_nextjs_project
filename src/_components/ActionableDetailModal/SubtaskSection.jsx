@@ -2,13 +2,8 @@ import { useState } from "react";
 import SubtaskItem from "./SubtaskItem";
 
 export default function SubtaskSection({
-  task,
-  onAddSubtask,
-  onToggleSubtask,
-  onUpdateSubtask,
-  onDeleteSubtask,
-  canEditOrDelete
-}) {
+  task, onAddSubtask, onToggleSubtask, onUpdateSubtask, onDeleteSubtask,
+  canEditOrDelete }) {
   const [showInput, setShowInput] = useState(false);
   const [value, setValue] = useState("");
   const [editingId, setEditingId] = useState(null);
@@ -72,6 +67,21 @@ export default function SubtaskSection({
               />
             </div>
       )}
+
+      {/* EMPTY STATE PLACEHOLDER */}
+      {/* {!showInput && (!task.subTask || task.subTask.length === 0) && (
+        <div className="flex items-center gap-[10px] text-[#999999] font-[600]"  onClick={() => setShowInput(true)} >
+                <div className={`h-[30px] flex items-center`} >
+                  <div
+                    className={`h-[18px] w-[18px] rounded-[4px] border-[2px] flex items-center justify-center cursor-pointer transition-colors border-[#999999] bg-transparent`}
+                  >
+                  </div>
+                </div>
+                Add a new subtask
+          
+        </div>
+      )} */}
+
 
       {task.subTask?.map((s) => (
         <SubtaskItem

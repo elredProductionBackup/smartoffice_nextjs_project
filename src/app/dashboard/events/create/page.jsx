@@ -1,8 +1,5 @@
 "use client";
 
-// import { Formik, Form, Field, ErrorMessage } from "formik";
-// import * as Yup from "yup";
-// import Calendar from "@/_components/UI/Calendar";
 import { useState } from "react";
 import { EventsInput } from "@/_components/UI/EventsInput";
 import { EventTypeDropdown } from "@/_components/UI/EventTypeDropdown";
@@ -15,48 +12,96 @@ import DateTimeRangePicker from "@/_components/UI/DateTimeRangePicker";
 import { EventImage } from "@/_components/UI/EventImage";
 import ReminderField from "@/_components/EventsComps/ReminderField";
 import ReminderModal from "@/_components/EventsComps/ReminderModal";
-import { openEventFormModal } from "@/store/events/eventsUiSlice";
+import { closeEventFormModal, openEventFormModal } from "@/store/events/eventsUiSlice";
 import { useDispatch } from "react-redux";
 import LocationModal from "@/_components/EventsComps/LocationModal";
 import { useRouter } from "next/navigation";
 import TravelModal from "@/_components/EventsComps/TravelModal";
 import { Collaborators } from "@/_components/EventsComps/Collaborators";
+import moment from "moment";
+import api from "@/services/axios";
+import DraftApprovalModal from "@/_components/EventsComps/DraftApprovalModal";
 
-const buildFormData = (form) => {
-  const fd = new FormData();
+const isValidImageFile = (file) => {
+  if (!(file instanceof File)) return false;
 
-  fd.append("eventName", form.eventName);
-  fd.append("eventType", form.eventType);
-  fd.append("description", form.description);
-  fd.append("startDate", form.startDate.toISOString());
-  fd.append("endDate", form.endDate.toISOString());
-  fd.append("location", form.location);
-  fd.append("registrationOpen", form.registrationOpen);
+  const allowed = ["image/jpeg", "image/png", "image/jpg"];
+  const maxSize = 10 * 1024 * 1024;
 
-  // Attendees (object)
-  Object.entries(form.attendees).forEach(([key, value]) => {
-    fd.append(`attendees[${key}]`, value);
-  });
-
-  // Speaker
-  fd.append("speaker[name]", form.speaker.name);
-  fd.append("speaker[description]", form.speaker.description);
-  fd.append("speaker[linkedin]", form.speaker.linkedin);
-
-  if (form.speaker.image) {
-    fd.append("speaker[image]", form.speaker.image);
-  }
-
-  // Attachments (array of files)
-  form.attachments.forEach((file, index) => {
-    fd.append(`attachments[${index}]`, file);
-  });
-
-  fd.append("travelInfo", form.travelInfo);
-  fd.append("additionalNote", form.additionalNote);
-
-  return fd;
+  return allowed.includes(file.type) && file.size <= maxSize;
 };
+
+
+export const buildEventPayload = (form, startTime, endTime, isDraft = false) => {
+  const toUTC = (date) =>
+    date ? moment(date).utc().format("YYYY-MM-DDTHH:mm:ss[Z]") : null;
+
+  const payload = {
+    eventId: "",
+
+    eventName: form.eventName.trim(),
+    eventType: form.eventType.type,
+    ...(isValidImageFile(form.image?.file) && {
+      eventImage: form.image.file,
+    }),
+    eventDescription: form.description || "",
+
+    startDateTime: toUTC(form.startDate),
+    endDateTime: toUTC(form.endDate),
+    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+
+    reminder: form.reminder.map((r) => ({
+      reminderName: r.label,
+      time: toUTC(r.time),
+    })),
+
+    eventLocation: form.location,
+
+    whoCanAttend: {
+      members: form.attendees.member,
+      spouce: form.attendees.spouse,
+      children: form.attendees.children,
+      guests: form.attendees.guests,
+    },
+
+    isRegistration: form.registrationOpen,
+
+    resourceName: form.speaker.name,
+    resourceDescription: form.speaker.description,
+    uploadResourceImageUrl: form.speaker.image || "",
+    webLink: form.speaker.weblinks || [],
+
+    collaborators: form.collaborators
+      .filter((c) => c.userCode)
+      .map((c) => ({
+        userCode: c.userCode,
+        points: c.point,
+      })),
+
+    travelInfo: {
+      venueLink: form.travelInfo.venueLink,
+      hotelLink: form.travelInfo.hotelLink,
+      attendeesInfo: Object.entries(form.travelInfo.requiredInfo)
+        .filter(([_, v]) => v)
+        .map(([k]) => k),
+      deadLine: form.travelInfo.deadline ? toUTC(form.travelInfo.deadline) : "",
+      remainder: form.travelInfo.reminders.map((r) => ({
+        reminderName: r.label,
+        time: toUTC(r.time),
+      })),
+    },
+
+    additionalNotes: form.additionalNote || "",
+    isDraft,
+  };
+
+  form.attachments?.forEach((file, i) => {
+    payload[`uploadDocument${i + 1}`] = file;
+  });
+
+  return payload;
+};
+
 
 
 
@@ -76,8 +121,8 @@ const mergeDateAndTime = (date, time) => {
 
 
 const CreateEvent = () => {
-  const [image, setImage] = useState(null);
   const [errors, setErrors] = useState({});
+  const [submitting, setSubmitting] = useState(false);
   const [startTime, setStartTime] = useState({
     hour: "15",
     minute: "00",
@@ -94,56 +139,104 @@ const CreateEvent = () => {
 
 
     const [form, setForm] = useState({
-    eventName: "", eventType: "", description: "", startDate: new Date(), endDate: new Date(),
+    image: { file: null, previewUrl: null,},
+    eventName: "",  eventType: { type: "", points: null},
+    description: "", startDate: new Date(), endDate: new Date(),
     reminder: [], location: "",
     attendees: { member: true, spouse: false, children: false, guests: false },
     registrationOpen: true,
-    speaker: { name: "", description: "", linkedin: "", image: null },
+    speaker: { name: "", description: "", weblinks: [], image: null },
     collaborators: [], attachments: [],   travelInfo: {
     venueLink: "", hotelLink: "",
     requiredInfo: {ticket: false, insurance: false, visa: false, },
-    deadline: null, reminders: [], note: "",
+    deadline: null, reminders: [],
   }, additionalNote: "",
   });
 
-  const validate = () => {
-    const newErrors = {};
+const validateEvent = () => {
+  const errors = {};
+  const now = moment();
+  
+  if (!form.eventName?.trim()) errors.eventName = "Event name is required";
+  if (!form.eventType?.type) errors.eventType = "Select event type";
+  if (!form.location?.trim()) errors.location = "Location required";
+  if (form.image?.file && !isValidImageFile(form.image.file)) {
+    errors.image = "Image must be JPG/PNG and under 10MB";
+  }
 
-    if (!form.eventName.trim()) {
-      newErrors.eventName = "Event name is required";
-    }
+  if (moment(form.startDate).isBefore(now))
+    errors.date = "Start date & time cannot be in the past";
 
-    if (!form.eventType) {
-      newErrors.eventType = "Please select event type";
-    }
+  if (moment(form.endDate).isSameOrBefore(form.startDate))
+    errors.date = "End time must be after start time";
 
-    if (!form.location.trim()) {
-      newErrors.location = "Event location is required";
-    }
+  return errors; 
+};
 
-    setErrors(newErrors);
 
-    return Object.keys(newErrors).length === 0;
-  };
-
-const handleCreateEvent = (e) => {
+const handleCreateEvent = async (e, isDraft = false) => {
   e?.preventDefault?.();
 
-  const isValid = validate();
+  const errors = validateEvent(form);
+  setErrors(errors);
+  if (Object.keys(errors).length > 0) return;
 
-  if (!isValid) return;
+  try {
+    setSubmitting(true);
 
-  const formData = buildFormData(form);
+    const payload = buildEventPayload(form, startTime, endTime, isDraft);
+    const formData = new FormData();
 
-  console.log(form)
+    Object.entries(payload).forEach(([key, value]) => {
+      if (value instanceof File) {
+        formData.append(key, value);
+      } 
+      else if (Array.isArray(value) || typeof value === "object") {
+        formData.append(key, JSON.stringify(value));
+      } 
+      else {
+        formData.append(key, value ?? "");
+      }
+    });
+
+
+    const res = await api.patch("/smartOffice/addEvents", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+
+    if (res.status >= 200 && res.status < 300) {
+      router.push("/dashboard/events");
+    } else {
+      setErrors({ api: res.data?.message || "Failed to create event" });
+    }
+  } catch (err) {
+    console.error(err);
+    setErrors({ api: "Network error. Please try again." });
+  } finally {
+    setSubmitting(false);
+  }
 };
 
   const update = (key, value) =>
     setForm((p) => ({ ...p, [key]: value }));
 
+  const updateEventType = (key, value) => {
+  setForm((prev) => ({
+    ...prev,
+    eventType: {
+      ...prev.eventType,
+      [key]: value,
+    },
+  }));
+};
+
+
   return (
     <div className="h-[calc(100vh-80px)] flex justify-center py-5 gap-[80px] overflow-auto relative">
-        <EventImage value={image} onChange={setImage} />
+        <EventImage
+          value={form.image}
+          onChange={(files) => update("image", files)}
+        />
 
         {/* Right Form */}
         <div className="flex-1 max-w-[500px]">
@@ -161,11 +254,13 @@ const handleCreateEvent = (e) => {
               />
 
               <EventTypeDropdown
-                value={form.eventType}
-                onChange={(v) => update("eventType", v)}
-                error={errors.eventType}
-                icon={<span className="material-symbols--event-list-outline-rounded"></span>}
-              />
+              value={form.eventType}
+              onChange={updateEventType}
+              error={errors.eventType}
+              icon={
+                <span className="material-symbols--event-list-outline-rounded" />
+              }
+            />
 
               {/* Description */}
               <EventsTextarea
@@ -208,6 +303,7 @@ const handleCreateEvent = (e) => {
                   placeholder="Add location/room or meeting link"
                   value={form.location || ""}
                   readOnly
+                   error={errors.location}
                   onClick={() =>
                     dispatch(openEventFormModal({ type: "LOCATION" }))
                   }
@@ -238,8 +334,7 @@ const handleCreateEvent = (e) => {
                 onChange={(v) => update("speaker", v)}
               />
 
-              <Collaborators  form={form}
-          setForm={setForm}/>
+              <Collaborators form={form} setForm={setForm}/>
 
               <Attachments
                 value={form.attachments}
@@ -260,6 +355,7 @@ const handleCreateEvent = (e) => {
                 onClick={() =>
                   dispatch(openEventFormModal({ type: "TRAVEL" }))
                 }
+                error={errors.travelInfo}
                 svg={"/logo/travel.svg"}
               />
 
@@ -274,19 +370,18 @@ const handleCreateEvent = (e) => {
 
               {/* Actions */}
               <div className="flex gap-3 mb-[25px]">
-                <button className="flex-1 h-[50px] text-[20px] font-[500] border border-[#0B57D0] text-[#0B57D0] rounded-full cursor-pointer">
+                <button className="flex-1 h-[50px] text-[20px] font-[500] border border-[#0B57D0] text-[#0B57D0] rounded-full cursor-pointer" disabled={submitting} onClick={()=> dispatch(openEventFormModal({ type: "APPROVAL" }))} 
+                >
                   Save as draft
                 </button>
-                <button className="flex-1 h-[50px] text-[20px] font-[500] bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)] cursor-pointer text-white rounded-full" type="button" onClick={handleCreateEvent}>
+                <button className="flex-1 h-[50px] text-[20px] font-[500] bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)] cursor-pointer text-white rounded-full" type="button" disabled={submitting} onClick={handleCreateEvent}>
                   Create event
                 </button>
               </div>
             </div>
         </div>
-        <ReminderModal
-          form={form}
-          setForm={setForm}
-        />
+        <DraftApprovalModal onConfirmCreate={() => dispatch(closeEventFormModal())} onSendForApproval={(e)=>handleCreateEvent(e, true)} />
+        <ReminderModal form={form} setForm={setForm} />
         <LocationModal form={form} setForm={setForm} />
         <TravelModal form={form} setForm={setForm} />
     </div>

@@ -17,14 +17,14 @@ export default function CollaboratorSection({ task, collaborators = [], onChange
   const inputRef = useRef(null);
   const debounceRef = useRef(null);
 
-  /* -------------------- FOCUS INPUT -------------------- */
+  /* FOCUS INPUT */
   useEffect(() => {
     if (isActive) {
       inputRef.current?.focus();
     }
   }, [isActive]);
 
-  /* -------------------- DEBOUNCED SEARCH -------------------- */
+  /*  DEBOUNCED SEARCH  */
   useEffect(() => {
     if (query.length < 0) return;
 
@@ -45,7 +45,7 @@ export default function CollaboratorSection({ task, collaborators = [], onChange
     return () => clearTimeout(debounceRef.current);
   }, [query, dispatch, task?.actionableId]);
 
-  /* -------------------- FILTER OUT ADDED USERS -------------------- */
+  /* FILTER OUT ADDED USERS */
   const filteredCollaborators = Array.isArray(collaboratorsList)
     ? collaboratorsList.filter(
         (u) =>
@@ -55,7 +55,7 @@ export default function CollaboratorSection({ task, collaborators = [], onChange
     : [];
 
 
-  /* -------------------- HANDLERS -------------------- */
+  /* HANDLERS */
   const addUser = (user) => {
     onChange([...collaborators, user]);
     setQuery("");
@@ -85,7 +85,7 @@ export default function CollaboratorSection({ task, collaborators = [], onChange
   }, []);
 
 
-  /* -------------------- UI -------------------- */
+  /* UI */
   return (
     <div className="relative flex flex-col gap-[8px] pt-[20px] px-[20px]" >
       <span className="text-[20px] text-[#333333] font-[700] uppercase">
@@ -94,11 +94,8 @@ export default function CollaboratorSection({ task, collaborators = [], onChange
 
       <div className="relative flex flex-col" ref={collaboratorContainerRef}>
               {/* CLICKABLE CONTAINER */}
-      <div
-        onClick={() => canEditOrDelete && setIsActive(true)}
-
-        className={`${canEditOrDelete && 'border-[1.4px] border-[#CCCCCC] rounded-[4px] px-[8px]'} py-[8px] flex items-center flex-wrap gap-x-[8px] gap-y-[10px] cursor-text min-h-[48px]`}
-      >
+      <div onClick={() => canEditOrDelete && setIsActive(true)}
+        className={`${canEditOrDelete && 'border-[1.4px] border-[#CCCCCC] rounded-[4px] px-[8px]'} py-[8px] flex items-center flex-wrap gap-x-[8px] gap-y-[10px] cursor-text min-h-[48px]`}  >
         {collaborators.length === 0 && !isActive && (
           <span className={`${canEditOrDelete && 'pl-[8px]'} font-[500] text-[#999999]`}>
             {canEditOrDelete ? `Add collaborator`:'No collaborators added yet'}

@@ -1,20 +1,31 @@
 import Image from "next/image";
 import { useRef } from "react";
-import { IoClose, IoAdd } from "react-icons/io5";
+import { IoClose } from "react-icons/io5";
 
 export function Attachments({ value, onChange }) {
   const inputRef = useRef(null);
 
-  const handleFiles = (files) => {
-    const newFiles = Array.from(files);
-    onChange([...value, ...newFiles]);
-  };
+const handleFiles = (files) => {
+  const mapped = Array.from(files).map((file) => ({
+    id: crypto.randomUUID(),
+    file,
+    previewUrl: file.type.startsWith("image/")
+      ? URL.createObjectURL(file)
+      : null,
+  }));
 
-  const removeFile = (index) => {
-    const updated = [...value];
-    updated.splice(index, 1);
-    onChange(updated);
-  };
+  onChange([...value, ...mapped]);
+};
+
+const removeFile = (id) => {
+  const fileToRemove = value.find((v) => v.id === id);
+
+  if (fileToRemove?.previewUrl) {
+    URL.revokeObjectURL(fileToRemove.previewUrl);
+  }
+
+  onChange(value.filter((v) => v.id !== id));
+};
 
   return (
     <div className="flex flex-col gap-2">
@@ -40,37 +51,33 @@ export function Attachments({ value, onChange }) {
         </div>
       )}
 
-      {/* Filled state */}
       {value.length > 0 && (
         <div className="flex items-center gap-[20px] flex-wrap">
-          {value.map((file, index) => {
-            const isImage = file.type.startsWith("image/");
+          {value.map((item) => {
+            const isImage = item.file.type.startsWith("image/");
 
             return (
               <div
-                key={index}
+                key={item.id}
                 className="relative w-[80px] h-[100px] rounded-lg overflow-hidden border border-[#EAEAEA] bg-[#F6F6F6]"
               >
-                {/* Remove */}
                 <button
-                  onClick={() => removeFile(index)}
-                  className="absolute top-1 right-1 w-[20px] h-[20px] bg-black/50 rounded-full flex items-center justify-center text-white z-10 cursor-pointer"
+                  onClick={() => removeFile(item.id)}
+                  className="absolute top-1 right-1 w-[20px] h-[20px] bg-black/50 rounded-full flex items-center justify-center text-white z-10"
                 >
                   <IoClose size={16} />
                 </button>
 
-                {/* Preview */}
                 {isImage ? (
                   <Image
-                    src={URL.createObjectURL(file)}
-                    alt="Attachments Preview"
-                    className="w-full h-full object-cover"
-                    width={500}
-                    height={500}
+                    src={item.previewUrl}
+                    alt="Attachment Preview"
+                    fill
+                    className="object-cover"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-xs text-gray-600 px-2 text-center">
-                    {file.name}
+                    {item.file.name}
                   </div>
                 )}
               </div>

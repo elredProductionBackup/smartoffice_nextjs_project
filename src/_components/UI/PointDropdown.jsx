@@ -15,11 +15,11 @@ const PointDropdown = ({ value, onChange }) => {
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="relative h-[50px] px-3 bg-[#F6F6F6] border border-[#EAEAEA] rounded-lg w-full text-left whitespace-nowrap flex items-center justify-between"
+        className="relative h-[50px] min-w-[120px] px-3 bg-[#F6F6F6] border border-[#EAEAEA] rounded-lg w-full text-left whitespace-nowrap flex items-center justify-between cursor-pointer"
       >
         <span>
           {value
-            ? `${value} ${value === 1 ? "point" : "points"}`
+            ? `${value} ${value === 1 ? "Point" : "Points"}`
             : "Point"}
         </span>
 
@@ -31,7 +31,7 @@ const PointDropdown = ({ value, onChange }) => {
       </button>
 
       {open && (
-        <div className="absolute z-20 mt-2 p-[8px] w-full bg-white rounded-[16px] shadow-lg border border-[#F2F6FC] max-h-[180px] overflow-y-auto flex flex-col">
+        <div className="absolute z-20 mt-[6px] p-[8px] w-full bg-white rounded-[16px] shadow-lg border border-[#F2F6FC] max-h-[180px] overflow-y-auto flex flex-col">
           {POINTS.map((p) => (
             <button
               key={p}
@@ -40,11 +40,11 @@ const PointDropdown = ({ value, onChange }) => {
                 onChange(p);
                 setOpen(false);
               }}
-              className={`w-full rounded-[10px] text-left px-[12px] py-[8px] whitespace-nowrap ${
+              className={`w-full rounded-[10px] text-left px-[12px] py-[8px] whitespace-nowrap cursor-pointer ${
                 value === p ? "bg-[#F2F6FC]" : ""
               }`}
             >
-              {p} {p === 1 ? "point" : "points"}
+              {p} {p === 1 ? "Point" : "Points"}
             </button>
           ))}
         </div>

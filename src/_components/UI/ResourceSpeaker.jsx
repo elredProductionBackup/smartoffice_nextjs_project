@@ -1,11 +1,5 @@
 import { useRef, useState } from "react";
-import {
-  IoPersonOutline,
-  IoClose,
-  IoLinkOutline,
-  IoCloudUploadOutline,
-  IoDocumentTextOutline,
-} from "react-icons/io5";
+import { IoClose } from "react-icons/io5";
 
 export function ResourceSpeaker({ value, onChange }) {
   const fileRef = useRef(null);
@@ -43,7 +37,7 @@ export function ResourceSpeaker({ value, onChange }) {
         <div className="flex-1 flex flex-col gap-[10px]">
           {/* Name */}
           <div className="relative flex items-center">
-            <div className="absolute left-[20px] text-gray-400  flex items-center">
+            <div className="absolute left-[20px] text-[#999999]  flex items-center">
               <span className="carbon--user-speaker"></span>
             </div>
             <input
@@ -58,7 +52,7 @@ export function ResourceSpeaker({ value, onChange }) {
 
           {/* Description (with icon) */}
           <div className="relative h-[80px]">
-            <div className="absolute left-[20px] top-[14px] text-gray-400  flex items-center">
+            <div className="absolute left-[20px] top-[14px] text-[#999999]  flex items-center">
               <span className="solar--chat-line-outline"></span>
             </div>
             <textarea
@@ -120,7 +114,7 @@ export function ResourceSpeaker({ value, onChange }) {
       <div className="w-full mt-[4px] flex flex-col gap-[10px]">
           {(value.weblinks || []).map((link, index) => (
             <div key={index} className="relative w-full flex items-center ">
-              <div className="absolute left-[20px] text-gray-400  flex items-center">
+              <div className="absolute left-[20px] text-[#999999]  flex items-center">
                 <span className="bi--globe big"></span>
               </div>
               <input
@@ -135,7 +129,7 @@ export function ResourceSpeaker({ value, onChange }) {
               {/* Remove weblink */}
               <button
                 onClick={() => removeWeblink(index)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#999999]"
               >
                 <IoClose />
               </button>
@@ -146,7 +140,7 @@ export function ResourceSpeaker({ value, onChange }) {
           <button
             type="button"
             onClick={addWeblink}
-            className="text-[#0B57D0] text-[18px] text-left w-fit"
+            className="text-[#0B57D0] ml-[10px] text-[18px] font-[600] text-left w-fit cursor-pointer"
           >
             Add weblink
           </button>

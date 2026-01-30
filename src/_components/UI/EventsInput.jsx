@@ -20,12 +20,12 @@ export function EventsInput({
 
       <div className="relative  flex items-center">
         {icon && (
-          <div className="absolute left-[20px] text-gray-400  flex items-center">
+          <div className="absolute left-[20px] text-[#999999]  flex items-center">
             {icon}
           </div>
         )}
         { svg && (
-          <Image src={svg} alt="Icon" width={24} height={24} className="absolute left-[20px] text-gray-400 flex items-center"/>
+          <Image src={svg} alt="Icon" width={24} height={24} className="absolute left-[20px] text-[#999999] flex items-center"/>
         )
         }
 

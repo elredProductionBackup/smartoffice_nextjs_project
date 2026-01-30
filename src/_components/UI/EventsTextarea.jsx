@@ -15,7 +15,7 @@ export function EventsTextarea({
 
       <div className="relative flex items-center">
         {icon && (
-          <div className="absolute left-[20px] top-[14px] text-gray-400  flex items-center">
+          <div className="absolute left-[20px] top-[14px] text-[#999999]  flex items-center">
             {icon}
           </div>
         )}

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useOutsideClick } from "@/hooks/useOutsideClick";
+import { useRef, useState } from "react";
 import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
 
 const DAYS = ["S", "M", "T", "W", "T", "F", "S"];
@@ -10,14 +11,22 @@ const FULL_MONTHS = [
 ];
 
 export default function Calendar({
-  value = new Date(), onChange, mode = "inline",
+  value = new Date(), onChange, mode = "inline",onClose=()=>{},
   position = "relative",right = false, minDate, maxDate,
 }) {
+  const calendarRef = useRef(null);
   const [viewDate, setViewDate] = useState(value);
   const [selectedDate, setSelectedDate] = useState(value);
   const [viewMode, setViewMode] = useState("date");
     const viewYear = viewDate.getFullYear();
     const viewMonth = viewDate.getMonth();
+
+    useOutsideClick(
+      calendarRef,
+      () => {
+        if (mode !== "inline") onClose?.();
+      },
+    );
 
 
 
@@ -82,10 +91,12 @@ export default function Calendar({
 
   const startYear = Math.floor(year / 12) * 12;
 
-  const containerClass =
-    mode === "popup"
-      ? `absolute z-50 top-[calc(100%+20px)] ${right && 'right-[0px]'}`
-      : "relative";
+const containerClass =
+  mode === "popup"
+    ? `absolute z-50 top-[calc(100%+20px)] ${right ? "right-0" : ""}`
+    : mode === "fullscreen"
+    ? "fixed inset-0 z-[999] flex items-center justify-center bg-black/40"
+    : "relative";
 
   const canGoPrevMonth =
   new Date(year, month - 1, 1) >=
@@ -100,7 +111,9 @@ export default function Calendar({
         <div className={`absolute top-[-8px] ${right?'right-8':'left-8'} h-4 w-4 rotate-45 bg-white border-l-2 border-t-2 border-[#F3F4F6]`} />
       )}
 
-      <div className={`${mode === "popup"?'w-[350px] border-[2.5px]  px-[14px]':'w-[100%]  px-9'} bg-white rounded-2xl border-[1.27px] border-[#F3F4F6] py-6`}>
+      <div className={`${mode === "popup"?'w-[350px] border-[2.5px]  px-[14px]':'w-[100%]  px-9'} bg-white rounded-2xl border-[1.27px] border-[#F3F4F6] py-6 ${mode === "fullscreen"?'max-w-[416px]':''}`}
+        ref={calendarRef}
+        onClick={(e) => e.stopPropagation()}>
         {/*  HEADER  */}
         <div className="flex items-center justify-between mb-6 text-2xl">
             {viewMode !== "date" && (
@@ -118,7 +131,7 @@ export default function Calendar({
             <div className="flex items-center justify-between w-[100%] gap-3">
                 <div className={`cursor-pointer text-xl font-semibold select-none ${viewMode !== 'date' && 'flex-1 grid place-items-center'}`}
                 onClick={() => {
-                    if (mode !== "popup") return;
+                    if (mode === "inline") return;
                     if (viewMode === "date") setViewMode("month");
                     else if (viewMode === "month") setViewMode("year");
                     else setViewMode("date");

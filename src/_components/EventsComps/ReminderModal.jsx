@@ -6,7 +6,7 @@ import { TimeInput } from "@/_components/UI/TimeInput";
 import { IoChevronDown } from "react-icons/io5";
 import { useOutsideClick } from "@/hooks/useOutsideClick";
 
-/* ---------------- Constants ---------------- */
+/*  Constants  */
 
 const AUDIENCE_OPTIONS = [
   { label: "To members", value: "members" },
@@ -14,7 +14,7 @@ const AUDIENCE_OPTIONS = [
   { label: "To those who not signed up", value: "not_signed" },
 ];
 
-/* ---------------- Helpers ---------------- */
+/*  Helpers  */
 
 const mergeDateAndTime = (date, time) => {
   const d = new Date(date);
@@ -35,7 +35,7 @@ const createDefaultReminder = () => ({
   note: "",
 });
 
-/* ---------------- Component ---------------- */
+/*  Component  */
 
 const ReminderModal = ({ form, setForm }) => {
   const dispatch = useDispatch();
@@ -135,7 +135,7 @@ const isFormValid =
   return (
     <div
       className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center"
-      onClick={() => setOpenDropdownId(null)}
+      onClick={() => dispatch(closeEventFormModal())}
     >
       <div
         className="w-[560px] bg-white rounded-[20px] overflow-y-auto flex flex-col  max-h-[85vh] px-[30px]  relative"
@@ -224,6 +224,7 @@ const isFormValid =
                         updateReminder(r.id, "date", date)
                       }
                       right={true}
+                      mode={'fullscreen'}
                     />
 
                     <TimeInput
@@ -231,6 +232,7 @@ const isFormValid =
                       onChange={(time) =>
                         updateReminder(r.id, "time", time)
                       }
+                      size={'small'}
                     />
                   </div>
 
@@ -259,7 +261,7 @@ const isFormValid =
 
           <button
             onClick={addReminder}
-            className="w-full text-start text-[#0B57D0] font-[600] text-[18px] mt-[10px]"
+            className="w-full text-start text-[#0B57D0] font-[600] text-[18px] mt-[10px] ml-[10px] cursor-pointer mb-[60px]"
           >
             Add reminder
           </button>
