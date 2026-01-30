@@ -17,3 +17,13 @@ export const getEventsList = ({
     },
   });
 };
+
+export const getMasterList = (networkClusterCode) => {
+  return api.get("/smartOffice/masterList", {
+    params: { networkClusterCode },
+  });
+};
+
+export const updateMasterList = (payload) => {
+  return api.patch("/smartOffice/masterList", payload);
+};

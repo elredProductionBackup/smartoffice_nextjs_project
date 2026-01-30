@@ -24,25 +24,8 @@ export default function EventsPageClient() {
   const dispatch = useDispatch();
 
   const {
-    groupedEvents,
-    page,
-    limit,
-    search,
-    activeTab,
-    loading,
-    error,  
+    groupedEvents, page, limit, search, activeTab, loading, error,  
   } = useSelector((state) => state.events);
-  // const router = useRouter();
-
-//   useEffect(() => {
-//   if (activeTab && activeTab !== tab) {
-//     const params = new URLSearchParams(searchParams.toString());
-//     params.delete("page"); 
-//     router.replace(`?${params.toString()}`); 
-//     dispatch(setPage(1));
-//   }
-// }, [tab]);
-
 
   useEffect(() => {
     if (activeTab !== tab) {
@@ -75,13 +58,13 @@ export default function EventsPageClient() {
           showTasks={tab !== "past"}
           isDraft={tab === "draft"}
         />
-        <Pagination
+         <Pagination
           total={useSelector((state) => state.events.total)}
           currentPage={urlPage}
           perPage={limit}
+          itemLength={groupedEvents.length===0}
         />
       </div>
-
 
       <EventsPopups />
     </div>
