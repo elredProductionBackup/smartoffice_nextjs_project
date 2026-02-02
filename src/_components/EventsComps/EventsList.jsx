@@ -150,9 +150,9 @@ export default function EventsList({
                         <Image
                           src={event.eventImage}
                           alt={event.name}
-                          width={50}
-                          height={50}
-                          className="h-[50px] w-[50px] object-cover rounded-full border border-[#CCCCCC]"
+                          width={400}
+                          height={400}
+                          className="h-[50px] w-[50px] object-cover rounded-full border border-[#CCCCCC] bg-[#ccc]"
                         />
                       ) : (
                         <div className="h-[50px] w-[50px] rounded-full bg-[#ccc]" />

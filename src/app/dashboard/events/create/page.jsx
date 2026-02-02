@@ -21,66 +21,106 @@ import { Collaborators } from "@/_components/EventsComps/Collaborators";
 import moment from "moment";
 import DraftApprovalModal from "@/_components/EventsComps/DraftApprovalModal";
 import { useEventForm } from "@/hooks/useEventForm";
-import { validateEvent } from "@/utils/validation";
+import { clearFieldError, isValidImageFile, validateEvent } from "@/utils/validation";
 import { buildEventPayload } from "@/utils/eventPayload";
 import { submitEvent } from "@/services/events.service";
 import { mergeDateAndTime } from "@/utils/dateUtils";
 import { addToast } from "@/store/toastSlice";
 
   const CreateEvent = () => {
-  const { form, update,setForm, updateEventType } = useEventForm();
-  const [errors, setErrors] = useState({});
+  const { form, update,setForm,errors,setErrors , updateEventType } = useEventForm();
   const [submitting, setSubmitting] = useState(false);
   const router = useRouter();
 
-const handleCreateEvent = async (e, isDraft = false) => {
-  e?.preventDefault?.();
+  const handleCreateEvent = async (e, isDraft = false) => {
+    e?.preventDefault?.();
 
-  const errs = validateEvent(form);
-  if (Object.keys(errs).length) return setErrors(errs);
+    const errs = validateEvent(form);
+    if (Object.keys(errs).length) return setErrors(errs);
 
-  try {
-    setSubmitting(true);
+    const file = form.image?.file;
 
-    const payload = buildEventPayload(form, isDraft);
-    const res = await submitEvent(payload);
-
-    console.log(res)
-
-    if (res.status >= 200 && res.status < 300) {
-      router.push("/dashboard/events");
-      dispatch(addToast({ message: 'Success', type: "success" }));
-    } else {
-       dispatch(addToast({ message: {title:'Something Went Wrong',descrip:"lorem ipsum"}, type: "error" }));
+    if (!file) {
+      dispatch(addToast({ message: { title: "Event Image Required",
+            descrip: "Please upload an image for this event type",
+          },type: "error",}));
+      return;
     }
 
-  } catch (error) {
-    console.error("Create Event Failed:", error?.response || error);
+    const { valid, reason } = isValidImageFile(file);
 
-    if (error?.response?.data?.errors) {
-      setErrors(error.response.data.errors);
+    if (!valid) {
+      if (reason === "type") {
+        dispatch( addToast({message: {title: "Invalid Image Type",
+              descrip: "Only JPG/PNG files are allowed",},
+            type: "error", })
+        );
+      } else if (reason === "size") {
+        dispatch(
+          addToast({
+            message: {
+              title: "Maximum File Size Exceeded",
+              descrip: "The file is too large. Allowed maximum size is 2MB.",
+            },
+            type: "error",
+          })
+        );
+      }
 
-      dispatch(
-        addToast({
-          message: "Please fix the highlighted errors",
-          type: "error",
-        })
-      );
+      setErrors((prev) => ({
+        ...prev,
+        image: reason === "size"
+          ? "Image must be under 2MB"
+          : "Only JPG/PNG files are allowed",
+      }));
 
       return;
     }
 
-    const message =
-      error?.response?.data?.message ||
-      "Something went wrong. Please try again.";
+    try {
+      setSubmitting(true);
 
-    dispatch(addToast({ message, type: "error" }));
-    setErrors({ api: message });
+      const payload = buildEventPayload(form, isDraft);
+      const res = await submitEvent(payload);
 
-  } finally {
-    setSubmitting(false);
-  }
-};
+      if (res.success) {
+        router.push("/dashboard/events");
+      } else {
+        dispatch(
+          addToast({
+            message: {
+              title: "Something Went Wrong",
+              descrip: "Please contact support if the problem persists",
+            },
+            type: "error",
+          })
+        );
+      }
+    } catch (error) {
+      console.error("Create Event Failed:", error?.response || error);
+
+      if (error?.response?.data?.errors) {
+        setErrors(error.response.data.errors);
+
+        dispatch(
+          addToast({
+            message: "Please fix the highlighted errors",
+            type: "error",
+          })
+        );
+        return;
+      }
+
+      const message =
+        error?.response?.data?.message ||
+        "Something went wrong. Please try again.";
+
+      dispatch(addToast({ message, type: "error" }));
+      setErrors({ api: message });
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
     const getTimeFromDate = (date) => ({
       hour: moment(date).format("HH"),
@@ -88,8 +128,6 @@ const handleCreateEvent = async (e, isDraft = false) => {
     });
 
     const dispatch = useDispatch();
-
-    console.log(errors)
 
   return (
     <div className="h-[calc(100vh-80px)] flex justify-center py-5 gap-[80px] overflow-auto relative">
@@ -109,7 +147,8 @@ const handleCreateEvent = async (e, isDraft = false) => {
                 icon={<span className="uil--calendar"></span>}
                 placeholder="Enter Event name"
                 value={form.eventName}
-                onChange={(e) => update("eventName", e.target.value)}
+                onChange={(e) => {update("eventName", e.target.value);
+                  clearFieldError(setErrors,"eventName")}}
                 error={errors.eventName}
               />
 
@@ -222,6 +261,7 @@ const handleCreateEvent = async (e, isDraft = false) => {
                 value={form.additionalNote}
                 onChange={(e) => update("additionalNote", e.target.value)}
                 icon={<span className="meteor-icons--pencil"></span>}
+                error={errors.additionalNote}
               />
 
 
@@ -239,7 +279,7 @@ const handleCreateEvent = async (e, isDraft = false) => {
         </div>
         <DraftApprovalModal onConfirmCreate={() => dispatch(closeEventFormModal())} onSendForApproval={(e)=>handleCreateEvent(e, true)} />
         <ReminderModal form={form} setForm={setForm} />
-        <LocationModal form={form} setForm={setForm} />
+        <LocationModal form={form} setForm={setForm} setErrors={setErrors} />
         <TravelModal form={form} setForm={setForm} />
     </div>
   );

@@ -16,37 +16,38 @@ export default function PointSystemModal({ onClose }) {
   const pointsMaster = useSelector((state) => state.events.pointsMaster) || [];
   const [editMode, setEditMode] = useState(false);
   const [localPoints, setLocalPoints] = useState([]);
-
+  const [originalPoints, setOriginalPoints] = useState([]);
   useEffect(() => {
     dispatch(fetchMasterConfig());
   }, [dispatch]);
 
-  useEffect(() => {
-    if (pointsMaster.length > 0) {
-      setLocalPoints(
-        pointsMaster.map((p) => ({
-          id: p._id || crypto.randomUUID(),
-          tempId: p._id ? null : crypto.randomUUID(),
-          label: p.label || "",
-          value: p.points ?? 1,
-        }))
-      );
-    } else {
-      setLocalPoints([]);
-    }
-  }, [pointsMaster]);
+useEffect(() => {
+  if (pointsMaster.length > 0) {
+    setLocalPoints(
+      pointsMaster.map((p) => ({
+        id: p._id || crypto.randomUUID(),
+        tempId: p._id ? null : crypto.randomUUID(),
+        label: p.label || "",
+        value: p.points !== undefined && p.points !== null ? String(p.points) : "1", 
+      }))
+    );
+  } else {
+    setLocalPoints([]);
+  }
+}, [pointsMaster]);
 
   const updateLabel = (id, value) => {
     setLocalPoints((prev) =>
       prev.map((p) => (p.id === id ? { ...p, label: value } : p))
     );
   };
-
-  const updateValue = (id, value) => {
+const updateValue = (id, value) => {
+  if (value === "" || (/^\d+$/.test(value) && value !== "0")) {
     setLocalPoints((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, value: Number(value) || 0 } : p))
+      prev.map((p) => (p.id === id ? { ...p, value } : p))
     );
-  };
+  }
+};
 
   const addRule = () => {
     const newPoint = createRule("", 1);
@@ -66,10 +67,10 @@ export default function PointSystemModal({ onClose }) {
     }
   };
 
-  const handlePointSave = async (rules) => {
+const handlePointSave = async (rules) => {
   const updatedPoints = rules.map((r) => ({
     label: r.label,
-    points: r.value,
+    points: r.value === "" ? 1 : Number(r.value),
   }));
 
   dispatch(setPointsMaster(updatedPoints));
@@ -77,9 +78,29 @@ export default function PointSystemModal({ onClose }) {
   const res = await dispatch(saveMasterConfig());
 
   if (saveMasterConfig.fulfilled.match(res)) {
-    onClose()
+    onClose();
   }
 };
+
+  useEffect(() => {
+    if (pointsMaster.length > 0) {
+      setOriginalPoints(
+        pointsMaster.map((p) => ({
+          label: p.label || "",
+          value: String(p.points ?? 1),
+        }))
+      );
+    }
+  }, [pointsMaster]);
+
+  const isChanged = () => {
+    const cleanLocal = localPoints.map((p) => ({
+      label: p.label.trim(),
+      value: String(p.value),
+    }));
+
+    return JSON.stringify(cleanLocal) !== JSON.stringify(originalPoints);
+  };
 
   return (
     <div className="w-[480px] min-h-[380px] max-h-[85vh] bg-white rounded-[20px] overflow-y-auto flex flex-col px-[40px] relative">
@@ -88,7 +109,7 @@ export default function PointSystemModal({ onClose }) {
         <h2 className="text-[24px] font-[700]">Point System</h2>
       </div>
 
-        <div className="flex-1 flex flex-col ">
+        <div className="flex-1 flex flex-col items-start">
             {/* Points list */}
             <div className={`${masterLoading && 'flex-1'} flex flex-col gap-[20px] items-start w-[100%] mb-[20px]`}>
                 {masterLoading && (
@@ -122,15 +143,16 @@ export default function PointSystemModal({ onClose }) {
                         editMode ? "bg-[#fff]" : "bg-[#F6F6F6]"
                         }`}
                     />
-                    <input
-                        type="number"
-                        value={point.value}
-                        min={0}
-                        disabled={!editMode}
-                        onChange={(e) => updateValue(point.id, e.target.value)}
-                        className={`w-[80px] h-[48px] px-[10px] text-center font-[500] rounded-[4px] outline-none border-[1.4px] border-[#CCCCCC] ${
+                   <input
+                      type="number"
+                      value={point.value}
+                      placeholder="1"
+                      min={1} 
+                      disabled={!editMode}
+                      onChange={(e) => updateValue(point.id, e.target.value)}
+                      className={`w-[80px] h-[48px] px-[10px] text-center font-[500] rounded-[4px] outline-none border-[1.4px] border-[#CCCCCC] ${
                         editMode ? "bg-[#fff]" : "bg-[#F6F6F6]"
-                        }`}
+                      }`}
                     />
                     {editMode && localPoints.length !== 1 &&(
                         <button
@@ -149,7 +171,7 @@ export default function PointSystemModal({ onClose }) {
             {editMode && (
                 <button
                 onClick={addRule}
-                className="w-full text-start text-[#0B57D0] font-[600] text-[18px] ml-[10px] mb-[20px] cursor-pointer"
+                className=" text-start text-[#0B57D0] font-[600] text-[18px] ml-[10px] mb-[20px] cursor-pointer"
                 >
                 Add more
                 </button>
@@ -157,7 +179,7 @@ export default function PointSystemModal({ onClose }) {
             {!masterLoading && !editMode && localPoints.length > 0 && (
                 <button
                 onClick={() => setEditMode(true)}
-                className="w-full text-start text-[#0B57D0] font-[600] text-[18px] ml-[10px] mb-[20px] cursor-pointer"
+                className=" text-start text-[#0B57D0] font-[600] text-[18px] ml-[10px] mb-[20px] cursor-pointer"
                 >
                 Add / Edit
                 </button>
@@ -176,8 +198,12 @@ export default function PointSystemModal({ onClose }) {
         </button>
         <button
           onClick={handleSave}
-          className="w-[120px] py-[8px] rounded-[20px] text-white transition bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)] cursor-pointer"
-          disabled={masterLoading || localPoints.length === 0}
+          disabled={masterLoading || localPoints.length === 0 || !isChanged()}
+          className={`w-[120px] py-[8px] rounded-[20px] text-white transition bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)] ${
+            !isChanged()
+              ? "opacity-50 cursor-not-allowed"
+              : "cursor-pointer"
+          }`}
         >
           Save
         </button>

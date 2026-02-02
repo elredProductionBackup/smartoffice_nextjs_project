@@ -2,11 +2,14 @@ import { useDispatch, useSelector } from "react-redux";
 import { closeEventFormModal } from "@/store/events/eventsUiSlice";
 import { useEffect, useState } from "react";
 
-const LocationModal = ({ form, setForm }) => {
+const LocationModal = ({ form, setForm, setErrors }) => {
   const dispatch = useDispatch();
   const { type } = useSelector((s) => s.eventsUi.eventFormModal);
 
   const [location, setLocation] = useState("");
+  const originalLocation = (form.location || "").trim();
+  const currentLocation = location.trim();
+  const hasChanged = currentLocation !== originalLocation;
 
   /* Init location */
   useEffect(() => {
@@ -22,6 +25,12 @@ const LocationModal = ({ form, setForm }) => {
       ...prev,
       location: location.trim(),
     }));
+      setErrors((prev) => {
+    if (!prev.location) return prev;
+    const newErr = { ...prev };
+    delete newErr.location;
+    return newErr;
+  });
     dispatch(closeEventFormModal());
   };
 
@@ -77,11 +86,11 @@ const LocationModal = ({ form, setForm }) => {
 
           <button
             onClick={handleSave}
-            disabled={!location.trim()}
+            disabled={!currentLocation || !hasChanged}
             className={`w-[120px] py-[8px] rounded-[20px] text-white transition
               bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)]
               ${
-                location.trim()
+                currentLocation && hasChanged
                   ? "cursor-pointer"
                   : "cursor-not-allowed opacity-50"
               }`}

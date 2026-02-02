@@ -5,9 +5,13 @@ const isValidImageFile = (file) => {
   const allowed = ["image/jpeg", "image/png", "image/jpg"];
   return allowed.includes(file.type) && file.size <= 10 * 1024 * 1024;
 };
-
+const ensureHttps = (url) => {
+  if (!url) return "";
+  return url.startsWith("http://") || url.startsWith("https://")
+    ? url
+    : `https://${url}`;
+};
 export const buildEventPayload = (form, isDraft = false) => {
-
   const payload = {
     eventId: "",
 
@@ -16,7 +20,7 @@ export const buildEventPayload = (form, isDraft = false) => {
     ...(isValidImageFile(form.image?.file) && {
       eventImage: form.image.file,
     }),
-    point:form.eventType.points,
+    point: form.eventType.points,
     eventDescription: form.description || "",
 
     startDateTime: toUTC(form.startDate),
@@ -43,7 +47,8 @@ export const buildEventPayload = (form, isDraft = false) => {
     resourceName: form.speaker.name,
     resourceDescription: form.speaker.description,
     uploadResourceImageUrl: form.speaker.image || "",
-    webLink: form.speaker.weblinks || [],
+
+    webLink: (form.speaker.weblinks || []).map(ensureHttps),
 
     collaborators: form.collaborators
       .filter((c) => c.userCode)
@@ -53,11 +58,13 @@ export const buildEventPayload = (form, isDraft = false) => {
       })),
 
     travelInfo: {
-      venueLink: form.travelInfo.venueLink,
-      hotelLink: form.travelInfo.hotelLink,
-      attendeesInfo: Object.entries(form.travelInfo.requiredInfo)
-        .filter(([_, v]) => v)
-        .map(([k]) => k),
+      venueLink: ensureHttps(form.travelInfo.venueLink),
+      hotelLink: ensureHttps(form.travelInfo.hotelLink),
+      attendeesInfo:{
+        ticketDetails: form.travelInfo?.requiredInfo?.ticketDetails,
+        insuranceDetails: form.travelInfo.requiredInfo?.insuranceDetails,
+        visaInformation: form.travelInfo?.requiredInfo?.visaInformation
+      },
       deadLine: form.travelInfo.deadline ? toUTC(form.travelInfo.deadline) : "",
       remainder: form.travelInfo.reminders.map((r) => ({
         reminderName: r.label || "Reminder",

@@ -4,18 +4,25 @@ import { useEffect, useMemo, useState } from "react";
 import CustomCheckbox from "../UI/CustomCheckbox";
 import { DateInput } from "../UI/DateInput";
 import { TimeInput } from "../UI/TimeInput";
-import moment from "moment";
+import { isValidURL } from "@/utils/validation";
 
 const TravelModal = ({ form, setForm }) => {
   const dispatch = useDispatch();
   const { type } = useSelector((s) => s.eventsUi.eventFormModal);
 
   const [draft, setDraft] = useState(form.travelInfo);
-  const getToday = () => moment().startOf("day").toDate();
-    /* Init */
+  const [errors, setErrors] = useState(form.travelInfo);
 
-  const update = (key, value) =>
-    setDraft((p) => ({ ...p, [key]: value }));
+const update = (key, value) => {
+  setDraft((prev) => ({ ...prev, [key]: value }));
+
+  setErrors((prev) => {
+    if (!prev[key]) return prev;
+    const newErr = { ...prev };
+    delete newErr[key];
+    return newErr;
+  });
+};
 
   const toggleRequired = (key) =>
     setDraft((p) => ({
@@ -27,33 +34,66 @@ const TravelModal = ({ form, setForm }) => {
     }));
 
 const handleSave = () => {
-  const formattedReminders = (draft.reminders || [])
-    // ❌ remove unused reminders (no date, no time, no note)
-    .filter((r) => {
-      const hasDate = !!r.date;
-      const hasTime = r.time?.hour != null && r.time?.minute != null;
-      const hasNote = !!r.note?.trim();
-      return hasDate || hasTime || hasNote;
-    })
-    .map((r) => {
-      if (!r.date) return r;
+  const errors = {};
 
+  // --- Validate venueLink ---
+  const venue = draft.venueLink?.trim();
+  if (venue) {
+    if (venue.length < 3) errors.venueLink = "Venue link must be at least 3 characters";
+    else if (venue.length > 200) errors.venueLink = "Venue link cannot exceed 200 characters";
+    else if (!isValidURL(venue)) errors.venueLink = "Enter a valid venue link";
+  }
+
+  // --- Validate hotelLink ---
+  const hotel = draft.hotelLink?.trim();
+  if (hotel) {
+    if (hotel.length < 3) errors.hotelLink = "Hotel link must be at least 3 characters";
+    else if (hotel.length > 200) errors.hotelLink = "Hotel link cannot exceed 200 characters";
+    else if (!isValidURL(hotel)) errors.hotelLink = "Enter a valid hotel link";
+  }
+
+  // --- Validate reminders ---
+  const formattedReminders = (draft.reminders || []).map((r) => {
+    const note = r.note?.trim() || "";
+    if (note && (note.length < 5 || note.length > 200)) {
+      errors[`reminder_${r.id}`] = "Reminder note must be 5–200 characters";
+    }
+
+    // combine date & time
+    if (r.date) {
       const combinedDate = new Date(r.date);
-
       if (r.time?.hour != null && r.time?.minute != null) {
         combinedDate.setHours(Number(r.time.hour));
         combinedDate.setMinutes(Number(r.time.minute));
         combinedDate.setSeconds(0);
         combinedDate.setMilliseconds(0);
       }
-
       return { ...r, date: combinedDate };
-    });
+    }
+    return r;
+  });
 
+  // --- If any error, stop and set errors ---
+  if (Object.keys(errors).length > 0) {
+    setErrors(errors);
+    return;
+  }
+
+  // --- Add https if missing for links ---
+  const ensureHttps = (url) => {
+    if (!url) return "";
+    return url.startsWith("http://") || url.startsWith("https://")
+      ? url
+      : `https://${url}`;
+  };
+
+  // --- Save form ---
   setForm((prev) => ({
     ...prev,
     travelInfo: {
       ...draft,
+      venueLink: ensureHttps(venue),
+      hotelLink: ensureHttps(hotel),
       reminders: formattedReminders,
     },
   }));
@@ -79,12 +119,22 @@ const addReminder = () => {
 
 
 const updateReminder = (id, key, value) => {
-  setDraft((p) => ({
-    ...p,
-    reminders: p.reminders.map((r) =>
+  setDraft((prev) => ({
+    ...prev,
+    reminders: prev.reminders.map((r) =>
       r.id === id ? { ...r, [key]: value } : r
     ),
   }));
+
+  if (key === "note") {
+    setErrors((prev) => {
+      const errorKey = `reminder_${id}`;
+      if (!prev[errorKey]) return prev;
+      const newErr = { ...prev };
+      delete newErr[errorKey];
+      return newErr;
+    });
+  }
 };
 
 const hasInvalidReminder = (draft.reminders || []).some((r) => {
@@ -196,6 +246,7 @@ useEffect(() => {
             value={draft.venueLink}
             placeholder={'Enter link'}
             onChange={(e) => update("venueLink", e.target.value)}
+            error={errors.venueLink}
           />
 
           <Input
@@ -203,6 +254,7 @@ useEffect(() => {
             value={draft.hotelLink}
             placeholder={'Enter link'}
             onChange={(e) => update("hotelLink", e.target.value)}
+            error={errors.hotelLink}
           />
 
           {/* Required info */}
@@ -212,9 +264,9 @@ useEffect(() => {
           </p>
 
           {[
-            ["ticket", "Ticket details"],
-            ["insurance", "Insurance"],
-            ["visa", "Visa information"],
+            ["ticketDetails", "Ticket details"],
+            ["insuranceDetails", "Insurance"],
+            ["visaInformation", "Visa information"],
           ].map(([key, label]) => (
             <div key={key} className="flex items-center gap-[10px] py-[4px]">
               <CustomCheckbox
@@ -292,6 +344,11 @@ useEffect(() => {
                         updateReminder(r.id, "note", e.target.value)
                       }
                     />
+                    {errors[`reminder_${r.id}`] && (
+                      <p className="text-red-500 text-[14px] mt-[4px]">
+                        {errors[`reminder_${r.id}`]}
+                      </p>
+                    )}
                   </div>
 
                   {/* Remove */}
@@ -344,15 +401,14 @@ useEffect(() => {
 };
 
 export default TravelModal;
-
-const Input = ({ label, ...props }) => (
-  <div>
-    <label className="text-[16px] font-[700] mb-[6px] block">
-      {label}
-    </label>
+const Input = ({ label, error, ...props }) => (
+  <div className="mb-[12px] relative">
+    <label className="text-[16px] font-[700] mb-[6px] block">{label}</label>
     <input
       {...props}
-      className="w-full pl-[20px] bg-[#F6F6F6] border-[1.4px] border-[#EAEAEA] rounded-lg outline-none h-[50px]"
+      className={`w-full pl-[20px] bg-[#F6F6F6] border-[1.4px] rounded-lg outline-none h-[50px]
+        ${error ? "border-red-500" : "border-[#EAEAEA]"}`}
     />
+    {error && <p className="absolute bottom-[-25px] text-red-500 text-[14px] mt-[4px]">{error}</p>}
   </div>
 );
