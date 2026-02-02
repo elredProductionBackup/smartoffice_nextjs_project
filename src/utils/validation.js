@@ -62,43 +62,43 @@ export const validateEvent = (form) => {
     errors.endDate = "End time must be after start time";
 
   // ---------------- SPEAKER / RESOURCE ----------------
-  if (form.speaker) {
-    const speakerErrors = {};
+  // if (form.speaker) {
+  //   const speakerErrors = {};
 
-    let nameError = "";
-    let descError = "";
+  //   let nameError = "";
+  //   let descError = "";
 
-    if (isEmpty(form.speaker.name)) {
-      nameError = "Resource name is required";
-    } else if (!isLengthValid(form.speaker.name, 3, 200)) {
-      nameError = "Resource name must be 3–200 characters";
-    }
+  //   if (isEmpty(form.speaker.name)) {
+  //     nameError = "Resource name is required";
+  //   } else if (!isLengthValid(form.speaker.name, 3, 200)) {
+  //     nameError = "Resource name must be 3–200 characters";
+  //   }
 
-    if (isEmpty(form.speaker.description)) {
-      descError = "Resource description is required";
-    } else if (!isLengthValid(form.speaker.description, 5, 400)) {
-      descError = "Resource description must be 5–400 characters";
-    }
+  //   if (isEmpty(form.speaker.description)) {
+  //     descError = "Resource description is required";
+  //   } else if (!isLengthValid(form.speaker.description, 5, 400)) {
+  //     descError = "Resource description must be 5–400 characters";
+  //   }
 
-    if (nameError && descError) {
-      speakerErrors.main = `${nameError} & ${descError}`;
-    } else {
-      speakerErrors.main = nameError || descError;
-    }
+  //   if (nameError && descError) {
+  //     speakerErrors.main = `${nameError} & ${descError}`;
+  //   } else {
+  //     speakerErrors.main = nameError || descError;
+  //   }
 
-    if (form.speaker.weblinks?.length) {
-      speakerErrors.weblinks = form.speaker.weblinks.map((link) => {
-        if (isEmpty(link)) return "Link is required";
-        if (!isLengthValid(link, 3, 200))
-          return "Link must be 3–200 characters";
-        if (!isValidURL(link))
-          return "Enter a valid URL (https://example.com)";
-        return null;
-      });
-    }
+  //   if (form.speaker.weblinks?.length) {
+  //     speakerErrors.weblinks = form.speaker.weblinks.map((link) => {
+  //       if (isEmpty(link)) return "Link is required";
+  //       if (!isLengthValid(link, 3, 200))
+  //         return "Link must be 3–200 characters";
+  //       if (!isValidURL(link))
+  //         return "Enter a valid URL (https://example.com)";
+  //       return null;
+  //     });
+  //   }
 
-    errors.speaker = speakerErrors;
-  }
+  //   errors.speaker = speakerErrors;
+  // }
   // ---------------- ADDITIONAL NOTES (optional field) ----------------
   if (form.additionalNote) {
     if (!isLengthValid(form.additionalNote, 5, 400))
