@@ -9,6 +9,7 @@ export default function Pagination({
   perPage = 10,
   className = "",
   rounded = false,
+  itemLength=false
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -24,7 +25,7 @@ export default function Pagination({
     router.push(`?${params.toString()}`);
   };
 
-  if (totalPages <= 1) return null;
+  if (totalPages <= 1 || itemLength) return null;
 
   return (
     <div

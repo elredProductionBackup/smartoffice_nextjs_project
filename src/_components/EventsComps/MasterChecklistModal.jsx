@@ -1,8 +1,10 @@
 "use client";
 
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { openEventsModal } from "@/store/events/eventsUiSlice";
 import Image from "next/image";
+import { useEffect } from "react";
+import { fetchMasterConfig } from "@/store/events/eventsThunks";
 
 const difficultyColor = {
   hard: "bg-red-500",
@@ -10,12 +12,19 @@ const difficultyColor = {
   easy: "bg-green-500",
 };
 
-export default function MasterChecklistModal({checklist, onClose }) {
+export default function MasterChecklistModal({ onClose }) {
   const dispatch = useDispatch();
+  
+  useEffect(() => {
+    dispatch(fetchMasterConfig());
+  }, [dispatch]);
 
-
-const openAdd = () => {
-  dispatch(
+  const checklist = useSelector((state) => state.events.checklistMaster);
+  const masterLoading = useSelector((state) => state.events.masterLoading);
+  
+  
+  const openAdd = () => {
+    dispatch(
     openEventsModal({
       type: "CHECKLIST_FORM",
       payload: {
@@ -39,7 +48,6 @@ const openEdit = (item, index) => {
   );
 };
 
-
   return (
     <div className="w-[600px] flex flex-col bg-white rounded-[14px] shadow-xl p-[40px] relative flex flex-col gap-[24px] h-[637px] max-h-[90vh]">
        <div className="flex items-center justify-between">
@@ -54,7 +62,7 @@ const openEdit = (item, index) => {
        </div>
 
       {/* EMPTY STATE */}
-      {!checklist.length && (
+      {!masterLoading && !checklist.length && (
         <div className="flex flex-col flex-1 items-center justify-center gap-[20px]">
           <div className="bg-[#D3E3FD] h-[60px] w-[60px] rounded-full grid place-items-center">
             <Image src={`/logo/no-checklist.svg`} alt="No Checklist" height={36} width={36}/>
@@ -71,8 +79,17 @@ const openEdit = (item, index) => {
         </div>
       )}
 
+      {/* Loading */}
+     {masterLoading && (
+          <div className="flex-1 grid place-items-center">
+            <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+            {/* <p className="text-[18px] font-[500] text-[#555]">Loading checklist...</p> */}
+          </div>
+        )
+      }
+
       {/* LIST */}
-      {!!checklist.length && (
+      {!masterLoading && !!checklist.length && (
         <>
           <div className="flex flex-col gap-[20px]">
             {checklist.map((item, index) => (

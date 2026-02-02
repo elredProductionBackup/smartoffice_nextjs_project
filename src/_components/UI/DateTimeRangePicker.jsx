@@ -30,7 +30,7 @@ export default function DateTimeRangePicker({
         </div>
       </div>
 
-      {error && <p className="text-red-500 text-sm">{error}</p>}
+      {error && <p className="relative -bottom-[5px] text-[12px] text-red-500">{error}</p>}
 
       <div className="flex items-center gap-[6px] pl-[10px] text-[14px] text-[#666666] font-[600] mt-[10px]">
         <span className="bi--globe"></span> Time zone – <span className="font-[700]">GMT+05:30 (Calcutta)</span>

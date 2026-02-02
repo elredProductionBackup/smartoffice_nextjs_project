@@ -27,16 +27,16 @@ export function DateInput({
       <button
         type="button"
         onClick={() => setOpen((p) => !p)}
-        className="h-[50px] w-full px-4 bg-[#F6F6F6]
+        className={`h-[50px] w-full px-4 bg-[#F6F6F6]
                    border-[1.4px] border-[#EAEAEA]
                    rounded-lg font-[600]
                    cursor-pointer whitespace-nowrap
-                   text-left"
+                   ${dateValue ? 'text-left':'text-center' }`}
       >
         {dateValue ? (
           moment(dateValue).format(format)
         ) : (
-          <span className="text-gray-400">Select date</span>
+          <span className="text-[#333333]">Date</span>
         )}
       </button>
 

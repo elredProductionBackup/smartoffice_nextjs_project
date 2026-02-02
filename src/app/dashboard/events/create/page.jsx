@@ -44,6 +44,7 @@ export const buildEventPayload = (form, startTime, endTime, isDraft = false) => 
     ...(isValidImageFile(form.image?.file) && {
       eventImage: form.image.file,
     }),
+    point:form.eventType.points,
     eventDescription: form.description || "",
 
     startDateTime: toUTC(form.startDate),
@@ -51,8 +52,9 @@ export const buildEventPayload = (form, startTime, endTime, isDraft = false) => 
     timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
 
     reminder: form.reminder.map((r) => ({
-      reminderName: r.label,
-      time: toUTC(r.time),
+      reminderName: r.audience,
+      time: toUTC(r.datetime),
+      notes: r.note
     })),
 
     eventLocation: form.location,
@@ -86,8 +88,9 @@ export const buildEventPayload = (form, startTime, endTime, isDraft = false) => 
         .map(([k]) => k),
       deadLine: form.travelInfo.deadline ? toUTC(form.travelInfo.deadline) : "",
       remainder: form.travelInfo.reminders.map((r) => ({
-        reminderName: r.label,
-        time: toUTC(r.time),
+        reminderName: r.label || "Reminder",
+        time: toUTC(r.date),
+        notes: r.note
       })),
     },
 
@@ -95,8 +98,10 @@ export const buildEventPayload = (form, startTime, endTime, isDraft = false) => 
     isDraft,
   };
 
-  form.attachments?.forEach((file, i) => {
-    payload[`uploadDocument${i + 1}`] = file;
+  form.attachments?.forEach((item, i) => {
+    if (item?.file instanceof File) {
+      payload[`uploadDocument${i + 1}`] = item.file;
+    }
   });
 
   return payload;
@@ -105,31 +110,51 @@ export const buildEventPayload = (form, startTime, endTime, isDraft = false) => 
 
 
 
+// const mergeDateAndTime = (date, time) => {
+//   const d = new Date(date);
+
+//   d.setHours(
+//     parseInt(time.hour, 10),
+//     parseInt(time.minute, 10),
+//     0,
+//     0
+//   );
+
+//   return d;
+// };
+
 const mergeDateAndTime = (date, time) => {
-  const d = new Date(date);
+  if (!date || !time) return null;
 
-  d.setHours(
-    parseInt(time.hour, 10),
-    parseInt(time.minute, 10),
-    0,
-    0
-  );
-
-  return d;
+  return moment(date)
+    .set({
+      hour: Number(time.hour),
+      minute: 0,
+      second: 0,
+      millisecond: 0,
+    })
+    .toDate();
 };
 
+const getNextFullHour = () => {
+  const now = moment();
+  const nextHour = now.clone().add(1, "hour").startOf("hour"); 
+  return nextHour.toDate();
+};
 
 
 const CreateEvent = () => {
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const initialMoment = moment(getNextFullHour());
+
   const [startTime, setStartTime] = useState({
-    hour: "15",
+    hour: initialMoment.format("HH"),
     minute: "00",
   });
 
   const [endTime, setEndTime] = useState({
-    hour: "15",
+    hour: initialMoment.clone().add(1, "hour").format("HH"),
     minute: "00",
   });
 
@@ -137,16 +162,20 @@ const CreateEvent = () => {
 
   const dispatch = useDispatch();
 
+  const defaultStart = getNextFullHour();
+  const defaultEnd = moment(defaultStart).add(1, "hour").toDate();
+
 
     const [form, setForm] = useState({
     image: { file: null, previewUrl: null,},
-    eventName: "",  eventType: { type: "", points: null},
-    description: "", startDate: new Date(), endDate: new Date(),
+    eventName: "",  eventType: { type: "", points: 1},
+    description: "",   startDate: defaultStart,
+  endDate: defaultEnd,
     reminder: [], location: "",
     attendees: { member: true, spouse: false, children: false, guests: false },
     registrationOpen: true,
     speaker: { name: "", description: "", weblinks: [], image: null },
-    collaborators: [], attachments: [],   travelInfo: {
+    collaborators: [], attachments: [], travelInfo: {
     venueLink: "", hotelLink: "",
     requiredInfo: {ticket: false, insurance: false, visa: false, },
     deadline: null, reminders: [],
@@ -165,8 +194,7 @@ const validateEvent = () => {
   }
 
   if (moment(form.startDate).isBefore(now))
-    errors.date = "Start date & time cannot be in the past";
-
+    
   if (moment(form.endDate).isSameOrBefore(form.startDate))
     errors.date = "End time must be after start time";
 
@@ -176,6 +204,7 @@ const validateEvent = () => {
 
 const handleCreateEvent = async (e, isDraft = false) => {
   e?.preventDefault?.();
+    console.log(form)
 
   const errors = validateEvent(form);
   setErrors(errors);
@@ -198,7 +227,6 @@ const handleCreateEvent = async (e, isDraft = false) => {
         formData.append(key, value ?? "");
       }
     });
-
 
     const res = await api.patch("/smartOffice/addEvents", formData, {
       headers: { "Content-Type": "multipart/form-data" },
@@ -254,13 +282,13 @@ const handleCreateEvent = async (e, isDraft = false) => {
               />
 
               <EventTypeDropdown
-              value={form.eventType}
-              onChange={updateEventType}
-              error={errors.eventType}
-              icon={
-                <span className="material-symbols--event-list-outline-rounded" />
-              }
-            />
+                value={form.eventType}
+                onChange={updateEventType}
+                error={errors.eventType}
+                icon={
+                  <span className="material-symbols--event-list-outline-rounded" />
+                }
+              />
 
               {/* Description */}
               <EventsTextarea
@@ -341,23 +369,15 @@ const handleCreateEvent = async (e, isDraft = false) => {
                 onChange={(files) => update("attachments", files)}
               />
 
-
-              <EventsInput
-                label="Add travel info"
-                placeholder="Travel ticket, hotels, insurance, visa, local transport"
-                value={
-                  form.travelInfo?.venueLink ||
-                  form.travelInfo?.hotelLink
-                    ? "Travel info added"
-                    : ""
-                }
-                readOnly
-                onClick={() =>
-                  dispatch(openEventFormModal({ type: "TRAVEL" }))
-                }
-                error={errors.travelInfo}
-                svg={"/logo/travel.svg"}
-              />
+                <EventsInput
+                  label="Add travel info"
+                  readOnly
+                  onClick={() => dispatch(openEventFormModal({ type: "TRAVEL" }))}
+                  error={errors.travelInfo}
+                  svg="/logo/travel.svg"
+                  isTravelField
+                  travelData={form.travelInfo}
+                />
 
               <EventsTextarea
                 label="Additional note"

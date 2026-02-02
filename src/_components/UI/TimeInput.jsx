@@ -3,7 +3,7 @@ import { TimePicker } from "./TimePicker";
 import { useOutsideClick } from "@/hooks/useOutsideClick";
 
 const format24Hour = (value) => {
-  if (!value) return "00:00";
+  if (!value || (value.hour == null && value.minute == null)) return null;
 
   const hour = String(value.hour ?? "00").padStart(2, "0");
   const minute = String(value.minute ?? "00").padStart(2, "0");
@@ -24,7 +24,7 @@ export function TimeInput({ value, onChange, size }) {
         onClick={() => setOpen((p) => !p)}
         className="h-[50px] w-full px-4 bg-[#F6F6F6] border-[1.4px] border-[#EAEAEA] rounded-lg font-[600] cursor-pointer"
       >
-        {format24Hour(value)}
+        {format24Hour(value) || "Time"}
       </button>
 
       {open && (

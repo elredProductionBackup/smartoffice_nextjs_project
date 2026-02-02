@@ -1,6 +1,6 @@
 // redux/events/eventSlice.js
 import { createSlice } from "@reduxjs/toolkit";
-import { fetchCollaborators, fetchEvents } from "./eventsThunks";
+import { fetchCollaborators, fetchEvents, fetchMasterConfig, saveMasterConfig } from "./eventsThunks";
 import moment from "moment";
 
 const initialState = {
@@ -15,6 +15,10 @@ const initialState = {
 
   collaboratorsList:[],
   collaboratorsLoading:false,
+
+  checklistMaster: [],
+  pointsMaster: [],
+  masterLoading: false,
 
   activeTab: "upcomming", 
   search: "",
@@ -82,6 +86,12 @@ const eventSlice = createSlice({
       state.page = 1;
     },
     resetEventsState: () => initialState,
+    setChecklistMaster(state, action) {
+      state.checklistMaster = action.payload;
+    },
+    setPointsMaster(state, action) {
+      state.pointsMaster = action.payload;
+    }
   },
 
   extraReducers: (builder) => {
@@ -117,10 +127,91 @@ const eventSlice = createSlice({
         .addCase(fetchCollaborators.rejected, (state, action) => {
           state.collaboratorsLoading = false;
         })
+        // Checklist
+        .addCase(fetchMasterConfig.pending, (state) => {
+          state.masterLoading = true;
+        })
+        .addCase(fetchMasterConfig.fulfilled, (state, action) => {
+          state.masterLoading = false;
+
+          state.checklistMaster = (action.payload.checkList || []).map((c) => ({
+            label: c.itemName,
+            difficulty:
+              c.priority === "veryDifficult"
+                ? "hard"
+                : c.priority === "mildlyDifficult"
+                ? "medium"
+                : "easy",
+            _id: c._id,
+          }));
+
+          state.pointsMaster = (action.payload.pointsList || []).map((p) => ({
+            label: p.pointName,
+            points: p.point,
+          }));
+        })
+        .addCase(fetchMasterConfig.rejected, (state) => {
+          state.masterLoading = false;
+        })
+        .addCase(saveMasterConfig.pending, (state) => {
+          state.masterLoading = false;
+        })
+
+        .addCase(saveMasterConfig.fulfilled, (state, action) => {
+          state.masterLoading = false;
+
+          const serverChecklist = action.payload.checkList || [];
+          const serverPoints = action.payload.pointsList || [];
+
+          serverChecklist.forEach((serverItem) => {
+            const existing = state.checklistMaster.find(
+              (c) => c.label === serverItem.itemName
+            );
+
+            const mapped = {
+              label: serverItem.itemName,
+              difficulty:
+                serverItem.priority === "veryDifficult"
+                  ? "hard"
+                  : serverItem.priority === "mildlyDifficult"
+                  ? "medium"
+                  : "easy",
+              _id: serverItem._id,
+            };
+
+            if (existing) {
+              Object.assign(existing, mapped);
+            } else {
+              state.checklistMaster.push(mapped);
+            }
+          });
+
+          state.checklistMaster = state.checklistMaster.filter((local) =>
+            serverChecklist.some((s) => s._id === local._id)
+          );
+
+          serverPoints.forEach((p) => {
+            const existing = state.pointsMaster.find(
+              (x) => x.label === p.pointName
+            );
+
+            const mapped = { label: p.pointName, points: p.point };
+
+            if (existing) Object.assign(existing, mapped);
+            else state.pointsMaster.push(mapped);
+          });
+
+          state.pointsMaster = state.pointsMaster.filter((local) =>
+            serverPoints.some((s) => s.pointName === local.label)
+          );
+        })
+        .addCase(saveMasterConfig.rejected, (state) => {
+          state.masterLoading = false;
+        });
   },
 });
 
-export const { setPage, setSearch, setActiveTab, resetEventsState } =
+export const { setPage, setSearch, setActiveTab, resetEventsState,setChecklistMaster,setPointsMaster} =
   eventSlice.actions;
 
 export default eventSlice.reducer;

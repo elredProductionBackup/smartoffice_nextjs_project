@@ -1,6 +1,6 @@
 import { useDispatch, useSelector } from "react-redux";
 import { closeEventFormModal } from "@/store/events/eventsUiSlice";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import CustomCheckbox from "../UI/CustomCheckbox";
 import { DateInput } from "../UI/DateInput";
 import { TimeInput } from "../UI/TimeInput";
@@ -11,36 +11,8 @@ const TravelModal = ({ form, setForm }) => {
   const { type } = useSelector((s) => s.eventsUi.eventFormModal);
 
   const [draft, setDraft] = useState(form.travelInfo);
-const getToday = () => moment().startOf("day").toDate();
-  /* Init */
-useEffect(() => {
-  if (type !== "TRAVEL") return;
-
-  setDraft((prev) => {
-    const existing = form.travelInfo;
-
-    return {
-      ...existing,
-      deadline: existing.deadline
-        ? new Date(existing.deadline)
-        : getToday(),
-      reminders:
-        existing.reminders && existing.reminders.length > 0
-          ? existing.reminders
-          : [
-              {
-                id: crypto.randomUUID(),
-                date: getToday(),
-                time: "",
-                note: "",
-              },
-            ],
-    };
-  });
-}, [type]);
-
-
-  if (type !== "TRAVEL") return null;
+  const getToday = () => moment().startOf("day").toDate();
+    /* Init */
 
   const update = (key, value) =>
     setDraft((p) => ({ ...p, [key]: value }));
@@ -54,13 +26,40 @@ useEffect(() => {
       },
     }));
 
-  const handleSave = () => {
-    setForm((prev) => ({
-      ...prev,
-      travelInfo: draft,
-    }));
-    dispatch(closeEventFormModal());
-  };
+const handleSave = () => {
+  const formattedReminders = (draft.reminders || [])
+    // ❌ remove unused reminders (no date, no time, no note)
+    .filter((r) => {
+      const hasDate = !!r.date;
+      const hasTime = r.time?.hour != null && r.time?.minute != null;
+      const hasNote = !!r.note?.trim();
+      return hasDate || hasTime || hasNote;
+    })
+    .map((r) => {
+      if (!r.date) return r;
+
+      const combinedDate = new Date(r.date);
+
+      if (r.time?.hour != null && r.time?.minute != null) {
+        combinedDate.setHours(Number(r.time.hour));
+        combinedDate.setMinutes(Number(r.time.minute));
+        combinedDate.setSeconds(0);
+        combinedDate.setMilliseconds(0);
+      }
+
+      return { ...r, date: combinedDate };
+    });
+
+  setForm((prev) => ({
+    ...prev,
+    travelInfo: {
+      ...draft,
+      reminders: formattedReminders,
+    },
+  }));
+
+  dispatch(closeEventFormModal());
+};
 
 
 const addReminder = () => {
@@ -70,8 +69,8 @@ const addReminder = () => {
       ...(p.reminders || []),
       {
         id: crypto.randomUUID(),
-        date: getToday(),
-        time: "03:00",
+        date: null,
+        time: "",
         note: "",
       },
     ],
@@ -88,6 +87,59 @@ const updateReminder = (id, key, value) => {
   }));
 };
 
+const hasInvalidReminder = (draft.reminders || []).some((r) => {
+  const hasDate = !!r.date;
+  const hasTime = r.time?.hour != null && r.time?.minute != null;
+
+  return (hasDate && !hasTime) || (!hasDate && hasTime);
+});
+const isUnchanged = useMemo(() => {
+  const original = form.travelInfo || {};
+  const current = draft || {};
+
+const normalizeReminder = (r) => {
+  const hasDate = !!r.date;
+  const hasTime = r.time?.hour != null && r.time?.minute != null;
+
+  if (!hasDate && !hasTime && !r.note) return null;
+
+  return {
+    date: hasDate ? new Date(r.date).getTime() : null,
+    hour: r.time?.hour ?? null,
+    minute: r.time?.minute ?? null,
+    note: r.note || "",
+  };
+};
+
+  const originalReminders = (original.reminders || [])
+  .map(normalizeReminder)
+  .filter(Boolean);
+
+const currentReminders = (current.reminders || [])
+  .map(normalizeReminder)
+  .filter(Boolean);
+
+  return JSON.stringify({
+    venueLink: original.venueLink || "",
+    hotelLink: original.hotelLink || "",
+    deadline: original.deadline
+      ? new Date(original.deadline).getTime()
+      : null,
+    requiredInfo: original.requiredInfo || {},
+    reminders: originalReminders,
+  }) ===
+  JSON.stringify({
+    venueLink: current.venueLink || "",
+    hotelLink: current.hotelLink || "",
+    deadline: current.deadline
+      ? new Date(current.deadline).getTime()
+      : null,
+    requiredInfo: current.requiredInfo || {},
+    reminders: currentReminders,
+  });
+}, [draft, form.travelInfo]);
+const disableDone = hasInvalidReminder || isUnchanged;
+
 const removeReminder = (id) => {
   setDraft((p) => ({
     ...p,
@@ -95,6 +147,35 @@ const removeReminder = (id) => {
   }));
 };
 
+
+useEffect(() => {
+    if (type !== "TRAVEL") return;
+
+    setDraft((prev) => {
+      const existing = form.travelInfo;
+
+      return {
+        ...existing,
+        deadline: existing.deadline
+          ? new Date(existing.deadline)
+          : null,
+        reminders:
+          existing.reminders && existing.reminders.length > 0
+            ? existing.reminders
+            : [
+                {
+                  id: crypto.randomUUID(),
+                  date: null,
+                  time: "",
+                  note: "",
+                },
+              ],
+      };
+    });
+  }, [type]);
+
+
+  if (type !== "TRAVEL") return null;
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
@@ -247,8 +328,12 @@ const removeReminder = (id) => {
 
           <button
             onClick={handleSave}
-            className="w-[120px] py-[8px] rounded-[20px] text-white cursor-pointer
-                       bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)]"
+            disabled={disableDone}
+            className={`w-[120px] py-[8px] rounded-[20px] text-white bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)]
+              ${disableDone
+                ? "opacity-50 cursor-not-allowed"
+                : "cursor-pointer "
+              }`}
           >
             Done
           </button>

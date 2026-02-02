@@ -166,8 +166,10 @@ export default function EventsList({
                       {event.attendees}
                     </div>
 
-                    <div className="grid place-items-center text-[18px] font-[500]">
-                      {event.location}
+                    <div className="max-w-[150px] min-w-0 flex items-center justify-center text-[18px] font-[500]">
+                      <span className="block w-full overflow-hidden whitespace-nowrap text-ellipsis text-center">
+                        {event.location}
+                      </span>
                     </div>
 
                     {showTasks && (

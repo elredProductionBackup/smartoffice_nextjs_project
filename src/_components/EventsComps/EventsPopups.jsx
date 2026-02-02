@@ -5,9 +5,10 @@ import { closeTopEventsModal } from "@/store/events/eventsUiSlice";
 
 import MasterChecklistModal from "./MasterChecklistModal";
 import ChecklistFormModal from "./ChecklistFormModal";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import PointSystemModal from "./PointSystemModal";
-
+import { saveMasterConfig } from "@/store/events/eventsThunks";
+import { setChecklistMaster, setPointsMaster } from "@/store/events/eventsSlice";
 
 export default function EventsPopups() {
   const [pointSystem, setPointSystem] = useState(null);
@@ -15,26 +16,21 @@ export default function EventsPopups() {
   const modalStack = useSelector(
     (state) => state.eventsUi.modalStack
   );
-  const [checklist, setChecklist] = useState([]);
-  
-  const handleSubmit = (data, mode, index) => {
-  if (mode === "add") {
-    setChecklist((prev) => [...prev, data]);
-  }
+  const checklistMaster = useSelector((state) => state.events.checklistMaster);
 
-  if (mode === "edit") {
-    setChecklist((prev) =>
-      prev.map((item, i) =>
-        i === index ? data : item
-      )
-    );
-  }
+  const handleSubmit = async (data, mode, index) => {
+    const current = [...checklistMaster];
 
-  dispatch(closeTopEventsModal());
-};
-  const handlePointSave = (data) => {
-    setPointSystem(data);
-    // dispatch(closeTopEventsModal());
+    if (mode === "add") current.push(data);
+    if (mode === "edit") current[index] = data;
+
+    dispatch(setChecklistMaster(current));
+
+    const res = await dispatch(saveMasterConfig());
+
+    if (saveMasterConfig.fulfilled.match(res)) {
+      dispatch(closeTopEventsModal());
+    }
   };
 
 
@@ -60,18 +56,16 @@ export default function EventsPopups() {
               onClick={(e) => e.stopPropagation()}
             >
               {modal.type === "MASTER_CHECKLIST" && (
-                <MasterChecklistModal checklist={checklist} onClose={()=>dispatch(closeTopEventsModal())}/>
+                <MasterChecklistModal onClose={()=>dispatch(closeTopEventsModal())}/>
               )}
 
               {modal.type === "CHECKLIST_FORM" && (
                 <ChecklistFormModal {...modal.payload} onSubmit={handleSubmit} onClose={()=>dispatch(closeTopEventsModal())}/>
               )}
               {modal.type === "POINT_SYSTEM" && (
-              <PointSystemModal
-                initialRules={pointSystem} 
-                onClose={() => dispatch(closeTopEventsModal())}
-                onSave={handlePointSave}
-              />
+                <PointSystemModal
+                  onClose={() => dispatch(closeTopEventsModal())}
+                />
             )}
 
             </div>
