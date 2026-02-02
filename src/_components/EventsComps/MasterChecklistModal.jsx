@@ -49,13 +49,13 @@ const openEdit = (item, index) => {
 };
 
   return (
-    <div className="w-[600px] flex flex-col bg-white rounded-[14px] shadow-xl p-[40px] relative flex flex-col gap-[24px] h-[637px] max-h-[90vh]">
-       <div className="flex items-center justify-between">
+    <div className="w-[600px] flex flex-col bg-white rounded-[14px] shadow-xl px-[40px]  relative flex flex-col gap-[24px] h-[637px] max-h-[90vh] overflow-y-auto">
+       <div className="pt-[40px] flex items-center justify-between w-[100%] sticky top-[0px] bg-[white]">
          <h3 className="text-[32px] font-[700] text-[#333]">Master Checklist</h3>
 
          <button
            onClick={onClose}
-           className="absolute right-[40px] top-[40px] h-[24px] w-[24px] rounded-full bg-[#EEEEEE] flex items-center justify-center text-[#999999] cursor-pointer"
+           className="absolute right-[0px] top-[40px] h-[24px] w-[24px] rounded-full bg-[#EEEEEE] flex items-center justify-center text-[#999999] cursor-pointer"
          >
            <span className="akar-icons--cross small-cross"></span>
          </button>
@@ -72,7 +72,7 @@ const openEdit = (item, index) => {
           </p>
           <button
             onClick={openAdd}
-            className="py-[8px] px-[20px] text-[20px] rounded-full bg-gradient-to-r from-[#5597ED] to-[#00449C] text-white cursor-pointer"
+            className="py-[8px] px-[20px] text-[20px] rounded-full bg-gradient-to-r from-[#5597ED] to-[#00449C] text-white cursor-pointer "
           >
             Add new
           </button>
@@ -108,12 +108,14 @@ const openEdit = (item, index) => {
             ))}
           </div>
 
+          <div className="bg-[white] w-[100%] sticky bottom-[0px] pt-[10px] pb-[40px]">
           <button
             onClick={openAdd}
-            className="self-start py-[8px] px-[20px] text-[20px] rounded-full bg-gradient-to-r from-[#5597ED] to-[#00449C] text-white cursor-pointer"
+            className="self-start py-[8px] px-[20px] text-[20px] rounded-full bg-gradient-to-r from-[#5597ED] to-[#00449C] text-white cursor-pointer "
           >
             + Add new
           </button>
+          </div>
         </>
       )}
     </div>

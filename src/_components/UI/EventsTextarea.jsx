@@ -31,7 +31,7 @@ export function EventsTextarea({
       </div>
 
       {error && (
-        <p className="absolute -bottom-[10px] text-[12px] text-red-500">
+        <p className="absolute -bottom-[22px] text-[12px] text-red-500">
           {error}
         </p>
       )}

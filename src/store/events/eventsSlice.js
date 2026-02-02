@@ -58,7 +58,7 @@ const groupEventsByMonth = (events = []) => {
     const m = moment(event.startDateTime);
     if (!m.isValid()) return;
 
-    const month = m.format("MMMM YYYY");
+    const month = m.format("MMMM, YYYY");
     if (!grouped[month]) grouped[month] = [];
     grouped[month].push(mapEventToUI(event));
   });

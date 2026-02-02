@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { IoClose } from "react-icons/io5";
 
-export function ResourceSpeaker({ value, onChange }) {
+export function ResourceSpeaker({ value, onChange, errors = {} }) {
   const fileRef = useRef(null);
 
   const updateSpeaker = (key, val) => {
@@ -32,7 +32,7 @@ export function ResourceSpeaker({ value, onChange }) {
         Resource/speaker
       </span>
 
-      <div className="flex gap-[10px]">
+      <div className="flex gap-[10px] relative">
         {/* Left fields */}
         <div className="flex-1 flex flex-col gap-[10px]">
           {/* Name */}
@@ -110,41 +110,55 @@ export function ResourceSpeaker({ value, onChange }) {
           }
         />
       </div>
-      {/* Weblinks */}
-      <div className="w-full mt-[4px] flex flex-col gap-[10px]">
-          {(value.weblinks || []).map((link, index) => (
-            <div key={index} className="relative w-full flex items-center ">
-              <div className="absolute left-[20px] text-[#999999]  flex items-center">
-                <span className="bi--globe big"></span>
-              </div>
-              <input
-                placeholder="Weblink URL"
-                value={link}
-                onChange={(e) =>
-                  updateWeblink(index, e.target.value)
-                }
-                className="h-[50px] w-full pl-[50px] pr-10 rounded-lg border-[1.4px] border-[#EAEAEA] bg-[#F6F6F6] outline-none"
-              />
-
-              {/* Remove weblink */}
-              <button
-                onClick={() => removeWeblink(index)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#999999]"
-              >
-                <IoClose />
-              </button>
+        {errors && (
+        <p className="text-[12px] text-red-500">
+          {errors.main}
+        </p>
+      )}
+     {/* Weblinks */}
+    <div className="w-full mt-[4px] flex flex-col gap-[10px]">
+      {(value.weblinks || []).map((link, index) => (
+        <div key={index} className="w-full flex flex-col">
+          
+          <div className="relative w-full flex items-center">
+            <div className="absolute left-[20px] text-[#999999] flex items-center">
+              <span className="bi--globe big"></span>
             </div>
-          ))}
 
-          {/* Add weblink */}
-          <button
-            type="button"
-            onClick={addWeblink}
-            className="text-[#0B57D0] ml-[10px] text-[18px] font-[600] text-left w-fit cursor-pointer"
-          >
-            Add weblink
-          </button>
-      </div>
+            <input
+              placeholder="Weblink URL"
+              value={link}
+              onChange={(e) => updateWeblink(index, e.target.value)}
+              className={`h-[50px] w-full pl-[50px] pr-10 rounded-lg border-[1.4px] bg-[#F6F6F6] outline-none
+                ${errors.weblinks?.[index] ? "border-red-500" : "border-[#EAEAEA]"}`}
+            />
+
+            {/* Remove weblink */}
+            <button
+              onClick={() => removeWeblink(index)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#999999] cursor-pointer"
+            >
+              <IoClose />
+            </button>
+          </div>
+
+          {errors.weblinks?.[index] && (
+            <span className="text-[12px] text-red-500 mt-1">
+              {errors.weblinks[index]}
+            </span>
+          )}
+        </div>
+      ))}
+
+      {/* Add weblink */}
+      <button
+        type="button"
+        onClick={addWeblink}
+        className="text-[#0B57D0] ml-[10px] text-[18px] font-[600] text-left w-fit cursor-pointer"
+      >
+        Add weblink
+      </button>
+    </div>
     </div>
   );
 }
