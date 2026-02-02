@@ -21,10 +21,10 @@ export function TimePicker({ value, onChange, size='large' }) {
             <div
               key={timeKey}
               onClick={() => onChange(t)}
-              className={`relative px-2 py-2 cursor-pointer text-center text-[13px] rounded-[4px]
+              className={`relative px-2 py-2 cursor-pointer text-center text-[13px] rounded-[4px] text-[#9CA3AF]
                 ${
                   isSelected
-                    ? "bg-[#0B57D0] text-white font-semibold"
+                    ? "bg-[#0B57D0] text-white font-semibold text-[#FFFFFF]"
                     : "text-[#9CA3AF]"
                 }`}
             >
