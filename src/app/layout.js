@@ -5,6 +5,7 @@ import MemberInfoPopup from "@/_components/MemberInfoPopup";
 import VendorNotePopup from "@/_components/VendorNotePopup";
 import GlobalLoader from "@/_components/GlobalLoader";
 import Providers from "./providers";
+import GlobalToast from "@/_components/UI/GlobalToast";
 
 const nunito_sans = Nunito_Sans({
   variable: "--font-nunito-sans",
@@ -20,7 +21,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body
-        className={`${nunito_sans.variable} antialiased`}
+        className={`${nunito_sans.variable} antialiased relative`}
         suppressHydrationWarning
       >
         <Providers>
@@ -28,6 +29,7 @@ export default function RootLayout({ children }) {
           {children}
           <VendorNotePopup />
           <GlobalLoader />
+          <GlobalToast/>
         </Providers>
       </body>
     </html>

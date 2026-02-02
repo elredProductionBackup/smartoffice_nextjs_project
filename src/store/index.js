@@ -5,6 +5,7 @@ import eventSlice from "./events/eventsSlice";
 import eventUiReducer from "./events/eventsUiSlice";
 import dashboardReducer from "./dashboard/dashboardSlice";
 import authReducer from "./auth/authSlice";
+import toastReducer from "./toastSlice";
 
 export const store = configureStore({
   reducer: {
@@ -14,5 +15,6 @@ export const store = configureStore({
     events:eventSlice,
     eventsUi: eventUiReducer,
     dashboard:dashboardReducer,
+    toast: toastReducer,
   },
 });

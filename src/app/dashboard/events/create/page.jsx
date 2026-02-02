@@ -19,245 +19,77 @@ import { useRouter } from "next/navigation";
 import TravelModal from "@/_components/EventsComps/TravelModal";
 import { Collaborators } from "@/_components/EventsComps/Collaborators";
 import moment from "moment";
-import api from "@/services/axios";
 import DraftApprovalModal from "@/_components/EventsComps/DraftApprovalModal";
+import { useEventForm } from "@/hooks/useEventForm";
+import { validateEvent } from "@/utils/validation";
+import { buildEventPayload } from "@/utils/eventPayload";
+import { submitEvent } from "@/services/events.service";
+import { mergeDateAndTime } from "@/utils/dateUtils";
+import { addToast } from "@/store/toastSlice";
 
-const isValidImageFile = (file) => {
-  if (!(file instanceof File)) return false;
-
-  const allowed = ["image/jpeg", "image/png", "image/jpg"];
-  const maxSize = 10 * 1024 * 1024;
-
-  return allowed.includes(file.type) && file.size <= maxSize;
-};
-
-
-export const buildEventPayload = (form, startTime, endTime, isDraft = false) => {
-  const toUTC = (date) =>
-    date ? moment(date).utc().format("YYYY-MM-DDTHH:mm:ss[Z]") : null;
-
-  const payload = {
-    eventId: "",
-
-    eventName: form.eventName.trim(),
-    eventType: form.eventType.type,
-    ...(isValidImageFile(form.image?.file) && {
-      eventImage: form.image.file,
-    }),
-    point:form.eventType.points,
-    eventDescription: form.description || "",
-
-    startDateTime: toUTC(form.startDate),
-    endDateTime: toUTC(form.endDate),
-    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-
-    reminder: form.reminder.map((r) => ({
-      reminderName: r.audience,
-      time: toUTC(r.datetime),
-      notes: r.note
-    })),
-
-    eventLocation: form.location,
-
-    whoCanAttend: {
-      members: form.attendees.member,
-      spouce: form.attendees.spouse,
-      children: form.attendees.children,
-      guests: form.attendees.guests,
-    },
-
-    isRegistration: form.registrationOpen,
-
-    resourceName: form.speaker.name,
-    resourceDescription: form.speaker.description,
-    uploadResourceImageUrl: form.speaker.image || "",
-    webLink: form.speaker.weblinks || [],
-
-    collaborators: form.collaborators
-      .filter((c) => c.userCode)
-      .map((c) => ({
-        userCode: c.userCode,
-        points: c.point,
-      })),
-
-    travelInfo: {
-      venueLink: form.travelInfo.venueLink,
-      hotelLink: form.travelInfo.hotelLink,
-      attendeesInfo: Object.entries(form.travelInfo.requiredInfo)
-        .filter(([_, v]) => v)
-        .map(([k]) => k),
-      deadLine: form.travelInfo.deadline ? toUTC(form.travelInfo.deadline) : "",
-      remainder: form.travelInfo.reminders.map((r) => ({
-        reminderName: r.label || "Reminder",
-        time: toUTC(r.date),
-        notes: r.note
-      })),
-    },
-
-    additionalNotes: form.additionalNote || "",
-    isDraft,
-  };
-
-  form.attachments?.forEach((item, i) => {
-    if (item?.file instanceof File) {
-      payload[`uploadDocument${i + 1}`] = item.file;
-    }
-  });
-
-  return payload;
-};
-
-
-
-
-// const mergeDateAndTime = (date, time) => {
-//   const d = new Date(date);
-
-//   d.setHours(
-//     parseInt(time.hour, 10),
-//     parseInt(time.minute, 10),
-//     0,
-//     0
-//   );
-
-//   return d;
-// };
-
-const mergeDateAndTime = (date, time) => {
-  if (!date || !time) return null;
-
-  return moment(date)
-    .set({
-      hour: Number(time.hour),
-      minute: 0,
-      second: 0,
-      millisecond: 0,
-    })
-    .toDate();
-};
-
-const getNextFullHour = () => {
-  const now = moment();
-  const nextHour = now.clone().add(1, "hour").startOf("hour"); 
-  return nextHour.toDate();
-};
-
-
-const CreateEvent = () => {
+  const CreateEvent = () => {
+  const { form, update,setForm, updateEventType } = useEventForm();
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
-  const initialMoment = moment(getNextFullHour());
-
-  const [startTime, setStartTime] = useState({
-    hour: initialMoment.format("HH"),
-    minute: "00",
-  });
-
-  const [endTime, setEndTime] = useState({
-    hour: initialMoment.clone().add(1, "hour").format("HH"),
-    minute: "00",
-  });
-
-  const router = useRouter()
-
-  const dispatch = useDispatch();
-
-  const defaultStart = getNextFullHour();
-  const defaultEnd = moment(defaultStart).add(1, "hour").toDate();
-
-
-    const [form, setForm] = useState({
-    image: { file: null, previewUrl: null,},
-    eventName: "",  eventType: { type: "", points: 1},
-    description: "",   startDate: defaultStart,
-  endDate: defaultEnd,
-    reminder: [], location: "",
-    attendees: { member: true, spouse: false, children: false, guests: false },
-    registrationOpen: true,
-    speaker: { name: "", description: "", weblinks: [], image: null },
-    collaborators: [], attachments: [], travelInfo: {
-    venueLink: "", hotelLink: "",
-    requiredInfo: {ticket: false, insurance: false, visa: false, },
-    deadline: null, reminders: [],
-  }, additionalNote: "",
-  });
-
-const validateEvent = () => {
-  const errors = {};
-  const now = moment();
-  
-  if (!form.eventName?.trim()) errors.eventName = "Event name is required";
-  if (!form.eventType?.type) errors.eventType = "Select event type";
-  if (!form.location?.trim()) errors.location = "Location required";
-  if (form.image?.file && !isValidImageFile(form.image.file)) {
-    errors.image = "Image must be JPG/PNG and under 10MB";
-  }
-
-  if (moment(form.startDate).isBefore(now))
-    
-  if (moment(form.endDate).isSameOrBefore(form.startDate))
-    errors.date = "End time must be after start time";
-
-  return errors; 
-};
-
+  const router = useRouter();
 
 const handleCreateEvent = async (e, isDraft = false) => {
   e?.preventDefault?.();
-    console.log(form)
 
-  const errors = validateEvent(form);
-  setErrors(errors);
-  if (Object.keys(errors).length > 0) return;
+  const errs = validateEvent(form);
+  if (Object.keys(errs).length) return setErrors(errs);
 
   try {
     setSubmitting(true);
 
-    const payload = buildEventPayload(form, startTime, endTime, isDraft);
-    const formData = new FormData();
+    const payload = buildEventPayload(form, isDraft);
+    const res = await submitEvent(payload);
 
-    Object.entries(payload).forEach(([key, value]) => {
-      if (value instanceof File) {
-        formData.append(key, value);
-      } 
-      else if (Array.isArray(value) || typeof value === "object") {
-        formData.append(key, JSON.stringify(value));
-      } 
-      else {
-        formData.append(key, value ?? "");
-      }
-    });
-
-    const res = await api.patch("/smartOffice/addEvents", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+    console.log(res)
 
     if (res.status >= 200 && res.status < 300) {
       router.push("/dashboard/events");
+      dispatch(addToast({ message: 'Success', type: "success" }));
     } else {
-      setErrors({ api: res.data?.message || "Failed to create event" });
+       dispatch(addToast({ message: {title:'Something Went Wrong',descrip:"lorem ipsum"}, type: "error" }));
     }
-  } catch (err) {
-    console.error(err);
-    setErrors({ api: "Network error. Please try again." });
+
+  } catch (error) {
+    console.error("Create Event Failed:", error?.response || error);
+
+    if (error?.response?.data?.errors) {
+      setErrors(error.response.data.errors);
+
+      dispatch(
+        addToast({
+          message: "Please fix the highlighted errors",
+          type: "error",
+        })
+      );
+
+      return;
+    }
+
+    const message =
+      error?.response?.data?.message ||
+      "Something went wrong. Please try again.";
+
+    dispatch(addToast({ message, type: "error" }));
+    setErrors({ api: message });
+
   } finally {
     setSubmitting(false);
   }
 };
 
-  const update = (key, value) =>
-    setForm((p) => ({ ...p, [key]: value }));
+    const getTimeFromDate = (date) => ({
+      hour: moment(date).format("HH"),
+      minute: moment(date).format("mm"),
+    });
 
-  const updateEventType = (key, value) => {
-  setForm((prev) => ({
-    ...prev,
-    eventType: {
-      ...prev.eventType,
-      [key]: value,
-    },
-  }));
-};
+    const dispatch = useDispatch();
 
+    console.log(errors)
 
   return (
     <div className="h-[calc(100vh-80px)] flex justify-center py-5 gap-[80px] overflow-auto relative">
@@ -297,29 +129,33 @@ const handleCreateEvent = async (e, isDraft = false) => {
                 value={form.description}
                 onChange={(e) => update("description", e.target.value)}
                 icon={<span className="solar--chat-line-outline"></span>}
+                error={errors.description}
               />
 
               <div>
                 <DateTimeRangePicker
                   startDate={form.startDate}
                   endDate={form.endDate}
-                  startTime={startTime}
-                  endTime={endTime}
+                  startTime={getTimeFromDate(form.startDate)}
+                  endTime={getTimeFromDate(form.endDate)}
+
                   onStartDateChange={(date) =>
-                    update("startDate", mergeDateAndTime(date, startTime))
+                    update("startDate", mergeDateAndTime(date, getTimeFromDate(form.startDate)))
                   }
+
                   onEndDateChange={(date) =>
-                    update("endDate", mergeDateAndTime(date, endTime))
+                    update("endDate", mergeDateAndTime(date, getTimeFromDate(form.endDate)))
                   }
-                  onStartTimeChange={(time) => {
-                    setStartTime(time);
-                    update("startDate", mergeDateAndTime(form.startDate, time));
-                  }}
-                  onEndTimeChange={(time) => {
-                    setEndTime(time);
-                    update("endDate", mergeDateAndTime(form.endDate, time));
-                  }}
-                  error={errors.date}
+
+                  onStartTimeChange={(time) =>
+                    update("startDate", mergeDateAndTime(form.startDate, time))
+                  }
+
+                  onEndTimeChange={(time) =>
+                    update("endDate", mergeDateAndTime(form.endDate, time))
+                  }
+
+                  error={errors.startDate || errors.endDate}
                 />
               </div>
 
@@ -360,6 +196,7 @@ const handleCreateEvent = async (e, isDraft = false) => {
               <ResourceSpeaker
                 value={form.speaker}
                 onChange={(v) => update("speaker", v)}
+                errors={errors.speaker}
               />
 
               <Collaborators form={form} setForm={setForm}/>

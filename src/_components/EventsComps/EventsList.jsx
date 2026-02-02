@@ -43,7 +43,7 @@ export default function EventsList({
               : "grid-cols-[1.5fr_1fr_1fr]"
           } gap-[85px]`}
         >
-          <div>Event name</div>
+          <div className="pl-[80px]">Event name</div>
           <div className="text-center">Attendees</div>
           <div className="text-center">Location</div>
           {showTasks && <div className="text-center">Task completed</div>}
@@ -166,7 +166,7 @@ export default function EventsList({
                       {event.attendees}
                     </div>
 
-                    <div className="max-w-[150px] min-w-0 flex items-center justify-center text-[18px] font-[500]">
+                    <div className={`${showTasks && 'max-w-[150px]'} min-w-0 flex items-center justify-center text-[18px] font-[500]`}>
                       <span className="block w-full overflow-hidden whitespace-nowrap text-ellipsis text-center">
                         {event.location}
                       </span>

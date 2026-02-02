@@ -1,5 +1,29 @@
 import api from "@/services/axios";
 
+export const submitEvent = async (payload) => {
+  try {
+    const formData = new FormData();
+
+    Object.entries(payload).forEach(([k, v]) => {
+      if (v instanceof File) formData.append(k, v);
+      else if (Array.isArray(v) || typeof v === "object")
+        formData.append(k, JSON.stringify(v));
+      else formData.append(k, v ?? "");
+    });
+
+    const res = await api.patch("/smartOffice/addEvents", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+
+    return res.data;
+
+  } catch (error) {
+    console.error("submitEvent API Error:", error?.response || error);
+    throw error;
+  }
+};
+
+
 export const getEventsList = ({
   networkClusterCode,
   start = 1,
