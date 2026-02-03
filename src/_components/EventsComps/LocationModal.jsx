@@ -38,7 +38,7 @@ const LocationModal = ({ form, setForm, setErrors }) => {
   return (
     <div
       className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center"
-      onClick={() => {}}
+      onClick={() => dispatch(closeEventFormModal())}
     >
       <div
         className="w-[560px] bg-white rounded-[20px] overflow-y-auto flex flex-col max-h-[85vh] px-[30px] relative"
