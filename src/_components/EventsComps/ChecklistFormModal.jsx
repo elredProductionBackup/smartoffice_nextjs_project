@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function ChecklistFormModal({ mode, item, index, onSubmit, onClose }) {
+  const [original, setOriginal] = useState({ label: "", difficulty: "" });
   const [label, setLabel] = useState(item?.label || "");
   const [difficulty, setDifficulty] = useState(
     item?.difficulty || ""
@@ -16,8 +17,22 @@ export default function ChecklistFormModal({ mode, item, index, onSubmit, onClos
       index
     );
   };
+  
+    useEffect(() => {
+    if (mode === "edit" && item) {
+      setOriginal({
+        label: item.label || "",
+        difficulty: item.difficulty || "",
+      });
+    }
+  }, [mode, item]);
 
-  const isFormValid = !label || !difficulty;
+  const isChanged =
+  label.trim() !== original.label.trim() ||
+  difficulty !== original.difficulty;
+
+  const isFormInvalid =
+  !difficulty || (mode === "add" && !label) || (mode === "edit" && !isChanged);
 
   return (
     <div className="w-[520px] bg-white rounded-[14px] shadow-xl p-[40px] flex flex-col gap-[20px]">
@@ -85,15 +100,11 @@ export default function ChecklistFormModal({ mode, item, index, onSubmit, onClos
       <div className="flex justify-center gap-[80px] mt-[10px]">
         <button onClick={onClose} className="rounded-full text-[20px] bg-[#999999] px-6 py-2 text-white w-[120px] cursor-pointer" >Cancel</button>
         <button
-          onClick={handleSubmit}
-          disabled={isFormValid}
-          className={`rounded-full text-[20px] w-[120px] px-[16px] py-[8px] text-white transition bg-gradient-to-r from-[#5597ED] to-[#00449C] 
-            ${
-              isFormValid
-                ? "opacity-50 cursor-not-allowed"
-                : "cursor-pointer"
-            }`}
-        >
+            onClick={handleSubmit}
+            disabled={isFormInvalid}
+            className={`rounded-full text-[20px] w-[120px] px-[16px] py-[8px] text-white transition bg-gradient-to-r from-[#5597ED] to-[#00449C] 
+              ${isFormInvalid ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+          >
           {mode === "add" ? "Add" : "Save"}
         </button>
       </div>

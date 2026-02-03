@@ -6,19 +6,39 @@ const isLengthValid = (v, min, max) => {
   return len >= min && len <= max;
 };
 
-const isValidURL = (url) => {
-  try {
-    const parsed = new URL(url);
-    return ["http:", "https:"].includes(parsed.protocol);
-  } catch {
-    return false;
-  }
+export const isValidURL = (url) => {
+  const trimmed = url.trim();
+
+  const clean = trimmed.replace(/^https?:\/\//, "");
+  const regex = /^(localhost|\d{1,3}(\.\d{1,3}){3}|([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,})(\/.*)?$/;
+
+  return regex.test(clean);
 };
 
-const isValidImageFile = (file) => {
-  if (!(file instanceof File)) return false;
-  const allowed = ["image/jpeg", "image/png", "image/jpg"];
-  return allowed.includes(file.type) && file.size <= 10 * 1024 * 1024;
+export const isValidImageFile = (file) => {
+  if (!(file instanceof File)) {
+    console.log("Not a File instance:", file);
+    return { valid: false, reason: "type" };
+  }
+
+  const allowedTypes = ["image/jpeg", "image/png", "image/jpg"];
+  const maxSize = 2 * 1024 * 1024; 
+
+  console.log("File type:", file.type);
+  console.log("File size (bytes):", file.size);
+  console.log("Max allowed size (bytes):", maxSize);
+
+  if (!allowedTypes.includes(file.type)) {
+    console.log("Invalid file type");
+    return { valid: false, reason: "type" };
+  }
+
+  if (file.size > maxSize) {
+    console.log("File is too large");
+    return { valid: false, reason: "size" };
+  }
+
+  return { valid: true, reason: null };
 };
 
 export const validateEvent = (form) => {
@@ -50,10 +70,6 @@ export const validateEvent = (form) => {
     errors.location = "Location must be 3–200 characters";
   }
 
-  // ---------------- IMAGE ----------------
-  if (form.image?.file && !isValidImageFile(form.image.file))
-    errors.image = "Image must be JPG/PNG and under 10MB";
-
   // ---------------- DATES ----------------
   if (moment(form.startDate).isBefore(now))
     errors.startDate = "Start time cannot be in the past";
@@ -68,26 +84,30 @@ export const validateEvent = (form) => {
     let nameError = "";
     let descError = "";
 
-    if (isEmpty(form.speaker.name)) {
-      nameError = "Resource name is required";
-    } else if (!isLengthValid(form.speaker.name, 3, 200)) {
-      nameError = "Resource name must be 3–200 characters";
+    // ---- NAME ----
+    if (form.speaker.name) {
+      if (!isLengthValid(form.speaker.name, 3, 200)) {
+        nameError = "Resource name must be 3–200 characters";
+      }
     }
 
-    if (isEmpty(form.speaker.description)) {
-      descError = "Resource description is required";
-    } else if (!isLengthValid(form.speaker.description, 5, 400)) {
-      descError = "Resource description must be 5–400 characters";
+    // ---- DESCRIPTION ----
+    if (form.speaker.description) {
+      if (!isLengthValid(form.speaker.description, 5, 400)) {
+        descError = "Resource description must be 5–400 characters";
+      }
     }
 
+    // ---- COMBINED MESSAGE ----
     if (nameError && descError) {
       speakerErrors.main = `${nameError} & ${descError}`;
-    } else {
+    } else if (nameError || descError) {
       speakerErrors.main = nameError || descError;
     }
 
+    // ---- WEBLINKS ----
     if (form.speaker.weblinks?.length) {
-      speakerErrors.weblinks = form.speaker.weblinks.map((link) => {
+      const weblinkErrors = form.speaker.weblinks.map((link) => {
         if (isEmpty(link)) return "Link is required";
         if (!isLengthValid(link, 3, 200))
           return "Link must be 3–200 characters";
@@ -95,17 +115,29 @@ export const validateEvent = (form) => {
           return "Enter a valid URL (https://example.com)";
         return null;
       });
+
+      if (weblinkErrors.some(Boolean)) {
+        speakerErrors.weblinks = weblinkErrors;
+      }
     }
 
-    errors.speaker = speakerErrors;
+    if (Object.keys(speakerErrors).length > 0) {
+      errors.speaker = speakerErrors;
+    }
   }
-  // ---------------- ADDITIONAL NOTES (optional field) ----------------
+  // ---------------- ADDITIONAL NOTES ----------------
   if (form.additionalNote) {
     if (!isLengthValid(form.additionalNote, 5, 400))
       errors.additionalNote = "Additional notes must be 5–400 characters";
   }
 
-  console.log(errors)
-
   return errors;
+};
+
+export const clearFieldError = (setErrors,field) => {
+  setErrors((prev) => {
+    const updated = { ...prev };
+    delete updated[field];
+    return updated;
+  });
 };

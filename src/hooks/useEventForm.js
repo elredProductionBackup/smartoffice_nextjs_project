@@ -38,7 +38,7 @@ import { getNextFullHour } from "../utils/dateUtils";
 export const useEventForm = () => {
   const defaultStart = getNextFullHour(); 
   const defaultEnd = moment(defaultStart).add(1, "hour").toDate();
-
+  const [errors, setErrors] = useState({});
   const [form, setForm] = useState({
     startDate: defaultStart,
     endDate: defaultEnd,
@@ -55,20 +55,35 @@ export const useEventForm = () => {
     attachments: [],
     travelInfo: {
     venueLink: "", hotelLink: "",
-    requiredInfo: {ticket: false, insurance: false, visa: false, },
+    requiredInfo: {ticketDetails: false, insuranceDetails: false, visaInformation: false, },
     deadline: null, reminders: [],
   },
     additionalNote: "",
   });
 
-  const update = (key, value) =>
+  const update = (key, value) =>{
     setForm((p) => ({ ...p, [key]: value }));
+      setErrors((prev) => {
+    if (!prev[key]) return prev;
+    const newErr = { ...prev };
+    delete newErr[key];
+    return newErr;
+  });
+}
 
-  const updateEventType = (key, value) =>
-    setForm((p) => ({
-      ...p,
-      eventType: { ...p.eventType, [key]: value },
-    }));
+const updateEventType = (key, value) => {
+  setForm((p) => ({
+    ...p,
+    eventType: { ...p.eventType, [key]: value },
+  }));
 
-  return { form, setForm, update, updateEventType };
+  setErrors((prev) => {
+    if (!prev.eventType) return prev;
+    const newErr = { ...prev };
+    delete newErr.eventType;
+    return newErr;
+  });
+};
+
+  return { form, setForm,errors,setErrors, update, updateEventType };
 };

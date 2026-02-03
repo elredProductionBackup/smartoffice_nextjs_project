@@ -1,4 +1,3 @@
-// redux/events/eventSlice.js
 import { createSlice } from "@reduxjs/toolkit";
 import { fetchCollaborators, fetchEvents, fetchMasterConfig, saveMasterConfig } from "./eventsThunks";
 import moment from "moment";

@@ -24,13 +24,23 @@ export default function GlobalToast() {
     }, [toast]);
 
     useEffect(() => {
+      if (!toast || !toast.mounted) return;
+
+      const timer = setTimeout(() => {
+        dispatch(hideToast());
+      }, 4000);
+
+      return () => clearTimeout(timer);
+    }, [toast?.mounted]);
+
+    useEffect(() => {
         dispatch(clearAllToasts());
     }, [pathname]);
 
      if (!toast) return null;
 
   const stateClass = toast.hiding
-    ? "opacity-0 -translate-y-6 transition-all duration-200"
+    ? "opacity-0 -translate-y-2 transition-all duration-200"
     : toast.mounted
     ? "opacity-100 translate-y-0 transition-all duration-300"
     : "opacity-0 -translate-y-2";
@@ -45,30 +55,33 @@ export default function GlobalToast() {
           }
         }}
         className={`
-          absolute top-[130px] right-[50px] flex items-start gap-4
+          absolute top-[130px] right-[50px] flex items-center gap-[12px]
           min-w-[500px] max-w-[500px] max-w-[95%]
-          px-6 py-4 rounded-xl
-          text-white shadow-2xl
-          bg-[#2b2b2e]
+          p-[12px] rounded-[12px]
+          text-[#F3F3F3]
+          bg-[#3A3A3C]
           pointer-events-auto
           ${stateClass}
         `}
       >
         {/* TEXT */}
-        <div className="flex-1">
-          <div className="text-[18px] font-semibold text-red-400">
+        <div className="text-[#F12632] grid place-items-center ml-[4px]">
+          <span className="lucide--file-x"></span>
+        </div>
+        <div className="flex-1 flex flex-col gap-[4px]">
+          <div className="text-[16px] font-[500] text-[#F12632]">
             {toast.message?.title}
           </div>
-          <div className="text-[14px] text-white/80 mt-1">
+          <div className="text-[12px]">
             {toast.message?.descrip}
           </div>
         </div>
 
         <button
           onClick={() => dispatch(clearAllToasts())}
-          className="absolute top-3 right-3 text-white/60 hover:text-white text-lg"
+          className="absolute top-[12px] right-[12px] cursor-pointer"
         >
-          ✕
+          <span className="akar-icons--cross regular"></span>
         </button>
       </div>
     </div>
