@@ -3,7 +3,7 @@
 import { useDispatch, useSelector } from "react-redux";
 import { closeEventFormModal } from "@/store/events/eventsUiSlice";
 
-const DraftApprovalModal = ({ onConfirmCreate, onSendForApproval }) => {
+const DraftApprovalModal = ({ onConfirmCreate, onSendForApproval,submitting }) => {
   const dispatch = useDispatch();
   const { type } = useSelector((s) => s.eventsUi.eventFormModal);
 
@@ -30,20 +30,20 @@ const DraftApprovalModal = ({ onConfirmCreate, onSendForApproval }) => {
             onClick={() => {
               dispatch(closeEventFormModal());
             }}
-            className="px-[16px] py-[8px] whitespace-nowrap rounded-[100px] bg-[#999999] text-white cursor-pointer text-[20px] font-[500]"
+            className="px-[16px] min-w-[184px] py-[8px] whitespace-nowrap rounded-[100px] bg-[#999999] text-white cursor-pointer text-[20px] font-[500]"
           >
             No, create event
           </button>
 
           <button
-            onClick={() => {
+            onClick={async () => {
+              await onSendForApproval();
               dispatch(closeEventFormModal());
-              onSendForApproval();
             }}
-            className="px-[16px] py-[8px] whitespace-nowrap rounded-[100px] text-white transition
-              bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)] text-[20px] font-[500] cursor-pointer"
+            className="px-[16px] min-w-[187px] py-[8px] whitespace-nowrap rounded-[100px] text-white transition
+              bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)] text-[20px] font-[500] cursor-pointer flex items-center justify-center"
           >
-            Send for approval
+            {submitting?<div className="w-[20px] h-[20px] border-2 border-[white] border-t-transparent rounded-full animate-spin" />:'Send for approval'}
           </button>
         </div>
       </div>

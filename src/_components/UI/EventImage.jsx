@@ -2,13 +2,43 @@
 
 import { useEffect, useRef } from "react";
 import Image from "next/image";
+import { addToast } from "@/store/toastSlice";
+import { useDispatch } from "react-redux";
 
 export const EventImage = ({ value, onChange }) => {
   const inputRef = useRef(null);
+  const dispatch = useDispatch();
+
+  const MAX_SIZE = 2 * 1024 * 1024;
+  const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/jpg"];
 
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      dispatch(addToast({
+        message: {
+          title: "Invalid Image Type",
+          descrip: "Only JPG/PNG files are allowed",
+        },
+        type: "error",
+      }));
+      e.target.value = "";
+      return;
+    }
+
+    if (file.size > MAX_SIZE) {
+      dispatch(addToast({
+        message: {
+          title: "Maximum File Size Exceeded",
+          descrip: "The file is too large. Allowed maximum size is 2MB.",
+        },
+        type: "error",
+      }));
+      e.target.value = "";
+      return;
+    }
 
     const previewUrl = URL.createObjectURL(file);
     onChange({ file, previewUrl });
@@ -18,7 +48,6 @@ export const EventImage = ({ value, onChange }) => {
     inputRef.current?.click();
   };
 
-  // Cleanup object URL
   useEffect(() => {
     return () => {
       if (value?.previewUrl) {
@@ -27,11 +56,16 @@ export const EventImage = ({ value, onChange }) => {
     };
   }, [value]);
 
+  const isValidPreview =
+  value?.file &&
+  ALLOWED_TYPES.includes(value.file.type) &&
+  value.file.size <= MAX_SIZE;
+
   return (
     <div className="sticky top-0 flex flex-col items-center gap-[30px]">
       {/* Image Preview */}
       <div className="relative h-[600px] aspect-[3/4] overflow-hidden rounded-[20px] bg-gray-200">
-        {value?.previewUrl ? (
+        {value?.previewUrl && isValidPreview ? (
           <Image
             src={value.previewUrl}
             alt="event"
@@ -85,7 +119,7 @@ export const EventImage = ({ value, onChange }) => {
       <input
         ref={inputRef}
         type="file"
-        accept="image/*"
+        accept="image/png, image/jpeg, image/jpg"
         hidden
         onChange={handleFileChange}
       />

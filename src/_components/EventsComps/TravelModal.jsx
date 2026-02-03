@@ -228,7 +228,7 @@ useEffect(() => {
   if (type !== "TRAVEL") return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center" onClick={() => dispatch(closeEventFormModal())}>
       <div
         className="w-[500px] bg-white rounded-[20px] overflow-y-auto flex flex-col max-h-[85vh] px-[30px]"
         onClick={(e) => e.stopPropagation()}
