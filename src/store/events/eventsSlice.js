@@ -133,22 +133,26 @@ const eventSlice = createSlice({
         .addCase(fetchMasterConfig.fulfilled, (state, action) => {
           state.masterLoading = false;
 
-          state.checklistMaster = (action.payload.checkList || []).map((c) => ({
-            label: c.itemName,
-            difficulty:
-              c.priority === "veryDifficult"
-                ? "hard"
-                : c.priority === "mildlyDifficult"
-                ? "medium"
-                : "easy",
-            _id: c._id,
-          }));
+            const payload = action.payload || {};   // 🛡️ SAFETY
+            const checkList = Array.isArray(payload.checkList) ? payload.checkList : [];
+            const pointsList = Array.isArray(payload.pointsList) ? payload.pointsList : [];
 
-          state.pointsMaster = (action.payload.pointsList || []).map((p) => ({
-            label: p.pointName,
-            points: p.point,
-          }));
-        })
+            state.checklistMaster = checkList.map((c) => ({
+              label: c.itemName,
+              difficulty:
+                c.priority === "veryDifficult"
+                  ? "hard"
+                  : c.priority === "mildlyDifficult"
+                  ? "medium"
+                  : "easy",
+              _id: c._id,
+            }));
+
+            state.pointsMaster = pointsList.map((p) => ({
+              label: p.pointName,
+              points: p.point,
+            }));
+          })
         .addCase(fetchMasterConfig.rejected, (state) => {
           state.masterLoading = false;
         })
