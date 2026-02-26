@@ -10,6 +10,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import MediaUploader from "@/_components/UI/MediaUploader";
 import Attendees from "@/_components/EventsComps/Attendees";
+import LogisticsContent from "@/_components/LogisticsContent";
+import ChecklistContent from "@/_components/ChecklistContent";
 
 export default function EventDetailsClient() {
   const params = useParams();
@@ -38,13 +40,13 @@ export default function EventDetailsClient() {
 
           <div className="flex-1 flex flex-col justify-between gap-[20px]">
             <div className="flex flex-col gap-[20px] items-start">
-              <div className="text-[36px] font-[600] flex items-center gap-[20px]">
+              <div className="text-[36px] font-semibold flex items-center gap-[20px]">
               <span className="maki--arrow rotate-180 inline-block cursor-pointer" onClick={()=>router.back()}></span> {event.name}</div>
               <p className="text-[18px] leading-[27px] w-[70%]">
                 Get ready for an incredible experience at ConFig, Figma's highly anticipated flagship yearly conference, happening on June 21-22
               </p>
 
-              <div className="w-full flex flex-wrap justify-between font-[500] text-[#333]">
+              <div className="w-full flex flex-wrap justify-between font-medium text-[#333]">
                 <div className="flex gap-[8px] items-center"><span className="material-symbols--location-on"></span>{event.location}</div>
                 <div className="flex gap-[8px] items-center"><span className="ic--round-date-range"></span>{event.dateRange}</div>
                 <div className="flex gap-[8px] items-center"><span className="icon-park-outline--time"></span>{event.time}</div>
@@ -52,10 +54,10 @@ export default function EventDetailsClient() {
             </div>
 
             <div className="flex flex-col gap-[4px]">
-              <div className="font-[600] text-[#999999]">Speaker</div>
+              <div className="font-semibold text-[#999999]">Speaker</div>
               <div className="flex gap-[8px] items-center">
                 <div className="h-[32px]  w-[32px] bg-[#ccc] rounded-full"></div>
-                <p className="font-[500] text-[20px] text-black">{event.speaker.name}</p>
+                <p className="font-medium text-[20px] text-black">{event.speaker.name}</p>
               </div>
               <div className="text-[18px] leading-[24px] pt-[6px] w-[70%]">{event.speaker.bio}</div>
             </div>
@@ -63,12 +65,12 @@ export default function EventDetailsClient() {
         </div>
 
         <div className="flex flex-col items-start justify-between">
-          <button className="flex gap-[8px] whitespace-nowrap items-center bg-[#E40000] text-white font-[500] px-[16px] py-[8px] rounded-[60px] cursor-pointer" >
+          <button className="flex gap-[8px] whitespace-nowrap items-center bg-[#E40000] text-white font-medium px-[16px] py-[8px] rounded-[60px] cursor-pointer" >
             <span className="akar-icons--cross regular"></span>
             Close event
           </button>
 
-          <div className="text-[#147BFF] font-[700] underline pt-[12px]">
+          <div className="text-[#147BFF] font-bold underline pt-[12px]">
             Additional note
           </div>
 
@@ -79,7 +81,7 @@ export default function EventDetailsClient() {
         </div>
       </div>
 
-      <div className="bg-white sticky top-[0px] pt-[20px]">
+      <div className="bg-white sticky z-10 top-0 pt-[20px]">
         <ActionableTabs tabs={EVENTS_DETAILS} defaultTab="attendees" />
       </div>
 
@@ -95,8 +97,12 @@ export default function EventDetailsClient() {
           // </div>
         )}
         {activeTab === "documents" && <MediaUploader title="Document Media" />}
-        {activeTab === "logistics" && <div>Logistics content</div>}
-        {activeTab === "checklist" && <div className="min-h-[calc(100dvh-180px)] bg-[#F2F7FF] rounded-[20px] overflow-y-auto">Checklist content</div>}
+        {activeTab === "logistics" &&
+         <div className="min-h-[calc(100dvh-180px)] bg-[#f2f7ff] rounded-[20px] overflow-y-auto mb-10 p-4">
+         <LogisticsContent/></div>}
+        {activeTab === "checklist" &&
+         <div className="min-h-[calc(100dvh-180px)] bg-[#f2f7ff] rounded-[20px] overflow-y-auto mb-10 p-4" >
+         <ChecklistContent/></div>}
       </>
 
     </div>
