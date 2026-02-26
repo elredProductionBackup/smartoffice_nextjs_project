@@ -108,7 +108,7 @@ export const validateEvent = (form) => {
     // ---- WEBLINKS ----
     if (form.speaker.weblinks?.length) {
       const weblinkErrors = form.speaker.weblinks.map((link) => {
-        if (isEmpty(link)) return "Link is required";
+        if (isEmpty(link)) return "Link is not valid";
         if (!isLengthValid(link, 3, 200))
           return "Link must be 3–200 characters";
         if (!isValidURL(link))

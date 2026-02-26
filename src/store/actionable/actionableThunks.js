@@ -21,7 +21,7 @@ export const fetchActionables = createAsyncThunk(
       const networkClusterCode = localStorage.getItem("networkClusterCode");
 
       const start = (page - 1) * limit + 1;
-      const offset = page * limit;
+      const offset = limit;
 
       const res = await getActionables({
         networkClusterCode,

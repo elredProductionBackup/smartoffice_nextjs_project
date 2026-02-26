@@ -5,10 +5,17 @@ import { useParams, useSearchParams } from "next/navigation";
 import { UPCOMING_EVENTS, PAST_EVENTS, DRAFT_EVENTS } from "@/assets/helpers/sampleEvents";
 import { EVENTS_DETAILS } from "@/assets/helpers/sampleEvents";
 import ActionableTabs from "@/_components/ActionableTabs";
+import { RegistrationToggle } from "@/_components/UI/RegistrationToggle";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import MediaUploader from "@/_components/UI/MediaUploader";
+import Attendees from "@/_components/EventsComps/Attendees";
 
 export default function EventDetailsClient() {
   const params = useParams();
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const [registrationEnabled, setRegistrationEnabled] = useState(true);
 
   const eventId = params?.id;
   const activeTab = searchParams.get("tab") || "attendees";
@@ -21,64 +28,76 @@ export default function EventDetailsClient() {
   if (!event) return <div className="p-10 text-xl">Event not found</div>;
 
   return (
-    <div className="h-[calc(100vh-80px)] flex flex-col gap-[30px] overflow-y-auto relative ">
+    <div className="h-[calc(100vh-80px)] flex flex-col gap-[20px] overflow-y-auto relative pb-[20px]">
 
-      {/* 🔷 Header Section */}
-      <div className="bg-white rounded-2xl pt-6 flex gap-6">
-        <div className="w-[250px] h-[320px] relative rounded-xl overflow-hidden">
-          <Image src={event.image} alt="event" fill className="object-cover" />
-        </div>
-
-        <div className="flex-1 space-y-2">
-          <h1 className="text-2xl font-semibold">{event.name}</h1>
-          <p className="text-gray-500 text-sm">
-            Get ready for an incredible experience at {event.name}.
-          </p>
-
-          <div className="flex flex-wrap gap-6 text-sm text-gray-600 pt-2">
-            <span>📍 {event.location}</span>
-            <span>📅 {event.dateRange}</span>
-            <span>⏰ {event.time}</span>
-            <button className="text-blue-600 font-medium">Additional note</button>
+      <div className="bg-white rounded-2xl pt-6 flex gap-[105px]">
+        <div className="flex gap-[40px]">
+          <div className="w-[250px] min-h-[320px] relative rounded-[20px] overflow-hidden">
+            <Image src={event.image} alt="event" fill className="object-cover" />
           </div>
 
-          <div className="flex items-center gap-3 pt-3">
-            {/* <Image src={event.speaker.avatar} width={40} height={40} alt="" className="rounded-full"/> */}
-            <div>
-              <p className="font-medium text-sm">{event.speaker.name}</p>
-              <p className="text-xs text-gray-500">{event.speaker.bio}</p>
+          <div className="flex-1 flex flex-col justify-between gap-[20px]">
+            <div className="flex flex-col gap-[20px] items-start">
+              <div className="text-[36px] font-[600] flex items-center gap-[20px]">
+              <span className="maki--arrow rotate-180 inline-block cursor-pointer" onClick={()=>router.back()}></span> {event.name}</div>
+              <p className="text-[18px] leading-[27px] w-[70%]">
+                Get ready for an incredible experience at ConFig, Figma's highly anticipated flagship yearly conference, happening on June 21-22
+              </p>
+
+              <div className="w-full flex flex-wrap justify-between font-[500] text-[#333]">
+                <div className="flex gap-[8px] items-center"><span className="material-symbols--location-on"></span>{event.location}</div>
+                <div className="flex gap-[8px] items-center"><span className="ic--round-date-range"></span>{event.dateRange}</div>
+                <div className="flex gap-[8px] items-center"><span className="icon-park-outline--time"></span>{event.time}</div>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-[4px]">
+              <div className="font-[600] text-[#999999]">Speaker</div>
+              <div className="flex gap-[8px] items-center">
+                <div className="h-[32px]  w-[32px] bg-[#ccc] rounded-full"></div>
+                <p className="font-[500] text-[20px] text-black">{event.speaker.name}</p>
+              </div>
+              <div className="text-[18px] leading-[24px] pt-[6px] w-[70%]">{event.speaker.bio}</div>
             </div>
           </div>
         </div>
 
-        <div className="flex flex-col items-end justify-between">
-          <button className="bg-red-500 text-white text-xs px-3 py-1 rounded-full">
+        <div className="flex flex-col items-start justify-between">
+          <button className="flex gap-[8px] whitespace-nowrap items-center bg-[#E40000] text-white font-[500] px-[16px] py-[8px] rounded-[60px] cursor-pointer" >
+            <span className="akar-icons--cross regular"></span>
             Close event
           </button>
 
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">Registration</span>
-            <div className={`w-10 h-5 rounded-full p-1 ${event.registrationOpen ? "bg-blue-500" : "bg-gray-300"}`}>
-              <div className="w-4 h-4 bg-white rounded-full ml-auto" />
-            </div>
-            <span className="text-sm text-gray-500">{event.registrationOpen ? "Open" : "Closed"}</span>
+          <div className="text-[#147BFF] font-[700] underline pt-[12px]">
+            Additional note
           </div>
+
+          <RegistrationToggle
+            value={registrationEnabled}
+            onChange={()=>setRegistrationEnabled(!registrationEnabled)}
+          />
         </div>
       </div>
 
-      {/* 🔷 Tabs */}
-      <div className="bg-white rounded-2xl sticky top-[0px]">
+      <div className="bg-white sticky top-[0px] pt-[20px]">
         <ActionableTabs tabs={EVENTS_DETAILS} defaultTab="attendees" />
       </div>
 
-      {/* 🔷 Tab Content (URL Controlled) */}
-      <div className="bg-white rounded-2xl">
-        {activeTab === "attendees" && <div className="pb-[20px]">Attendees content</div>}
-        {activeTab === "memberMedia" && <div>Member Media content</div>}
-        {activeTab === "documents" && <div>Documents content</div>}
+      <>
+        {activeTab === "attendees" && 
+          <div className="min-h-[calc(100dvh-180px)] bg-[#F2F7FF] rounded-[20px] overflow-y-auto">
+            <Attendees />
+          </div>
+        }
+        {activeTab === "memberMedia" && (
+          // <div className="">
+            <MediaUploader title="Member Media" />
+          // </div>
+        )}
+        {activeTab === "documents" && <MediaUploader title="Document Media" />}
         {activeTab === "logistics" && <div>Logistics content</div>}
-        {activeTab === "checklist" && <div>Checklist content</div>}
-      </div>
+        {activeTab === "checklist" && <div className="min-h-[calc(100dvh-180px)] bg-[#F2F7FF] rounded-[20px] overflow-y-auto">Checklist content</div>}
+      </>
 
     </div>
   );

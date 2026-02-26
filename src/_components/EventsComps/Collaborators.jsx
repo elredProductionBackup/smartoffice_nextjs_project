@@ -18,7 +18,7 @@ export function Collaborators({ form, setForm }) {
     if (collaborators.length === 0) {
       setForm({
         ...form,
-        collaborators: [{ userCode: "", name: "", email: "", dpURL: "", point: 1 }],
+        collaborators: [{ userCode: "", name: "", email: "", dpURL: "", point: 0 }],
       });
     }
   }, []);
@@ -50,7 +50,7 @@ export function Collaborators({ form, setForm }) {
       ...form,
       collaborators: [
         ...collaborators,
-        { userCode: "", name: "", email: "", dpURL: "", point: 1 },
+        { userCode: "", name: "", email: "", dpURL: "", point: 0 },
       ],
     });
   };

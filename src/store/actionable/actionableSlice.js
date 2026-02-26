@@ -4,7 +4,7 @@ import moment from "moment";
 
 const initialState = {
   items: [],
-  loading: false,
+  loading: true,
   creating: false,
   deletingId: null,
   error: null,

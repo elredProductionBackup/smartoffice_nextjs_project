@@ -91,7 +91,7 @@ const openEdit = (item, index) => {
       {/* LIST */}
       {!masterLoading && !!checklist.length && (
         <>
-          <div className="flex flex-col gap-[20px]">
+          <div className="flex flex-col gap-[20px] flex-1">
             {checklist.map((item, index) => (
               <div
                 key={index}
