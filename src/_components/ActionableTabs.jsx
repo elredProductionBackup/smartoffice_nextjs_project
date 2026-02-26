@@ -58,7 +58,7 @@ export default function ActionableTabs({
         {events &&
         <button
           onClick={() => router.push('/dashboard/events/create')}
-          className="py-[4px] px-[12px] rounded-[100px] bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)] cursor-pointer text-white font-[500] flex items-center gap-[4px]"
+          className="py-[4px] pr-[16px] pl-[10px]  rounded-[100px] bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)] cursor-pointer text-white font-[500] flex items-center gap-[4px] hover:opacity-90 transition"
         >
          <span className="ic--round-plus"></span> Create event
         </button>}

@@ -63,7 +63,7 @@ const CollaboratorRow = ({
               <button
                 type="button"
                 onClick={() => {
-                  onChange({ userCode: "", name: "", email: "", dpURL: "", point: 1 });
+                  onChange({ userCode: "", name: "", email: "", dpURL: "", point: 0 });
                   setOpen(true);
                   setQuery("");
                 }}
@@ -107,7 +107,7 @@ const CollaboratorRow = ({
                           name: u.name,
                           email: u.email,
                           dpURL: u.dpURL,
-                          point: data.point || 1,
+                          point: data.point || 0,
                         });
                         setOpen(false);
                         setQuery("");

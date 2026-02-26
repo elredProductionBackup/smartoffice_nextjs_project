@@ -147,11 +147,11 @@ const isFormValid =
         </div>
 
         {/* Body */}
-        <div className="flex-1 flex flex-col ">
+        <div className="flex-1 flex flex-col items-start">
           {draftReminders.map((r, index) => (
             <div
               key={r.id}
-              className={`relative mt-[15px] ${
+              className={`w-full relative mt-[15px] ${
                 index !== draftReminders.length - 1
                   ? "border-b border-[#EAEAEA] pb-[15px]"
                   : ""
@@ -261,7 +261,7 @@ const isFormValid =
 
           <button
             onClick={addReminder}
-            className="w-full text-start text-[#0B57D0] font-[600] text-[18px] mt-[10px] ml-[10px] cursor-pointer mb-[60px]"
+            className="text-start text-[#0B57D0] font-[600] text-[18px] mt-[10px] ml-[10px] cursor-pointer mb-[60px]"
           >
             Add reminder
           </button>

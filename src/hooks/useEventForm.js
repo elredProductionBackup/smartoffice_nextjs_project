@@ -42,7 +42,7 @@ export const useEventForm = () => {
   const [form, setForm] = useState({
     startDate: defaultStart,
     endDate: defaultEnd,
-    eventType: { type: "", points: 1 },
+    eventType: { type: "", points: 0 },
     image: { file: null, previewUrl: null },
     description: "",
     eventName: "",

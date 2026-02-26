@@ -133,7 +133,7 @@ const eventSlice = createSlice({
         .addCase(fetchMasterConfig.fulfilled, (state, action) => {
           state.masterLoading = false;
 
-            const payload = action.payload || {};   // 🛡️ SAFETY
+            const payload = action.payload || {};
             const checkList = Array.isArray(payload.checkList) ? payload.checkList : [];
             const pointsList = Array.isArray(payload.pointsList) ? payload.pointsList : [];
 

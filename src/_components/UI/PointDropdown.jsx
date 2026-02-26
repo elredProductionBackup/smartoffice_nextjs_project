@@ -20,7 +20,7 @@ const PointDropdown = ({ value, onChange }) => {
         <span>
           {value
             ? `${value} ${value === 1 ? "Point" : "Points"}`
-            : "Point"}
+            : "No Points"}
         </span>
 
         <IoChevronDown
