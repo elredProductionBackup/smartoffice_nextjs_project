@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { FiBell, FiExternalLink } from 'react-icons/fi';
+import { FiBell } from 'react-icons/fi';
 import Image from "next/image";
 import Link from "next/link";
 import callIcon from "@/assets/logo/call.svg";
 import MemberDetailsModal from "./MemberDetailsModal";
+import ExportAsExcelButton from "./ExportAsExcelButton";
 
 const LogisticsContent = () => {
   const phonePopupRef = useRef(null);
@@ -303,18 +304,15 @@ const LogisticsContent = () => {
             
             {/* Divider between Date groups */}
             {groupIndex !== dummyData.length - 1 && (
-               <div className="w-full h-px bg-gray-200/80 my-2 ml-[15%] "></div>
+               <div className="w-full h-[1px] bg-gray-200/80 my-2 ml-[15%] w-[85%]"></div>
             )}
           </div>
         ))}
       </div>
 
-      {/* Export as PDF button */}
+      {/* Export as Excel button */}
       <div className="absolute bottom-6 right-8">
-        <button className="bg-[#0f52ba] hover:bg-blue-700 text-white cursor-pointer text-[14px] font-medium py-3 px-6 rounded-full flex items-center gap-2 transition shadow-lg pointer-events-auto">
-          <FiExternalLink className="w-4 h-4" />
-          Export as Excel
-        </button>
+        <ExportAsExcelButton className="pointer-events-auto shadow-lg" />
       </div>
 
       {/* Modal conditionally rendered when a member is clicked */}
