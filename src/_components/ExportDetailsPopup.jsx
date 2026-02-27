@@ -23,7 +23,7 @@ const ExportDetailsPopup = ({ onClose }) => {
     const value = fields[key];
     return (
       <div className="flex items-center justify-between py-[6px]" key={key}>
-        <span className="text-[24px] font-bold text-[#333333] uppercase">
+        <span className="text-[20px] font-bold text-[#333333] uppercase">
           {label}
         </span>
         <button
