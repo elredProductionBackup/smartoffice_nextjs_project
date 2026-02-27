@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import ExportAsExcelButton from "./ExportAsExcelButton";
+import ExportDetailsPopup from "./ExportDetailsPopup";
 
 const MembersDetailsShimmer = () => {
   return (
@@ -80,14 +81,18 @@ const MembersDetailsShimmer = () => {
   );
 };
 
-
-
-export default function MemberDetailsModal({ member, onClose, hideChildren = false, showLogisticsDetails = false }) {
+export default function MemberDetailsModal({
+  member,
+  onClose,
+  hideChildren = false,
+  showLogisticsDetails = false,
+}) {
   const [tooltipOpen, setTooltipOpen] = useState(false);
   const tooltipRef = useRef(null);
 
   // const [avatarLoaded, setAvatarLoaded] = useState(false);
   const [activeDoc, setActiveDoc] = useState(null);
+  const [isExportDetailsOpen, setIsExportDetailsOpen] = useState(false);
 
   const formatLocation = (location) => {
     if (!location) return "";
@@ -95,10 +100,13 @@ export default function MemberDetailsModal({ member, onClose, hideChildren = fal
     return [city, state, country].filter(Boolean).join(", ");
   };
 
-  const formattedTitles = member?.title?.map(t => t.value[0].toUpperCase() + t.value.slice(1)) || [];
-  const display = formattedTitles.length <= 2
-    ? formattedTitles.join(" | ")
-    : `${formattedTitles.slice(0, 2).join(" | ")} | +${formattedTitles.length - 2}`;
+  const formattedTitles =
+    member?.title?.map((t) => t.value[0].toUpperCase() + t.value.slice(1)) ||
+    [];
+  const display =
+    formattedTitles.length <= 2
+      ? formattedTitles.join(" | ")
+      : `${formattedTitles.slice(0, 2).join(" | ")} | +${formattedTitles.length - 2}`;
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -112,9 +120,14 @@ export default function MemberDetailsModal({ member, onClose, hideChildren = fal
   }, []);
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center" onClick={onClose}>
-      <div className="bg-white w-[650px] rounded-[20px] p-[40px] relative flex flex-col gap-[18px]" onClick={(e) => e.stopPropagation()}>
-
+    <div
+      className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white w-[650px] h-[1050px] max-h-[90vh] rounded-[20px] p-[40px] relative flex flex-col gap-[18px] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* {!avatarLoaded && member.avatar && <MembersDetailsShimmer/>} */}
 
         {/* {avatarLoaded && <> */}
@@ -127,19 +140,31 @@ export default function MemberDetailsModal({ member, onClose, hideChildren = fal
 
         {/* Header */}
         <div className="flex flex-col gap-[20px] items-start">
-          {member.avatar ? <Image src={member.avatar} alt="" width={100} height={100}
-            className="rounded-full max-h-[100]" />:
-            <div className="min-w-[100px] h-[100px] bg-[#D4DFF1] grid place-items-center text-[42px] font-[600] rounded-full">{member.name?.slice(0,1)}</div>}
+          {member.avatar ? (
+            <Image
+              src={member.avatar}
+              alt=""
+              width={100}
+              height={100}
+              className="rounded-full max-h-[100]"
+            />
+          ) : (
+            <div className="min-w-[100px] h-[100px] bg-[#D4DFF1] grid place-items-center text-[42px] font-semibold rounded-full">
+              {member.name?.slice(0, 1)}
+            </div>
+          )}
 
-          <div className="w-[100%] flex flex-col items-start gap-[6px]">
-            <div className="w-[100%] flex items-center justify-between">
-              <h2 className="text-[32px] text-[#333333] font-[600]">{member.name}</h2>
+          <div className="w-full flex flex-col items-start gap-[6px]">
+            <div className="w-full flex items-center justify-between">
+              <h2 className="text-[32px] text-[#333333] font-semibold">
+                {member.name}
+              </h2>
               {showLogisticsDetails ? (
                 <ExportAsExcelButton
                   small
                   onClick={(e) => {
                     e?.stopPropagation?.();
-                    // hook up real export later; for now this is just UI
+                    setIsExportDetailsOpen(true);
                   }}
                 />
               ) : (
@@ -156,58 +181,63 @@ export default function MemberDetailsModal({ member, onClose, hideChildren = fal
                 </Link>
               )}
             </div>
-                  {/* Title tool tip  */}
-                  <div className="relative flex"  ref={tooltipRef}>
-                    <p
-                      className={`text-[20px] text-[#666666] font-[500] capitalize ${formattedTitles.length > 2 && 'cursor-pointer'}`}
-                      onClick={() => setTooltipOpen(prev => !prev)}
-                    >
-                      {display}
-                    </p>
+            {/* Title tool tip  */}
+            <div className="relative flex" ref={tooltipRef}>
+              <p
+                className={`text-[20px] text-[#666666] font-medium capitalize ${formattedTitles.length > 2 && "cursor-pointer"}`}
+                onClick={() => setTooltipOpen((prev) => !prev)}
+              >
+                {display}
+              </p>
 
-                    {tooltipOpen && formattedTitles.length > 2 && (
-                      <div className="absolute z-50 w-max min-w-[200px] bg-[#ffffff] text-[#333] text-[16px] font-[500] p-[10px] rounded-[20px] whitespace-nowrap top-[100%] right-[0%] flex flex-col gap-[4px] mt-1" style={{boxShadow: `0px 4px 4px 0px #99999940`}} >
-                        {formattedTitles.map((title, index) => {
-                          return (
-                            <div key={index} className={`pl-[12px] h-[30px] w-[180px] `}>
-                              {title}
-                            </div>
-                          );
-                        })}
+              {tooltipOpen && formattedTitles.length > 2 && (
+                <div
+                  className="absolute z-50 w-max min-w-[200px] bg-[#ffffff] text-[#333] text-[16px] font-medium p-[10px] rounded-[20px] whitespace-nowrap top-full right-[0%] flex flex-col gap-[4px] mt-1"
+                  style={{ boxShadow: `0px 4px 4px 0px #99999940` }}
+                >
+                  {formattedTitles.map((title, index) => {
+                    return (
+                      <div
+                        key={index}
+                        className={`pl-[12px] h-[30px] w-[180px] `}
+                      >
+                        {title}
                       </div>
-                    )}
-                  </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
 
-              {formatLocation(member.location) && (
-                  <div className="flex items-center gap-[8px] text-[16px] text-[#666666] font-[600]">
-                    <span className="h-[24px] w-[24px] rounded-full bg-[#E6EBF2] grid place-items-center">
-                      <span className="weui--location-outlined"></span>
-                    </span>
-                    {formatLocation(member.location)}
-                  </div>
-                )}
+            {formatLocation(member.location) && (
+              <div className="flex items-center gap-[8px] text-[16px] text-[#666666] font-semibold">
+                <span className="h-[24px] w-[24px] rounded-full bg-[#E6EBF2] grid place-items-center">
+                  <span className="weui--location-outlined"></span>
+                </span>
+                {formatLocation(member.location)}
+              </div>
+            )}
           </div>
         </div>
 
         {/* Details */}
         <div className="grid grid-cols-2 gap-x-10 gap-y-[40px] text-base text-[#333333]">
-
           {/* Email (LEFT column) */}
           <div className="flex flex-col gap-[12px] justify-self-start">
-            <span className="text-[20px] font-[700] uppercase">Email</span>
-            <span className="flex gap-[8px] text-[#666666] text-[16px] font-[600]">
+            <span className="text-[20px] font-bold uppercase">Email</span>
+            <span className="flex gap-[8px] text-[#666666] text-[16px] font-semibold">
               <span className="h-[24px] w-[24px] rounded-full bg-[#E6EBF2] grid place-items-center">
                 <span className="oui--email small-icon"></span>
-              </span> 
-              {member.email}
               </span>
+              {member.email}
+            </span>
           </div>
 
           {/* Phone (RIGHT column – block aligned right) */}
           <div className="flex flex-col gap-[12px] justify-self-end w-[230px]">
-            <span className="text-[20px] font-[700] uppercase">Phone</span>
+            <span className="text-[20px] font-bold uppercase">Phone</span>
             <div className="flex items-center gap-2">
-              <span className="flex gap-[8px] text-[#666666] text-[16px] font-[600]">
+              <span className="flex gap-[8px] text-[#666666] text-[16px] font-semibold">
                 <span className="h-[24px] w-[24px] rounded-full bg-[#E6EBF2] grid place-items-center">
                   <span className="proicons--call small-icons"></span>
                 </span>
@@ -218,22 +248,27 @@ export default function MemberDetailsModal({ member, onClose, hideChildren = fal
 
           {/* Spouse (LEFT column) */}
           <div className="flex flex-col gap-[12px] justify-self-start text-[#333333] ">
-            <span className="text-[20px] font-[700] uppercase">Spouse Name</span>
-            <span className="text-[16px] font-[600]">{member.spouse || "—"}</span>
+            <span className="text-[20px] font-bold uppercase">
+              Spouse Name
+            </span>
+            <span className="text-[16px] font-semibold">
+              {member.spouse || "—"}
+            </span>
           </div>
 
           {/* Children (RIGHT column – block aligned right) */}
           {!hideChildren && (
             <div className="flex flex-col gap-[12px] justify-self-end text-[#333333] w-[230px]">
-              <span className="text-[20px] font-[700] uppercase">Children Name</span>
-              <span className="text-[16px] font-[600]">
+              <span className="text-[20px] font-bold uppercase">
+                Children Name
+              </span>
+              <span className="text-[16px] font-semibold">
                 {member?.children?.length
-                  ? member.children.map(child => child.name).join(", ")
+                  ? member.children.map((child) => child.name).join(", ")
                   : "—"}
               </span>
             </div>
           )}
-
         </div>
 
         {/* Divider and logistics details only when requested (e.g. LogisticsContent) */}
@@ -242,72 +277,92 @@ export default function MemberDetailsModal({ member, onClose, hideChildren = fal
             <div className="w-full h-px bg-[#E6EBF2] my-[32px]" />
 
             {/* Logistics-style details (pickup, travel etc.) */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-x-10 gap-y-[24px] text-base text-[#333333]">
+            <div className="grid grid-cols-2 gap-x-10 gap-y-[24px] text-base text-[#333333]">
               <div className="flex flex-col gap-[8px]">
-                <span className="text-[18px] font-[700] uppercase">Pickup</span>
-                <span className="text-[16px] font-[600] text-[#666666]">
+                <span className="text-[18px] font-bold uppercase">Pickup</span>
+                <span className="text-[16px] font-semibold text-[#666666]">
                   {member.pickup || "—"}
                 </span>
               </div>
 
               <div className="flex flex-col gap-[8px]">
-                <span className="text-[18px] font-[700] uppercase">ETA</span>
-                <span className="text-[16px] font-[600] text-[#666666]">
+                <span className="text-[18px] font-bold uppercase">ETA</span>
+                <span className="text-[16px] font-semibold text-[#666666]">
                   {member.eta || "—"}
                 </span>
               </div>
 
               <div className="flex flex-col gap-[8px]">
-                <span className="text-[18px] font-[700] uppercase">Hotel Details</span>
-                <span className="text-[16px] font-[600] text-[#666666]">
+                <span className="text-[18px] font-bold uppercase">
+                  Hotel Details
+                </span>
+                <span className="text-[16px] font-semibold text-[#666666]">
                   {member.hotelDetails || "—"}
                 </span>
               </div>
 
               <div className="flex flex-col gap-[8px]">
-                <span className="text-[18px] font-[700] uppercase">Mode of Travel</span>
-                <span className="text-[16px] font-[600] text-[#666666]">
+                <span className="text-[18px] font-bold uppercase">
+                  Mode of Travel
+                </span>
+                <span className="text-[16px] font-semibold text-[#666666]">
                   {member.modeOfTravel || member.travelMode || "—"}
                 </span>
               </div>
 
               <div className="flex flex-col gap-[8px]">
-                <span className="text-[18px] font-[700] uppercase">Flight Details</span>
-                <span className="text-[16px] font-[600] text-[#666666]">
+                <span className="text-[18px] font-bold uppercase">
+                  Flight Details
+                </span>
+                <span className="text-[16px] font-semibold text-[#666666]">
                   {member.flightDetails || "—"}
                 </span>
               </div>
 
               <div className="flex flex-col gap-[8px]">
-                <span className="text-[18px] font-[700] uppercase">Car Details</span>
-                <span className="text-[16px] font-[600] text-[#666666]">
-                  {member.carDetails || "—"}
+                <span className="text-[18px] font-bold uppercase">
+                  Car Details
                 </span>
+                {member.pickupCarDetails || member.dropoffCarDetails ? (
+                  <div className="flex flex-col text-[16px] font-semibold text-[#666666]">
+                    <span>
+                      {member.pickupCarDetails || "Pickup - Car - N/A"}
+                    </span>
+                    <span>
+                      {member.dropoffCarDetails || "Drop off - Car - N/A"}
+                    </span>
+                  </div>
+                ) : (
+                  <span className="text-[16px] font-semibold text-[#666666]">
+                    {member.carDetails || "—"}
+                  </span>
+                )}
               </div>
             </div>
           </>
         )}
 
-
         {/* Documents */}
         <div className="flex flex-col gap-[12px]">
-            <div className="text-[20px] font-[700] uppercase">Documents Uploaded</div>{" "}
+          <div className="text-[20px] font-bold uppercase">
+            Documents Uploaded
+          </div>{" "}
           {member?.documents?.length ? (
             <div className="flex gap-[20px]">
               {member.documents.map((item, index) => {
                 const imageSrc =
                   item.docType === "pdf" ? item?.pdfPreview : item?.fileUrl;
-                  console.log(imageSrc)
+                console.log(imageSrc);
 
                 const hasImage = imageSrc && imageSrc.trim() !== "";
 
                 return (
                   <div
                     key={index}
-                    className="flex flex-col gap-[8px] items-center text-[#666666] font-[500] capitalize"
+                    className="flex flex-col gap-[8px] items-center text-[#666666] font-medium capitalize"
                   >
                     <div
-                      className="flex items-center justify-center overflow-hidden text-center w-[90px] h-[100px] bg-[#E3EEFF] border-2 border-[#E6E6FF] rounded-[10px] text-[14px] text-[#666666] font-[500] relative cursor-pointer"
+                      className="flex items-center justify-center overflow-hidden text-center w-[90px] h-[100px] bg-[#E3EEFF] border-2 border-[#E6E6FF] rounded-[10px] text-[14px] text-[#666666] font-medium relative cursor-pointer"
                       onClick={() => hasImage && setActiveDoc(item)}
                     >
                       <div className="absolute top-0 left-0 w-full h-full bg-[#0002]"></div>
@@ -332,25 +387,29 @@ export default function MemberDetailsModal({ member, onClose, hideChildren = fal
               })}
             </div>
           ) : (
-            <div className="flex items-center justify-center px-[13px] text-center w-[90px] h-[100px] bg-[#F8F8F8] border-2 border-[#ECECEC] rounded-[10px] text-[14px] text-[#666666] font-[500]">
+            <div className="flex items-center justify-center px-[13px] text-center w-[90px] h-[100px] bg-[#F8F8F8] border-2 border-[#ECECEC] rounded-[10px] text-[14px] text-[#666666] font-medium">
               No document
             </div>
           )}
-
         </div>
 
         {/* Nested popup example */}
-        {activeDoc && <div className="fixed inset-0 z-[59]" onClick={() => setActiveDoc(null)}></div>}
         {activeDoc && (
           <div
-            className="absolute h-[100%] inset-0 bg-black/0 z-[60] flex items-center justify-center "
+            className="fixed inset-0 z-59"
+            onClick={() => setActiveDoc(null)}
+          ></div>
+        )}
+        {activeDoc && (
+          <div
+            className="absolute h-full inset-0 bg-black/0 z-60 flex items-center justify-center "
             onClick={() => setActiveDoc(null)}
           >
             <div
-              className="flex flex-col bg-[#111] w-[100%] h-[100%] rounded-[20px] relative p-[40px] flex overflow-scroll"
+              className="flex flex-col bg-[#111] w-full h-full rounded-[20px] relative p-[40px] overflow-scroll"
               onClick={(e) => e.stopPropagation()}
-              >
-              <div className="actions-nested-popup sticky top-[0px] right-[0px] flex gap-[20px] items-center justify-end">
+            >
+              <div className="actions-nested-popup sticky top-0 right-0p flex gap-[20px] items-center justify-end">
                 {/* Download */}
                 <a
                   href={`/api/download?fileUrl=${encodeURIComponent(activeDoc.fileUrl)}`}
@@ -361,9 +420,7 @@ export default function MemberDetailsModal({ member, onClose, hideChildren = fal
                   <span className="material-symbols--download-rounded"></span>
                 </a>
 
-
-
-                 {/* Close */}
+                {/* Close */}
                 <button
                   onClick={() => setActiveDoc(null)}
                   className="text-[#333] bg-[#EEEEEE] cursor-pointer flex items-center justify-center rounded-full h-[35px] w-[35px]"
@@ -372,13 +429,17 @@ export default function MemberDetailsModal({ member, onClose, hideChildren = fal
                 </button>
               </div>
               {/* Image */}
-              <div className="image-box flex flex-col gap-[20px] flex-1 items-center justify-center px-[30px] text-[#FFFFFF] font-[500]">
+              <div className="image-box flex flex-col gap-[20px] flex-1 items-center justify-center px-[30px] text-[#FFFFFF] font-medium">
                 <Image
-                src={activeDoc.docType === "pdf" ? activeDoc?.pdfPreview : activeDoc?.fileUrl}
-                alt="Document Preview"
-                width={500}
-                height={500}
-                className="w-[100%] object-contain rounded-[12px]"
+                  src={
+                    activeDoc.docType === "pdf"
+                      ? activeDoc?.pdfPreview
+                      : activeDoc?.fileUrl
+                  }
+                  alt="Document Preview"
+                  width={500}
+                  height={500}
+                  className="w-full object-contain rounded-[12px]"
                 />
                 {activeDoc.docType}
               </div>
@@ -387,6 +448,10 @@ export default function MemberDetailsModal({ member, onClose, hideChildren = fal
         )}
         {/* </>} */}
       </div>
+
+      {isExportDetailsOpen && (
+        <ExportDetailsPopup onClose={() => setIsExportDetailsOpen(false)} />
+      )}
     </div>
   );
 }

@@ -207,11 +207,15 @@ const LogisticsContent = () => {
                           location: item.location || { city: "Mumbai", state: "Maharashtra", country: "India" },
                           title: item.title || [{ value: "UX Designer" }],
                           pickup: item.pickup || "Mumbai, India",
-                          eta: item.eta || "22 Aug, 2026 | 07:00 PM",
+                          // Show ETA as DATE | TIME (using group.date from list)
+                          eta: `${group.date} | ${item.eta}`,
                           hotelDetails: item.hotelDetails || "Novotel Hyderabad Airport",
                           modeOfTravel: item.modeOfTravel || item.travelMode || "Flight, Bus",
                           flightDetails: item.flightDetails || "AY101",
-                          carDetails: item.carDetails || "Pickup - Car - TG 09 0001 | Drop off - Car - TG 09 0001",
+                          // Separate car details into two lines
+                          pickupCarDetails: item.pickupCarDetails || "Pickup - Car - TG 09 0001",
+                          dropoffCarDetails: item.dropoffCarDetails || "Drop off - Car - TG 09 0001",
+                          carDetails: item.carDetails,
                         };
                         setSelectedMember(memberForModal);
                       }}
@@ -304,7 +308,7 @@ const LogisticsContent = () => {
             
             {/* Divider between Date groups */}
             {groupIndex !== dummyData.length - 1 && (
-               <div className="w-full h-[1px] bg-gray-200/80 my-2 ml-[15%] w-[85%]"></div>
+               <div className="w-full h-px bg-gray-200/80 my-2 ml-[15%] w-[85%]"></div>
             )}
           </div>
         ))}
