@@ -59,7 +59,6 @@ const ExportDetailsPopup = ({ onClose }) => {
         className="bg-white w-[480px] h-[846px] max-h-[90vh] rounded-[20px] p-[40px] flex flex-col gap-[16px] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Title */}
         <div className="flex items-center justify-between mb-[8px]">
           <h2 className="text-[24px] text-center font-bold text-[#333333]">
             Do you want to hide few fields for export?
