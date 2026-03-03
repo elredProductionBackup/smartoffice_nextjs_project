@@ -30,47 +30,47 @@ export default function EventDetailsClient() {
   if (!event) return <div className="p-10 text-xl">Event not found</div>;
 
   return (
-    <div className="h-[calc(100vh-80px)] flex flex-col gap-[20px] overflow-y-auto relative pb-[20px]">
+    <div className="h-[calc(100vh-80px)] flex flex-col gap-5 overflow-y-auto relative pb-5">
 
       <div className="bg-white rounded-2xl pt-6 flex gap-[105px]">
-        <div className="flex gap-[40px]">
-          <div className="w-[250px] min-h-[320px] relative rounded-[20px] overflow-hidden">
+        <div className="flex gap-10">
+          <div className="w-[250px] min-h-80 relative rounded-[20px] overflow-hidden">
             <Image src={event.image} alt="event" fill className="object-cover" />
           </div>
 
-          <div className="flex-1 flex flex-col justify-between gap-[20px]">
-            <div className="flex flex-col gap-[20px] items-start">
-              <div className="text-[36px] font-semibold flex items-center gap-[20px]">
+          <div className="flex-1 flex flex-col justify-between gap-5">
+            <div className="flex flex-col gap-5 items-start">
+              <div className="text-[36px] font-semibold flex items-center gap-5">
               <span className="maki--arrow rotate-180 inline-block cursor-pointer" onClick={()=>router.back()}></span> {event.name}</div>
               <p className="text-[18px] leading-[27px] w-[70%]">
                 Get ready for an incredible experience at ConFig, Figma's highly anticipated flagship yearly conference, happening on June 21-22
               </p>
 
               <div className="w-full flex flex-wrap justify-between font-medium text-[#333]">
-                <div className="flex gap-[8px] items-center"><span className="material-symbols--location-on"></span>{event.location}</div>
-                <div className="flex gap-[8px] items-center"><span className="ic--round-date-range"></span>{event.dateRange}</div>
-                <div className="flex gap-[8px] items-center"><span className="icon-park-outline--time"></span>{event.time}</div>
+                <div className="flex gap-2 items-center"><span className="material-symbols--location-on"></span>{event.location}</div>
+                <div className="flex gap-2 items-center"><span className="ic--round-date-range"></span>{event.dateRange}</div>
+                <div className="flex gap-2 items-center"><span className="icon-park-outline--time"></span>{event.time}</div>
               </div>
             </div>
 
-            <div className="flex flex-col gap-[4px]">
+            <div className="flex flex-col gap-1">
               <div className="font-semibold text-[#999999]">Speaker</div>
-              <div className="flex gap-[8px] items-center">
-                <div className="h-[32px]  w-[32px] bg-[#ccc] rounded-full"></div>
+              <div className="flex gap-2 items-center">
+                <div className="h-8  w-8 bg-[#ccc] rounded-full"></div>
                 <p className="font-medium text-[20px] text-black">{event.speaker.name}</p>
               </div>
-              <div className="text-[18px] leading-[24px] pt-[6px] w-[70%]">{event.speaker.bio}</div>
+              <div className="text-[18px] leading-6 pt-1.5 w-[70%]">{event.speaker.bio}</div>
             </div>
           </div>
         </div>
 
         <div className="flex flex-col items-start justify-between">
-          <button className="flex gap-[8px] whitespace-nowrap items-center bg-[#E40000] text-white font-medium px-[16px] py-[8px] rounded-[60px] cursor-pointer" >
+          <button className="flex gap-2 whitespace-nowrap items-center bg-[#E40000] text-white font-medium px-4 py-2 rounded-[60px] cursor-pointer" >
             <span className="akar-icons--cross regular"></span>
             Close event
           </button>
 
-          <div className="text-[#147BFF] font-bold underline pt-[12px]">
+          <div className="text-[#147BFF] font-bold underline pt-3">
             Additional note
           </div>
 
@@ -81,7 +81,7 @@ export default function EventDetailsClient() {
         </div>
       </div>
 
-      <div className="bg-white sticky z-10 top-0 pt-[20px]">
+      <div className="bg-white sticky z-10 top-0 pt-5">
         <ActionableTabs tabs={EVENTS_DETAILS} defaultTab="attendees" />
       </div>
 

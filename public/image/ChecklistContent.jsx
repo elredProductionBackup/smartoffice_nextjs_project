@@ -44,7 +44,7 @@ const ChecklistContent = () => {
   // One ref entry per task id so contains() checks the correct DOM node
   const menuRefs = useRef({});
 
-  //============= Close dropdown when clicking anywhere outside the open menu===============
+  // Close dropdown when clicking anywhere outside the open menu
   useEffect(() => {
     if (!openMenu) return;
     const handleOutsideClick = (e) => {
@@ -75,7 +75,7 @@ const ChecklistContent = () => {
       {/* =============== Event List – non empty condition ================  */}
       {hasChecklistData && (
         <div className="w-full">
-          <div className="text-[24px] font-semibold mb-4 pl-2">All</div>
+          <div className="text-[24px] font-[600] mb-4 pl-2">All</div>
 
           <div className="flex flex-col gap-2">
             {tasks.map((task) => {
@@ -85,13 +85,13 @@ const ChecklistContent = () => {
               return (
                 <div
                   key={task.id}
-                  className="flex h-20 items-center gap-3 pb-5 pl-2 border-b border-[#d4dff1]"
+                  className="flex h-[80px] items-center gap-3 pb-[20px] pl-2 border-b border-[#d4dff1]"
                 >
                   {/* Checkbox */}
-                 <div className="h-full pt-1.5">
+                 <div className="h-full pt-[6px]">
                    <button
                     onClick={() => toggleCheck(task.id)}
-                    className="shrink-0 w-[18px] h-[18px] rounded-[3px] border-2 border-[#666666] flex items-center justify-center "
+                    className="shrink-0 w-[18px] h-[18px] rounded-[3px] border-[2px] border-[#666666] flex items-center justify-center "
                     style={isDone ? { borderColor: "#e72d38", backgroundColor: "#e72d38" } : {}}
                   >
                     {isDone && (
@@ -107,14 +107,14 @@ const ChecklistContent = () => {
                   {/* Task info */}
                   <div className="flex-1 min-w-0">
                     <div
-                      className={`text-[20px] font-medium leading-snug ${
+                      className={`text-[20px] font-[500] leading-snug ${
                         isDone ? "line-through text-[#333333]" : "text-[#333333]"
                       }`}
                     >
                       {task.title}
                     </div>
                     {creator && (
-                      <div className="text-[16px] text-[#666666] font-semibold mt-0.5">
+                      <div className="text-[16px] text-[#666666] font-[600] mt-0.5">
                         {creator.name}
                       </div>
                     )}
@@ -122,10 +122,10 @@ const ChecklistContent = () => {
 
                   {/* Avatar */}
                   {creator && (
-                   <div className="h-8 w-[200px]"> <img
+                   <div className="h-[32px] w-[200px]"> <img
                       src={creator.avatar}
                       alt={creator.name}
-                      className="w-8 h-8 rounded-full object-fit shrink-0"
+                      className="w-[32px] h-[32px] rounded-full object-fit shrink-0"
                     /> </div>
                   )}
 
@@ -138,18 +138,18 @@ const ChecklistContent = () => {
                       <img
                         src="/image/Three-dots.svg"
                         alt="More options"
-                        className="w-6 h-6 cursor-pointer"
+                        className="w-[24px] h-[24px] cursor-pointer"
                       />
                     </button>
 
                     {openMenu === task.id && (
                       <div
-                        className="absolute right-0 top-8 z-5 bg-white rounded-[20px] gap-2.5 shadow-2xl p-5 w-[300px] "
+                        className="absolute right-0 top-8 z-5 bg-white rounded-[20px] gap-[10px] shadow-2xl p-[20px] w-[334px] "
                         style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.18)" }}
                         onMouseDown={(e) => e.stopPropagation()}
                       >
                         {/* Move item */}
-                        <button onMouseDown={(e) => e.stopPropagation()} className="w-full flex cursor-pointer items-center gap-3 px-4 py-2.5 text-[18px] font-medium text-gray-800 hover:bg-gray-50">
+                        <button onMouseDown={(e) => e.stopPropagation()} className="w-full flex items-center gap-3 px-4 py-2.5 text-[18px] font-[500] text-gray-800 hover:bg-gray-50">
                           <img
                             src="/image/Group.svg"
                             alt="Move"
@@ -159,7 +159,7 @@ const ChecklistContent = () => {
                         </button>
 
                         {/* Delete item */}
-                        <button onMouseDown={(e) => e.stopPropagation()} className="w-full cursor-pointer flex items-center gap-3 px-4 py-2.5 text-[18px] font-medium text-gray-800 hover:bg-gray-50">
+                        <button onMouseDown={(e) => e.stopPropagation()} className="w-full flex items-center gap-3 px-4 py-2.5 text-[18px] font-[500] text-gray-800 hover:bg-gray-50">
                           <img
                             src="/image/Delete-content.svg"
                             alt="Delete"
@@ -167,6 +167,42 @@ const ChecklistContent = () => {
                           />
                           Delete item
                         </button>
+
+                        {/* Divider */}
+                        <div className="border-t w-[200px] ml-[20px] border-gray-200 my-1" onMouseDown={(e) => e.stopPropagation()} />
+
+                        {/* Category list */}
+                        {[
+                          "All",
+                          "Hotel reservations",
+                          "Flights",
+                          "Ground logistics",
+                          "F&B",
+                          "Special request",
+                          "Membership",
+                          "Resource/speaker coordination",
+                          "Board coordination",
+                          "Spouse coordination",
+                        ].map((category) => {
+                          const isSelected = selectedCategories.has(category);
+                          return (
+                            <button
+                              onMouseDown={(e) => e.stopPropagation()}
+                              key={category}
+                              onClick={() => toggleCategory(category)}
+                              className="w-[300px] flex items-center my-[5px] px-[12px] py-[8px] text-[18px] font-[500] text-[#333333] hover:bg-gray-50"
+                            >
+                              {isSelected ? (
+                                <span className="text-gray-700 text-[16px] pr-[9px]">
+                                  <img src="/image/tick-content.svg" alt="check" />
+                                </span>
+                              ) : (
+                                <span className="w-[16px] h-[16px] mr-[9px]" />
+                              )}
+                              {category}
+                            </button>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
@@ -183,7 +219,7 @@ const ChecklistContent = () => {
           <img
             src="/image/Events_checklist.svg"
             alt="No Checklist Info"
-            className="w-20 h-20 mb-6 object-contain"
+            className="w-[80px] h-[80px] mb-6 object-contain"
           />
           <div className="text-[24px] font-semibold mb-2">No information yet</div>
           <div className="text-gray-500 text-[16px] font-normal">
