@@ -35,6 +35,56 @@ const tasks = [
   { id: 18, title: "Conduct final technical equipment check", creatorId: 1, difficulty: "easy" },
 ];
 
+// ─── Circular Progress Ring ────────────────────────────────────────────────────
+const CircularProgress = ({ done, total, fillColor, emptyColor, onClick }) => {
+  const size = 55;
+  const strokeWidth = 5;
+  const radius = (size - strokeWidth) / 2;       // 27.5
+  const circumference = 2 * Math.PI * radius;    // ≈ 172.8
+  const pct = total === 0 ? 0 : done / total;
+  const offset = circumference * (1 - pct);
+  return (
+    <div
+      onClick={onClick}
+      className="cursor-pointer relative shrink-0"
+      style={{ width: size, height: size }}
+    >
+      <svg width={size} height={size} style={{ transform: "rotate(-90deg)", display: "block" }}>
+        {/* background track */}
+        <circle
+          cx={size / 2} cy={size / 2} r={radius}
+          fill="none"
+          stroke={emptyColor}
+          strokeWidth={strokeWidth}
+        />
+        {/* progress arc with rounded ends */}
+        <circle
+          cx={size / 2} cy={size / 2} r={radius}
+          fill="none"
+          stroke={fillColor}
+          strokeWidth={strokeWidth}
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+        />
+      </svg>
+      {/* centre label */}
+      <div
+        style={{
+          position: "absolute",
+          top: "50%", left: "50%",
+          transform: "translate(-50%, -50%)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}
+      >
+        <span style={{ fontSize: "15px", fontWeight: "700", color: "#333333", lineHeight: 1, whiteSpace: "nowrap" }}>
+          {done}/{total}
+        </span>
+      </div>
+    </div>
+  );
+};
+
 // ─── Component ─────────────────────────────────────────────────────────────────
 
 const ChecklistContent = () => {
@@ -113,34 +163,35 @@ const ChecklistContent = () => {
 
             {/* ===========task completion Progress bar=================== */}
             {(() => {
-              const stats = ["hard", "medium", "easy"].reduce((acc, diff) => {
-                const total = taskList.filter((t) => t.difficulty === diff).length;
-                const done  = taskList.filter((t) => t.difficulty === diff && checked[t.id]).length;
-                acc[diff] = { total, done };
-                return acc;
-              }, {});
+              const countFor = (diff) => ({
+                total: taskList.filter((t) => t.difficulty === diff).length,
+                done:  taskList.filter((t) => t.difficulty === diff && checked[t.id]).length,
+              });
               return (
-                <div className="w-[220px] h-[50px] flex justify-around items-center">
-                  <div
-                    onClick={() => { setActiveDifficulty("hard"); setShowDifficultyBar(true); }}
-                    className="red-progress h-[50px] w-[50px] rounded-full border-[5px] border-[#f13c3f] cursor-pointer flex flex-row items-center justify-center leading-none"
-                  >
-                    <span className="text-[15px] font-bold text-[#333333]">{stats.hard.done}</span>
-                    <span className="text-[15px] text-[#333333] font-bold">/{stats.hard.total}</span>
+                <div className="flex justify-around items-center gap-3">
+                  <div style={{ display: showDifficultyBar && activeDifficulty !== "hard" ? "none" : "block" }}>
+                    <CircularProgress
+                      {...countFor("hard")}
+                      fillColor="#f13c3f"
+                      emptyColor="#F2BFC5"
+                      onClick={() => { setActiveDifficulty("hard"); setShowDifficultyBar(true); }}
+                    />
                   </div>
-                  <div
-                    onClick={() => { setActiveDifficulty("medium"); setShowDifficultyBar(true); }}
-                    className="orange-progress h-[50px] w-[50px] rounded-full border-[5px] border-[#ffae3c] cursor-pointer flex flex-row items-center justify-center leading-none"
-                  >
-                    <span className="text-[15px] font-bold text-[#333333]">{stats.medium.done}</span>
-                    <span className="text-[15px] text-[#333333] font-bold">/{stats.medium.total}</span>
+                  <div style={{ display: showDifficultyBar && activeDifficulty !== "medium" ? "none" : "block" }}>
+                    <CircularProgress
+                      {...countFor("medium")}
+                      fillColor="#ffae3c"
+                      emptyColor="#F6E1C5"
+                      onClick={() => { setActiveDifficulty("medium"); setShowDifficultyBar(true); }}
+                    />
                   </div>
-                  <div
-                    onClick={() => { setActiveDifficulty("easy"); setShowDifficultyBar(true); }}
-                    className="green-progress h-[50px] w-[50px] rounded-full border-[5px] border-[#43ae34] cursor-pointer flex flex-row items-center justify-center leading-none"
-                  >
-                    <span className="text-[15px] font-bold text-[#333333]">{stats.easy.done}</span>
-                    <span className="text-[15px] text-[#333333] font-bold">/{stats.easy.total}</span>
+                  <div style={{ display: showDifficultyBar && activeDifficulty !== "easy" ? "none" : "block" }}>
+                    <CircularProgress
+                      {...countFor("easy")}
+                      fillColor="#43ae34"
+                      emptyColor="#a0c59cff"
+                      onClick={() => { setActiveDifficulty("easy"); setShowDifficultyBar(true); }}
+                    />
                   </div>
                 </div>
               );
