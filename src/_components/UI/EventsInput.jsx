@@ -10,6 +10,7 @@ export function EventsInput({
   svg,
   isTravelField = false,
   travelData,
+  dataError,
   ...props
 }) {
   const formatDate = (date) => {
@@ -36,7 +37,7 @@ export function EventsInput({
   );
 
   return (
-    <div className="relative w-full">
+    <div className="relative w-full" data-error={dataError?? ''}>
       {label && (
         <label className="text-[16px] mb-[6px] block text-[#333] font-[700]">
           {label}

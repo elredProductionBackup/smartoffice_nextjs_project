@@ -61,15 +61,35 @@ export const useEventForm = () => {
     additionalNote: "",
   });
 
-  const update = (key, value) =>{
-    setForm((p) => ({ ...p, [key]: value }));
-      setErrors((prev) => {
+const update = (key, value) => {
+  setForm((p) => {
+    let updated = { ...p, [key]: value };
+
+    if (key === "startDate" && updated.endDate) {
+      const start = new Date(value);
+      const end = new Date(updated.endDate);
+
+      const startDateOnly = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+      const endDateOnly = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+
+      if (endDateOnly < startDateOnly) {
+        const newEnd = new Date(start);
+        newEnd.setHours(end.getHours(), end.getMinutes(), 0, 0);
+
+        updated.endDate = newEnd;
+      }
+    }
+
+    return updated;
+  });
+
+  setErrors((prev) => {
     if (!prev[key]) return prev;
     const newErr = { ...prev };
     delete newErr[key];
     return newErr;
   });
-}
+};
 
 const updateEventType = (key, value) => {
   setForm((p) => ({

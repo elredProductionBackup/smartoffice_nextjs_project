@@ -19,6 +19,7 @@ export function EventTypeDropdown({
   onChange,
   error,
   icon,
+  dataError
 }) {
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef(null);
@@ -35,7 +36,7 @@ export function EventTypeDropdown({
   }, []);
 
   return (
-    <div ref={wrapperRef} className="relative w-full flex flex-col">
+    <div ref={wrapperRef} className="relative w-full flex flex-col" data-error={dataError?? ''}>
       <label className="text-[16px] mb-[6px] block text-[#333333] font-[700]">
         Type of event*
       </label>

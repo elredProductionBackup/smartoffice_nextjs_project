@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef  } from "react";
 import { EventsInput } from "@/_components/UI/EventsInput";
 import { EventTypeDropdown } from "@/_components/UI/EventTypeDropdown";
 import { EventsTextarea } from "@/_components/UI/EventsTextarea";
@@ -27,28 +27,37 @@ import { submitEvent } from "@/services/events.service";
 import { mergeDateAndTime } from "@/utils/dateUtils";
 import { addToast } from "@/store/toastSlice";
 
-  const CreateEvent = () => {
+const CreateEvent = () => {
+  const formContainerRef = useRef(null);
   const { form, update,setForm,errors,setErrors , updateEventType } = useEventForm();
   const [submitting, setSubmitting] = useState(false);
   const [draftSubmitting, setDraftSubmitting] = useState(false);
   const router = useRouter();
 
-const handleCreateEvent = async (e, isDraft = false) => {
-  e?.preventDefault?.();
+  const handleCreateEvent = async (e, isDraft = false) => {
+    e?.preventDefault?.();
 
-  const errs = validateEvent(form);
-  if (Object.keys(errs).length) return setErrors(errs);
+    const errs = validateEvent(form);
+    if (Object.keys(errs).length) {
+  setErrors(errs);
 
-  const file = form.image?.file;
+  setTimeout(() => {
+    scrollToFirstError(errs);
+  }, 50);
 
-  if (!file) {
-    dispatch(addToast({
-      message: {
-        title: "Event Image Required",
-        descrip: "Please upload an image for this event type",
-      },
-      type: "error",
-    }));
+  return;
+}
+
+    const file = form.image?.file;
+
+    if (!file) {
+      dispatch(addToast({
+        message: {
+          title: "Event Image Required",
+          descrip: "Please upload an image for this event type",
+        },
+        type: "error",
+      }));
     return;
   }
 
@@ -103,18 +112,34 @@ const handleCreateEvent = async (e, isDraft = false) => {
 
     const dispatch = useDispatch();
 
+    const scrollToFirstError = (errors) => {
+      if (!formContainerRef.current) return;
+
+      const firstErrorKey = Object.keys(errors)[0];
+
+      const el = formContainerRef.current.querySelector(
+        `[data-error="${firstErrorKey}"]`
+      );
+
+      if (el) {
+        el.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }
+    };
+
   return (
-    <div className="h-[calc(100vh-80px)] flex justify-center py-5 gap-[80px] overflow-auto relative">
+    <div ref={formContainerRef} className="h-[calc(100vh-80px)] flex justify-center py-5 gap-[80px] overflow-auto relative">
         <EventImage
           value={form.image}
           onChange={(files) => update("image", files)}
         />
 
-        {/* Right Form */}
-        <div className="flex-1 max-w-[500px]">
+        <div  className="flex-1 max-w-[500px] ">
           <div className="mb-[30px] text-[36px] font-[600] flex items-center gap-[20px]">
            <span className="maki--arrow rotate-180 inline-block cursor-pointer" onClick={()=>router.back()}></span> Create event</div>
-            <div className="w-full flex flex-col gap-[30px]">
+            <div className="w-full flex flex-col gap-[30px]" >
 
               <EventsInput
                 label="Event name*"
@@ -124,6 +149,7 @@ const handleCreateEvent = async (e, isDraft = false) => {
                 onChange={(e) => {update("eventName", e.target.value);
                   clearFieldError(setErrors,"eventName")}}
                 error={errors.eventName}
+                dataError={'eventName'}
               />
 
               <EventTypeDropdown
@@ -133,6 +159,7 @@ const handleCreateEvent = async (e, isDraft = false) => {
                 icon={
                   <span className="material-symbols--event-list-outline-rounded" />
                 }
+                dataError={'eventType'}
               />
 
               {/* Description */}
@@ -143,9 +170,10 @@ const handleCreateEvent = async (e, isDraft = false) => {
                 onChange={(e) => update("description", e.target.value)}
                 icon={<span className="solar--chat-line-outline"></span>}
                 error={errors.description}
+                dataError={'description'}
               />
 
-              <div>
+              <div data-error={'startDate'}>
                 <DateTimeRangePicker
                   startDate={form.startDate}
                   endDate={form.endDate}
@@ -185,6 +213,7 @@ const handleCreateEvent = async (e, isDraft = false) => {
                     dispatch(openEventFormModal({ type: "LOCATION" }))
                   }
                   icon={<span className="weui--location-outlined"></span>}
+                  dataError={'location'}
               />
 
               <CheckboxGroup

@@ -3,10 +3,11 @@ export function EventsTextarea({
   label,
   icon,
   error,
+  dataError,
   ...props
 }) {
   return (
-    <div className="relative w-full">
+    <div className="relative w-full" data-error={dataError?? ''}>
       {label && (
         <label className="text-[16px] mb-[6px] block text-[#333333] font-[700]">
           {label}
