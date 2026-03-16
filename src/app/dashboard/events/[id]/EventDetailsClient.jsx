@@ -12,6 +12,7 @@ import MediaUploader from "@/_components/UI/MediaUploader";
 import Attendees from "@/_components/EventsComps/Attendees";
 import LogisticsContent from "@/_components/LogisticsContent";
 import ChecklistContent from "@/_components/ChecklistContent";
+import Eventcosting from "@/_components/Eventcosting";
 
 export default function EventDetailsClient() {
   const params = useParams();
@@ -103,6 +104,9 @@ export default function EventDetailsClient() {
         {activeTab === "checklist" &&
          <div className="min-h-[calc(100dvh-180px)] bg-[#f2f7ff] rounded-[20px] overflow-y-auto mb-10 p-4" >
          <ChecklistContent/></div>}
+          {activeTab === "eventcosting" &&
+         <div className="min-h-[calc(100dvh-180px)] overflow-y-auto mb-10 p-4" >
+         <Eventcosting/></div>}
       </>
 
     </div>
