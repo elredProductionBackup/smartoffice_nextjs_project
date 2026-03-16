@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import ButtonComp from "./ButtonComp";
 import AddTask from "./AddTask";
+import { useDispatch, useSelector } from "react-redux";
+import { openModal, closeModal } from "@/store/actionable/actionableUiSlice";
+import ActionableDetailsModal from "./ActionableDetailsModal";
 
 
 const creators = [
@@ -99,6 +102,24 @@ const ChecklistContent = () => {
   // One ref entry per task id so contains() checks the correct DOM node
   const menuRefs = useRef({});
 
+  const { modal } = useSelector((state) => state.actionableUi);
+  const dispatch = useDispatch();
+
+  const selectedTaskForModal = taskList.find(
+    (t) => t.id === modal.taskId || t.actionableId === modal.taskId
+  );
+
+  // Map local task to the format ActionableDetailsModal expects
+  const mappedTask = selectedTaskForModal ? {
+    ...selectedTaskForModal,
+    actionableId: selectedTaskForModal.id,
+    createdBy: creators.find(c => c.id === selectedTaskForModal.creatorId),
+    subTask: selectedTaskForModal.subTask || [],
+    notes: selectedTaskForModal.notes || "",
+    comments: selectedTaskForModal.comments || [],
+    isLocal: true
+  } : null;
+
   // Close dropdown when clicking anywhere outside the open menu
   useEffect(() => {
     if (!openMenu) return;
@@ -133,6 +154,87 @@ const ChecklistContent = () => {
       creatorId: 1, // default creator
     };
     setTaskList((prev) => [newTask, ...prev]);
+  };
+
+  const updateTaskLocally = (id, updates) => {
+    setTaskList(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
+  };
+
+  const handleAddSubtask = (id, title) => {
+    setTaskList(prev => prev.map(t => {
+      if (t.id === id) {
+        const newSubTask = { _id: Date.now(), title, isCompleted: false };
+        return { ...t, subTask: [newSubTask, ...(t.subTask || [])] };
+      }
+      return t;
+    }));
+  };
+
+  const handleToggleSubtask = (id, subTask) => {
+    setTaskList(prev => prev.map(t => {
+      if (t.id === id) {
+        return {
+          ...t,
+          subTask: t.subTask.map(st => st._id === subTask._id ? { ...st, isCompleted: !st.isCompleted } : st)
+        };
+      }
+      return t;
+    }));
+  };
+
+  const handleUpdateSubtask = (id, subTaskId, title) => {
+    setTaskList(prev => prev.map(t => {
+      if (t.id === id) {
+        return {
+          ...t,
+          subTask: t.subTask.map(st => st._id === subTaskId ? { ...st, title } : st)
+        };
+      }
+      return t;
+    }));
+  };
+
+  const handleDeleteSubtask = (id, subTaskId) => {
+    setTaskList(prev => prev.map(t => {
+      if (t.id === id) {
+        return {
+          ...t,
+          subTask: (t.subTask || []).filter(st => st._id !== subTaskId)
+        };
+      }
+      return t;
+    }));
+  };
+
+  const { user } = useSelector((state) => state.auth);
+
+  const handleAddComment = (id, text) => {
+    setTaskList(prev => prev.map(t => {
+      if (t.id === id) {
+        const newComment = {
+          _id: Date.now().toString(),
+          comment: text,
+          name: user?.firstname || "Me",
+          dpURL: user?.dpURL || "",
+          createdAt: new Date().toISOString(),
+          email: user?.email
+        };
+        return { ...t, comments: [...(t.comments || []), newComment] };
+      }
+      return t;
+    }));
+  };
+
+  const handleDeleteComment = (id, commentId) => {
+    setTaskList(prev => prev.map(t => {
+      if (t.id === id) {
+        return {
+          ...t,
+          comments: (t.comments || []).filter(c => c._id !== commentId)
+        };
+      }
+      return t;
+    }));
   };
 
   return (
@@ -229,10 +331,10 @@ const ChecklistContent = () => {
               return (
                 <div
                   key={task.id}
-                  className="flex h-[80px] items-center gap-3 pb-[20px] pl-2 border-b border-[#d4dff1]"
+                  className="flex min-h-[80px] items-start gap-3 pb-[20px] pt-[20px] pl-2 border-b border-[#d4dff1]"
                 >
                   {/* Checkbox */}
-                  <div className="h-full pt-[6px]">
+                  <div className="pt-[5px]">
                     <button
                       onClick={() => toggleCheck(task.id)}
                       className="shrink-0 w-[18px] h-[18px] rounded-[3px] border-[2px] border-[#666666] flex items-center justify-center "
@@ -249,7 +351,10 @@ const ChecklistContent = () => {
                   </div>
 
                   {/* Task info */}
-                  <div className="flex-1 min-w-0">
+                  <div 
+                    className="flex-1 min-w-0 cursor-pointer"
+                    onClick={() => dispatch(openModal({ type: "DETAILS", taskId: task.id }))}
+                  >
                     <div
                       className={`text-[20px] font-[500] leading-snug ${isDone ? "line-through text-[#333333]" : "text-[#333333]"
                         }`}
@@ -261,11 +366,24 @@ const ChecklistContent = () => {
                         {creator.name}
                       </div>
                     )}
+                    {/* Subtasks display */}
+                    {task.subTask && task.subTask.length > 0 && (
+                      <div className="mt-2 ml-4 flex flex-col gap-1">
+                        {task.subTask.map((st) => (
+                          <div key={st._id} className="flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#333333] shrink-0" />
+                            <span className={`text-[16px] font-[400] text-[#333333] ${st.isCompleted ? 'line-through opacity-60' : ''}`}>
+                              {st.title}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   {/* Avatar */}
                   {creator && (
-                    <div className="h-[32px] w-[200px]"> <img
+                    <div className="h-[32px] w-[200px] pt-[1px]"> <img
                       src={creator.avatar}
                       alt={creator.name}
                       className="w-[32px] h-[32px] rounded-full object-fit shrink-0"
@@ -273,7 +391,7 @@ const ChecklistContent = () => {
                   )}
 
                   {/* 3-dot menu */}
-                  <div ref={(el) => (menuRefs.current[task.id] = el)} className="relative shrink-0">
+                  <div ref={(el) => (menuRefs.current[task.id] = el)} className="relative shrink-0 pt-[4px]">
                     <button
                       onClick={() => toggleMenu(task.id)}
                       className="w-6 h-6 flex items-center justify-center hover:opacity-70"
@@ -318,6 +436,22 @@ const ChecklistContent = () => {
             })}
           </div>
         </div>
+      )}
+
+      {modal.type === "DETAILS" && mappedTask && (
+        <ActionableDetailsModal
+          task={mappedTask}
+          onClose={() => dispatch(closeModal())}
+          onSave={(id, updates) => updateTaskLocally(id, updates)}
+          onAddSubtask={(id, title) => handleAddSubtask(id, title)}
+          onToggleSubtask={(id, subTask) => handleToggleSubtask(id, subTask)}
+          onUpdateSubtask={(id, subTaskId, title) => handleUpdateSubtask(id, subTaskId, title)}
+          onDeleteSubtask={(id, subTaskId) => handleDeleteSubtask(id, subTaskId)}
+          onAddComment={(id, text) => handleAddComment(id, text)}
+          onDeleteComment={(id, commentId) => handleDeleteComment(id, commentId)}
+          hideLinkEvent={true}
+          canEdit={true}
+        />
       )}
 
       {/* =============== Event List – empty condition ================  */}
