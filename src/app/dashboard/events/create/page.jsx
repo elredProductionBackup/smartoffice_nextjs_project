@@ -243,10 +243,10 @@ const CreateEvent = () => {
 
               <Collaborators form={form} setForm={setForm}/>
 
-              <Attachments
+              {/* <Attachments
                 value={form.attachments}
                 onChange={(files) => update("attachments", files)}
-              />
+              /> */}
 
                 <EventsInput
                   label="Add travel info"

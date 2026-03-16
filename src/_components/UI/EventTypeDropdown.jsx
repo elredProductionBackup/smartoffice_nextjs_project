@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { IoChevronDown } from "react-icons/io5";
 import PointDropdown from "./PointDropdown";
+import { fetchMasterConfig } from "@/store/events/eventsThunks";
+import { useDispatch, useSelector } from "react-redux";
 
 const baseFieldClass =
   "flex-1 bg-[#F6F6F6] border-[1.4px] border-[#EAEAEA] rounded-lg outline-none h-[50px]";
@@ -21,8 +23,14 @@ export function EventTypeDropdown({
   icon,
   dataError
 }) {
+  const dispatch = useDispatch();
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef(null);
+  const pointsMaster = useSelector((state) => state.events.pointsMaster) || [];
+
+    useEffect(() => {
+      dispatch(fetchMasterConfig());
+    }, [dispatch]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -90,10 +98,11 @@ export function EventTypeDropdown({
         )}
 
         {/* Points Dropdown */}
-          <PointDropdown
-            value={value?.points}
-            onChange={(p) => onChange("points", p)}
-          />
+        <PointDropdown
+          value={value?.points}
+          onChange={(p) => onChange("points", p)}
+          dynamicPoints={pointsMaster}
+        />
 
       </div>
 

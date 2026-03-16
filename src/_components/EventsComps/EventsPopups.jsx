@@ -5,13 +5,13 @@ import { closeTopEventsModal } from "@/store/events/eventsUiSlice";
 
 import MasterChecklistModal from "./MasterChecklistModal";
 import ChecklistFormModal from "./ChecklistFormModal";
-import { useEffect, useState } from "react";
+// import { useEffect, useState } from "react";
 import PointSystemModal from "./PointSystemModal";
 import { saveMasterConfig } from "@/store/events/eventsThunks";
-import { setChecklistMaster, setPointsMaster } from "@/store/events/eventsSlice";
+import { setChecklistMaster } from "@/store/events/eventsSlice";
 
 export default function EventsPopups() {
-  const [pointSystem, setPointSystem] = useState(null);
+  // const [pointSystem, setPointSystem] = useState(null);
   const dispatch = useDispatch();
   const modalStack = useSelector(
     (state) => state.eventsUi.modalStack
