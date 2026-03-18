@@ -381,14 +381,24 @@ const ChecklistContent = () => {
                     )}
                   </div>
 
-                  {/* Avatar */}
-                  <div className="h-[32px] w-[200px] pt-[2px]">
+                  {/* Avatar Stack */}
+                  <div className="h-[32px] w-[200px] pt-[2px] flex items-center -space-x-3">
                     {task.collaborators && task.collaborators.length > 0 && (
-                      <img
-                        src={task.collaborators[0].dp || task.collaborators[0].dpURL || ""}
-                        alt={task.collaborators[0].name || "collaborator"}
-                        className="w-[32px] h-[32px] rounded-full object-cover shrink-0 bg-gray-200"
-                      />
+                      <>
+                        {task.collaborators.slice(0, 3).map((col, idx) => (
+                          <img
+                            key={idx}
+                            src={col.dp || col.dpURL || ""}
+                            alt={col.name || "collaborator"}
+                            className="w-[32px] h-[32px] rounded-full object-cover shrink-0 bg-gray-200 border-2 border-white"
+                          />
+                        ))}
+                        {task.collaborators.length > 3 && (
+                          <div className="w-[32px] h-[32px] rounded-full bg-[#D3E3FD] border-2 border-white flex items-center justify-center text-[12px] font-bold text-[#0B57D0] shrink-0">
+                            +{task.collaborators.length - 3}
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
 
