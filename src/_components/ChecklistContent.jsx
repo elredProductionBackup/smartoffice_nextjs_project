@@ -382,13 +382,15 @@ const ChecklistContent = () => {
                   </div>
 
                   {/* Avatar */}
-                  {creator && (
-                    <div className="h-[32px] w-[200px] pt-[1px]"> <img
-                      src={creator.avatar}
-                      alt={creator.name}
-                      className="w-[32px] h-[32px] rounded-full object-fit shrink-0"
-                    /> </div>
-                  )}
+                  <div className="h-[32px] w-[200px] pt-[2px]">
+                    {task.collaborators && task.collaborators.length > 0 && (
+                      <img
+                        src={task.collaborators[0].dp || task.collaborators[0].dpURL || ""}
+                        alt={task.collaborators[0].name || "collaborator"}
+                        className="w-[32px] h-[32px] rounded-full object-cover shrink-0 bg-gray-200"
+                      />
+                    )}
+                  </div>
 
                   {/* 3-dot menu */}
                   <div ref={(el) => (menuRefs.current[task.id] = el)} className="relative shrink-0 pt-[4px]">
