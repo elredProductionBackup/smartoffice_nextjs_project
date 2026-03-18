@@ -14,7 +14,9 @@ import Image from "next/image";
 export default function ActionableDetailsModal({
   task, onClose, onSave, onAddSubtask,
   onToggleSubtask, onUpdateSubtask,
-  onDeleteSubtask,
+  onDeleteSubtask, onAddComment,
+  onDeleteComment, hideLinkEvent,
+  canEdit
 }) {
   if (!task) return null;
 
@@ -32,10 +34,10 @@ const commentsState = useSelector(
   (state) =>
     state.actionable.comments.byActionableId[task.actionableId]
 ) || {
-  list: [],
-  page: 0,
-  total: 0,
-  hasMore: true,
+  list: task.comments || [],
+  page: 1,
+  total: task.comments?.length || 0,
+  hasMore: false,
   loading: false,
 };
 
@@ -49,9 +51,11 @@ useEffect(() => {
 }, [task.actionableId]);
 
 
-  const actionable = useSelector((state) =>
+  const reduxActionable = useSelector((state) =>
     state.actionable.items.find((i) => i.actionableId === task.actionableId)
   );
+
+  const actionable = reduxActionable || task;
 
   if (!actionable) return null;
 
@@ -68,10 +72,11 @@ useEffect(() => {
   const { user } = useSelector((state) => state.auth);
   const isAdmin = user?.userType?.toLowerCase() === "admin";
 
-  const canEditOrDelete = isAdmin;
+  const canEditOrDelete = canEdit !== undefined ? canEdit : isAdmin;
+
   // --- Initial fetch ---
   useEffect(() => {
-    if (!actionable) return;
+    if (!actionable || task.isLocal) return;
     if (commentsState.page === 0) {
       dispatch(fetchComments({
         actionableId: actionable.actionableId,
@@ -79,7 +84,7 @@ useEffect(() => {
         limit: 10,
       }));
     }
-  }, [actionable?.actionableId]);
+  }, [actionable?.actionableId, task.isLocal]);
 
   // --- Infinite Scroll ---
   const isFetchingRef = useRef(false);
@@ -90,7 +95,7 @@ useEffect(() => {
   }, [commentsState]);
 useEffect(() => {
   const scrollEl = scrollRef.current;
-  if (!scrollEl || !showAllComments) return;
+  if (!scrollEl || !showAllComments || task.isLocal) return;
 
   const handleScroll = () => {
     const state = commentsStateRef.current;
@@ -122,13 +127,13 @@ useEffect(() => {
   handleScroll();
 
   return () => scrollEl.removeEventListener("scroll", handleScroll);
-}, [showAllComments, actionable?.actionableId]);
+}, [showAllComments, actionable?.actionableId, task.isLocal]);
 
 
 
   return (
     <div
-      className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center"
+      className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center font-nunito"
       onClick={onClose}
     >
       <div className="bg-white w-[600px] rounded-[20px] flex flex-col items-center pr-[8px]">
@@ -151,17 +156,19 @@ useEffect(() => {
           canEditOrDelete={canEditOrDelete}
         />
 
-        {/* Link to Event (Disabled) */}
-         <div className="flex flex-col gap-[12px] opacity-50 px-[20px]">
-           <span className="text-[20px] text-[#333333] font-[700] uppercase">
-             Link to event
-           </span>
-           <div className="flex border-[1.4px] border-[#CCCCCC] rounded-[4px] p-[8px] cursor-not-allowed">
-             <div className="flex items-center gap-[6px] border-1 border-[#B1B1B1] p-[4px] text-[14px] rounded-[100px]">
-               <Image src={'/image/figma-config.webp'} alt="Events" height={24} width={24} className="min-h-[24px] max-h-[24px] shrink-0 min-w-[24px] bg-[#CCCCCC] rounded-full object-cover"/>
-               Figma Config <span className="akar-icons--cross small-cross mr-[10px]"></span></div>
+        {/* Link to Event (Disabled for local tasks) */}
+         {!hideLinkEvent && (
+           <div className="flex flex-col gap-[12px] opacity-50 px-[20px]">
+             <span className="text-[20px] text-[#333333] font-[700] uppercase">
+               Link to event
+             </span>
+             <div className="flex border-[1.4px] border-[#CCCCCC] rounded-[4px] p-[8px] cursor-not-allowed">
+               <div className="flex items-center gap-[6px] border-1 border-[#B1B1B1] p-[4px] text-[14px] rounded-[100px]">
+                 <Image src={'/image/figma-config.webp'} alt="Events" height={24} width={24} className="min-h-[24px] max-h-[24px] shrink-0 min-w-[24px] bg-[#CCCCCC] rounded-full object-cover"/>
+                 Figma Config <span className="akar-icons--cross small-cross mr-[10px]"></span></div>
+             </div>
            </div>
-         </div>
+         )}
 
         <SubtaskSection
           task={actionable}
@@ -199,18 +206,28 @@ useEffect(() => {
             setShowAll={setShowAllComments}
             canEditOrDelete={canEditOrDelete}
             onAdd={(value, user) => {
-              const tempId = `temp-comment-${Date.now()}`;
-              dispatch(createComment({
-                tempId,
-                actionableId: actionable.actionableId,
-                comment: value,
-                user,
-              }));
+              if (onAddComment) {
+                onAddComment(actionable.actionableId, value);
+              } else {
+                const tempId = `temp-comment-${Date.now()}`;
+                dispatch(createComment({
+                  tempId,
+                  actionableId: actionable.actionableId,
+                  comment: value,
+                  user,
+                }));
+              }
             }}
-            onDelete={(id) => dispatch(removeComment({
-              actionableId: actionable.actionableId,
-              commentId: id,
-            }))}
+            onDelete={(id) => {
+              if (onDeleteComment) {
+                onDeleteComment(actionable.actionableId, id);
+              } else {
+                dispatch(removeComment({
+                  actionableId: actionable.actionableId,
+                  commentId: id,
+                }));
+              }
+            }}
           />
 
 
@@ -220,3 +237,4 @@ useEffect(() => {
     </div>
   );
 }
+
