@@ -5,14 +5,18 @@ import Link from "next/link";
 import callIcon from "@/assets/logo/call.svg";
 import MemberDetailsModal from "./MemberDetailsModal";
 import ExportAsExcelButton from "./ExportAsExcelButton";
+import AddVehicleModal from "./AddVehicleModal";
 
 const LogisticsContent = () => {
   const phonePopupRef = useRef(null);
   const [openPhoneFor, setOpenPhoneFor] = useState(null);
   const [copiedPhoneFor, setCopiedPhoneFor] = useState(null);
   const [selectedMember, setSelectedMember] = useState(null);
+  const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
+  const [memberForVehicle, setMemberForVehicle] = useState(null);
+  const [vehicleDetails, setVehicleDetails] = useState({});
 
-  const handleCopyPhone = (e, phone, memberId) => {
+  const handleCopyPhone = (e, phone, memberId) => { 
     e.stopPropagation();
     navigator.clipboard.writeText(phone);
     setCopiedPhoneFor(memberId);
@@ -154,9 +158,10 @@ const LogisticsContent = () => {
       <div className="flex pb-4 text-[14px] md:text-[15px] font-bold text-gray-700">
         <div className="w-[15%] text-left">Date</div>
         <div className="w-[85%] grid grid-cols-12 gap-2">
-          <div className="col-span-3 text-left pl-2">ETA</div>
+          <div className="col-span-2 text-left pl-2">ETA</div>
           <div className="col-span-3 text-center">Mode of travel</div>
-          <div className="col-span-4 text-left pl-6">Member name</div>
+          <div className="col-span-3 text-left pl-6">Member name</div>
+          <div className="col-span-2 text-center">Vehicle Details</div>
           <div className="col-span-2 text-center">Actions</div>
         </div>
       </div>
@@ -181,7 +186,7 @@ const LogisticsContent = () => {
                     }`}
                   >
                     {/* ETA */}
-                    <div className="col-span-3 text-left pl-2 text-gray-500 font-medium text-[16px]">
+                    <div className="col-span-2 text-left pl-2 text-gray-500 font-medium text-[16px]">
                       {item.eta}
                     </div>
 
@@ -192,7 +197,7 @@ const LogisticsContent = () => {
 
                     {/* Member name */}
                     <div 
-                      className="col-span-4 flex font-600 items-center gap-4 pl-6 cursor-pointer p-1.5 -ml-1.5 rounded-lg transition"
+                      className="col-span-3 flex font-600 items-center gap-4 pl-6 cursor-pointer p-1.5 -ml-1.5 rounded-lg transition"
                       onClick={() => {
                         const memberForModal = {
                           ...item,
@@ -226,6 +231,39 @@ const LogisticsContent = () => {
                         className="w-10 h-10 rounded-full object-cover"
                       />
                       <span className="text-gray-800 font-semibold text-[15px]">{item.member}</span>
+                    </div>
+
+                    {/* Vehicle Details */}
+                    <div className="col-span-2 flex flex-col items-center gap-2">
+                      {vehicleDetails[item.id] ? (
+                        <div className="flex flex-col gap-1.5 w-full items-center">
+                          {vehicleDetails[item.id].pickupNumber && (
+                            <div className="bg-[#EEF2F9] px-4 py-1.5 rounded-full w-fit">
+                              <span className="text-[#0051CC] text-[12px] font-semibold underline decoration-[#0051CC]/40">
+                                Pick up - {vehicleDetails[item.id].vehicleType} - {vehicleDetails[item.id].pickupNumber}
+                              </span>
+                            </div>
+                          )}
+                          {vehicleDetails[item.id].dropOffNumber && (
+                            <div className="bg-[#EEF2F9] px-4 py-1.5 rounded-full w-fit">
+                              <span className="text-[#0051CC] text-[12px] font-semibold underline decoration-[#0051CC]/40">
+                                Drop off - {vehicleDetails[item.id].vehicleType} - {vehicleDetails[item.id].dropOffNumber}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setMemberForVehicle(item);
+                            setIsVehicleModalOpen(true);
+                          }}
+                          className="text-[#0070FF] font-semibold hover:underline transition-all cursor-pointer"
+                        >
+                          Add
+                        </button>
+                      )}
                     </div>
 
                     {/* Actions */}
@@ -308,7 +346,7 @@ const LogisticsContent = () => {
             
             {/* Divider between Date groups */}
             {groupIndex !== dummyData.length - 1 && (
-               <div className="w-full h-px bg-gray-200/80 my-2 ml-[15%] w-[85%]"></div>
+               <div className="h-px bg-gray-200/80 my-2 ml-[15%] w-[85%]"></div>
             )}
           </div>
         ))}
@@ -328,6 +366,22 @@ const LogisticsContent = () => {
           showLogisticsDetails
         />
       )}
+
+      {/* Vehicle Details Modal */}
+      <AddVehicleModal
+        isOpen={isVehicleModalOpen}
+        onClose={() => setIsVehicleModalOpen(false)}
+        memberName={memberForVehicle?.member}
+        onDone={(data) => {
+          if (memberForVehicle) {
+            setVehicleDetails(prev => ({
+              ...prev,
+              [memberForVehicle.id]: data
+            }));
+          }
+          setIsVehicleModalOpen(false);
+        }}
+      />
     </div>
   );
 };
