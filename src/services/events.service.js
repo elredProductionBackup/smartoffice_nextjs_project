@@ -51,3 +51,17 @@ export const getMasterList = (networkClusterCode) => {
 export const updateMasterList = (payload) => {
   return api.patch("/smartOffice/masterList", payload);
 };
+
+export const getEventMembers = ({
+  eventId,
+  start = 1,
+  offset = 10,
+}) => {
+  return api.get("/smartOffice/getEventsMembersList", {
+    params: {
+      eventId,
+      start,
+      offset,
+    },
+  });
+};

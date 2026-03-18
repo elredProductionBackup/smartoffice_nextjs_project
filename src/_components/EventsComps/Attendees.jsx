@@ -1,11 +1,35 @@
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FiMail, FiPhone, FiBell } from "react-icons/fi";
 import { DUMMY_ATTENDEES } from "@/assets/helpers/sampleEvents";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchEventMembers } from "@/store/events/eventsThunks";
 
-const Attendees = () => {
+const Attendees = ({ eventId }) => {
+  const dispatch = useDispatch();
+
+  const {
+    membersList,
+    membersLoading,
+    membersFetched,
+  } = useSelector((state) => state.events);
+
   const [selectedRow, setSelectedRow] = useState(null);
 
+  useEffect(() => {
+    if (!eventId) return;
+
+    // 👇 Always fetch (for latest data)
+    dispatch(fetchEventMembers({ eventId }));
+
+  }, [eventId]);
+
+  console.log(membersList)
+
+  // 👇 Show loader ONLY first time
+  if (membersLoading && !membersFetched) {
+    return <div className="p-10 text-center">Loading attendees...</div>;
+  }
 
   return (
     <div className="flex flex-col">

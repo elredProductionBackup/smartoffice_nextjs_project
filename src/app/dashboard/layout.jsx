@@ -109,7 +109,7 @@ export default function DashboardLayout({ children }) {
   { name: "Actionable", path: "/dashboard/actionable", logo: actionableLogo },
   {
     name: "Members",
-    path: "/dashboard/members?tab=members",
+    path: "/dashboard/members?tab=member",
     logo: memberLogo,
   },
 ];

@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { fetchCollaborators, fetchEvents, fetchMasterConfig, saveMasterConfig } from "./eventsThunks";
+import { fetchCollaborators, fetchEventMembers, fetchEvents, fetchMasterConfig, saveMasterConfig } from "./eventsThunks";
 import moment from "moment";
 
 const initialState = {
@@ -7,6 +7,8 @@ const initialState = {
   rawEvents: [],       
   loading: false,
   error: null,
+
+  selectedEvent: null,
 
   page: 1,
   limit: 10,
@@ -18,6 +20,13 @@ const initialState = {
   checklistMaster: [],
   pointsMaster: [],
   masterLoading: false,
+
+  membersList: [],
+  membersLoading: false,
+  membersError: null,
+  membersTotal: 0,
+  membersPage: 1,
+  membersFetched: false, // 👈 KEY FLAG
 
   activeTab: "upcomming", 
   search: "",
@@ -41,6 +50,14 @@ const mapEventToUI = (event) => {
     date: startDay !== endDay
     ? `${startDay} - ${endDay}`
     : endDay,
+    // For Redux Event - START
+    eventDescription:event.eventDescription,
+    startDate:event.startDateTime,
+    endDate:event.endDateTime,
+    isRegistration:event.isRegistration,
+    resource:event.resource,
+    additionalNotes:event.additionalNotes,
+    // END
     attendees: event.whoCanAttend?.length || 0,
     location:
       event.eventLocation || "—",
@@ -90,6 +107,9 @@ const eventSlice = createSlice({
     },
     setPointsMaster(state, action) {
       state.pointsMaster = action.payload;
+    },
+    setSelectedEvent(state, action) {
+      state.selectedEvent = action.payload;
     }
   },
 
@@ -210,11 +230,27 @@ const eventSlice = createSlice({
         })
         .addCase(saveMasterConfig.rejected, (state) => {
           state.masterLoading = false;
+        })
+        // Attendees
+        .addCase(fetchEventMembers.pending, (state) => {
+          if (!state.membersFetched) {
+            state.membersLoading = true;
+          }
+        })
+        .addCase(fetchEventMembers.fulfilled, (state, action) => {
+          state.membersLoading = false;
+          state.membersList = action.payload.list;
+          state.membersTotal = action.payload.total;
+          state.membersFetched = true;
+        })
+        .addCase(fetchEventMembers.rejected, (state, action) => {
+          state.membersLoading = false;
+          state.membersError = action.payload;
         });
-  },
+        },
 });
 
-export const { setPage, setSearch, setActiveTab, resetEventsState,setChecklistMaster,setPointsMaster} =
+export const { setPage, setSearch, setActiveTab, resetEventsState,setChecklistMaster,setPointsMaster,setSelectedEvent} =
   eventSlice.actions;
 
 export default eventSlice.reducer;

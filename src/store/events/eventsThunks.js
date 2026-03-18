@@ -1,6 +1,6 @@
 // redux/events/eventThunks.js
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { getEventsList, getMasterList, updateMasterList  } from "@/services/events.service";
+import { getEventMembers, getEventsList, getMasterList, updateMasterList  } from "@/services/events.service";
 
 import { getCollaborators } from "@/services/actionable.service";
 
@@ -102,6 +102,35 @@ export const saveMasterConfig = createAsyncThunk(
 
     } catch (err) {
       return rejectWithValue(err?.response?.data?.message || err.message);
+    }
+  }
+);
+
+// Events Attendees
+export const fetchEventMembers = createAsyncThunk(
+  "events/fetchEventMembers",
+  async (
+    { eventId, page = 1, limit = 10, searchKey = "", searchBy = "all" },
+    { rejectWithValue }
+  ) => {
+    try {
+      const start = (page - 1) * limit + 1;
+      const offset = limit;
+
+      const res = await getEventMembers({
+        eventId,
+        start,
+        offset,
+      });
+
+      return {
+        list: res.data?.result || [],
+        total: res.data?.totalCount || 0,
+      };
+    } catch (err) {
+      return rejectWithValue(
+        err?.response?.data?.message || err.message
+      );
     }
   }
 );

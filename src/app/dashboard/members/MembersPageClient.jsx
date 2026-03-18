@@ -12,7 +12,7 @@ export default function MembersPageClient() {
   const searchParams = useSearchParams();
   const [search, setSearch] = useState("");
   const [searchBy, setSearchBy] = useState("Name");
-  const tab = searchParams.get("tab") || "members";
+  const tab = searchParams.get("tab") || "member";
   const page = Number(searchParams.get("page")) || 1;
   // const search = searchParams.get("search") || "";
 
@@ -45,8 +45,9 @@ export default function MembersPageClient() {
       <SectionHeader
         title="Members"
         tabs={[
-          { key: "members", label: "Members" },
+          { key: "member", label: "Members" },
           { key: "board", label: "Board" },
+          { key: "nonBoard", label: "Non-Boarded" },
         ]}
         activeTab={tab}
         onTabChange={(key) =>

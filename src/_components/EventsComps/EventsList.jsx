@@ -3,6 +3,8 @@
 import Image from "next/image";
 import ProgressCircle from "./ProgressCircle";
 import { useRouter } from "next/navigation";
+import { useDispatch } from "react-redux";
+import { setSelectedEvent } from "@/store/events/eventsSlice";
 
 const TASK_ORDER = ["hard", "medium", "easy"];
 
@@ -22,9 +24,13 @@ export default function EventsList({
   const hasEvents = events.some((group) => group.items.length > 0);
   const router = useRouter();
 
-  const goToEvent = (id) => {
-    router.push(`/dashboard/events/${id}`);
-  };
+
+const dispatch = useDispatch();
+
+const goToEvent = (event) => {
+  dispatch(setSelectedEvent(event));
+  router.push(`/dashboard/events/${event.id}`);
+};
 
   return (
     <div className="flex-1 flex flex-col overflow-auto px-[30px] relative">
@@ -131,7 +137,7 @@ export default function EventsList({
               {group.items.map((event) => (
                 <div
                   key={event.id}
-                  onClick={() => goToEvent(event.id)}
+                  onClick={() => goToEvent(event)}
                   className="cursor-pointer grid grid-cols-[140px_1fr] gap-[22px] last:[&_.event-border]:border-b-0"
                 >
                   <div className="text-center pt-[10px] font-[600]">

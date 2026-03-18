@@ -31,7 +31,7 @@ export function useMembersData({
             networkClusterCode: networkClusterCode,
             start,
             offset,
-            filterBy: tab === "board" ? "board" : "member",
+            filterBy: tab,
             searchBy: searchBy.toLowerCase(),
             searchKey: search?.trim() || "",
           },
