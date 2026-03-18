@@ -128,10 +128,10 @@ export default function MembersTable({ data=[], total, documents = false,current
           ) : (
             <>
               <div className="mb-3 text-2xl font-semibold text-[#333333]">
-                No {tab} yet
+                No {tab === "nonBoard"?"non-boarded members":tab} yet
               </div>
               <div className="text-base font-normal text-[#666666]">
-                Looks like you haven’t added any {tab==='members' ? tab?.slice(0,-1):tab} yet
+                Looks like you haven’t added any {tab=== "nonBoard"?"non-boarded members":tab} yet
               </div>
             </>
           )}
