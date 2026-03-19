@@ -6,6 +6,7 @@ export const getActionables = ({
   offset = 10,
   search = "",
   dueSearchKey = "today",
+  eventId = ""
 }) => {
   return api.get("/smartOffice/actionables", {
     params: {
@@ -14,7 +15,7 @@ export const getActionables = ({
       offset,
       search,
       dueSearchKey,
-      eventId:""
+      eventId
     },
   });
 };
