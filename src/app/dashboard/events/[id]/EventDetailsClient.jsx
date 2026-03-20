@@ -6,48 +6,106 @@ import { useParams, useSearchParams } from "next/navigation";
 import { EVENTS_DETAILS } from "@/assets/helpers/sampleEvents";
 import ActionableTabs from "@/_components/ActionableTabs";
 import { RegistrationToggle } from "@/_components/UI/RegistrationToggle";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import MediaUploader from "@/_components/UI/MediaUploader";
 import Attendees from "@/_components/EventsComps/Attendees";
 import LogisticsContent from "@/_components/LogisticsContent";
 import ChecklistContent from "@/_components/ChecklistContent";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import moment from "moment";
 import Eventcosting from "@/_components/Eventcosting";
+import { closeAllEventsModals, openEventsModal } from "@/store/events/eventsUiSlice";
+import { closeEventThunk, fetchDocuments, fetchEventDetails, fetchMembersMedia, uploadDocument, uploadMemberMedia } from "@/store/events/eventsThunks";
+import MemberDetailsModal from "@/_components/MemberDetailsModal";
 
 export default function EventDetailsClient() {
   const params = useParams();
   const searchParams = useSearchParams();
   const router = useRouter();
+  const dispatch = useDispatch();
+  const [closing, setClosing] = useState(false);
+  const modalStack = useSelector((state) => state.eventsUi.modalStack);
+  //   if (!modalStack.length) return null;
+
+  const currentModal = modalStack[modalStack.length - 1];
+
   const [registrationEnabled, setRegistrationEnabled] = useState(true);
+  // const [eventData, setEventData] = useState(null);
 
   const eventId = params?.id;
   const activeTab = searchParams.get("tab") || "attendees";
-  const selectedEvent = useSelector((state) => state.events.selectedEvent);
 
-  // Dummy 
-  // const allEvents = [...UPCOMING_EVENTS, ...PAST_EVENTS, ...DRAFT_EVENTS]
-  //   .flatMap(group => group.items);
+  const {
+  membersMediaMap,
+  membersMediaFetched,
+  documentsMap,
+  documentsFetched,
+    membersMediaLoading,
+    documentsLoading
+  } = useSelector((state) => state.events);
 
-  // const event = allEvents.find(e => e.id === eventId);
+  const membersMediaList = membersMediaMap[eventId] || [];
+  const documentsList = documentsMap[eventId] || [];
 
-  const event = selectedEvent;
-  const start = moment(event?.startDate).local();
-  const end = moment(event?.endDate).local();
+  const isMembersMediaFetched = membersMediaFetched[eventId];
+  const isDocumentsFetched = documentsFetched[eventId];
+
+  const event = useSelector(
+    (state) => state.events.eventDetailsMap[eventId]
+  )
+
+  useEffect(() => {
+    if (eventId) {
+      dispatch(fetchEventDetails({ eventId }));
+    }
+  }, [eventId]);
+
+useEffect(() => {
+  if (activeTab === "memberMedia" && !isMembersMediaFetched) {
+    dispatch(fetchMembersMedia({ eventId }));
+  }
+
+  if (activeTab === "documents" && !isDocumentsFetched) {
+    dispatch(fetchDocuments({ eventId }));
+  }
+}, [activeTab, eventId, isMembersMediaFetched, isDocumentsFetched, dispatch]);
+
+  const start = moment(event?.startDateTime).local();
+  const end = moment(event?.endDateTime).local();
 
 
   const dateRange = `${start.format("ddd DD MMM YYYY")} - ${end.format("ddd DD MMM YYYY")}`;
-  const timeRange = `${start.format("h:mm")} - ${end.format("h:mm A")}`;
+  const timeRange =
+    start && end
+      ? start.isSame(end, "minute")
+        ? start.format("h:mm A")
+        : `${start.format("h:mm")} - ${end.format("h:mm A")}`
+      : "";
 
 
-  if (!event) return <div className="p-10 text-xl">Event not found</div>;
+  const handleCloseEvent = async () => {
+    try {
+      setClosing(true);
+      await dispatch(closeEventThunk({ eventId })).unwrap();
+      router.push("/dashboard/events?tab=past");
+    } catch (err) {
+      console.error(err);
+    } finally {
+      dispatch(closeAllEventsModals())
+      setClosing(false);
+    }
+  };
+
+  if (!event) {
+    return <div className="p-10 text-xl">Loading event...</div>;
+  }
 
   return (
     <div className="h-[calc(100vh-80px)] flex flex-col gap-[20px] overflow-y-auto relative pb-[20px]">
 
-      <div className="bg-white rounded-2xl pt-6 flex gap-[105px]">
-        <div className="flex gap-[40px]">
+      <div className="bg-white rounded-2xl pt-6 flex justify-between gap-[105px] w-full relative z-[15]">
+        <div className="flex-1 flex gap-[40px]">
           <div className="w-[250px] min-h-[320px] relative rounded-[20px] overflow-hidden">
             <Image src={event?.eventImage} alt="event" fill className="object-cover" />
           </div>
@@ -55,23 +113,38 @@ export default function EventDetailsClient() {
           <div className="flex-1 flex flex-col justify-between gap-[20px]">
             <div className="flex flex-col gap-[20px] items-start">
               <div className="text-[36px] font-semibold flex items-center gap-[20px]">
-              <span className="maki--arrow rotate-180 inline-block cursor-pointer" onClick={()=>router.push('/dashboard/events')}></span> {event?.name}</div>
+                <span className="maki--arrow rotate-180 inline-block cursor-pointer"
+                  onClick={() => {
+                    const isPast = moment(event?.startDateTime).isBefore(moment());
+
+                    if (isPast) {
+                      router.push("/dashboard/events?tab=past");
+                    } else {
+                      router.push("/dashboard/events");
+                    }
+                  }}></span> {event?.eventName}</div>
               <p className="text-[18px] leading-[27px] w-[70%]">
-                Get ready for an incredible experience at ConFig, Figma's highly anticipated flagship yearly conference, happening on June 21-22
+                {event?.eventDescription}
               </p>
 
               <div className="w-full flex flex-wrap justify-between font-medium text-[#333]">
-                <div className="flex gap-[8px] items-center"><span className="material-symbols--location-on"></span>{event?.location}</div>
+                <div className="flex gap-[8px] items-center"><span className="material-symbols--location-on"></span>{event?.eventLocation}</div>
                 <div className="flex gap-[8px] items-center"><span className="ic--round-date-range"></span>{dateRange}</div>
                 <div className="flex gap-[8px] items-center"><span className="icon-park-outline--time"></span>{timeRange}</div>
               </div>
             </div>
 
-            {event?.resource?.resourceName && 
+            {event?.resource?.resourceName &&
               <div className="flex flex-col gap-[4px]">
                 <div className="font-semibold text-[#999999]">Speaker</div>
                 <div className="flex gap-[8px] items-center">
-                  <div className="h-[32px]  w-[32px] bg-[#ccc] rounded-full"></div>
+                  {event?.resource?.uploadResourceImageUrl ?
+                    <div className="h-[32px]  w-[32px]">
+                      <Image src={event.resource.uploadResourceImageUrl} alt="speaker image" className="object-cover h-full rounded-full" width={500} height={500} />
+                    </div>
+                    :
+                    <div className="h-[32px] w-[32px] bg-[#ccc] rounded-full grid place-items-center text-[18px]">{event?.resource?.resourceName?.split("")[0]}</div>
+                  }
                   <p className="font-medium text-[20px] text-black">{event?.resource?.resourceName}</p>
                 </div>
                 <div className="text-[18px] leading-[24px] pt-[6px] w-[70%]">{event?.resource?.resourceDescription}</div>
@@ -81,18 +154,41 @@ export default function EventDetailsClient() {
         </div>
 
         <div className="flex flex-col items-start justify-between">
-          <button className="flex gap-[8px] whitespace-nowrap items-center bg-[#E40000] text-white font-medium px-[16px] py-[8px] rounded-[60px] cursor-pointer" >
+          <button className="flex gap-[8px] whitespace-nowrap items-center bg-[#E40000] text-white font-medium px-[16px] py-[8px] rounded-[60px] cursor-pointer"
+            onClick={() =>
+              dispatch(
+                openEventsModal({
+                  type: "CONFIRM_CLOSE_EVENT",
+                  payload: { eventId },
+                })
+              )
+            }
+            disabled={closing} >
             <span className="akar-icons--cross regular"></span>
             Close event
           </button>
 
-          <div className="text-[#147BFF] font-bold underline pt-[12px]">
-            Additional note
-          </div>
+          {event?.additionalNotes &&
+            <div className="relative inline-block group">
+              {/* Trigger */}
+              <div className="text-[#147BFF] font-bold underline pt-[12px] cursor-pointer">
+                Additional note
+              </div>
+
+              {/* Hover Content */}
+              <div className="absolute right-0 top-full w-[380px] p-[24px] rounded-[20px] shadow-[0px_4px_4px_2px_#A2A0A040] opacity-0 invisible group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 translate-y-2 transition-all duration-200 z-10 bg-[#F2F7FF] flex flex-col gap-[8px]">
+                <h4 className="font-bold text-[20px] ">Additional note</h4>
+                <p className="text-[16px] text-[#333333]">
+                  {event?.additionalNotes}
+                </p>
+              </div>
+            </div>
+          }
+
 
           <RegistrationToggle
             value={registrationEnabled}
-            onChange={()=>setRegistrationEnabled(!registrationEnabled)}
+            onChange={() => setRegistrationEnabled(!registrationEnabled)}
           />
         </div>
       </div>
@@ -102,27 +198,79 @@ export default function EventDetailsClient() {
       </div>
 
       <>
-        {activeTab === "attendees" && 
+        {activeTab === "attendees" &&
           <div className="min-h-[calc(100dvh-180px)] bg-[#F2F7FF] rounded-[20px] overflow-y-auto">
-            <Attendees eventId={eventId}/>
+            <Attendees eventId={eventId} />
           </div>
         }
         {activeTab === "memberMedia" && (
-          // <div className="">
-            <MediaUploader title="Member Media" />
-          // </div>
+          <MediaUploader
+            data={membersMediaList}
+            loading={membersMediaLoading}
+            fetched={isMembersMediaFetched}
+            onUpload={(files) =>
+              files.forEach((file) =>
+                dispatch(uploadMemberMedia({ file, eventId }))
+              )
+            }
+          />
         )}
-        {activeTab === "documents" && <MediaUploader title="Document Media" />}
+
+        {activeTab === "documents" && (
+          <MediaUploader
+            data={documentsList}
+            loading={documentsLoading}
+            fetched={isDocumentsFetched} 
+            onUpload={(files) =>
+              files.forEach((file) =>
+                dispatch(uploadDocument({ file, eventId }))
+              )
+            }
+          />
+        )}
         {activeTab === "logistics" &&
-         <div className="min-h-[calc(100dvh-180px)] bg-[#f2f7ff] rounded-[20px] overflow-y-auto mb-10 p-4">
-         <LogisticsContent/></div>}
+          <div className="min-h-[calc(100dvh-180px)] bg-[#f2f7ff] rounded-[20px] overflow-y-auto mb-10 p-4">
+            <LogisticsContent /></div>}
         {activeTab === "checklist" &&
-         <div className="min-h-[calc(100dvh-180px)] bg-[#f2f7ff] rounded-[20px] overflow-y-auto mb-10 p-4" >
-         <ChecklistContent/></div>}
-          {activeTab === "eventcosting" &&
-         <div className="min-h-[calc(100dvh-180px)] overflow-y-auto mb-10 p-4" >
-         <Eventcosting/></div>}
+          <div className="min-h-[calc(100dvh-180px)] bg-[#f2f7ff] rounded-[20px] overflow-y-auto mb-10 p-4" >
+            <ChecklistContent /></div>}
+        {activeTab === "eventcosting" &&
+          <div className="min-h-[calc(100dvh-180px)] overflow-y-auto mb-10 p-4" >
+            <Eventcosting /></div>}
       </>
+
+      {currentModal?.type === "CONFIRM_CLOSE_EVENT" && eventId && (
+        <div className="fixed inset-0 z-20 flex items-center justify-center bg-black/40" onClick={() => dispatch(closeAllEventsModals())}>
+          <div className="w-[480px] rounded-[28px] bg-white pt-[53px] pb-[40px] shadow-xl flex flex-col items-center gap-[45px]" onClick={(e) => e.stopPropagation()}>
+            <div className="text-[24px] font-[700] px-[68px] text-center">Are you sure you want to close
+              this event?</div>
+            <div className="flex gap-[80px]">
+              <button onClick={() => dispatch(closeAllEventsModals())}
+                className="rounded-full text-[20px] bg-[#999999] px-6 py-2 text-white w-[120px] cursor-pointer" >
+                Cancel
+              </button>
+
+              <button onClick={handleCloseEvent} className="rounded-full text-[20px] bg-gradient-to-r from-[#5597ED] to-[#00449C] w-[120px] px-[16px] py-[8px] text-white cursor-pointer flex items-center justify-center" >
+                {closing ? <div className="w-[20px] h-[20px] border-2 border-[white] border-t-transparent rounded-full animate-spin" /> : 'Close'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {modalStack.map((modal, index) => {
+        if (modal.type === "ATTENDEE_POPUP") {
+          return (
+            <MemberDetailsModal
+              key={index}
+              member={modal.payload}
+              onClose={() => dispatch(closeAllEventsModals())}
+            />
+          );
+        }
+
+        return null;
+      })}
 
     </div>
   );

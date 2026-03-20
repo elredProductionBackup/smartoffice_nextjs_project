@@ -12,14 +12,14 @@ import { setActiveTab,setPage  } from "@/store/events/eventsSlice";
 import Pagination from "@/_components/UI/Pagination";
 
 const EVENT_TABS = [
-  { label: "Upcoming events", value: "upcoming" },
+  { label: "Upcoming events", value: "upcomming" },
   { label: "Past events", value: "past" },
   { label: "Draft", value: "draft" },
 ];
 
 export default function EventsPageClient() {
   const searchParams = useSearchParams();
-  const tab = searchParams.get("tab") || "upcoming";
+  const tab = searchParams.get("tab") || 'upcomming';
   const urlPage = Number(searchParams.get("page")) || 1;
   const dispatch = useDispatch();
 
@@ -46,7 +46,7 @@ export default function EventsPageClient() {
 
       <ActionableTabs
         tabs={EVENT_TABS}
-        defaultTab="upcoming"
+        defaultTab="upcomming"
         events={true}
       />
 
