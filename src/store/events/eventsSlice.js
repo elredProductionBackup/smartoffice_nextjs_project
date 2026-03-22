@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { closeEventThunk, fetchCollaborators, fetchDocuments, fetchEventDetails, fetchEventMembers, fetchEvents, fetchMasterConfig, fetchMembersMedia, saveMasterConfig, uploadDocument, uploadMemberMedia } from "./eventsThunks";
+import { closeEventThunk, deleteDocument, deleteMembersMedia, fetchCollaborators, fetchDocuments, fetchEventDetails, fetchEventMembers, fetchEvents, fetchMasterConfig, fetchMembersMedia, saveMasterConfig, uploadDocument, uploadMemberMedia } from "./eventsThunks";
 import moment from "moment";
 
 const initialState = {
@@ -31,11 +31,13 @@ const initialState = {
   membersPage: 1,
   membersFetched: false,
 
-  membersMediaMap: {},        // { [eventId]: [] }
-  membersMediaFetched: {},    // { [eventId]: true }
+  membersMediaMap: {},
+  membersMediaUploadingCount: {},
+  membersMediaFetched: {},
   membersMediaLoading: false,
 
   documentsMap: {},
+  documentsUploadingCount: {},
   documentsFetched: {},
   documentsLoading: false,
 
@@ -276,13 +278,15 @@ const eventSlice = createSlice({
         console.error("Close event failed:", action.payload);
       })
       // ================= MEMBERS MEDIA =================
-.addCase(fetchMembersMedia.pending, (state, action) => {
-  const eventId = action.meta.arg.eventId;
+      .addCase(fetchMembersMedia.pending, (state, action) => {
+        const eventId = action.meta.arg.eventId;
 
-  if (!state.membersMediaFetched[eventId]) {
-    state.membersMediaLoading = true;
-  }
-})
+        const existing = state.membersMediaMap[eventId];
+
+        if (!existing || existing.length === 0) {
+          state.membersMediaLoading = true;
+        }
+      })
       .addCase(fetchMembersMedia.fulfilled, (state, action) => {
         const { eventId, list } = action.payload;
 
@@ -293,21 +297,68 @@ const eventSlice = createSlice({
       .addCase(fetchMembersMedia.rejected, (state) => {
         state.membersMediaLoading = false;
       })
+      .addCase(uploadMemberMedia.pending, (state, action) => {
+        const { eventId, files } = action.meta.arg;
 
-      // Upload → refresh list
-      .addCase(uploadMemberMedia.fulfilled, (state) => {
-        state.membersMediaFetched = false;
+        if (!state.membersMediaUploadingCount[eventId]) {
+          state.membersMediaUploadingCount[eventId] = 0;
+        }
+
+        state.membersMediaUploadingCount[eventId] += files.length;
       })
 
+      .addCase(uploadMemberMedia.fulfilled, (state, action) => {
+        const { eventId, files } = action.meta.arg;
 
+        // 🔥 normalize order (same as documents)
+        const items = (action.payload?.result?.flat() || [])
+          .slice()
+          .reverse();
+
+        if (!state.membersMediaMap[eventId]) {
+          state.membersMediaMap[eventId] = [];
+        }
+
+        const existing = state.membersMediaMap[eventId];
+
+        // ✅ remove shimmer count
+        state.membersMediaUploadingCount[eventId] -= files.length;
+
+        // ✅ filter duplicates
+        const newItems = items.filter(
+          (newItem) =>
+            !existing.some((m) => m.fileURL === newItem.fileURL)
+        );
+
+        // ✅ prepend (correct order)
+        state.membersMediaMap[eventId] = [...newItems, ...existing];
+
+        state.membersMediaFetched[eventId] = true;
+      })
+
+      .addCase(uploadMemberMedia.rejected, (state, action) => {
+        const { eventId, files } = action.meta.arg || {};
+
+        if (eventId && files) {
+          state.membersMediaUploadingCount[eventId] -= files.length;
+        }
+
+        console.log(
+          "Upload Member Media Failed:",
+          action.payload || action.error
+        );
+      })
       // ================= DOCUMENTS =================
-.addCase(fetchDocuments.pending, (state, action) => {
-  const eventId = action.meta.arg.eventId;
+      .addCase(fetchDocuments.pending, (state, action) => {
+        const eventId = action.meta.arg.eventId;
 
-  if (!state.documentsFetched[eventId]) {
-    state.documentsLoading = true;
-  }
-})
+        const existing = state.documentsMap[eventId];
+
+        if (!existing || existing.length === 0) {
+          state.documentsLoading = true;
+        }
+      })
+
       .addCase(fetchDocuments.fulfilled, (state, action) => {
         const { eventId, list } = action.payload;
 
@@ -315,14 +366,82 @@ const eventSlice = createSlice({
         state.documentsFetched[eventId] = true;
         state.documentsLoading = false;
       })
+
       .addCase(fetchDocuments.rejected, (state) => {
         state.documentsLoading = false;
       })
 
-      // Upload → refresh list
-      .addCase(uploadDocument.fulfilled, (state) => {
-        state.documentsFetched = false;
-      });
+
+      .addCase(uploadDocument.pending, (state, action) => {
+        const { eventId, files } = action.meta.arg;
+
+        if (!state.documentsUploadingCount[eventId]) {
+          state.documentsUploadingCount[eventId] = 0;
+        }
+
+        state.documentsUploadingCount[eventId] += files.length;
+      })
+      .addCase(uploadDocument.fulfilled, (state, action) => {
+        const { eventId, files } = action.meta.arg;
+
+        const items = (action.payload?.result?.flat() || [])
+          .slice()
+          .reverse();
+
+        if (!state.documentsMap[eventId]) {
+          state.documentsMap[eventId] = [];
+        }
+
+        const existing = state.documentsMap[eventId];
+
+        state.documentsUploadingCount[eventId] -= files.length;
+
+        const newItems = items.filter(
+          (newItem) =>
+            !existing.some((m) => m.fileURL === newItem.fileURL)
+        );
+
+        state.documentsMap[eventId] = [...newItems, ...existing];
+
+        state.documentsFetched[eventId] = true;
+      })
+      .addCase(uploadDocument.rejected, (state, action) => {
+        const { eventId, files } = action.meta.arg || {};
+
+        if (eventId && files) {
+          state.documentsUploadingCount[eventId] -= files.length;
+        }
+
+        console.log("Upload Document Failed:", action.payload || action.error);
+      })
+      .addCase(deleteMembersMedia.fulfilled, (state, action) => {
+        const { eventId, deleteURL } = action.payload;
+
+        if (!state.membersMediaMap[eventId]) return;
+
+        state.membersMediaMap[eventId] = state.membersMediaMap[eventId].filter(
+          (item) => item.fileURL !== deleteURL
+        );
+      })
+
+      .addCase(deleteMembersMedia.rejected, (state, action) => {
+        console.log("Delete Member Media Failed:", action.payload || action.error);
+      })
+
+      .addCase(deleteDocument.fulfilled, (state, action) => {
+        const { eventId, deleteURL } = action.payload;
+
+        if (!state.documentsMap[eventId]) return;
+
+        state.documentsMap[eventId] = state.documentsMap[eventId].filter(
+          (item) => item.fileURL !== deleteURL
+        );
+      })
+
+      .addCase(deleteDocument.rejected, (state, action) => {
+        console.log("Delete Document Failed:", action.payload || action.error);
+      })
+
   },
 });
 

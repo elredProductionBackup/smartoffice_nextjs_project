@@ -16,8 +16,9 @@ import { useDispatch, useSelector } from "react-redux";
 import moment from "moment";
 import Eventcosting from "@/_components/Eventcosting";
 import { closeAllEventsModals, openEventsModal } from "@/store/events/eventsUiSlice";
-import { closeEventThunk, fetchDocuments, fetchEventDetails, fetchMembersMedia, uploadDocument, uploadMemberMedia } from "@/store/events/eventsThunks";
+import { closeEventThunk, deleteDocument, deleteMembersMedia, fetchDocuments, fetchEventDetails, fetchMembersMedia, uploadDocument, uploadMemberMedia } from "@/store/events/eventsThunks";
 import MemberDetailsModal from "@/_components/MemberDetailsModal";
+import DeleteMediaConfirm from "@/_components/EventsComps/DeleteMediaConfirm";
 
 export default function EventDetailsClient() {
   const params = useParams();
@@ -37,10 +38,10 @@ export default function EventDetailsClient() {
   const activeTab = searchParams.get("tab") || "attendees";
 
   const {
-  membersMediaMap,
-  membersMediaFetched,
-  documentsMap,
-  documentsFetched,
+    membersMediaMap,
+    membersMediaFetched,
+    documentsMap,
+    documentsFetched,
     membersMediaLoading,
     documentsLoading
   } = useSelector((state) => state.events);
@@ -55,21 +56,20 @@ export default function EventDetailsClient() {
     (state) => state.events.eventDetailsMap[eventId]
   )
 
+
+  useEffect(() => {
+    if (activeTab === "memberMedia") {
+      dispatch(fetchMembersMedia({ eventId }));
+    }
+    if (activeTab === "documents") {
+      dispatch(fetchDocuments({ eventId }));
+    }
+  }, [activeTab, eventId, isMembersMediaFetched, isDocumentsFetched, dispatch]);
   useEffect(() => {
     if (eventId) {
       dispatch(fetchEventDetails({ eventId }));
     }
   }, [eventId]);
-
-useEffect(() => {
-  if (activeTab === "memberMedia" && !isMembersMediaFetched) {
-    dispatch(fetchMembersMedia({ eventId }));
-  }
-
-  if (activeTab === "documents" && !isDocumentsFetched) {
-    dispatch(fetchDocuments({ eventId }));
-  }
-}, [activeTab, eventId, isMembersMediaFetched, isDocumentsFetched, dispatch]);
 
   const start = moment(event?.startDateTime).local();
   const end = moment(event?.endDateTime).local();
@@ -203,31 +203,33 @@ useEffect(() => {
             <Attendees eventId={eventId} />
           </div>
         }
-        {activeTab === "memberMedia" && (
+
+        {activeTab === "memberMedia" &&
           <MediaUploader
             data={membersMediaList}
             loading={membersMediaLoading}
             fetched={isMembersMediaFetched}
+            eventId={eventId}
+            type="media"
             onUpload={(files) =>
-              files.forEach((file) =>
-                dispatch(uploadMemberMedia({ file, eventId }))
-              )
+              dispatch(uploadMemberMedia({ files, eventId })).unwrap()
             }
           />
-        )}
+        }
 
-        {activeTab === "documents" && (
+        {activeTab === "documents" &&
           <MediaUploader
             data={documentsList}
             loading={documentsLoading}
-            fetched={isDocumentsFetched} 
+            fetched={isDocumentsFetched}
+            eventId={eventId}
+            type="document"
             onUpload={(files) =>
-              files.forEach((file) =>
-                dispatch(uploadDocument({ file, eventId }))
-              )
+              dispatch(uploadDocument({ files, eventId })).unwrap()
             }
           />
-        )}
+        }
+
         {activeTab === "logistics" &&
           <div className="min-h-[calc(100dvh-180px)] bg-[#f2f7ff] rounded-[20px] overflow-y-auto mb-10 p-4">
             <LogisticsContent /></div>}
@@ -264,6 +266,16 @@ useEffect(() => {
             <MemberDetailsModal
               key={index}
               member={modal.payload}
+              onClose={() => dispatch(closeAllEventsModals())}
+            />
+          );
+        }
+
+        if (modal.type === "DELETE_MEDIA_CONFIRM") {
+          return (
+            <DeleteMediaConfirm
+              key={index}
+              payload={modal.payload}
               onClose={() => dispatch(closeAllEventsModals())}
             />
           );

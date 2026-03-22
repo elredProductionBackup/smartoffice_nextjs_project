@@ -104,9 +104,13 @@ export const closeEvent = ({ eventId }) => {
 };
 
 // Add Members Media
-export const addMemberMedia = ({ mediaFile, eventId }) => {
+export const addMemberMedia = ({ mediaFiles, eventId }) => {
   const formData = new FormData();
-  formData.append("mediaFile", mediaFile);
+
+  mediaFiles.forEach((file) => {
+    formData.append("mediaFile", file);
+  });
+
   formData.append("eventId", eventId);
 
   return api.post("/smartOffice/addMemberMedia", formData, {
@@ -117,9 +121,13 @@ export const addMemberMedia = ({ mediaFile, eventId }) => {
 };
 
 // Add Document
-export const addDocument = ({ documentFile, eventId }) => {
+export const addDocument = ({ documentFiles, eventId }) => {
   const formData = new FormData();
-  formData.append("documentFile", documentFile);
+
+  documentFiles.forEach((file) => {
+    formData.append("documentFile", file);
+  });
+
   formData.append("eventId", eventId);
 
   return api.post("/smartOffice/addDocument", formData, {

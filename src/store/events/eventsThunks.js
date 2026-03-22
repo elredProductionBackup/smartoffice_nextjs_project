@@ -1,6 +1,6 @@
 // redux/events/eventThunks.js
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { addDocument, addMemberMedia, closeEvent, getEventDetails, getEventMembers, getEventsList, getMasterList, getMembersMedia, getMyDocuments, updateMasterList  } from "@/services/events.service";
+import { addDocument, addMemberMedia, closeEvent, deleteMemberMedia, deleteMyDocument, getEventDetails, getEventMembers, getEventsList, getMasterList, getMembersMedia, getMyDocuments, updateMasterList  } from "@/services/events.service";
 
 import { getCollaborators } from "@/services/actionable.service";
 
@@ -175,7 +175,7 @@ export const closeEventThunk = createAsyncThunk(
 // Fetch Member Media
 export const fetchMembersMedia = createAsyncThunk(
   "media/fetchMembersMedia",
-  async ({ eventId, page = 1, limit = 10 }, { rejectWithValue }) => {
+  async ({ eventId, page = 1, limit = 30 }, { rejectWithValue }) => {
     try {
       const start = (page - 1) * limit + 1;
       const offset = limit;
@@ -185,7 +185,7 @@ export const fetchMembersMedia = createAsyncThunk(
       return {
         eventId, 
         list: res.data?.result || [],
-        total: res.data?.totalCount || 0,
+        total: res.data?.memberMediaFileCount || 0,
       };
     } catch (err) {
       return rejectWithValue(
@@ -198,7 +198,7 @@ export const fetchMembersMedia = createAsyncThunk(
 // Fetch Documents
 export const fetchDocuments = createAsyncThunk(
   "media/fetchDocuments",
-  async ({ eventId, page = 1, limit = 10 }, { rejectWithValue }) => {
+  async ({ eventId, page = 1, limit = 20 }, { rejectWithValue }) => {
     try {
       const start = (page - 1) * limit + 1;
       const offset = limit;
@@ -208,7 +208,7 @@ export const fetchDocuments = createAsyncThunk(
       return {
         eventId,
         list: res.data?.result || [],
-        total: res.data?.totalCount || 0,
+        total: res.data?.documentFileCount || 0,
       };
     } catch (err) {
       return rejectWithValue(
@@ -221,10 +221,10 @@ export const fetchDocuments = createAsyncThunk(
 // Upload Member Media
 export const uploadMemberMedia = createAsyncThunk(
   "media/uploadMemberMedia",
-  async ({ file, eventId }, { rejectWithValue }) => {
+  async ({ files, eventId }, { rejectWithValue }) => {
     try {
       const res = await addMemberMedia({
-        mediaFile: file,
+        mediaFiles: files,
         eventId,
       });
       return res.data;
@@ -236,16 +236,43 @@ export const uploadMemberMedia = createAsyncThunk(
   }
 );
 
-// Upload Document
 export const uploadDocument = createAsyncThunk(
   "media/uploadDocument",
-  async ({ file, eventId }, { rejectWithValue }) => {
+  async ({ files, eventId }, { rejectWithValue }) => {
     try {
       const res = await addDocument({
-        documentFile: file,
+        documentFiles: files,
         eventId,
       });
       return res.data;
+    } catch (err) {
+      return rejectWithValue(
+        err?.response?.data?.message || err.message
+      );
+    }
+  }
+);
+
+export const deleteMembersMedia = createAsyncThunk(
+  "media/deleteMembersMedia",
+  async ({ eventId, deleteURL }, { rejectWithValue }) => {
+    try {
+      const res = await deleteMemberMedia({ eventId, deleteURL });
+      return { eventId, deleteURL, data: res.data };
+    } catch (err) {
+      return rejectWithValue(
+        err?.response?.data?.message || err.message
+      );
+    }
+  }
+);
+
+export const deleteDocument = createAsyncThunk(
+  "media/deleteDocument",
+  async ({ eventId, deleteURL }, { rejectWithValue }) => {
+    try {
+      const res = await deleteMyDocument({ eventId, deleteURL });
+      return { eventId, deleteURL, data: res.data };
     } catch (err) {
       return rejectWithValue(
         err?.response?.data?.message || err.message

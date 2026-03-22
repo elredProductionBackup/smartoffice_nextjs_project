@@ -1,53 +1,95 @@
 "use client";
+import { openEventsModal } from "@/store/events/eventsUiSlice";
 import Image from "next/image";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 
 export default function MediaUploader({
   data = [],
   loading = false,
   fetched = false,
-  accept = "image/png, image/jpeg, image/jpg",
+  accept = "image/png, image/jpeg, image/jpg, application/pdf",
   onUpload,
+  eventId,
+  type,
 }) {
-
   const inputRef = useRef(null);
+  const dispatch = useDispatch();
+
+  // ✅ get shimmer count from redux
+  const uploadingCount = useSelector((state) =>
+    type === "document"
+      ? state.events.documentsUploadingCount?.[eventId] || 0
+      : state.events.membersMediaUploadingCount?.[eventId] || 0
+  );
+
+  // ❌ keep files ONLY for temporary control (no UI usage)
   const [files, setFiles] = useState([]);
 
   const handleFiles = (e) => {
     const selected = Array.from(e.target.files || []);
 
-    const validFiles = selected.filter(
-      (file) =>
-        file.type === "image/png" || file.type === "image/jpeg" ||
-        file.type === "image/jpg"
-    );
+const validFiles = selected.filter((file) =>
+  [
+    "image/png",
+    "image/jpeg",
+    "image/jpg",
+    "application/pdf",
+  ].includes(file.type)
+);
 
-    const mapped = validFiles.map((file) => ({
-      id: crypto.randomUUID(),
-      file,
-      preview: URL.createObjectURL(file),
-    }));
+    if (!validFiles.length) return;
 
-    setFiles((prev) => [...prev, ...mapped]);
+    // just track count, not preview
+    setFiles((prev) => [...prev, ...validFiles]);
 
-    if (onUpload) onUpload(validFiles);
+    if (onUpload) {
+      onUpload(validFiles)
+        .then(() => {
+          setFiles([]);
+        })
+        .catch(() => {
+          setFiles([]);
+        });
+    }
   };
 
-  if (loading && !fetched) {
-  return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-[35px]">
-      {Array.from({ length: 3 }).map((_, i) => (
-        <div
-          key={i}
-          className="aspect-square rounded-[16px] bg-[#E5E7EB] animate-pulse"
-        />
-      ))}
-    </div>
-  );
-}
+  const handleDelete = (item) => {
+    dispatch(
+      openEventsModal({
+        type: "DELETE_MEDIA_CONFIRM",
+        payload: {
+          item: {
+            ...item,
+            eventId,
+            type,
+          },
+        },
+      })
+    );
+  };
+
+  // ✅ shimmer + api data (NO local preview)
+  const displayList = [
+    ...Array(uploadingCount).fill({ isShimmer: true }),
+    ...data,
+  ];
+
+  if (!fetched && data.length === 0 && uploadingCount === 0) {
+    return (
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-[35px]">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div
+            key={i}
+            className="aspect-square rounded-[16px] bg-[#E5E7EB] animate-pulse"
+          />
+        ))}
+      </div>
+    );
+  }
 
   return (
-    <div className="w-full max-w-[1600px]">
+    <div className="w-full max-w-[1600px] bg-[salmon]">
       <input
         ref={inputRef}
         type="file"
@@ -57,16 +99,18 @@ export default function MediaUploader({
         onChange={handleFiles}
       />
 
-     {fetched && [...data, ...files].length === 0 ?  (
+      {fetched && displayList.length === 0 ? (
         <div className="flex justify-center items-center py-[50px]">
           <button
             onClick={() => inputRef.current?.click()}
-            className="w-[180px] aspect-square border-[1px] border-[#147BFF] rounded-[16px] flex flex-col items-center justify-center text-[#667085] bg-[#F2F7FF] gap-[10px] cursor-pointer"
+            className="w-[180px] aspect-square border-[1px] border-[#147BFF] rounded-[16px] flex flex-col items-center justify-center text-[#667085] bg-[#F2F7FF] gap-[10px]"
           >
             <div className="h-[50px] w-[50px] rounded-full bg-[#D3E3FD] text-[#0B57D0] grid place-items-center">
               <span className="solar--add-folder-bold"></span>
             </div>
-            <span className="font-[600] px-[10px] text-[#000]">Add media/ documents</span>
+            <span className="font-[600] px-[10px] text-[#000]">
+              Add media/ documents
+            </span>
           </button>
         </div>
       ) : (
@@ -74,26 +118,34 @@ export default function MediaUploader({
           {/* Upload Card */}
           <button
             onClick={() => inputRef.current?.click()}
-            className="aspect-square border-[1px] border-[#147BFF] rounded-[16px] flex flex-col items-center justify-center text-[#667085] bg-[#F2F7FF] gap-[10px] cursor-pointer"
+            className="aspect-square border-[1px] border-[#147BFF] rounded-[16px] flex flex-col items-center justify-center text-[#667085] bg-[#F2F7FF] gap-[10px]"
           >
             <div className="h-[50px] w-[50px] rounded-full bg-[#D3E3FD] text-[#0B57D0] grid place-items-center">
               <span className="solar--add-folder-bold"></span>
             </div>
-            <span className="font-[600] px-[15px] text-[#000]">Add media/ documents</span>
+            <span className="font-[600] px-[15px] text-[#000]">
+              Add media/ documents
+            </span>
           </button>
 
-          {[...data, ...files].map((item, index) => {
-            const src =
-              item.preview ||
-              item.fileURL ||
-              item.previewURL;
+          {displayList.map((item, index) => {
+            // ✅ shimmer UI
+            if (item.isShimmer) {
+              return (
+                <div
+                  key={`shimmer-${index}`}
+                  className="aspect-square rounded-[16px] bg-[#E5E7EB] animate-pulse"
+                />
+              );
+            }
 
-            if (!src) return null; // safety
+            const src = item.fileURL || item.previewURL;
+            if (!src) return null;
 
             return (
               <div
-                key={item.id || index}
-                className="relative aspect-square rounded-[16px] overflow-hidden bg-[#F2F4F7]"
+                key={item._id || item.fileURL}
+                className="relative aspect-square rounded-[16px] overflow-hidden bg-[#F2F4F7] group"
               >
                 <Image
                   src={src}
@@ -101,6 +153,13 @@ export default function MediaUploader({
                   fill
                   className="object-cover"
                 />
+
+                <button
+                  onClick={() => handleDelete(item)}
+                  className="absolute bottom-[12px] right-[12px] w-[30px] h-[30px] rounded-[9px] bg-[#8080804D] text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition backdrop-blur-[3.7px]"
+                >
+                  <span className="fluent--delete-12-filled"></span>
+                </button>
               </div>
             );
           })}
