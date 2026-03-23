@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-
+import moment from "moment";
 import {
   fetchCollaborators,
   fetchEventMembers,
@@ -19,7 +19,6 @@ import {
   fetchEventTaskSummaries
 } from "@/store/events/eventsThunks";
 
-import moment from "moment";
 const initialState = {
   groupedEvents: [],
   rawEvents: [],
