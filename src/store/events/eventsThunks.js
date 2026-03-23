@@ -1,6 +1,15 @@
 // redux/events/eventThunks.js
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { addDocument, addMemberMedia, closeEvent, deleteMemberMedia, deleteMyDocument, getEventDetails, getEventMembers, getEventsList, getMasterList, getMembersMedia, getMyDocuments, updateMasterList  } from "@/services/events.service";
+import { getEventMembers, getEventsList, getMasterList, updateMasterList } from "@/services/events.service";
+import {
+  getActionables,
+  addActionable,
+  deleteActionable,
+  addComment,
+  deleteComment,
+  addSubTask,
+  deleteSubTask
+} from "@/services/actionable.service";
 
 import { addActionable, addComment, addSubTask, deleteActionable, deleteComment, deleteSubTask, getActionables, getCollaborators } from "@/services/actionable.service";
 
@@ -286,6 +295,31 @@ export const deleteDocument = createAsyncThunk(
 
 // ─── Event Checklist Thunks (Actionables within an Event) ─────────────────────
 
+// ─── localStorage helpers for persisting completed states per event ────────────
+const COMPLETED_KEY = (eventId) => `checklist_completed_${eventId}`;
+
+export const loadPersistedCompleted = (eventId) => {
+  try {
+    const raw = localStorage.getItem(COMPLETED_KEY(eventId));
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+};
+
+export const persistCompleted = (eventId, actionableId, isCompleted) => {
+  try {
+    const map = loadPersistedCompleted(eventId);
+    if (isCompleted) {
+      map[actionableId] = true;
+    } else {
+      delete map[actionableId];
+    }
+    localStorage.setItem(COMPLETED_KEY(eventId), JSON.stringify(map));
+  } catch {}
+};
+// ──────────────────────────────────────────────────────────────────────────────
+
 export const fetchEventChecklist = createAsyncThunk(
   "events/fetchEventChecklist",
   async ({ eventId, page = 1, limit = 100 }, { rejectWithValue }) => {
@@ -298,12 +332,84 @@ export const fetchEventChecklist = createAsyncThunk(
         offset: limit,
         eventId,
       });
+
+      // Merge persisted completed states so checked tasks survive page refresh
+      const completedMap = loadPersistedCompleted(eventId);
+      const list = (res.data.result || []).map((item) => {
+        const id = item.actionableId || item._id || item.id;
+        if (completedMap[id]) {
+          return { ...item, isCompleted: true };
+        }
+        return item;
+      });
+
       return {
-        list: res.data.result || [],
+        list,
         total: res.data?.totalEventsCount || 0,
+        eventId, // pass eventId to the slicer
       };
     } catch (err) {
       return rejectWithValue(err?.response?.data?.message || err.message);
+    }
+  }
+);
+
+export const fetchEventTaskSummaries = createAsyncThunk(
+  "events/fetchEventTaskSummaries",
+  async ({ eventIds }, { rejectWithValue }) => {
+    try {
+      const networkClusterCode = localStorage.getItem("networkClusterCode");
+      const summaries = {};
+
+      await Promise.all(
+        eventIds.map(async (eventId) => {
+          try {
+            const res = await getActionables({
+              networkClusterCode,
+              start: 1,
+              offset: 100,
+              eventId,
+            });
+
+            const completedMap = loadPersistedCompleted(eventId);
+            const taskList = (res.data.result || []).map((item) => {
+              const id = item.actionableId || item._id || item.id;
+              if (completedMap[id]) {
+                return { ...item, isCompleted: true };
+              }
+              return item;
+            });
+
+            // Replicated calculation logic
+            const summary = {
+              hard: { completed: 0, total: 0 },
+              medium: { completed: 0, total: 0 },
+              easy: { completed: 0, total: 0 },
+            };
+
+            taskList.forEach((task) => {
+              let key = "easy";
+              const cat = (task.category || task.priority || "").toLowerCase();
+              if (cat.includes("very") || cat === "hard") key = "hard";
+              else if (cat.includes("mildly") || cat === "medium") key = "medium";
+              else if (cat.includes("easy") || cat === "easy") key = "easy";
+              else return;
+
+              summary[key].total++;
+              const isDone = task.isCompleted === true || task.isCompleted === "true";
+              if (isDone) summary[key].completed++;
+            });
+
+            summaries[eventId] = summary;
+          } catch {
+            // silent fail for individual event
+          }
+        })
+      );
+
+      return summaries;
+    } catch (err) {
+      return rejectWithValue(err.message);
     }
   }
 );
@@ -314,11 +420,11 @@ export const createEventActionable = createAsyncThunk(
     try {
       const networkClusterCode = localStorage.getItem("networkClusterCode");
       const { tempId, eventMeta, ...rest } = payload;
-      const res = await addActionable({ 
-        ...rest, 
-      networkClusterCode,
+      const res = await addActionable({
+        ...rest,
+        networkClusterCode,
         // linkedEvent: [eventMeta], 
-        actionableId: "" 
+        actionableId: ""
       });
       return { item: res.data.result[0], tempId };
     } catch (err) {
