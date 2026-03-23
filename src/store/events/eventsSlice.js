@@ -20,7 +20,6 @@ import {
   fetchEventDetails,
   closeEventThunk
 } from "./eventsThunks";
-import moment from "moment";
 
 const initialState = {
   groupedEvents: [],
