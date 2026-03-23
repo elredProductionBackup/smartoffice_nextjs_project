@@ -16,7 +16,7 @@ import { useDispatch, useSelector } from "react-redux";
 import moment from "moment";
 import Eventcosting from "@/_components/Eventcosting";
 import { closeAllEventsModals, openEventsModal } from "@/store/events/eventsUiSlice";
-import { closeEventThunk, deleteDocument, deleteMembersMedia, fetchDocuments, fetchEventDetails, fetchMembersMedia, uploadDocument, uploadMemberMedia } from "@/store/events/eventsThunks";
+import { closeEventThunk, fetchDocuments, fetchEventDetails, fetchMembersMedia, uploadDocument, uploadMemberMedia } from "@/store/events/eventsThunks";
 import MemberDetailsModal from "@/_components/MemberDetailsModal";
 import DeleteMediaConfirm from "@/_components/EventsComps/DeleteMediaConfirm";
 import { useRef } from "react";
@@ -42,17 +42,8 @@ export default function EventDetailsClient() {
 
   // ================= REDUX STATE =================
   const {
-    membersMediaMap,
-    membersMediaFetched,
-    membersMediaLoading,
-    membersMediaPage,
-    membersMediaTotal,
-
-    documentsMap,
-    documentsFetched,
-    documentsLoading,
-    documentsPage,
-    documentsTotal,
+    membersMediaMap, membersMediaFetched, membersMediaLoading, membersMediaPage, membersMediaTotal,
+    documentsMap, documentsFetched, documentsLoading, documentsPage, documentsTotal,
   } = useSelector((state) => state.events);
 
   const modalStack = useSelector((state) => state.eventsUi.modalStack);
@@ -122,15 +113,17 @@ export default function EventDetailsClient() {
   });
 
   // ================= DATA FETCH =================
-  useEffect(() => {
-    if (activeTab === "memberMedia" && !isMembersMediaFetched) {
-      dispatch(fetchMembersMedia({ eventId, page: 1, limit: 20 }));
-    }
+useEffect(() => {
+  if (!eventId) return;
 
-    if (activeTab === "documents" && !isDocumentsFetched) {
-      dispatch(fetchDocuments({ eventId, page: 1, limit: 20 }));
-    }
-  }, [activeTab, eventId]);
+  if (activeTab === "memberMedia") {
+    dispatch(fetchMembersMedia({ eventId, page: 1, limit: 20 }));
+  }
+
+  if (activeTab === "documents") {
+    dispatch(fetchDocuments({ eventId, page: 1, limit: 20 }));
+  }
+}, [activeTab, eventId]);
 
   useEffect(() => {
     if (eventId) {
@@ -141,6 +134,7 @@ export default function EventDetailsClient() {
   // ================= DATE =================
   const start = moment(event?.startDateTime).local();
   const end = moment(event?.endDateTime).local();
+  const isPast = moment(event?.startDateTime).isBefore(moment());
 
   const dateRange = `${start.format("ddd DD MMM YYYY")} - ${end.format(
     "ddd DD MMM YYYY"
@@ -173,7 +167,7 @@ export default function EventDetailsClient() {
   }
 
   return (
-    <div className="h-[calc(100vh-80px)] flex flex-col gap-[20px] overflow-y-auto relative pb-[20px]"  ref={containerRef}>
+    <div className="h-[calc(100vh-80px)] flex flex-col gap-[20px] overflow-y-auto relative pb-[20px]" ref={containerRef}>
 
       <div className="bg-white rounded-2xl pt-6 flex justify-between gap-[105px] w-full relative z-[15]">
         <div className="flex-1 flex gap-[40px]">
@@ -186,7 +180,7 @@ export default function EventDetailsClient() {
               <div className="text-[36px] font-semibold flex items-center gap-[20px]">
                 <span className="maki--arrow rotate-180 inline-block cursor-pointer"
                   onClick={() => {
-                    const isPast = moment(event?.startDateTime).isBefore(moment());
+                    // const isPast = moment(event?.startDateTime).isBefore(moment());
 
                     if (isPast) {
                       router.push("/dashboard/events?tab=past");
@@ -225,20 +219,24 @@ export default function EventDetailsClient() {
         </div>
 
         <div className="flex flex-col items-start justify-between">
-          <button className="flex gap-[8px] whitespace-nowrap items-center bg-[#E40000] text-white font-medium px-[16px] py-[8px] rounded-[60px] cursor-pointer"
-            onClick={() =>
+          <button
+            className={`flex gap-[8px] whitespace-nowrap items-center bg-[#E40000] text-white font-medium px-[16px] py-[8px] rounded-[60px]
+              ${isPast ? "cursor-not-allowed opacity-60" : "cursor-pointer"}
+            `}
+            onClick={() => {
+              if (isPast) return;
               dispatch(
                 openEventsModal({
                   type: "CONFIRM_CLOSE_EVENT",
                   payload: { eventId },
                 })
-              )
-            }
-            disabled={closing} >
+              );
+            }}
+            disabled={closing || isPast}
+          >
             <span className="akar-icons--cross regular"></span>
             Close event
           </button>
-
           {event?.additionalNotes &&
             <div className="relative inline-block group">
               {/* Trigger */}
@@ -276,37 +274,37 @@ export default function EventDetailsClient() {
         }
 
         {activeTab === "memberMedia" &&
-                 <>
-          <MediaUploader
-            data={membersMediaList}
-            loading={membersMediaLoading}
-            fetched={isMembersMediaFetched}
-            eventId={eventId}
-            type="media"
-            onUpload={(files) =>
-              dispatch(uploadMemberMedia({ files, eventId })).unwrap()
-            }
-            
-            />
-             <div ref={membersMediaRef} style={{ height: "1px" }} />
-            </>
-        }
-{activeTab === "documents" && (
-  <>
-    <MediaUploader
-      data={documentsList}
-      loading={documentsLoading}
-      fetched={isDocumentsFetched}
-      eventId={eventId}
-      type="document"
-      onUpload={(files) =>
-        dispatch(uploadDocument({ files, eventId })).unwrap()
-      }
-    />
+          <>
+            <MediaUploader
+              data={membersMediaList}
+              loading={membersMediaLoading}
+              fetched={isMembersMediaFetched}
+              eventId={eventId}
+              type="media"
+              onUpload={(files) =>
+                dispatch(uploadMemberMedia({ files, eventId })).unwrap()
+              }
 
-    <div ref={documentsRef} style={{ height: "1px" }} />
-  </>
-)}
+            />
+            <div ref={membersMediaRef} style={{ height: "1px" }} />
+          </>
+        }
+        {activeTab === "documents" && (
+          <>
+            <MediaUploader
+              data={documentsList}
+              loading={documentsLoading}
+              fetched={isDocumentsFetched}
+              eventId={eventId}
+              type="document"
+              onUpload={(files) =>
+                dispatch(uploadDocument({ files, eventId })).unwrap()
+              }
+            />
+
+            <div ref={documentsRef} style={{ height: "1px" }} />
+          </>
+        )}
 
         {activeTab === "logistics" &&
           <div className="min-h-[calc(100dvh-180px)] bg-[#f2f7ff] rounded-[20px] overflow-y-auto mb-10 p-4">
