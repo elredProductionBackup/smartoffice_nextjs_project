@@ -284,7 +284,7 @@ export const deleteDocument = createAsyncThunk(
 );
 
 
-// ─── Event Checklist Thunks (Actionables within an Event) ─────────────────────
+// ─── Event Checklist Thunks ─────────────────────
 
 export const fetchEventChecklist = createAsyncThunk(
   "events/fetchEventChecklist",
