@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { closeEventThunk, createEventActionable, createEventComment, createEventSubTask, deleteDocument, deleteMembersMedia, fetchCollaborators, fetchDocuments, fetchEventChecklist, fetchEventDetails, fetchEventMembers, fetchEvents, fetchMasterConfig, fetchMembersMedia, removeEventActionable, removeEventComment, removeEventSubTask, saveMasterConfig, toggleEventActionable, updateEventActionable, updateEventSubTask, uploadDocument, uploadMemberMedia } from "./eventsThunks";
+import { closeEventThunk, createEventActionable, createEventComment, createEventSubTask, deleteDocument, deleteMembersMedia, fetchCollaborators, fetchDocuments, fetchEventChecklist, fetchEventDetails, fetchEventMembers, fetchEvents, fetchEventTaskSummaries, fetchMasterConfig, fetchMembersMedia, removeEventActionable, removeEventComment, removeEventSubTask, saveMasterConfig, toggleEventActionable, updateEventActionable, updateEventSubTask, uploadDocument, uploadMemberMedia } from "./eventsThunks";
 import moment from "moment";
 
 const initialState = {
@@ -628,11 +628,16 @@ const eventSlice = createSlice({
           if (item && item.comments) {
             item.comments = item.comments.filter(c => c._id !== commentId);
           }
-        });
+        })
+      .addCase(fetchEventTaskSummaries.fulfilled, (state, action) => {
+        state.eventTaskSummaries = {
+          ...state.eventTaskSummaries,
+          ...action.payload,
+        };
+      })
 
   },
 });
-
 export const { setPage, setSearch, setActiveTab, resetEventsState, setChecklistMaster, setPointsMaster, setSelectedEvent,localToggleChecklist } =
   eventSlice.actions;
 
