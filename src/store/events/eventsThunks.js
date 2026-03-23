@@ -197,9 +197,70 @@ export const fetchEventChecklist = createAsyncThunk(
       return {
         list,
         total: res.data?.totalEventsCount || 0,
+        eventId, // pass eventId to the slicer
       };
     } catch (err) {
       return rejectWithValue(err?.response?.data?.message || err.message);
+    }
+  }
+);
+
+export const fetchEventTaskSummaries = createAsyncThunk(
+  "events/fetchEventTaskSummaries",
+  async ({ eventIds }, { rejectWithValue }) => {
+    try {
+      const networkClusterCode = localStorage.getItem("networkClusterCode");
+      const summaries = {};
+
+      await Promise.all(
+        eventIds.map(async (eventId) => {
+          try {
+            const res = await getActionables({
+              networkClusterCode,
+              start: 1,
+              offset: 100,
+              eventId,
+            });
+
+            const completedMap = loadPersistedCompleted(eventId);
+            const taskList = (res.data.result || []).map((item) => {
+              const id = item.actionableId || item._id || item.id;
+              if (completedMap[id]) {
+                return { ...item, isCompleted: true };
+              }
+              return item;
+            });
+
+            // Replicated calculation logic
+            const summary = {
+              hard: { completed: 0, total: 0 },
+              medium: { completed: 0, total: 0 },
+              easy: { completed: 0, total: 0 },
+            };
+
+            taskList.forEach((task) => {
+              let key = "easy";
+              const cat = (task.category || task.priority || "").toLowerCase();
+              if (cat.includes("very") || cat === "hard") key = "hard";
+              else if (cat.includes("mildly") || cat === "medium") key = "medium";
+              else if (cat.includes("easy") || cat === "easy") key = "easy";
+              else return;
+
+              summary[key].total++;
+              const isDone = task.isCompleted === true || task.isCompleted === "true";
+              if (isDone) summary[key].completed++;
+            });
+
+            summaries[eventId] = summary;
+          } catch {
+            // silent fail for individual event
+          }
+        })
+      );
+
+      return summaries;
+    } catch (err) {
+      return rejectWithValue(err.message);
     }
   }
 );

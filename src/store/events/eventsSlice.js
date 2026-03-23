@@ -11,7 +11,8 @@ import {
   updateEventSubTask,
   removeEventSubTask,
   createEventComment,
-  removeEventComment
+  removeEventComment,
+  fetchEventTaskSummaries
 } from "./eventsThunks";
 import moment from "moment";
 
@@ -339,6 +340,12 @@ const eventSlice = createSlice({
       })
       .addCase(fetchEventChecklist.rejected, (state) => {
         state.eventChecklistLoading = false;
+      })
+      .addCase(fetchEventTaskSummaries.fulfilled, (state, action) => {
+        state.eventTaskSummaries = {
+          ...state.eventTaskSummaries,
+          ...action.payload,
+        };
       })
       .addCase(createEventActionable.pending, (state, action) => {
         const tempId = action.meta.arg.tempId;
