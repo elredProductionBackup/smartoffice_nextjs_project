@@ -12,7 +12,8 @@ import {
   removeEventSubTask,
   createEventComment,
   removeEventComment,
-  fetchEventTaskSummaries
+  fetchEventTaskSummaries,
+  fetchEventDetails
 } from "./eventsThunks";
 import moment from "moment";
 
