@@ -1,6 +1,10 @@
 import { createSlice } from "@reduxjs/toolkit";
+import moment from "moment";
 import {
-  fetchCollaborators, fetchEventMembers, fetchEvents, fetchMasterConfig,
+  fetchCollaborators,
+  fetchEventMembers,
+  fetchEvents,
+  fetchMasterConfig,
   saveMasterConfig,
   fetchEventChecklist,
   createEventActionable,
