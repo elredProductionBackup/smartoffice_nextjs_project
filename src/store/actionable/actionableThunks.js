@@ -89,8 +89,8 @@ export const updateActionable = createAsyncThunk(
         networkClusterCode,
         title,
         notes,
-        collaborators:collaborators.map(
-        (c) => c.userCode
+        collaborators: collaborators.map(
+          (c) => c.userCode
         ),
       });
 
@@ -170,7 +170,7 @@ export const changeDueDateTime = createAsyncThunk(
   async ({ actionableId, dueDate, dueTime }, { rejectWithValue }) => {
     try {
       const networkClusterCode = localStorage.getItem("networkClusterCode");
-      
+
       const currentUtcTime = moment.utc();
 
       const utcMoment = moment.utc(
@@ -223,7 +223,7 @@ export const fetchComments = createAsyncThunk(
       const res = await getComments({
         networkClusterCode,
         actionableId,
-        start:page,
+        start: page,
         offset,
       });
 
@@ -287,7 +287,7 @@ export const updateSubTask = createAsyncThunk(
       const networkClusterCode = localStorage.getItem("networkClusterCode");
 
       const res = await addSubTask({
-        ...payload,        
+        ...payload,
         networkClusterCode,
       });
 
@@ -322,7 +322,7 @@ export const removeSubTask = createAsyncThunk(
   async ({ actionableId, subTaskId }, { rejectWithValue }) => {
     try {
       const networkClusterCode = localStorage.getItem("networkClusterCode");
-      await deleteSubTask({ _id:subTaskId,networkClusterCode,actionableId });
+      await deleteSubTask({ _id: subTaskId, networkClusterCode, actionableId });
       return { actionableId, subTaskId };
     } catch (err) {
       return rejectWithValue(err.response?.data || err.message);
@@ -344,7 +344,7 @@ export const fetchCollaborators = createAsyncThunk(
         offset,
       });
 
-      return res?.data?.result; 
+      return res?.data?.result;
     } catch (err) {
       return rejectWithValue(err?.response?.data);
     }
@@ -357,7 +357,7 @@ export const createComment = createAsyncThunk(
   "actionable/createComment",
   async (payload, { rejectWithValue }) => {
     try {
-      const { tempId, actionableId, comment,user } = payload;
+      const { tempId, actionableId, comment, user } = payload;
       const networkClusterCode = localStorage.getItem("networkClusterCode");
 
 
@@ -378,8 +378,10 @@ export const createComment = createAsyncThunk(
 
       return {
         actionableId,
-        comment: {...res.data.result[0], name: user?.firstname,
-          dpURL: user?.dpURL,email:user?.email  },
+        comment: {
+          ...res.data.result[0], name: user?.firstname,
+          dpURL: user?.dpURL, email: user?.email
+        },
         tempId,
       };
     } catch (err) {

@@ -258,7 +258,7 @@ export default function ActionItems() {
           <div className="flex flex-1 w-full overflow-y-auto pt-[20px] px-[30px]">
             {activeItem === "today" && (
               <TodayItems
-                items={items}
+                items={items.filter(item => !item.category || item.category === "all")}
                 adding={adding}
                 onAdd={handleAdd}
                 handleDelete={handleDelete}
@@ -269,7 +269,7 @@ export default function ActionItems() {
 
             {activeItem === "past" &&
               (items.length ? (
-                <PastItems items={items} onToggle={toggleItem}/>
+                <PastItems items={items.filter(item => !item.category || item.category === "all")} onToggle={toggleItem}/>
               ) : (
                 <EmptyState searchValue={debouncedSearch}/>
               ))}
@@ -277,7 +277,7 @@ export default function ActionItems() {
             {activeItem === "all" &&
               (items.length ? (
                 <AllItems
-                  items={items}
+                  items={items.filter(item => !item.category || item.category === "all")}
                   onToggle={toggleItem}
                   handleDelete={handleDelete}
                 />

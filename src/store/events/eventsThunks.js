@@ -2,7 +2,7 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { addDocument, addMemberMedia, closeEvent, deleteMemberMedia, deleteMyDocument, getEventDetails, getEventMembers, getEventsList, getMasterList, getMembersMedia, getMyDocuments, updateMasterList  } from "@/services/events.service";
 
-import { getCollaborators } from "@/services/actionable.service";
+import { addActionable, addComment, deleteComment, getCollaborators } from "@/services/actionable.service";
 
 const mapTabToFilter = (tab) => {
   if (tab === "upcoming") return "upcomming";
@@ -16,7 +16,7 @@ export const fetchEvents = createAsyncThunk(
 
       const start = (page - 1) * limit + 1;
       const offset = limit;
-      
+
       const res = await getEventsList({
         networkClusterCode,
         start,
@@ -49,7 +49,7 @@ export const fetchCollaborators = createAsyncThunk(
         offset,
       });
 
-      return res?.data?.result; 
+      return res?.data?.result;
     } catch (err) {
       return rejectWithValue(err?.response?.data);
     }
@@ -87,8 +87,8 @@ export const saveMasterConfig = createAsyncThunk(
             c.difficulty === "hard"
               ? "veryDifficult"
               : c.difficulty === "medium"
-              ? "mildlyDifficult"
-              : "easyToDo",
+                ? "mildlyDifficult"
+                : "easyToDo",
         })),
         pointsList: pointsMaster.map((p) => ({
           pointName: p.label,
@@ -279,6 +279,157 @@ export const deleteDocument = createAsyncThunk(
       return rejectWithValue(
         err?.response?.data?.message || err.message
       );
+    }
+  }
+);
+
+
+// ─── Event Checklist Thunks (Actionables within an Event) ─────────────────────
+
+export const fetchEventChecklist = createAsyncThunk(
+  "events/fetchEventChecklist",
+  async ({ eventId, page = 1, limit = 100 }, { rejectWithValue }) => {
+    try {
+      const networkClusterCode = localStorage.getItem("networkClusterCode");
+      const start = (page - 1) * limit + 1;
+      const res = await getActionables({
+        networkClusterCode,
+        start,
+        offset: limit,
+        eventId,
+      });
+      return {
+        list: res.data.result || [],
+        total: res.data?.totalEventsCount || 0,
+      };
+    } catch (err) {
+      return rejectWithValue(err?.response?.data?.message || err.message);
+    }
+  }
+);
+
+export const createEventActionable = createAsyncThunk(
+  "events/createEventActionable",
+  async (payload, { rejectWithValue }) => {
+    try {
+      const networkClusterCode = localStorage.getItem("networkClusterCode");
+      const { tempId, eventMeta, ...rest } = payload;
+      const res = await addActionable({ 
+        ...rest, 
+      networkClusterCode,
+        // linkedEvent: [eventMeta], 
+        actionableId: "" 
+      });
+      return { item: res.data.result[0], tempId };
+    } catch (err) {
+      return rejectWithValue({
+        message: err?.response?.data?.message || err.message,
+        tempId: payload.tempId,
+      });
+    }
+  }
+);
+
+export const updateEventActionable = createAsyncThunk(
+  "events/updateEventActionable",
+  async (payload, { rejectWithValue }) => {
+    try {
+      const { actionableId, ...updates } = payload;
+      const networkClusterCode = localStorage.getItem("networkClusterCode");
+      await addActionable({ ...updates, actionableId, networkClusterCode });
+      return payload;
+    } catch (err) {
+      return rejectWithValue(err?.response?.data?.message || err.message);
+    }
+  }
+);
+
+export const toggleEventActionable = createAsyncThunk(
+  "events/toggleEventActionable",
+  async ({ actionableId, isCompleted }, { rejectWithValue }) => {
+    try {
+      const networkClusterCode = localStorage.getItem("networkClusterCode");
+      await addActionable({ actionableId, isCompleted, networkClusterCode });
+      return { actionableId, isCompleted };
+    } catch (err) {
+      return rejectWithValue(err?.response?.data?.message || err.message);
+    }
+  }
+);
+
+export const removeEventActionable = createAsyncThunk(
+  "events/removeEventActionable",
+  async ({ actionableId, networkClusterCode }, { rejectWithValue }) => {
+    try {
+      await deleteActionable({ actionableId, networkClusterCode });
+      return { actionableId };
+    } catch (err) {
+      return rejectWithValue(err?.response?.data?.message || err.message);
+    }
+  }
+);
+
+export const createEventSubTask = createAsyncThunk(
+  "events/createEventSubTask",
+  async ({ actionableId, title, tempId }, { rejectWithValue }) => {
+    try {
+      const networkClusterCode = localStorage.getItem("networkClusterCode");
+      const res = await addSubTask({ actionableId, title, networkClusterCode, _id: "" });
+      return { actionableId, subTask: res.data.result[0], tempId };
+    } catch (err) {
+      return rejectWithValue({ actionableId, tempId });
+    }
+  }
+);
+
+export const updateEventSubTask = createAsyncThunk(
+  "events/updateEventSubTask",
+  async (payload, { rejectWithValue }) => {
+    try {
+      const networkClusterCode = localStorage.getItem("networkClusterCode");
+      const res = await addSubTask({ ...payload, networkClusterCode });
+      return { actionableId: payload.actionableId, subTask: res.data.result[0] };
+    } catch (err) {
+      return rejectWithValue(err?.response?.data?.message || err.message);
+    }
+  }
+);
+
+export const removeEventSubTask = createAsyncThunk(
+  "events/removeEventSubTask",
+  async ({ actionableId, subTaskId }, { rejectWithValue }) => {
+    try {
+      const networkClusterCode = localStorage.getItem("networkClusterCode");
+      await deleteSubTask({ actionableId, _id: subTaskId, networkClusterCode });
+      return { actionableId, subTaskId };
+    } catch (err) {
+      return rejectWithValue(err?.response?.data?.message || err.message);
+    }
+  }
+);
+
+export const createEventComment = createAsyncThunk(
+  "events/createEventComment",
+  async ({ actionableId, comment, tempId }, { rejectWithValue }) => {
+    try {
+      const networkClusterCode = localStorage.getItem("networkClusterCode");
+      const res = await addComment({ actionableId, comment, networkClusterCode, _id: "" });
+      return { actionableId, comment: res.data.result[0], tempId };
+    } catch (err) {
+      return rejectWithValue({ actionableId, tempId });
+    }
+  }
+);
+
+export const removeEventComment = createAsyncThunk(
+  "events/removeEventComment",
+  async ({ actionableId, commentId }, { rejectWithValue }) => {
+    try {
+      const networkClusterCode = localStorage.getItem("networkClusterCode");
+      await deleteComment({ actionableId, commentId, networkClusterCode });
+      return { actionableId, commentId };
+    } catch (err) {
+      return rejectWithValue({ actionableId });
     }
   }
 );

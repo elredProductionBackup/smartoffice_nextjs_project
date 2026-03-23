@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { closeEventThunk, deleteDocument, deleteMembersMedia, fetchCollaborators, fetchDocuments, fetchEventDetails, fetchEventMembers, fetchEvents, fetchMasterConfig, fetchMembersMedia, saveMasterConfig, uploadDocument, uploadMemberMedia } from "./eventsThunks";
+import { closeEventThunk, deleteDocument, deleteMembersMedia, fetchCollaborators, fetchDocuments, fetchEventChecklist, fetchEventDetails, fetchEventMembers, fetchEvents, fetchMasterConfig, fetchMembersMedia, saveMasterConfig, uploadDocument, uploadMemberMedia } from "./eventsThunks";
 import moment from "moment";
 
 const initialState = {
@@ -43,6 +43,10 @@ const initialState = {
   documentsUploadingCount: {},
   documentsFetched: {},
   documentsLoading: false,
+
+  eventChecklist: [],
+  eventChecklistLoading: false,
+  eventChecklistTotal: 0,
 
   activeTab: "",
   search: "",
@@ -468,6 +472,18 @@ const eventSlice = createSlice({
         console.log("Delete Member Media Failed:", action.payload || action.error);
       })
 
+      .addCase(fetchEventChecklist.pending, (state) => {
+          state.eventChecklistLoading = true;
+        })
+        .addCase(fetchEventChecklist.fulfilled, (state, action) => {
+          state.eventChecklistLoading = false;
+          state.eventChecklist = action.payload.list;
+          state.eventChecklistTotal = action.payload.total;
+        })
+        .addCase(fetchEventChecklist.rejected, (state) => {
+          state.eventChecklistLoading = false;
+        })
+
       .addCase(deleteDocument.fulfilled, (state, action) => {
         const { eventId, deleteURL } = action.payload;
 
@@ -481,6 +497,8 @@ const eventSlice = createSlice({
       .addCase(deleteDocument.rejected, (state, action) => {
         console.log("Delete Document Failed:", action.payload || action.error);
       })
+
+
 
   },
 });
