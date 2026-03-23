@@ -13,7 +13,8 @@ import {
   createEventComment,
   removeEventComment,
   fetchEventTaskSummaries,
-  fetchEventDetails
+  fetchEventDetails,
+  closeEventThunk
 } from "./eventsThunks";
 import moment from "moment";
 
