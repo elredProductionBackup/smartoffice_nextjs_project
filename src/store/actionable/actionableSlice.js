@@ -56,8 +56,15 @@ const actionableSlice = createSlice({
       })
       .addCase(fetchActionables.fulfilled, (state, action) => {
         state.loading = false;
-        state.items = action.payload.list;
-        state.total = action.payload.total;
+        // Fallback filter to ensure event-checklist tasks are hidden even if API filter fails
+        const filteredList = action.payload.list.filter(
+          (item) => !item.category || item.category === "all"
+        );
+        state.items = filteredList;
+        // If we filtered locally, we should adjust total accordingly for the current view
+        state.total = filteredList.length < action.payload.list.length 
+          ? filteredList.length 
+          : action.payload.total;
       })
       .addCase(fetchActionables.rejected, (state, action) => {
         state.loading = false;

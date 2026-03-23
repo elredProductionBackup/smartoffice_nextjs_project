@@ -118,7 +118,7 @@ export default function EventDetailsClient() {
          <LogisticsContent/></div>}
         {activeTab === "checklist" &&
          <div className="min-h-[calc(100dvh-180px)] bg-[#f2f7ff] rounded-[20px] overflow-y-auto mb-10 p-4" >
-         <ChecklistContent/></div>}
+         <ChecklistContent eventId={eventId}/></div>}
           {activeTab === "eventcosting" &&
          <div className="min-h-[calc(100dvh-180px)] overflow-y-auto mb-10 p-4" >
          <Eventcosting/></div>}
