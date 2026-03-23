@@ -186,6 +186,8 @@ const goToEvent = (event) => {
                             total: 0,
                           };
 
+                          if (taskData.total === 0) return null;
+
                           return (
                             <ProgressCircle
                               key={task}
