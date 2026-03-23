@@ -2,7 +2,7 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { addDocument, addMemberMedia, closeEvent, deleteMemberMedia, deleteMyDocument, getEventDetails, getEventMembers, getEventsList, getMasterList, getMembersMedia, getMyDocuments, updateMasterList  } from "@/services/events.service";
 
-import { addActionable, addComment, deleteComment, getActionables, getCollaborators } from "@/services/actionable.service";
+import { addActionable, addComment, addSubTask, deleteActionable, deleteComment, deleteSubTask, getActionables, getCollaborators } from "@/services/actionable.service";
 
 const mapTabToFilter = (tab) => {
   if (tab === "upcoming") return "upcomming";
