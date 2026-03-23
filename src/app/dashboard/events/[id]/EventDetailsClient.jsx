@@ -19,63 +19,133 @@ import { closeAllEventsModals, openEventsModal } from "@/store/events/eventsUiSl
 import { closeEventThunk, deleteDocument, deleteMembersMedia, fetchDocuments, fetchEventDetails, fetchMembersMedia, uploadDocument, uploadMemberMedia } from "@/store/events/eventsThunks";
 import MemberDetailsModal from "@/_components/MemberDetailsModal";
 import DeleteMediaConfirm from "@/_components/EventsComps/DeleteMediaConfirm";
+import { useRef } from "react";
+import { useCallback } from "react";
+import useInfiniteScrollObserver from "@/hooks/useInfiniteScroll";
 
 export default function EventDetailsClient() {
+  // ================= ROUTER / PARAMS =================
   const params = useParams();
   const searchParams = useSearchParams();
   const router = useRouter();
   const dispatch = useDispatch();
-  const [closing, setClosing] = useState(false);
-  const modalStack = useSelector((state) => state.eventsUi.modalStack);
-  //   if (!modalStack.length) return null;
-
-  const currentModal = modalStack[modalStack.length - 1];
-
-  const [registrationEnabled, setRegistrationEnabled] = useState(true);
-  // const [eventData, setEventData] = useState(null);
 
   const eventId = params?.id;
   const activeTab = searchParams.get("tab") || "attendees";
 
+  // ================= LOCAL STATE =================
+  const [closing, setClosing] = useState(false);
+  const [registrationEnabled, setRegistrationEnabled] = useState(true);
+
+  // ================= REFS =================
+  const containerRef = useRef();
+
+  // ================= REDUX STATE =================
   const {
     membersMediaMap,
     membersMediaFetched,
+    membersMediaLoading,
+    membersMediaPage,
+    membersMediaTotal,
+
     documentsMap,
     documentsFetched,
-    membersMediaLoading,
-    documentsLoading
+    documentsLoading,
+    documentsPage,
+    documentsTotal,
   } = useSelector((state) => state.events);
 
-  const membersMediaList = membersMediaMap[eventId] || [];
-  const documentsList = documentsMap[eventId] || [];
-
-  const isMembersMediaFetched = membersMediaFetched[eventId];
-  const isDocumentsFetched = documentsFetched[eventId];
+  const modalStack = useSelector((state) => state.eventsUi.modalStack);
 
   const event = useSelector(
     (state) => state.events.eventDetailsMap[eventId]
-  )
+  );
 
+  const currentModal = modalStack[modalStack.length - 1];
 
+  // ================= MEMBERS MEDIA =================
+  const membersMediaList = membersMediaMap[eventId] || [];
+  const membersMediaPageNumber = membersMediaPage?.[eventId] || 1;
+  const membersMediaTotalCount = membersMediaTotal?.[eventId] || 0;
+  const membersMediaLength = membersMediaList.length;
+
+  const isMembersMediaFetched = membersMediaFetched[eventId];
+
+  const hasMoreMembersMedia =
+    membersMediaLength < membersMediaTotalCount;
+
+  const loadMoreMembersMedia = useCallback(() => {
+    if (activeTab !== "memberMedia") return;
+
+    dispatch(
+      fetchMembersMedia({
+        eventId,
+        page: membersMediaPageNumber + 1,
+        limit: 20,
+      })
+    );
+  }, [activeTab, eventId, membersMediaPageNumber]);
+
+  const membersMediaRef = useInfiniteScrollObserver({
+    hasMore: activeTab === "memberMedia" && hasMoreMembersMedia,
+    loading: membersMediaLoading,
+    onLoadMore: loadMoreMembersMedia,
+  });
+
+  // ================= DOCUMENTS =================
+  const documentsList = documentsMap[eventId] || [];
+  const documentsPageNumber = documentsPage?.[eventId] || 1;
+  const documentsTotalCount = documentsTotal?.[eventId] || 0;
+  const documentsLength = documentsList.length;
+
+  const isDocumentsFetched = documentsFetched[eventId];
+
+  const hasMoreDocuments =
+    documentsLength < documentsTotalCount;
+
+  const loadMoreDocuments = useCallback(() => {
+    if (activeTab !== "documents") return;
+
+    dispatch(
+      fetchDocuments({
+        eventId,
+        page: documentsPageNumber + 1,
+        limit: 20,
+      })
+    );
+  }, [activeTab, eventId, documentsPageNumber]);
+
+  const documentsRef = useInfiniteScrollObserver({
+    hasMore: activeTab === "documents" && hasMoreDocuments,
+    loading: documentsLoading,
+    onLoadMore: loadMoreDocuments,
+  });
+
+  // ================= DATA FETCH =================
   useEffect(() => {
-    if (activeTab === "memberMedia") {
-      dispatch(fetchMembersMedia({ eventId }));
+    if (activeTab === "memberMedia" && !isMembersMediaFetched) {
+      dispatch(fetchMembersMedia({ eventId, page: 1, limit: 20 }));
     }
-    if (activeTab === "documents") {
-      dispatch(fetchDocuments({ eventId }));
+
+    if (activeTab === "documents" && !isDocumentsFetched) {
+      dispatch(fetchDocuments({ eventId, page: 1, limit: 20 }));
     }
-  }, [activeTab, eventId, isMembersMediaFetched, isDocumentsFetched, dispatch]);
+  }, [activeTab, eventId]);
+
   useEffect(() => {
     if (eventId) {
       dispatch(fetchEventDetails({ eventId }));
     }
   }, [eventId]);
 
+  // ================= DATE =================
   const start = moment(event?.startDateTime).local();
   const end = moment(event?.endDateTime).local();
 
+  const dateRange = `${start.format("ddd DD MMM YYYY")} - ${end.format(
+    "ddd DD MMM YYYY"
+  )}`;
 
-  const dateRange = `${start.format("ddd DD MMM YYYY")} - ${end.format("ddd DD MMM YYYY")}`;
   const timeRange =
     start && end
       ? start.isSame(end, "minute")
@@ -83,7 +153,7 @@ export default function EventDetailsClient() {
         : `${start.format("h:mm")} - ${end.format("h:mm A")}`
       : "";
 
-
+  // ================= ACTIONS =================
   const handleCloseEvent = async () => {
     try {
       setClosing(true);
@@ -92,17 +162,18 @@ export default function EventDetailsClient() {
     } catch (err) {
       console.error(err);
     } finally {
-      dispatch(closeAllEventsModals())
+      dispatch(closeAllEventsModals());
       setClosing(false);
     }
   };
 
+  // ================= LOADING =================
   if (!event) {
     return <div className="p-10 text-xl">Loading event...</div>;
   }
 
   return (
-    <div className="h-[calc(100vh-80px)] flex flex-col gap-[20px] overflow-y-auto relative pb-[20px]">
+    <div className="h-[calc(100vh-80px)] flex flex-col gap-[20px] overflow-y-auto relative pb-[20px]"  ref={containerRef}>
 
       <div className="bg-white rounded-2xl pt-6 flex justify-between gap-[105px] w-full relative z-[15]">
         <div className="flex-1 flex gap-[40px]">
@@ -205,6 +276,7 @@ export default function EventDetailsClient() {
         }
 
         {activeTab === "memberMedia" &&
+                 <>
           <MediaUploader
             data={membersMediaList}
             loading={membersMediaLoading}
@@ -214,21 +286,27 @@ export default function EventDetailsClient() {
             onUpload={(files) =>
               dispatch(uploadMemberMedia({ files, eventId })).unwrap()
             }
-          />
+            
+            />
+             <div ref={membersMediaRef} style={{ height: "1px" }} />
+            </>
         }
+{activeTab === "documents" && (
+  <>
+    <MediaUploader
+      data={documentsList}
+      loading={documentsLoading}
+      fetched={isDocumentsFetched}
+      eventId={eventId}
+      type="document"
+      onUpload={(files) =>
+        dispatch(uploadDocument({ files, eventId })).unwrap()
+      }
+    />
 
-        {activeTab === "documents" &&
-          <MediaUploader
-            data={documentsList}
-            loading={documentsLoading}
-            fetched={isDocumentsFetched}
-            eventId={eventId}
-            type="document"
-            onUpload={(files) =>
-              dispatch(uploadDocument({ files, eventId })).unwrap()
-            }
-          />
-        }
+    <div ref={documentsRef} style={{ height: "1px" }} />
+  </>
+)}
 
         {activeTab === "logistics" &&
           <div className="min-h-[calc(100dvh-180px)] bg-[#f2f7ff] rounded-[20px] overflow-y-auto mb-10 p-4">

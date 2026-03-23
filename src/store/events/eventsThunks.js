@@ -172,10 +172,9 @@ export const closeEventThunk = createAsyncThunk(
   }
 );
 
-// Fetch Member Media
 export const fetchMembersMedia = createAsyncThunk(
   "media/fetchMembersMedia",
-  async ({ eventId, page = 1, limit = 30 }, { rejectWithValue }) => {
+  async ({ eventId, page = 1, limit = 20 }, { rejectWithValue }) => {
     try {
       const start = (page - 1) * limit + 1;
       const offset = limit;
@@ -183,9 +182,10 @@ export const fetchMembersMedia = createAsyncThunk(
       const res = await getMembersMedia({ eventId, start, offset });
 
       return {
-        eventId, 
+        eventId,
         list: res.data?.result || [],
         total: res.data?.memberMediaFileCount || 0,
+        page,
       };
     } catch (err) {
       return rejectWithValue(
@@ -194,8 +194,6 @@ export const fetchMembersMedia = createAsyncThunk(
     }
   }
 );
-
-// Fetch Documents
 export const fetchDocuments = createAsyncThunk(
   "media/fetchDocuments",
   async ({ eventId, page = 1, limit = 20 }, { rejectWithValue }) => {
@@ -209,6 +207,7 @@ export const fetchDocuments = createAsyncThunk(
         eventId,
         list: res.data?.result || [],
         total: res.data?.documentFileCount || 0,
+        page,
       };
     } catch (err) {
       return rejectWithValue(

@@ -16,14 +16,12 @@ export default function MediaUploader({
   const inputRef = useRef(null);
   const dispatch = useDispatch();
 
-  // ✅ get shimmer count from redux
   const uploadingCount = useSelector((state) =>
     type === "document"
       ? state.events.documentsUploadingCount?.[eventId] || 0
       : state.events.membersMediaUploadingCount?.[eventId] || 0
   );
 
-  // ❌ keep files ONLY for temporary control (no UI usage)
   const [files, setFiles] = useState([]);
 
   const handleFiles = (e) => {
@@ -40,7 +38,6 @@ const validFiles = selected.filter((file) =>
 
     if (!validFiles.length) return;
 
-    // just track count, not preview
     setFiles((prev) => [...prev, ...validFiles]);
 
     if (onUpload) {
@@ -69,7 +66,6 @@ const validFiles = selected.filter((file) =>
     );
   };
 
-  // ✅ shimmer + api data (NO local preview)
   const displayList = [
     ...Array(uploadingCount).fill({ isShimmer: true }),
     ...data,
@@ -89,7 +85,7 @@ const validFiles = selected.filter((file) =>
   }
 
   return (
-    <div className="w-full max-w-[1600px] bg-[salmon]">
+    <div className="w-full max-w-[1600px]">
       <input
         ref={inputRef}
         type="file"
@@ -129,7 +125,6 @@ const validFiles = selected.filter((file) =>
           </button>
 
           {displayList.map((item, index) => {
-            // ✅ shimmer UI
             if (item.isShimmer) {
               return (
                 <div
@@ -156,13 +151,18 @@ const validFiles = selected.filter((file) =>
 
                 <button
                   onClick={() => handleDelete(item)}
-                  className="absolute bottom-[12px] right-[12px] w-[30px] h-[30px] rounded-[9px] bg-[#8080804D] text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition backdrop-blur-[3.7px]"
+                  className="absolute bottom-[12px] right-[12px] w-[30px] h-[30px] rounded-[9px] bg-[#8080804D] text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition backdrop-blur-[3.7px] cursor-pointer"
                 >
                   <span className="fluent--delete-12-filled"></span>
                 </button>
               </div>
             );
           })}
+        </div>
+      )}
+      {loading && data.length > 0 && (
+        <div className="col-span-full flex justify-center pt-6">
+          <div className="w-[24px] h-[24px] border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
         </div>
       )}
     </div>

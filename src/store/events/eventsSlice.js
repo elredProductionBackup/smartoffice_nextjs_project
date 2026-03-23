@@ -35,7 +35,11 @@ const initialState = {
   membersMediaUploadingCount: {},
   membersMediaFetched: {},
   membersMediaLoading: false,
+  membersMediaPage: {},
+  membersMediaTotal: {},
 
+  documentsPage: {},
+  documentsTotal: {},
   documentsMap: {},
   documentsUploadingCount: {},
   documentsFetched: {},
@@ -288,9 +292,23 @@ const eventSlice = createSlice({
         }
       })
       .addCase(fetchMembersMedia.fulfilled, (state, action) => {
-        const { eventId, list } = action.payload;
+        const { eventId, list, total, page } = action.payload;
 
-        state.membersMediaMap[eventId] = list;
+        if (!state.membersMediaMap[eventId]) {
+          state.membersMediaMap[eventId] = [];
+        }
+
+        if (page === 1) {
+          state.membersMediaMap[eventId] = list;
+        } else {
+          state.membersMediaMap[eventId] = [
+            ...state.membersMediaMap[eventId],
+            ...list,
+          ];
+        }
+
+        state.membersMediaPage[eventId] = page;
+        state.membersMediaTotal[eventId] = total;
         state.membersMediaFetched[eventId] = true;
         state.membersMediaLoading = false;
       })
@@ -310,7 +328,6 @@ const eventSlice = createSlice({
       .addCase(uploadMemberMedia.fulfilled, (state, action) => {
         const { eventId, files } = action.meta.arg;
 
-        // 🔥 normalize order (same as documents)
         const items = (action.payload?.result?.flat() || [])
           .slice()
           .reverse();
@@ -321,16 +338,13 @@ const eventSlice = createSlice({
 
         const existing = state.membersMediaMap[eventId];
 
-        // ✅ remove shimmer count
         state.membersMediaUploadingCount[eventId] -= files.length;
 
-        // ✅ filter duplicates
         const newItems = items.filter(
           (newItem) =>
             !existing.some((m) => m.fileURL === newItem.fileURL)
         );
 
-        // ✅ prepend (correct order)
         state.membersMediaMap[eventId] = [...newItems, ...existing];
 
         state.membersMediaFetched[eventId] = true;
@@ -358,15 +372,28 @@ const eventSlice = createSlice({
           state.documentsLoading = true;
         }
       })
-
       .addCase(fetchDocuments.fulfilled, (state, action) => {
-        const { eventId, list } = action.payload;
+        const { eventId, list = [], total = 0, page = 1 } = action.payload;
 
-        state.documentsMap[eventId] = list;
+        if (!state.documentsMap[eventId]) {
+          state.documentsMap[eventId] = [];
+        }
+
+        if (page === 1) {
+          state.documentsMap[eventId] = list;
+        } else {
+          state.documentsMap[eventId] = [
+            ...state.documentsMap[eventId],
+            ...list,
+          ];
+        }
+
+
+        state.documentsPage[eventId] = page;
+        state.documentsTotal[eventId] = total;
         state.documentsFetched[eventId] = true;
         state.documentsLoading = false;
       })
-
       .addCase(fetchDocuments.rejected, (state) => {
         state.documentsLoading = false;
       })
