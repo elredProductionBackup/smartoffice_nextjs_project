@@ -1,13 +1,7 @@
 import Image from "next/image";
-import { IoIosArrowBack,IoIosArrowForward  } from "react-icons/io";
 import { SiGoogledocs } from "react-icons/si";
-
-// import noMember from "@/assets/logo/no-member.svg";
 import callIcon from "@/assets/logo/call.svg";
-// import userImage from "@/assets/image/user.jpeg";
-
 import { CONSTANTS } from "@/utils/data";
-// import { useModalStore } from "@/store/useModalStore";
 import { useEffect, useRef, useState } from "react";
 import MembersTableShimmer from "../Shimmer/MembersTableShimmer";
 import Link from "next/link";

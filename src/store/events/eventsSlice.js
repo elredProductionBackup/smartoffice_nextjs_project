@@ -1,17 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { fetchCollaborators, fetchEventMembers, fetchEvents,  fetchMasterConfig, 
-  saveMasterConfig,
-  fetchEventChecklist,
-  createEventActionable,
-  updateEventActionable,
-  removeEventActionable,
-  toggleEventActionable,
-  createEventSubTask,
-  updateEventSubTask,
-  removeEventSubTask,
-  createEventComment,
-  removeEventComment
-} from "./eventsThunks";
+import { closeEventThunk, createEventActionable, createEventComment, createEventSubTask, deleteDocument, deleteMembersMedia, fetchCollaborators, fetchDocuments, fetchEventChecklist, fetchEventDetails, fetchEventMembers, fetchEvents, fetchMasterConfig, fetchMembersMedia, removeEventActionable, removeEventComment, removeEventSubTask, saveMasterConfig, toggleEventActionable, updateEventActionable, updateEventSubTask, uploadDocument, uploadMemberMedia } from "./eventsThunks";
 import moment from "moment";
 
 const initialState = {
@@ -21,6 +9,9 @@ const initialState = {
   error: null,
 
   selectedEvent: null,
+  eventDetailsMap: {},
+  eventDetailsFetched: {},
+  eventDetailsError: {},
 
   page: 1,
   limit: 10,
@@ -33,19 +24,32 @@ const initialState = {
   pointsMaster: [],
   masterLoading: false,
 
-  membersList: [],
-  membersLoading: false,
-  membersError: null,
-  membersTotal: 0,
-  membersPage: 1,
-  membersFetched: false, // 👈 KEY FLAG
+  membersMap: {},
+  membersFetched: {},
+  membersLoading: {},
+  membersTotal: {},
+  membersPage: {},
 
-  activeTab: "upcomming",
-  search: "",
+  membersMediaMap: {},
+  membersMediaUploadingCount: {},
+  membersMediaFetched: {},
+  membersMediaLoading: false,
+  membersMediaPage: {},
+  membersMediaTotal: {},
+
+  documentsPage: {},
+  documentsTotal: {},
+  documentsMap: {},
+  documentsUploadingCount: {},
+  documentsFetched: {},
+  documentsLoading: false,
 
   eventChecklist: [],
-  eventChecklistLoading: false,
-  eventChecklistTotal: 0,
+  eventChecklistLoading: false,
+  eventChecklistTotal: 0,
+
+  activeTab: "",
+  search: "",
 };
 
 const getOrdinal = (n) => {
@@ -248,22 +252,241 @@ const eventSlice = createSlice({
         state.masterLoading = false;
       })
       // Attendees
-      .addCase(fetchEventMembers.pending, (state) => {
-        if (!state.membersFetched) {
-          state.membersLoading = true;
+// Attendees
+.addCase(fetchEventMembers.pending, (state, action) => {
+  const { eventId, page } = action.meta.arg;
+
+  if (page === 1) {
+    state.membersLoading[eventId] = true;
+  }
+})
+
+.addCase(fetchEventMembers.fulfilled, (state, action) => {
+  const { eventId, list, total, page } = action.payload;
+
+  state.membersLoading[eventId] = false;
+
+  if (!state.membersMap[eventId]) {
+    state.membersMap[eventId] = [];
+  }
+
+  state.membersMap[eventId] = list;
+
+  state.membersPage[eventId] = page;
+  state.membersTotal[eventId] = total;
+  state.membersFetched[eventId] = true;
+})
+
+.addCase(fetchEventMembers.rejected, (state, action) => {
+  const { eventId } = action.meta.arg;
+  state.membersLoading[eventId] = false;
+})
+      .addCase(fetchEventDetails.fulfilled, (state, action) => {
+        const { eventId, data, skip } = action.payload;
+
+        if (skip) return;
+
+        state.eventDetailsMap[eventId] = data;
+        state.eventDetailsFetched[eventId] = true;
+      })
+      .addCase(fetchEventDetails.rejected, (state, action) => {
+        const eventId = action.meta.arg.eventId;
+        state.eventDetailsError[eventId] = action.payload;
+      })
+      .addCase(closeEventThunk.fulfilled, (state, action) => {
+      })
+      .addCase(closeEventThunk.rejected, (state, action) => {
+        console.error("Close event failed:", action.payload);
+      })
+      // ================= MEMBERS MEDIA =================
+      .addCase(fetchMembersMedia.pending, (state, action) => {
+        const eventId = action.meta.arg.eventId;
+
+        const existing = state.membersMediaMap[eventId];
+
+        if (!existing || existing.length === 0) {
+          state.membersMediaLoading = true;
         }
       })
-      .addCase(fetchEventMembers.fulfilled, (state, action) => {
-        state.membersLoading = false;
-        state.membersList = action.payload.list;
-        state.membersTotal = action.payload.total;
-        state.membersFetched = true;
+      .addCase(fetchMembersMedia.fulfilled, (state, action) => {
+        const { eventId, list, total, page } = action.payload;
+
+        if (!state.membersMediaMap[eventId]) {
+          state.membersMediaMap[eventId] = [];
+        }
+
+        if (page === 1) {
+          state.membersMediaMap[eventId] = list;
+        } else {
+          state.membersMediaMap[eventId] = [
+            ...state.membersMediaMap[eventId],
+            ...list,
+          ];
+        }
+
+        state.membersMediaPage[eventId] = page;
+        state.membersMediaTotal[eventId] = total;
+        state.membersMediaFetched[eventId] = true;
+        state.membersMediaLoading = false;
       })
-        .addCase(fetchEventMembers.rejected, (state, action) => {
-          state.membersLoading = false;
-          state.membersError = action.payload;
-        })
-        // ─── Event Checklist ──────────────────────────────────────────────────
+      .addCase(fetchMembersMedia.rejected, (state) => {
+        state.membersMediaLoading = false;
+      })
+      .addCase(uploadMemberMedia.pending, (state, action) => {
+        const { eventId, files } = action.meta.arg;
+
+        if (!state.membersMediaUploadingCount[eventId]) {
+          state.membersMediaUploadingCount[eventId] = 0;
+        }
+
+        state.membersMediaUploadingCount[eventId] += files.length;
+      })
+
+      .addCase(uploadMemberMedia.fulfilled, (state, action) => {
+        const { eventId, files } = action.meta.arg;
+
+        const items = (action.payload?.result?.flat() || [])
+          .slice()
+          .reverse();
+
+        if (!state.membersMediaMap[eventId]) {
+          state.membersMediaMap[eventId] = [];
+        }
+
+        const existing = state.membersMediaMap[eventId];
+
+        state.membersMediaUploadingCount[eventId] -= files.length;
+
+        const newItems = items.filter(
+          (newItem) =>
+            !existing.some((m) => m.fileURL === newItem.fileURL)
+        );
+
+        state.membersMediaMap[eventId] = [...newItems, ...existing];
+
+        state.membersMediaFetched[eventId] = true;
+      })
+
+      .addCase(uploadMemberMedia.rejected, (state, action) => {
+        const { eventId, files } = action.meta.arg || {};
+
+        if (eventId && files) {
+          state.membersMediaUploadingCount[eventId] -= files.length;
+        }
+
+        console.log(
+          "Upload Member Media Failed:",
+          action.payload || action.error
+        );
+      })
+      // ================= DOCUMENTS =================
+      .addCase(fetchDocuments.pending, (state, action) => {
+        const eventId = action.meta.arg.eventId;
+
+        const existing = state.documentsMap[eventId];
+
+        if (!existing || existing.length === 0) {
+          state.documentsLoading = true;
+        }
+      })
+      .addCase(fetchDocuments.fulfilled, (state, action) => {
+        const { eventId, list = [], total = 0, page = 1 } = action.payload;
+
+        if (!state.documentsMap[eventId]) {
+          state.documentsMap[eventId] = [];
+        }
+
+        if (page === 1) {
+          state.documentsMap[eventId] = list;
+        } else {
+          state.documentsMap[eventId] = [
+            ...state.documentsMap[eventId],
+            ...list,
+          ];
+        }
+
+
+        state.documentsPage[eventId] = page;
+        state.documentsTotal[eventId] = total;
+        state.documentsFetched[eventId] = true;
+        state.documentsLoading = false;
+      })
+      .addCase(fetchDocuments.rejected, (state) => {
+        state.documentsLoading = false;
+      })
+
+
+      .addCase(uploadDocument.pending, (state, action) => {
+        const { eventId, files } = action.meta.arg;
+
+        if (!state.documentsUploadingCount[eventId]) {
+          state.documentsUploadingCount[eventId] = 0;
+        }
+
+        state.documentsUploadingCount[eventId] += files.length;
+      })
+      .addCase(uploadDocument.fulfilled, (state, action) => {
+        const { eventId, files } = action.meta.arg;
+
+        const items = (action.payload?.result?.flat() || [])
+          .slice()
+          .reverse();
+
+        if (!state.documentsMap[eventId]) {
+          state.documentsMap[eventId] = [];
+        }
+
+        const existing = state.documentsMap[eventId];
+
+        state.documentsUploadingCount[eventId] -= files.length;
+
+        const newItems = items.filter(
+          (newItem) =>
+            !existing.some((m) => m.fileURL === newItem.fileURL)
+        );
+
+        state.documentsMap[eventId] = [...newItems, ...existing];
+
+        state.documentsFetched[eventId] = true;
+      })
+      .addCase(uploadDocument.rejected, (state, action) => {
+        const { eventId, files } = action.meta.arg || {};
+
+        if (eventId && files) {
+          state.documentsUploadingCount[eventId] -= files.length;
+        }
+
+        console.log("Upload Document Failed:", action.payload || action.error);
+      })
+      .addCase(deleteMembersMedia.fulfilled, (state, action) => {
+        const { eventId, deleteURL } = action.payload;
+
+        if (!state.membersMediaMap[eventId]) return;
+
+        state.membersMediaMap[eventId] = state.membersMediaMap[eventId].filter(
+          (item) => item.fileURL !== deleteURL
+        );
+      })
+
+      .addCase(deleteMembersMedia.rejected, (state, action) => {
+        console.log("Delete Member Media Failed:", action.payload || action.error);
+      })
+
+      .addCase(deleteDocument.fulfilled, (state, action) => {
+        const { eventId, deleteURL } = action.payload;
+
+        if (!state.documentsMap[eventId]) return;
+
+        state.documentsMap[eventId] = state.documentsMap[eventId].filter(
+          (item) => item.fileURL !== deleteURL
+        );
+      })
+
+      .addCase(deleteDocument.rejected, (state, action) => {
+        console.log("Delete Document Failed:", action.payload || action.error);
+      })
+
+// ─── Event Checklist ──────────────────────────────────────────────────
         .addCase(fetchEventChecklist.pending, (state) => {
           state.eventChecklistLoading = true;
         })
@@ -352,7 +575,8 @@ const eventSlice = createSlice({
             item.comments = item.comments.filter(c => c._id !== commentId);
           }
         });
-    },
+
+  },
 });
 
 export const { setPage, setSearch, setActiveTab, resetEventsState, setChecklistMaster, setPointsMaster, setSelectedEvent } =

@@ -420,4 +420,3 @@ const ChecklistContent = ({ eventId }) => {
 
 export default ChecklistContent;
 
-

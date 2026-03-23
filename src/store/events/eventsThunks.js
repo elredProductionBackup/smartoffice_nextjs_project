@@ -1,17 +1,8 @@
 // redux/events/eventThunks.js
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { getEventMembers, getEventsList, getMasterList, updateMasterList } from "@/services/events.service";
-import { 
-  getActionables, 
-  addActionable, 
-  deleteActionable, 
-  addComment, 
-  deleteComment, 
-  addSubTask, 
-  deleteSubTask 
-} from "@/services/actionable.service";
+import { addDocument, addMemberMedia, closeEvent, deleteMemberMedia, deleteMyDocument, getEventDetails, getEventMembers, getEventsList, getMasterList, getMembersMedia, getMyDocuments, updateMasterList  } from "@/services/events.service";
 
-import { getCollaborators } from "@/services/actionable.service";
+import { addActionable, addComment, addSubTask, deleteActionable, deleteComment, deleteSubTask, getActionables, getCollaborators } from "@/services/actionable.service";
 
 const mapTabToFilter = (tab) => {
   if (tab === "upcoming") return "upcomming";
@@ -133,8 +124,11 @@ export const fetchEventMembers = createAsyncThunk(
       });
 
       return {
+        eventId,
         list: res.data?.result || [],
         total: res.data?.totalCount || 0,
+        page,
+        limit,
       };
     } catch (err) {
       return rejectWithValue(
@@ -143,6 +137,152 @@ export const fetchEventMembers = createAsyncThunk(
     }
   }
 );
+
+export const fetchEventDetails = createAsyncThunk(
+  "events/fetchEventDetails",
+  async ({ eventId }, { getState, rejectWithValue }) => {
+    try {
+      const { events } = getState();
+
+      if (events.eventDetailsFetched?.[eventId]) {
+        return { eventId, skip: true };
+      }
+
+      const res = await getEventDetails({ eventId });
+      return {
+        eventId,
+        data: res?.data.result[0]
+      };
+    } catch (err) {
+      return rejectWithValue(
+        err?.response?.data?.message || err.message
+      );
+    }
+  }
+);
+
+export const closeEventThunk = createAsyncThunk(
+  "events/closeEvent",
+  async ({ eventId }, { rejectWithValue }) => {
+    try {
+      const res = await closeEvent({ eventId });
+      return res?.data;
+    } catch (err) {
+      return rejectWithValue(
+        err?.response?.data?.message || err.message
+      );
+    }
+  }
+);
+
+export const fetchMembersMedia = createAsyncThunk(
+  "media/fetchMembersMedia",
+  async ({ eventId, page = 1, limit = 20 }, { rejectWithValue }) => {
+    try {
+      const start = (page - 1) * limit + 1;
+      const offset = limit;
+
+      const res = await getMembersMedia({ eventId, start, offset });
+
+      return {
+        eventId,
+        list: res.data?.result || [],
+        total: res.data?.memberMediaFileCount || 0,
+        page,
+      };
+    } catch (err) {
+      return rejectWithValue(
+        err?.response?.data?.message || err.message
+      );
+    }
+  }
+);
+export const fetchDocuments = createAsyncThunk(
+  "media/fetchDocuments",
+  async ({ eventId, page = 1, limit = 20 }, { rejectWithValue }) => {
+    try {
+      const start = (page - 1) * limit + 1;
+      const offset = limit;
+
+      const res = await getMyDocuments({ eventId, start, offset });
+
+      return {
+        eventId,
+        list: res.data?.result || [],
+        total: res.data?.documentFileCount || 0,
+        page,
+      };
+    } catch (err) {
+      return rejectWithValue(
+        err?.response?.data?.message || err.message
+      );
+    }
+  }
+);
+
+// Upload Member Media
+export const uploadMemberMedia = createAsyncThunk(
+  "media/uploadMemberMedia",
+  async ({ files, eventId }, { rejectWithValue }) => {
+    try {
+      const res = await addMemberMedia({
+        mediaFiles: files,
+        eventId,
+      });
+      return res.data;
+    } catch (err) {
+      return rejectWithValue(
+        err?.response?.data?.message || err.message
+      );
+    }
+  }
+);
+
+export const uploadDocument = createAsyncThunk(
+  "media/uploadDocument",
+  async ({ files, eventId }, { rejectWithValue }) => {
+    try {
+      const res = await addDocument({
+        documentFiles: files,
+        eventId,
+      });
+      return res.data;
+    } catch (err) {
+      return rejectWithValue(
+        err?.response?.data?.message || err.message
+      );
+    }
+  }
+);
+
+export const deleteMembersMedia = createAsyncThunk(
+  "media/deleteMembersMedia",
+  async ({ eventId, deleteURL }, { rejectWithValue }) => {
+    try {
+      const res = await deleteMemberMedia({ eventId, deleteURL });
+      return { eventId, deleteURL, data: res.data };
+    } catch (err) {
+      return rejectWithValue(
+        err?.response?.data?.message || err.message
+      );
+    }
+  }
+);
+
+export const deleteDocument = createAsyncThunk(
+  "media/deleteDocument",
+  async ({ eventId, deleteURL }, { rejectWithValue }) => {
+    try {
+      const res = await deleteMyDocument({ eventId, deleteURL });
+      return { eventId, deleteURL, data: res.data };
+    } catch (err) {
+      return rejectWithValue(
+        err?.response?.data?.message || err.message
+      );
+    }
+  }
+);
+
 
 // ─── Event Checklist Thunks (Actionables within an Event) ─────────────────────
 

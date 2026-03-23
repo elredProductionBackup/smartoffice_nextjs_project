@@ -4,83 +4,6 @@ import Link from "next/link";
 import ExportAsExcelButton from "./ExportAsExcelButton";
 import ExportDetailsPopup from "./ExportDetailsPopup";
 
-const MembersDetailsShimmer = () => {
-  return (
-    <>
-      {/* Close button shimmer */}
-      <div className="absolute right-[40px] top-[40px] h-[24px] w-[24px] rounded-full bg-[#D4DFF1] animate-pulse" />
-
-      {/* Header */}
-      <div className="flex flex-col gap-[20px] items-start animate-pulse">
-        {/* Avatar */}
-        <div className="w-[100px] h-[100px] rounded-full bg-[#D4DFF1]" />
-
-        {/* Name + title */}
-        <div className="w-full flex flex-col gap-[10px]">
-          <div className="flex items-center justify-between">
-            <div className="h-[32px] w-[220px] rounded bg-[#D4DFF1]" />
-            <div className="h-[24px] w-[24px] rounded-full bg-[#D4DFF1]" />
-          </div>
-
-          <div className="h-[20px] w-[180px] rounded bg-[#D4DFF1]" />
-
-          {/* Location */}
-          <div className="flex items-center gap-[8px]">
-            <div className="h-[24px] w-[24px] rounded-full bg-[#D4DFF1]" />
-            <div className="h-[16px] w-[160px] rounded bg-[#D4DFF1]" />
-          </div>
-        </div>
-      </div>
-
-      {/* Details grid */}
-      <div className="grid grid-cols-2 gap-x-10 gap-y-[40px] animate-pulse">
-        {/* Email */}
-        <div className="flex flex-col gap-[12px]">
-          <div className="h-[20px] w-[80px] rounded bg-[#D4DFF1]" />
-          <div className="flex items-center gap-[8px]">
-            <div className="h-[24px] w-[24px] rounded-full bg-[#D4DFF1]" />
-            <div className="h-[16px] w-[180px] rounded bg-[#D4DFF1]" />
-          </div>
-        </div>
-
-        {/* Phone */}
-        <div className="flex flex-col gap-[12px] justify-self-end w-[230px]">
-          <div className="h-[20px] w-[80px] rounded bg-[#D4DFF1]" />
-          <div className="flex items-center gap-[8px]">
-            <div className="h-[24px] w-[24px] rounded-full bg-[#D4DFF1]" />
-            <div className="h-[16px] w-[140px] rounded bg-[#D4DFF1]" />
-          </div>
-        </div>
-
-        {/* Spouse */}
-        <div className="flex flex-col gap-[12px]">
-          <div className="h-[20px] w-[130px] rounded bg-[#D4DFF1]" />
-          <div className="h-[16px] w-[160px] rounded bg-[#D4DFF1]" />
-        </div>
-
-        {/* Children */}
-        <div className="flex flex-col gap-[12px] justify-self-end w-[230px]">
-          <div className="h-[20px] w-[150px] rounded bg-[#D4DFF1]" />
-          <div className="h-[16px] w-[180px] rounded bg-[#D4DFF1]" />
-        </div>
-      </div>
-
-      {/* Documents */}
-      <div className="flex flex-col gap-[12px] animate-pulse">
-        <div className="h-[20px] w-[200px] rounded bg-[#D4DFF1]" />
-
-        <div className="flex gap-[20px]">
-          {[1, 2, 3].map((_, i) => (
-            <div key={i} className="flex flex-col gap-[8px] items-center">
-              <div className="w-[90px] h-[100px] rounded-[10px] bg-[#D4DFF1]" />
-            </div>
-          ))}
-        </div>
-      </div>
-    </>
-  );
-};
-
 export default function MemberDetailsModal({
   member,
   onClose,
@@ -396,7 +319,7 @@ export default function MemberDetailsModal({
         {/* Nested popup example */}
         {activeDoc && (
           <div
-            className="fixed inset-0 z-59"
+            className="fixed inset-0 z-59 "
             onClick={() => setActiveDoc(null)}
           ></div>
         )}
