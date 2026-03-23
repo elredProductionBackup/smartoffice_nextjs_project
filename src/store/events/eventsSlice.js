@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { closeEventThunk, deleteDocument, deleteMembersMedia, fetchCollaborators, fetchDocuments, fetchEventChecklist, fetchEventDetails, fetchEventMembers, fetchEvents, fetchMasterConfig, fetchMembersMedia, saveMasterConfig, uploadDocument, uploadMemberMedia } from "./eventsThunks";
+import { closeEventThunk, createEventActionable, createEventComment, createEventSubTask, deleteDocument, deleteMembersMedia, fetchCollaborators, fetchDocuments, fetchEventChecklist, fetchEventDetails, fetchEventMembers, fetchEvents, fetchMasterConfig, fetchMembersMedia, removeEventActionable, removeEventComment, removeEventSubTask, saveMasterConfig, toggleEventActionable, updateEventActionable, updateEventSubTask, uploadDocument, uploadMemberMedia } from "./eventsThunks";
 import moment from "moment";
 
 const initialState = {
@@ -472,18 +472,6 @@ const eventSlice = createSlice({
         console.log("Delete Member Media Failed:", action.payload || action.error);
       })
 
-      .addCase(fetchEventChecklist.pending, (state) => {
-          state.eventChecklistLoading = true;
-        })
-        .addCase(fetchEventChecklist.fulfilled, (state, action) => {
-          state.eventChecklistLoading = false;
-          state.eventChecklist = action.payload.list;
-          state.eventChecklistTotal = action.payload.total;
-        })
-        .addCase(fetchEventChecklist.rejected, (state) => {
-          state.eventChecklistLoading = false;
-        })
-
       .addCase(deleteDocument.fulfilled, (state, action) => {
         const { eventId, deleteURL } = action.payload;
 
@@ -498,7 +486,95 @@ const eventSlice = createSlice({
         console.log("Delete Document Failed:", action.payload || action.error);
       })
 
-
+// ─── Event Checklist ──────────────────────────────────────────────────
+        .addCase(fetchEventChecklist.pending, (state) => {
+          state.eventChecklistLoading = true;
+        })
+        .addCase(fetchEventChecklist.fulfilled, (state, action) => {
+          state.eventChecklistLoading = false;
+          state.eventChecklist = action.payload.list;
+          state.eventChecklistTotal = action.payload.total;
+        })
+        .addCase(fetchEventChecklist.rejected, (state) => {
+          state.eventChecklistLoading = false;
+        })
+        .addCase(createEventActionable.pending, (state, action) => {
+          const tempId = action.meta.arg.tempId;
+          const tempItem = {
+            ...action.meta.arg,
+            actionableId: tempId,
+            isOptimistic: true,
+          };
+          state.eventChecklist.unshift(tempItem);
+          state.eventChecklistTotal += 1;
+        })
+        .addCase(createEventActionable.fulfilled, (state, action) => {
+          const { item, tempId } = action.payload;
+          const index = state.eventChecklist.findIndex((t) => t.actionableId === tempId);
+          if (index !== -1) {
+            state.eventChecklist[index] = { ...item, isOptimistic: false };
+          }
+        })
+        .addCase(createEventActionable.rejected, (state, action) => {
+          const tempId = action.payload?.tempId;
+          state.eventChecklist = state.eventChecklist.filter((t) => t.actionableId !== tempId);
+          state.eventChecklistTotal -= 1;
+        })
+        .addCase(toggleEventActionable.fulfilled, (state, action) => {
+          const { actionableId, isCompleted } = action.payload;
+          const item = state.eventChecklist.find((t) => t.actionableId === actionableId);
+          if (item) item.isCompleted = isCompleted;
+        })
+        .addCase(removeEventActionable.fulfilled, (state, action) => {
+          const { actionableId } = action.payload;
+          state.eventChecklist = state.eventChecklist.filter((t) => t.actionableId !== actionableId);
+          state.eventChecklistTotal -= 1;
+        })
+        .addCase(updateEventActionable.fulfilled, (state, action) => {
+          const { actionableId, ...updates } = action.payload;
+          const item = state.eventChecklist.find((t) => t.actionableId === actionableId);
+          if (item) Object.assign(item, updates);
+        })
+        // Subtasks
+        .addCase(createEventSubTask.fulfilled, (state, action) => {
+          const { actionableId, subTask } = action.payload;
+          const item = state.eventChecklist.find((t) => t.actionableId === actionableId);
+          if (item) {
+            if (!item.subTask) item.subTask = [];
+            item.subTask.unshift(subTask);
+          }
+        })
+        .addCase(updateEventSubTask.fulfilled, (state, action) => {
+          const { actionableId, subTask } = action.payload;
+          const item = state.eventChecklist.find((t) => t.actionableId === actionableId);
+          if (item && item.subTask) {
+            const index = item.subTask.findIndex(s => s._id === subTask._id);
+            if (index !== -1) item.subTask[index] = subTask;
+          }
+        })
+        .addCase(removeEventSubTask.fulfilled, (state, action) => {
+          const { actionableId, subTaskId } = action.payload;
+          const item = state.eventChecklist.find((t) => t.actionableId === actionableId);
+          if (item && item.subTask) {
+            item.subTask = item.subTask.filter(s => s._id !== subTaskId);
+          }
+        })
+        // Comments
+        .addCase(createEventComment.fulfilled, (state, action) => {
+          const { actionableId, comment } = action.payload;
+          const item = state.eventChecklist.find((t) => t.actionableId === actionableId);
+          if (item) {
+            if (!item.comments) item.comments = [];
+            item.comments.unshift(comment);
+          }
+        })
+        .addCase(removeEventComment.fulfilled, (state, action) => {
+          const { actionableId, commentId } = action.payload;
+          const item = state.eventChecklist.find((t) => t.actionableId === actionableId);
+          if (item && item.comments) {
+            item.comments = item.comments.filter(c => c._id !== commentId);
+          }
+        });
 
   },
 });

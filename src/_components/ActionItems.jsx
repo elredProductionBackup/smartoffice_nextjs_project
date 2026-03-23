@@ -108,7 +108,7 @@ export default function ActionItems() {
         title: text,
         isCompleted: false,
         category: "all",
-        notes: "",  
+        notes: "",
         linkedEvent: [],
         // dueDateTimeStamp: moment.utc().toISOString(),
         dueDateTimeStamp: "",
