@@ -24,10 +24,11 @@ const initialState = {
   pointsMaster: [],
   masterLoading: false,
 
-membersMap: {},
-membersFetched: {},
-membersLoading: {},
-membersTotal: {},
+  membersMap: {},
+  membersFetched: {},
+  membersLoading: {},
+  membersTotal: {},
+  membersPage: {},
 
   membersMediaMap: {},
   membersMediaUploadingCount: {},
@@ -247,26 +248,33 @@ const eventSlice = createSlice({
         state.masterLoading = false;
       })
       // Attendees
+// Attendees
 .addCase(fetchEventMembers.pending, (state, action) => {
-  const { eventId } = action.meta.arg;
+  const { eventId, page } = action.meta.arg;
 
-  if (!state.membersFetched[eventId]) {
+  if (page === 1) {
     state.membersLoading[eventId] = true;
   }
 })
 
 .addCase(fetchEventMembers.fulfilled, (state, action) => {
-  const { eventId } = action.meta.arg;
+  const { eventId, list, total, page } = action.payload;
 
   state.membersLoading[eventId] = false;
-  state.membersMap[eventId] = action.payload.list;
-  state.membersTotal[eventId] = action.payload.total;
+
+  if (!state.membersMap[eventId]) {
+    state.membersMap[eventId] = [];
+  }
+
+  state.membersMap[eventId] = list;
+
+  state.membersPage[eventId] = page;
+  state.membersTotal[eventId] = total;
   state.membersFetched[eventId] = true;
 })
 
 .addCase(fetchEventMembers.rejected, (state, action) => {
   const { eventId } = action.meta.arg;
-
   state.membersLoading[eventId] = false;
 })
       .addCase(fetchEventDetails.fulfilled, (state, action) => {

@@ -124,8 +124,11 @@ export const fetchEventMembers = createAsyncThunk(
       });
 
       return {
+        eventId,
         list: res.data?.result || [],
         total: res.data?.totalCount || 0,
+        page,
+        limit,
       };
     } catch (err) {
       return rejectWithValue(
