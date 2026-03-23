@@ -1,14 +1,14 @@
 // redux/events/eventThunks.js
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { getEventMembers, getEventsList, getMasterList, updateMasterList } from "@/services/events.service";
-import { 
-  getActionables, 
-  addActionable, 
-  deleteActionable, 
-  addComment, 
-  deleteComment, 
-  addSubTask, 
-  deleteSubTask 
+import {
+  getActionables,
+  addActionable,
+  deleteActionable,
+  addComment,
+  deleteComment,
+  addSubTask,
+  deleteSubTask
 } from "@/services/actionable.service";
 
 import { getCollaborators } from "@/services/actionable.service";
@@ -146,6 +146,31 @@ export const fetchEventMembers = createAsyncThunk(
 
 // ─── Event Checklist Thunks (Actionables within an Event) ─────────────────────
 
+// ─── localStorage helpers for persisting completed states per event ────────────
+const COMPLETED_KEY = (eventId) => `checklist_completed_${eventId}`;
+
+export const loadPersistedCompleted = (eventId) => {
+  try {
+    const raw = localStorage.getItem(COMPLETED_KEY(eventId));
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+};
+
+export const persistCompleted = (eventId, actionableId, isCompleted) => {
+  try {
+    const map = loadPersistedCompleted(eventId);
+    if (isCompleted) {
+      map[actionableId] = true;
+    } else {
+      delete map[actionableId];
+    }
+    localStorage.setItem(COMPLETED_KEY(eventId), JSON.stringify(map));
+  } catch {}
+};
+// ──────────────────────────────────────────────────────────────────────────────
+
 export const fetchEventChecklist = createAsyncThunk(
   "events/fetchEventChecklist",
   async ({ eventId, page = 1, limit = 100 }, { rejectWithValue }) => {
@@ -158,8 +183,19 @@ export const fetchEventChecklist = createAsyncThunk(
         offset: limit,
         eventId,
       });
+
+      // Merge persisted completed states so checked tasks survive page refresh
+      const completedMap = loadPersistedCompleted(eventId);
+      const list = (res.data.result || []).map((item) => {
+        const id = item.actionableId || item._id || item.id;
+        if (completedMap[id]) {
+          return { ...item, isCompleted: true };
+        }
+        return item;
+      });
+
       return {
-        list: res.data.result || [],
+        list,
         total: res.data?.totalEventsCount || 0,
       };
     } catch (err) {
@@ -174,11 +210,11 @@ export const createEventActionable = createAsyncThunk(
     try {
       const networkClusterCode = localStorage.getItem("networkClusterCode");
       const { tempId, eventMeta, ...rest } = payload;
-      const res = await addActionable({ 
-        ...rest, 
-      networkClusterCode,
+      const res = await addActionable({
+        ...rest,
+        networkClusterCode,
         // linkedEvent: [eventMeta], 
-        actionableId: "" 
+        actionableId: ""
       });
       return { item: res.data.result[0], tempId };
     } catch (err) {
