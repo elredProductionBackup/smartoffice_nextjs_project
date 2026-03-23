@@ -8,10 +8,10 @@ import {
   addComment,
   deleteComment,
   addSubTask,
-  deleteSubTask
+  deleteSubTask,
+  getCollaborators
 } from "@/services/actionable.service";
 
-import { addActionable, addComment, addSubTask, deleteActionable, deleteComment, deleteSubTask, getCollaborators } from "@/services/actionable.service";
 
 const mapTabToFilter = (tab) => {
   if (tab === "upcoming") return "upcomming";
