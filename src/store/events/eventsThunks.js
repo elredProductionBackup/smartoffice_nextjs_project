@@ -1,16 +1,8 @@
 // redux/events/eventThunks.js
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { getEventMembers, getEventsList, getMasterList, updateMasterList } from "@/services/events.service";
-import {
-  getActionables,
-  addActionable,
-  deleteActionable,
-  addComment,
-  deleteComment,
-  addSubTask,
-  deleteSubTask,
-  getCollaborators
-} from "@/services/actionable.service";
+import { addDocument, addMemberMedia, closeEvent, deleteMemberMedia, deleteMyDocument, getEventDetails, getEventMembers, getEventsList, getMasterList, getMembersMedia, getMyDocuments, updateMasterList  } from "@/services/events.service";
+
+import { addActionable, addComment, addSubTask, deleteActionable, deleteComment, deleteSubTask, getActionables, getCollaborators } from "@/services/actionable.service";
 
 const mapTabToFilter = (tab) => {
   if (tab === "upcoming") return "upcomming";
