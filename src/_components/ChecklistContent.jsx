@@ -168,84 +168,88 @@ const ChecklistContent = ({ eventId }) => {
         />
       )}
 
-      {(taskList.length > 0 || loading) && (
-        <div className="w-full">
-          <div className=" flex justify-between ">
-            <div className=" w-fit flex items-center gap-4">
-              <span className="text-[24px] font-[600] pl-2">All</span>
-              {/* =============== Add Task Button ================ */}
-              <button
-                onClick={() => setShowAddModal(true)}
-                className="w-[50px] h-[36px] rounded-full flex items-center justify-center cursor-pointer"
-                style={{ backgroundImage: "linear-gradient(90deg, #5597ED 0%, #00449C 100%)" }}
-              >
-                <img src="/image/Plus-Icon.svg" alt="plus" />
-              </button>
-            </div>
-
-            {/* ===========task completion Progress bar=================== */}
-            {(() => {
-              const countFor = (p) => {
-                const filteredTasks = taskList.filter((t) => t.category === p);
-                return {
-                  total: filteredTasks.length,
-                  done: filteredTasks.filter(
-                    (t) => t.isCompleted === true || t.isCompleted === "true"
-                  ).length,
-                };
-              };
-              return (
-                <div className="flex justify-around items-center gap-3">
-                  <div style={{ display: showDifficultyBar && activeDifficulty !== "Very difficult" ? "none" : "block" }}>
-                    <CircularProgress
-                      {...countFor("Very difficult")}
-                      fillColor="#f13c3f"
-                      emptyColor="#F2BFC5"
-                      onClick={() => { setActiveDifficulty("Very difficult"); setShowDifficultyBar(true); }}
-                    />
-                  </div>
-                  <div style={{ display: showDifficultyBar && activeDifficulty !== "Mildly difficult" ? "none" : "block" }}>
-                    <CircularProgress
-                      {...countFor("Mildly difficult")}
-                      fillColor="#ffae3c"
-                      emptyColor="#F6E1C5"
-                      onClick={() => { setActiveDifficulty("Mildly difficult"); setShowDifficultyBar(true); }}
-                    />
-                  </div>
-                  <div style={{ display: showDifficultyBar && activeDifficulty !== "Easy to do" ? "none" : "block" }}>
-                    <CircularProgress
-                      {...countFor("Easy to do")}
-                      fillColor="#43ae34"
-                      emptyColor="#a0c59cff"
-                      onClick={() => { setActiveDifficulty("Easy to do"); setShowDifficultyBar(true); }}
-                    />
-                  </div>
-                </div>
-              );
-            })()}
+      {/* =============== Header – Always visible ================  */}
+      <div className="w-full">
+        <div className=" flex justify-between ">
+          <div className=" w-fit flex items-center gap-4">
+            <span className="text-[24px] font-[600] pl-2">All</span>
+            {/* =============== Add Task Button ================ */}
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="w-[50px] h-[36px] rounded-full flex items-center justify-center cursor-pointer"
+              style={{ backgroundImage: "linear-gradient(90deg, #5597ED 0%, #00449C 100%)" }}
+            >
+              <img src="/image/Plus-Icon.svg" alt="plus" />
+            </button>
           </div>
-          {/* ================= difficulty selection boxes =======================    */}
-          {showDifficultyBar && <div className="w-full h-[50px]  mt-5 gap-1.5 flex">
-            <button
-              onClick={() => setActiveDifficulty("Very difficult")}
-              className={`w-[180px] text-[20px] cursor-pointer h-full rounded-full ${activeDifficulty === "Very difficult" ? "bg-[#d3e3fd] font-bold" : "font-[500]"}`}
-            >
-              Very difficult
-            </button>
-            <button
-              onClick={() => setActiveDifficulty("Mildly difficult")}
-              className={`w-[180px] text-[20px] cursor-pointer h-full rounded-full ${activeDifficulty === "Mildly difficult" ? "bg-[#d3e3fd] font-bold" : "font-[500]"}`}
-            >
-              Mildly difficult
-            </button>
-            <button
-              onClick={() => setActiveDifficulty("Easy to do")}
-              className={`w-[180px] text-[20px] cursor-pointer h-full rounded-full ${activeDifficulty === "Easy to do" ? "bg-[#d3e3fd] font-bold" : "font-[500]"}`}
-            >
-              Easy to do
-            </button>
-            <button onClick={() => { setActiveDifficulty(null); setShowDifficultyBar(false); }} className="w-[106px] border-[2px] text-[16px] cursor-pointer border-[#666666] text-[#666666] h-full rounded-full flex items-center justify-center gap-2">Close <span><img src="/image/cross.svg" /></span></button>
-          </div>}
+
+          {/* ===========task completion Progress bar=================== */}
+          {(() => {
+            const countFor = (p) => {
+              const filteredTasks = taskList.filter((t) => t.category === p);
+              return {
+                total: filteredTasks.length,
+                done: filteredTasks.filter(
+                  (t) => t.isCompleted === true || t.isCompleted === "true"
+                ).length,
+              };
+            };
+            return (
+              <div className="flex justify-around items-center gap-3">
+                <div style={{ display: showDifficultyBar && activeDifficulty !== "Very difficult" ? "none" : "block" }}>
+                  <CircularProgress
+                    {...countFor("Very difficult")}
+                    fillColor="#f13c3f"
+                    emptyColor="#F2BFC5"
+                    onClick={() => { setActiveDifficulty("Very difficult"); setShowDifficultyBar(true); }}
+                  />
+                </div>
+                <div style={{ display: showDifficultyBar && activeDifficulty !== "Mildly difficult" ? "none" : "block" }}>
+                  <CircularProgress
+                    {...countFor("Mildly difficult")}
+                    fillColor="#ffae3c"
+                    emptyColor="#F6E1C5"
+                    onClick={() => { setActiveDifficulty("Mildly difficult"); setShowDifficultyBar(true); }}
+                  />
+                </div>
+                <div style={{ display: showDifficultyBar && activeDifficulty !== "Easy to do" ? "none" : "block" }}>
+                  <CircularProgress
+                    {...countFor("Easy to do")}
+                    fillColor="#43ae34"
+                    emptyColor="#a0c59cff"
+                    onClick={() => { setActiveDifficulty("Easy to do"); setShowDifficultyBar(true); }}
+                  />
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+
+        {/* ================= difficulty selection boxes =======================    */}
+        {showDifficultyBar && <div className="w-full h-[50px]  mt-5 gap-1.5 flex">
+          <button
+            onClick={() => setActiveDifficulty("Very difficult")}
+            className={`w-[180px] text-[20px] cursor-pointer h-full rounded-full ${activeDifficulty === "Very difficult" ? "bg-[#FFEBEB] text-[#E40000] font-bold" : "font-[500]"}`}
+          >
+            Very difficult
+          </button>
+          <button
+            onClick={() => setActiveDifficulty("Mildly difficult")}
+            className={`w-[180px] text-[20px] cursor-pointer h-full rounded-full ${activeDifficulty === "Mildly difficult" ? "bg-[#FFEBEB] text-[#E40000] font-bold" : "font-[500]"}`}
+          >
+            Mildly difficult
+          </button>
+          <button
+            onClick={() => setActiveDifficulty("Easy to do")}
+            className={`w-[180px] text-[20px] cursor-pointer h-full rounded-full ${activeDifficulty === "Easy to do" ? "bg-[#FFEBEB] text-[#E40000] font-bold" : "font-[500]"}`}
+          >
+            Easy to do
+          </button>
+          <button onClick={() => { setActiveDifficulty(null); setShowDifficultyBar(false); }} className="w-[106px] border-[2px] text-[16px] cursor-pointer border-[#666666] text-[#666666] h-full rounded-full flex items-center justify-center gap-2">Close <span><img src="/image/cross.svg" /></span></button>
+        </div>}
+
+        {/* =============== Task List ================ */}
+        {taskList.length > 0 && (
           <div className="flex flex-col gap-2 mt-5">
             {taskList
               .filter((task) => !activeDifficulty || task.category === activeDifficulty)
@@ -264,7 +268,7 @@ const ChecklistContent = ({ eventId }) => {
                       <button
                         onClick={() => toggleCheck(task)}
                         className="shrink-0 w-[18px] h-[18px] rounded-[3px] border-[2px] border-[#666666] flex items-center justify-center "
-                        style={isDone ? { borderColor: "#0B57D0", backgroundColor: "#0B57D0" } : {}}
+                        style={isDone ? { borderColor: "#E40000", backgroundColor: "#E40000" } : {}}
                       >
                         {isDone && (
                           <img
@@ -320,7 +324,7 @@ const ChecklistContent = ({ eventId }) => {
                             />
                           ))}
                           {task.collaborators.length > 3 && (
-                            <div className="w-[32px] h-[32px] rounded-full bg-[#D3E3FD] border-2 border-white flex items-center justify-center text-[12px] font-bold text-[#0B57D0] shrink-0">
+                            <div className="w-[32px] h-[32px] rounded-full bg-[#FFEBEB] border-2 border-white flex items-center justify-center text-[12px] font-bold text-[#E40000] shrink-0">
                               +{task.collaborators.length - 3}
                             </div>
                           )}
@@ -377,8 +381,8 @@ const ChecklistContent = ({ eventId }) => {
                 );
               })}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {modal.type === "DETAILS" && mappedTask && (
         <ActionableDetailsModal
@@ -398,7 +402,7 @@ const ChecklistContent = ({ eventId }) => {
 
       {/* =============== Event List – empty condition ================  */}
       {taskList.length === 0 && !loading && (
-        <div className="flex flex-col items-center justify-center py-24 w-full bg-white rounded-[24px] mt-10">
+        <div className="flex flex-col items-center justify-center py-24 w-full mt-10">
           <img
             src="/image/Events_checklist.svg"
             alt="No Checklist Info"
@@ -408,12 +412,6 @@ const ChecklistContent = ({ eventId }) => {
           <div className="text-gray-500 text-[16px] font-normal">
             Looks like no information about Checklist yet
           </div>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="mt-6 px-8 py-3 bg-[#0B57D0] text-white rounded-full font-bold hover:opacity-90 transition-opacity"
-          >
-            Add your first task
-          </button>
         </div>
       )}
     </div>
