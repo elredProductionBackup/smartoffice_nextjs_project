@@ -65,3 +65,103 @@ export const getEventMembers = ({
     },
   });
 };
+
+// Get Members Media List
+export const getMembersMedia = ({
+  eventId,
+  start = 1,
+  offset = 10,
+}) => {
+  return api.get("/smartOffice/getMembersMedia", {
+    params: {
+      eventId,
+      start,
+      offset,
+    },
+  });
+};
+
+// Get My Documents List
+export const getMyDocuments = ({
+  eventId,
+  start = 1,
+  offset = 10,
+}) => {
+  return api.get("/smartOffice/getMyDocuments", {
+    params: {
+      eventId,
+      start,
+      offset,
+    },
+  });
+};
+
+// Close Event
+export const closeEvent = ({ eventId }) => {
+  return api.post("/smartOffice/closeEvent", {
+    eventId,
+  });
+};
+
+// Add Members Media
+export const addMemberMedia = ({ mediaFiles, eventId }) => {
+  const formData = new FormData();
+
+  mediaFiles.forEach((file) => {
+    formData.append("mediaFile", file);
+  });
+
+  formData.append("eventId", eventId);
+
+  return api.post("/smartOffice/addMemberMedia", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+};
+
+// Add Document
+export const addDocument = ({ documentFiles, eventId }) => {
+  const formData = new FormData();
+
+  documentFiles.forEach((file) => {
+    formData.append("documentFile", file);
+  });
+
+  formData.append("eventId", eventId);
+
+  return api.post("/smartOffice/addDocument", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+};
+
+// Delete Members Media
+export const deleteMemberMedia = ({ eventId, deleteURL }) => {
+  return api.delete("/smartOffice/deleteMemberMedia", {
+    data: {
+      eventId,
+      deleteURL,
+    },
+  });
+};
+
+// Delete My Document
+export const deleteMyDocument = ({ eventId, deleteURL }) => {
+  return api.delete("/smartOffice/deleteMyDocument", {
+    data: {
+      eventId,
+      deleteURL,
+    },
+  });
+};
+
+// Get Event Details
+export const getEventDetails = ({ eventId }) => {
+  return api.get("/smartOffice/getEventsDetails", {
+    params: {
+      eventId,
+    },
+  });
+};

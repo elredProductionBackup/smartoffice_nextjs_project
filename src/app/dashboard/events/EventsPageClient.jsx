@@ -7,19 +7,19 @@ import EventsPopups from "@/_components/EventsComps/EventsPopups";
 import EventsHeader from "@/_components/EventsComps/EventsHeader";
 import { useDispatch, useSelector } from "react-redux";
 import { useEffect } from "react";
-import { fetchEvents } from "@/store/events/eventsThunks";
+import { fetchEvents, fetchEventTaskSummaries } from "@/store/events/eventsThunks";
 import { setActiveTab,setPage  } from "@/store/events/eventsSlice";
 import Pagination from "@/_components/UI/Pagination";
 
 const EVENT_TABS = [
-  { label: "Upcoming events", value: "upcoming" },
+  { label: "Upcoming events", value: "upcomming" },
   { label: "Past events", value: "past" },
   { label: "Draft", value: "draft" },
 ];
 
 export default function EventsPageClient() {
   const searchParams = useSearchParams();
-  const tab = searchParams.get("tab") || "upcoming";
+  const tab = searchParams.get("tab") || 'upcomming';
   const urlPage = Number(searchParams.get("page")) || 1;
   const dispatch = useDispatch();
 
@@ -36,7 +36,14 @@ export default function EventsPageClient() {
       dispatch(setPage(urlPage));
     }
 
-    dispatch(fetchEvents({ page: urlPage, limit, search, filterBy: tab }));
+    dispatch(fetchEvents({ page: urlPage, limit, search, filterBy: tab }))
+      .unwrap()
+      .then((res) => {
+        if (res.list && res.list.length > 0) {
+          const eventIds = res.list.map((e) => e.eventId);
+          dispatch(fetchEventTaskSummaries({ eventIds }));
+        }
+      });
   }, [tab, urlPage, limit, search, dispatch]);
 
 
@@ -46,7 +53,7 @@ export default function EventsPageClient() {
 
       <ActionableTabs
         tabs={EVENT_TABS}
-        defaultTab="upcoming"
+        defaultTab="upcomming"
         events={true}
       />
 

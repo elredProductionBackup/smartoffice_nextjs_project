@@ -1,9 +1,9 @@
- "use client";
+"use client";
 
 import Image from "next/image";
 import ProgressCircle from "./ProgressCircle";
 import { useRouter } from "next/navigation";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { setSelectedEvent } from "@/store/events/eventsSlice";
 
 const TASK_ORDER = ["hard", "medium", "easy"];
@@ -21,11 +21,10 @@ export default function EventsList({
   showTasks = true,
   isDraft = false,
 }) {
-  const hasEvents = events.some((group) => group.items.length > 0);
+  const dispatch = useDispatch();
+  const { eventTaskSummaries } = useSelector((state) => state.events);
   const router = useRouter();
-
-
-const dispatch = useDispatch();
+  const hasEvents = events.some((group) => group.items.length > 0);
 
 const goToEvent = (event) => {
   dispatch(setSelectedEvent(event));
@@ -180,28 +179,23 @@ const goToEvent = (event) => {
 
                     {showTasks && (
                       <div className="flex justify-center gap-[20px]">
-                        {isDraft &&
-                          TASK_ORDER.map((task) => (
+                        {TASK_ORDER.map((task) => {
+                          const localSummary = eventTaskSummaries[event.id]?.[task];
+                          const taskData = localSummary || event.tasks?.[task] || {
+                            completed: 0,
+                            total: 0,
+                          };
+
+                          if (taskData.total === 0) return null;
+
+                          return (
                             <ProgressCircle
                               key={task}
-                              value="0/0"
+                              value={`${taskData.completed}/${taskData.total}`}
                               color={TASK_COLORS[task]}
                             />
-                          ))}
-
-                        {!isDraft &&
-                          TASK_ORDER.map((task) => {
-                            const taskData = event.tasks?.[task];
-                            if (!taskData) return null;
-
-                            return (
-                              <ProgressCircle
-                                key={task}
-                                value={`${taskData.completed}/${taskData.total}`}
-                                color={TASK_COLORS[task]}
-                              />
-                            );
-                          })}
+                          );
+                        })}
                       </div>
                     )}
                   </div>
