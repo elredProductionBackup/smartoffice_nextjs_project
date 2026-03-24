@@ -28,10 +28,10 @@ const ReminderField = ({ reminders = [] }) => {
       <div className="space-y-2">
         {hasReminders ? (
           reminders.map((r) => (
-            <ReadOnlyReminderRow key={r.id} reminder={r} />
+            <ReadOnlyReminderRow key={r.id || r._id} reminder={r} />
           ))
         ) : (
-          <ReadOnlyReminderRow reminder={null} />
+          <ReadOnlyReminderRow  reminder={null} />
         )}
       </div>
     </div>

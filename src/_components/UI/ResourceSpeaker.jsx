@@ -74,7 +74,13 @@ export function ResourceSpeaker({ value, onChange, errors = {} }) {
           {value.image ? (
             <>
               <img
-                src={URL.createObjectURL(value.image)}
+                src={
+                  value.image
+                    ? value.image instanceof File
+                      ? URL.createObjectURL(value.image)
+                      : value.image
+                    : "/placeholder.png"
+                }
                 alt=""
                 className="w-full h-full object-cover rounded-lg"
               />

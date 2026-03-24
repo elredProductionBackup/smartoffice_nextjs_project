@@ -5,6 +5,7 @@ import ProgressCircle from "./ProgressCircle";
 import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import { setSelectedEvent } from "@/store/events/eventsSlice";
+import { isValidImage } from "@/utils/functions";
 
 const TASK_ORDER = ["hard", "medium", "easy"];
 
@@ -26,10 +27,14 @@ export default function EventsList({
   const router = useRouter();
   const hasEvents = events.some((group) => group.items.length > 0);
 
-const goToEvent = (event) => {
-  dispatch(setSelectedEvent(event));
-  router.push(`/dashboard/events/${event.id}`);
-};
+  const goToEvent = (event) => {
+    dispatch(setSelectedEvent(event));
+    if(isDraft){
+      router.push(`/dashboard/events/create?id=${event.id}`);
+    } else{
+      router.push(`/dashboard/events/${event.id}`);
+    }
+  };
 
   return (
     <div className="flex-1 flex flex-col overflow-auto px-[30px] relative">
@@ -151,10 +156,14 @@ const goToEvent = (event) => {
                     } gap-[85px] pb-[20px] border-b border-[#D4DFF1]`}
                   >
                     <div className="flex items-center gap-[20px]">
-                      {event.eventImage ? (
+                      {event?.eventImage ? (
                         <Image
-                          src={event.eventImage}
-                          alt={event.name}
+                          src={
+                            isValidImage(event?.eventImage)
+                              ? event.eventImage
+                              : "/logo/no-image.svg"
+                          }
+                          alt={event?.eventName || "event"}
                           width={400}
                           height={400}
                           className="h-[50px] w-[50px] object-cover rounded-full border border-[#CCCCCC] bg-[#ccc]"

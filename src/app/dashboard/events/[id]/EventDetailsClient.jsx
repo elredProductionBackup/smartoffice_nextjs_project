@@ -22,6 +22,7 @@ import DeleteMediaConfirm from "@/_components/EventsComps/DeleteMediaConfirm";
 import { useRef } from "react";
 import { useCallback } from "react";
 import useInfiniteScrollObserver from "@/hooks/useInfiniteScroll";
+import { isValidImage } from "@/utils/functions";
 
 export default function EventDetailsClient() {
   // ================= ROUTER / PARAMS =================
@@ -127,7 +128,7 @@ useEffect(() => {
 
   useEffect(() => {
     if (eventId) {
-      dispatch(fetchEventDetails({ eventId }));
+      dispatch(fetchEventDetails({ eventId, noSkip:true }));
     }
   }, [eventId]);
 
@@ -171,8 +172,19 @@ useEffect(() => {
 
       <div className="bg-white rounded-2xl pt-6 flex justify-between gap-[105px] w-full relative z-[15]">
         <div className="flex-1 flex gap-[40px]">
-          <div className="w-[250px] min-h-[320px] relative rounded-[20px] overflow-hidden">
-            <Image src={event?.eventImage} alt="event" fill className="object-cover" />
+          <div className="w-[250px] min-h-[320px] relative rounded-[20px] overflow-hidden flex justify-center items-center">
+           <Image
+              src={
+                isValidImage(event?.eventImage)
+                  ? event.eventImage
+                  : "/logo/no-image.svg"
+              }
+              alt={event?.eventName || "event"}
+              fill
+              className={ isValidImage(event?.eventImage)
+                  ? "object-cover"
+                  : "object-contain max-h-[60%] grid place-items-center"}
+            />
           </div>
 
           <div className="flex-1 flex flex-col justify-between gap-[20px]">

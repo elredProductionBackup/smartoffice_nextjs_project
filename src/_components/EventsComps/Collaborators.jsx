@@ -8,7 +8,6 @@ import CollaboratorRow from "./CollaboratorRow";
 export function Collaborators({ form, setForm }) {
   const collaborators = form.collaborators || [];
   const apiCollaborators = useSelector((s) => s.events.collaboratorsList) || [];
-
   const [query, setQuery] = useState("");
   const debounceRef = useRef(null);
   const dispatch = useDispatch();
@@ -33,6 +32,39 @@ export function Collaborators({ form, setForm }) {
 
     return () => clearTimeout(debounceRef.current);
   }, [query, dispatch]);
+
+useEffect(() => {
+  if (!apiCollaborators.length || !collaborators.length) return;
+
+  const updated = collaborators.map((c) => {
+    const user = apiCollaborators.find(
+      (u) => u.userCode === c.userCode
+    );
+
+    if (!user) return c;
+
+    return {
+      ...c,
+      name: user.name,
+      email: user.email,
+      dpURL: user.dpURL,
+    };
+  });
+
+  // prevent unnecessary re-render
+  const isChanged = updated.some(
+    (c, i) =>
+      c.name !== collaborators[i].name ||
+      c.dpURL !== collaborators[i].dpURL 
+    );
+
+  if (isChanged) {
+    setForm((prev) => ({
+      ...prev,
+      collaborators: updated,
+    }));
+  }
+}, [apiCollaborators]);
 
   // Filter collaborators to exclude already selected
   const filteredCollaborators = apiCollaborators.filter(

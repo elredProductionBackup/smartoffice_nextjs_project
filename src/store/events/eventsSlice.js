@@ -12,6 +12,7 @@ const initialState = {
   eventDetailsMap: {},
   eventDetailsFetched: {},
   eventDetailsError: {},
+  eventDetailsFormLoader: {},
 
   page: 1,
   limit: 10,
@@ -48,7 +49,6 @@ const initialState = {
   eventChecklistLoading: false,
   eventChecklistTotal: 0,
 
-  // Central track for all event task counts by eventId
   eventTaskSummaries: {},
 
   activeTab: "",
@@ -335,17 +335,24 @@ const eventSlice = createSlice({
   const { eventId } = action.meta.arg;
   state.membersLoading[eventId] = false;
 })
+      .addCase(fetchEventDetails.pending , (state,action) => {
+          const { eventId } = action.meta.arg;
+          state.eventDetailsFormLoader[eventId] = true;
+      })
       .addCase(fetchEventDetails.fulfilled, (state, action) => {
         const { eventId, data, skip } = action.payload;
 
+        state.eventDetailsFormLoader[eventId] = false;
         if (skip) return;
 
         state.eventDetailsMap[eventId] = data;
         state.eventDetailsFetched[eventId] = true;
+
       })
       .addCase(fetchEventDetails.rejected, (state, action) => {
         const eventId = action.meta.arg.eventId;
         state.eventDetailsError[eventId] = action.payload;
+        state.eventDetailsFormLoader[eventId] = false;
       })
       .addCase(closeEventThunk.fulfilled, (state, action) => {
       })
