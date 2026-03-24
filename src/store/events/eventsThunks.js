@@ -140,11 +140,11 @@ export const fetchEventMembers = createAsyncThunk(
 
 export const fetchEventDetails = createAsyncThunk(
   "events/fetchEventDetails",
-  async ({ eventId }, { getState, rejectWithValue }) => {
+  async ({ eventId, noSkip=false }, { getState, rejectWithValue }) => {
     try {
       const { events } = getState();
 
-      if (events.eventDetailsFetched?.[eventId]) {
+      if (!noSkip && events.eventDetailsFetched?.[eventId]) {
         return { eventId, skip: true };
       }
 

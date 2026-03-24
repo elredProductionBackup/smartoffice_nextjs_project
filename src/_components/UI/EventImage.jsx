@@ -56,24 +56,29 @@ export const EventImage = ({ value, onChange }) => {
     };
   }, [value]);
 
-  const isValidPreview =
-  value?.file &&
-  ALLOWED_TYPES.includes(value.file.type) &&
-  value.file.size <= MAX_SIZE;
+const isValidPreview =
+  (value?.file &&
+    ALLOWED_TYPES.includes(value.file.type) &&
+    value.file.size <= MAX_SIZE) ||
+  (!value?.file && typeof value?.previewUrl === "string");
+
+        const imageSrc = value?.previewUrl;
+
 
   return (
     <div className="sticky top-0 flex flex-col items-center gap-[30px]">
       {/* Image Preview */}
       <div className="relative h-[600px] aspect-[3/4] overflow-hidden rounded-[20px] bg-gray-200">
-        {value?.previewUrl && isValidPreview ? (
-          <Image
-            src={value.previewUrl}
-            alt="event"
-            fill
-            sizes="450px"
-            className="object-cover border-[1.4px] border-[#EAEAEA] rounded-[20px]"
-          />
-        ) : (
+
+{imageSrc && isValidPreview ? (
+  <Image
+    src={imageSrc}
+    alt="event"
+    fill
+    sizes="450px"
+    className="object-cover border-[1.4px] border-[#EAEAEA] rounded-[20px]"
+  />
+) : (
          <div className="
             flex flex-col h-full w-full items-center justify-center
             rounded-[20px] border-[1.4px] border-[#EAEAEA]

@@ -40,6 +40,7 @@ export const useEventForm = () => {
   const defaultEnd = moment(defaultStart).add(1, "hour").toDate();
   const [errors, setErrors] = useState({});
   const [form, setForm] = useState({
+    eventId:"",
     startDate: defaultStart,
     endDate: defaultEnd,
     eventType: { type: "", points: 0 },

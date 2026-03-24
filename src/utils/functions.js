@@ -11,3 +11,14 @@ export const maskEmail = (email) => {
     return `${visible}***@${domain}`;
   };
   
+
+ export const isValidImage = (src) => {
+  return (
+    typeof src === "string" &&
+    src.trim() !== "" &&
+    src !== "null" &&
+    (src.startsWith("http://") ||
+      src.startsWith("https://") ||
+      src.startsWith("/"))
+  );
+};

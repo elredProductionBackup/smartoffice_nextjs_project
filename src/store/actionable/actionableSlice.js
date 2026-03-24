@@ -56,6 +56,7 @@ const actionableSlice = createSlice({
       })
       .addCase(fetchActionables.fulfilled, (state, action) => {
         state.loading = false;
+        console.log(action.payload.list)
         // Fallback filter to ensure event-checklist tasks are hidden even if API filter fails
         const filteredList = action.payload.list.filter(
           (item) => !item.category || item.category === "all"

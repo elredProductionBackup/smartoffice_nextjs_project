@@ -24,7 +24,7 @@ export default function EventsPageClient() {
   const dispatch = useDispatch();
 
   const {
-    groupedEvents, page, limit, search, activeTab, loading, error,  
+    groupedEvents, page, limit, search, activeTab, loading, error
   } = useSelector((state) => state.events);
 
   useEffect(() => {
