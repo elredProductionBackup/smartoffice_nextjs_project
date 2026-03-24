@@ -3,10 +3,10 @@ import ButtonComp from "./ButtonComp";
 import AddTask from "./AddTask";
 import { useDispatch, useSelector } from "react-redux";
 import { openModal, closeModal } from "@/store/actionable/actionableUiSlice";
-import { localToggleChecklist } from "@/store/events/eventsSlice";
 import ActionableDetailsModal from "./ActionableDetailsModal";
 import {
   fetchEventChecklist,
+  toggleEventActionable,
   createEventActionable,
   updateEventActionable,
   removeEventActionable,
@@ -14,8 +14,7 @@ import {
   updateEventSubTask,
   removeEventSubTask,
   createEventComment,
-  removeEventComment,
-  persistCompleted
+  removeEventComment
 } from "@/store/events/eventsThunks";
 
 
@@ -92,6 +91,14 @@ const ChecklistContent = ({ eventId }) => {
     }
   }, [dispatch, eventId]);
 
+  useEffect(() => {
+    if (!eventId) return;
+    const intervalId = setInterval(() => {
+      dispatch(fetchEventChecklist({ eventId }));
+    }, 15000);
+    return () => clearInterval(intervalId);
+  }, [dispatch, eventId]);
+
   const selectedTaskForModal = taskList.find(
     (t) => t.id === modal.taskId || t.actionableId === modal.taskId
   );
@@ -116,10 +123,7 @@ const ChecklistContent = ({ eventId }) => {
   const toggleCheck = (task) => {
     const taskId = task.actionableId || task.id;
     const newCompleted = !(task.isCompleted === true || task.isCompleted === "true");
-    // Update Redux state immediately (no API call)
-    dispatch(localToggleChecklist({ actionableId: taskId }));
-    // Persist to localStorage so the state survives page refresh
-    persistCompleted(eventId, taskId, newCompleted);
+    dispatch(toggleEventActionable({ actionableId: taskId, isCompleted: newCompleted }));
   };
 
   const toggleMenu = (id) =>
@@ -157,8 +161,6 @@ const ChecklistContent = ({ eventId }) => {
   const handleDeleteTask = (actionableId) => {
     const networkClusterCode = localStorage.getItem("networkClusterCode");
     dispatch(removeEventActionable({ actionableId, networkClusterCode }));
-    // Clean up the persisted completed state for this deleted task
-    persistCompleted(eventId, actionableId, false);
     setOpenMenu(null);
   };
 

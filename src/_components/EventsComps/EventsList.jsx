@@ -19,7 +19,7 @@ export default function EventsList({
   loading = false,
   error = null,
   showTasks = true,
-  isDraft = false,
+  isDraft = false, 
 }) {
   const dispatch = useDispatch();
   const { eventTaskSummaries } = useSelector((state) => state.events);
