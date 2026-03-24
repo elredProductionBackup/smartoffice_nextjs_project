@@ -91,14 +91,6 @@ const ChecklistContent = ({ eventId }) => {
     }
   }, [dispatch, eventId]);
 
-  useEffect(() => {
-    if (!eventId) return;
-    const intervalId = setInterval(() => {
-      dispatch(fetchEventChecklist({ eventId }));
-    }, 15000);
-    return () => clearInterval(intervalId);
-  }, [dispatch, eventId]);
-
   const selectedTaskForModal = taskList.find(
     (t) => t.id === modal.taskId || t.actionableId === modal.taskId
   );
