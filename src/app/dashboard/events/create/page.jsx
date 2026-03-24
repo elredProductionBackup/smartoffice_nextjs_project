@@ -31,7 +31,6 @@ import { fetchEventDetails } from "@/store/events/eventsThunks";
 const CreateEvent = () => {
   const searchParams = useSearchParams();
   const eventId = searchParams.get("id");
-const [isInitialized, setIsInitialized] = useState(false);
   const isEditMode = !!eventId;
   const formContainerRef = useRef(null);
   const { form, update,setForm,errors,setErrors , updateEventType } = useEventForm();
@@ -155,9 +154,6 @@ useEffect(() => {
 
 }, [eventDetailsMap, eventId]);
 
-useEffect(() => {
-  setIsInitialized(false);
-}, [eventId]);
     
 
     if (loading) {
