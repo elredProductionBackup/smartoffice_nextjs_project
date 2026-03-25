@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
-
+import TitleTooltipHover from "@/_components/UI/TitleTooltipHover";
 export default function ModalHeader({
   title,
   addedBy,
@@ -9,10 +9,12 @@ export default function ModalHeader({
   onUpdateTitle,
   canEditOrDelete
 }) {
+  const titleRef = useRef(null);
+  const [isOverflowing, setIsOverflowing] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [value, setValue] = useState(title);
   const textareaRef = useRef(null);
-  const MAX_CHARS = 60;
+  const MAX_CHARS = 1000;
   useEffect(() => {
     setValue(title);
   }, [title]);
@@ -33,12 +35,17 @@ useEffect(() => {
 }, [isEditing]);
 
 
-  const autoResize = () => {
-    const el = textareaRef.current;
-    if (!el) return;
-    el.style.height = "auto";
-    el.style.height = Math.min(el.scrollHeight, 88) + "px";
-  };
+const autoResize = () => {
+  const el = textareaRef.current;
+  if (!el) return;
+
+  el.style.height = "auto";
+
+  const lineHeight = 44; 
+  const maxHeight = lineHeight * 4;
+
+  el.style.height = Math.min(el.scrollHeight, maxHeight) + "px";
+};
 
   const save = () => {
     if (value.trim()) {
@@ -54,14 +61,42 @@ useEffect(() => {
     setIsEditing(false);
   };
 
+useEffect(() => {
+  if (isEditing) return;
+
+  const el = titleRef.current;
+  if (!el) return;
+
+  const checkLines = () => {
+    const style = window.getComputedStyle(el);
+    const lineHeight = parseFloat(style.lineHeight);
+
+    const lines = Math.round(el.scrollHeight / lineHeight);
+
+    setIsOverflowing(lines > 4);
+  };
+
+  checkLines();
+
+  const observer = new ResizeObserver(checkLines);
+  observer.observe(el);
+
+  return () => observer.disconnect();
+}, [title, isEditing]);
+
   return (
     <div className="flex flex-col gap-[20px] pt-[40px] px-[20px] pb-[20px] sticky top-[0px] bg-white z-[10]">
       <div className="flex justify-between items-start">
         {/* TITLE */}
         {!isEditing ? (
-          <h2 className="text-[32px] font-[700] leading-[44px] text-[#333] mr-[36px]">
-            {title}
-          </h2>
+          <TitleTooltipHover title={isOverflowing ? title : ""}>
+            <h2
+              ref={titleRef}
+              className="text-[32px] font-[700] leading-[44px] text-[#333] mr-[36px] line-clamp-4 break-words"
+            >
+              {title}
+            </h2>
+          </TitleTooltipHover>
         ) : (
           <textarea
             ref={textareaRef}
@@ -84,7 +119,7 @@ useEffect(() => {
             className="
               text-[32px] font-[700] leading-[44px] text-[#333]
               border-none outline-none bg-transparent w-full
-              resize-none overflow-hidden max-h-[88px] mr-[36px]
+              resize-none overflow-hidden max-h-[176px] mr-[36px]
             "
           />
         )}

@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useRef, useEffect, useState } from "react";
 import { BsCheck, BsThreeDotsVertical } from "react-icons/bs";
 import { useDispatch, useSelector } from "react-redux";
+import TitleTooltipHover from "./UI/TitleTooltipHover";
 
 export default function ActionItem({
   item,
@@ -23,6 +24,28 @@ export default function ActionItem({
     collaborators = [],
   } = item;
     const dispatch = useDispatch();
+    const titleRef = useRef(null);
+const [isOverflowing, setIsOverflowing] = useState(false);
+useEffect(() => {
+  const el = titleRef.current;
+  if (!el) return;
+
+  const checkLines = () => {
+    const style = window.getComputedStyle(el);
+    const lineHeight = parseFloat(style.lineHeight);
+
+    const lines = Math.round(el.scrollHeight / lineHeight);
+
+    setIsOverflowing(lines > 2);
+  };
+
+  checkLines();
+
+  const observer = new ResizeObserver(checkLines);
+  observer.observe(el);
+
+  return () => observer.disconnect();
+}, [title]);
 
   const openTaskModal = (actionableId) => {
     dispatch(
@@ -104,7 +127,16 @@ export default function ActionItem({
         {/* Text */}
         <div
           className={`flex flex-col text-[20px] font-medium mt-[5px] gap-[6px] text-[#333333] `}  >
-          <div className={`line-clamp-1 leading-[22px] ${ isCompleted ? "line-through" : ""}`}>{title}</div>
+          <TitleTooltipHover title={isOverflowing ? title : ""}>
+  <div
+    ref={titleRef}
+    className={`line-clamp-2 leading-[22px] ${
+      isCompleted ? "line-through" : ""
+    }`}
+  >
+    {title}
+  </div>
+</TitleTooltipHover>
 
           {subTask.length > 0 && (
             <ul className="ml-[30px] flex flex-col gap-[8px] list-disc text-[20px] font-[500] text-[#333333]">
