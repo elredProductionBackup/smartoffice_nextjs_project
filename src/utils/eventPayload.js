@@ -185,5 +185,6 @@ travelInfo: {
   })),
 },
     additionalNote: event.additionalNotes || "",
+    isDraft:event.isDraft || false
   };
 };
