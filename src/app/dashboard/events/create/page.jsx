@@ -43,7 +43,6 @@ const CreateEvent = () => {
   const handleCreateEvent = async (e, isDraft = false) => {
     e?.preventDefault?.();
 
-    console.log(form)
 
     const errs = validateEvent(form);
     if (Object.keys(errs).length) {
@@ -75,7 +74,7 @@ const CreateEvent = () => {
     const payload = buildEventPayload(form, isDraft, isEditMode);
     const res = await submitEvent(payload);
 
-    if (res.success) {
+    if (res?.success) {
       if (isDraft) {
         router.push("/dashboard/events?tab=draft");
         return;
@@ -87,14 +86,13 @@ const CreateEvent = () => {
       dispatch(addToast({
         message: {
           title: "Something Went Wrong",
-          descrip: "Please contact support if the problem persists",
+          descrip: res?.message?`${res.message}`:`Please try again in a moment.`,
         },
         type: "error",
       }));
     }
   } catch (error) {
-    console.error("Create Event Failed:", error?.response || error);
-
+    // console.error("Create Event Failed:", error?.response || error);
     if (error?.response?.data?.errors) {
       setErrors(error.response.data.errors);
       dispatch(addToast({ message: "Please fix the highlighted errors", type: "error" }));
@@ -104,7 +102,6 @@ const CreateEvent = () => {
     const message =
       error?.response?.data?.message ||
       "Something went wrong. Please try again.";
-
     dispatch(addToast({ message, type: "error" }));
     setErrors({ api: message });
 
@@ -173,7 +170,7 @@ useEffect(() => {
 
         <div  className="flex-1 max-w-[500px] ">
           <div className="mb-[30px] text-[36px] font-[600] flex items-center gap-[20px]">
-           <span className="maki--arrow rotate-180 inline-block cursor-pointer" onClick={()=>router.back()}></span> {isEditMode?'Update':'Create'} event</div>
+           <span className="maki--arrow rotate-180 inline-block cursor-pointer" onClick={()=>router.back()}></span> {isEditMode && !form?.isDraft?'Update':'Create'} event</div>
             <div className="w-full flex flex-col gap-[30px]" >
 
               <EventsInput
@@ -310,7 +307,7 @@ useEffect(() => {
                   Save as draft
                 </button> 
                 <button className="flex-1 h-[50px] text-[20px] font-[500] bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)] cursor-pointer text-white rounded-full flex items-center justify-center" type="button" disabled={submitting} onClick={handleCreateEvent}>
-                  {submitting?<div className="w-[20px] h-[20px] border-2 border-[white] border-t-transparent rounded-full animate-spin" />:isEditMode?'Update event':'Create event'}
+                  {submitting?<div className="w-[20px] h-[20px] border-2 border-[white] border-t-transparent rounded-full animate-spin" />: isEditMode && !form?.isDraft ?'Update event':'Create event'}
                 </button>
               </div>
             </div>

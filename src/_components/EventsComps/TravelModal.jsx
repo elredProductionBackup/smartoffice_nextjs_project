@@ -13,7 +13,6 @@ const TravelModal = ({ form, setForm }) => {
   const [draft, setDraft] = useState(form.travelInfo);
   const [errors, setErrors] = useState({});
 
-  console.log(form.travelInfo??'new ')
 
 const update = (key, value) => {
   setDraft((prev) => ({ ...prev, [key]: value }));

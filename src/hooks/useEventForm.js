@@ -58,6 +58,7 @@ export const useEventForm = () => {
     venueLink: "", hotelLink: "",
     requiredInfo: {ticketDetails: false, insuranceDetails: false, visaInformation: false, },
     deadline: null, reminders: [],
+    isDraft:false
   },
     additionalNote: "",
   });
