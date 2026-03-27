@@ -48,8 +48,10 @@ export default function SlackEditor() {
     if (match) {
       setQuery(match[1]);
       setShowDropdown(true);
+      setActiveIndex(0);
     } else {
       setShowDropdown(false);
+      setQuery("");
     }
   };
 
@@ -211,7 +213,7 @@ const handleHover = (e) => {
   return (
     <div className="w-full max-w-xl mx-auto mt-20">
       {/* ================= EDITOR ================= */}
-      <div className="relative border rounded-xl p-2">
+      <div className="relative rounded-[8px] bg-[#F2F7FF] p-2">
         {isEmpty && (
           <div className="absolute left-4 top-4 text-gray-400 pointer-events-none">
             Type @ to mention...

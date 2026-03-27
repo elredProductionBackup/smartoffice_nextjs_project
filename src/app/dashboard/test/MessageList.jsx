@@ -1,106 +1,89 @@
 'use client';
+
 import moment from "moment";
+import { useState } from "react";
+import * as chrono from "chrono-node";
 
 // =========================
-// 🧠 DATE PARSER
+// 🧠 DATE PARSER (SAFE)
 // =========================
 const highlightFutureDates = (html) => {
   if (!html) return html;
 
   const now = moment();
 
-  // 🔥 MASTER REGEX (covers everything)
-  const regex =
-    /\b((today|tomorrow)?\s*\d{1,2}(:\d{2})?\s?(am|pm)?|\d{1,2}(:\d{2})|\d{1,2}\s(?:Jan|Feb|Mar|March|April|May|Jun|July|Aug|Sep|Oct|Nov|Dec)\s?\d{0,2}(:\d{2})?\s?(am|pm)?)\b/gi;
+  const results = chrono.parse(html);
 
-  return html.replace(regex, (match) => {
-    let parsed = null;
-    const clean = match.trim().toLowerCase();
+  if (!results.length) return html;
 
-    // =========================
-    // 🧠 DETECT CONTEXT
-    // =========================
-    const isTomorrow = clean.includes("tomorrow");
-    const isToday = clean.includes("today");
+  let output = html;
 
-    // extract time part
-    const timeMatch = clean.match(/\d{1,2}(:\d{2})?\s?(am|pm)?/);
+  // sort reverse to avoid index shifting issues
+  results
+    .filter(r => r.start?.date)
+    .sort((a, b) => b.index - a.index)
+    .forEach((res, i) => {
+      const date = moment(res.start.date());
 
-    if (!timeMatch) return match;
+      if (!date.isValid()) return;
+      if (date.isBefore(now)) return;
 
-    let timeStr = timeMatch[0];
+      const text = res.text;
 
-    // =========================
-    // 🧠 NORMALIZE TIME
-    // =========================
+      const safeSpan = `
+        <span 
+          class="underline cursor-pointer decoration-gray-500 font-medium"
+          data-time="${date.toISOString()}"
+          data-key="dt-${i}"
+        >${text}</span>
+      `;
 
-    // handle 24-hour (17:40)
-    if (/^\d{1,2}:\d{2}$/.test(timeStr)) {
-      parsed = moment(timeStr, "HH:mm");
-    } else {
-      parsed = moment(timeStr, ["h:mm A", "h:mmA", "h A", "hA"]);
-    }
+      // replace only first occurrence from that index
+      output =
+        output.slice(0, res.index) +
+        safeSpan +
+        output.slice(res.index + text.length);
+    });
 
-    if (!parsed.isValid()) return match;
-
-    // =========================
-    // 🧠 ATTACH DATE
-    // =========================
-
-    if (isTomorrow) {
-      parsed.set({
-        year: now.year(),
-        month: now.month(),
-        date: now.date() + 1,
-      });
-    } else {
-      // today OR no keyword → assume today
-      parsed.set({
-        year: now.year(),
-        month: now.month(),
-        date: now.date(),
-      });
-    }
-
-    // =========================
-    // 🧠 DATE FORMAT CASE
-    // =========================
-    if (/\d{1,2}\s(?:jan|feb|mar|march|april|may|jun|july|aug|sep|oct|nov|dec)/i.test(clean)) {
-      parsed = moment(clean, [
-        "D MMMM h:mm A",
-        "D MMM h:mm A",
-        "D MMMM h:mmA",
-        "D MMM h:mmA",
-        "D MMMM",
-        "D MMM",
-      ]);
-    }
-
-    // ❌ invalid
-    if (!parsed || !parsed.isValid()) return match;
-
-    // ❌ past
-    if (parsed.isBefore(now)) return match;
-
-    // ✅ FUTURE → underline
-    return `<span class="underline decoration-gray-500 font-medium">${match}</span>`;
-  });
+  return output;
 };
 
 // =========================
 // COMPONENT
 // =========================
-export default function MessageList({
-  messages,
-  onHover,
-}) {
+export default function MessageList({ messages, onHover }) {
+  const [selectedTime, setSelectedTime] = useState(null);
+  const [showCalendarPopup, setShowCalendarPopup] = useState(false);
+
+  const addToGoogleCalendar = (isoTime) => {
+    const start = moment(isoTime);
+    const end = moment(start).add(1, "hour");
+
+    const format = "YYYYMMDDTHHmmss";
+
+    const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=Meeting&dates=${start.format(format)}/${end.format(format)}&details=Created from chat&sf=true&output=xml`;
+
+    window.open(url, "_blank");
+  };
+
+  const handleClick = (e) => {
+    const el = e.target.closest("[data-time]");
+    if (!el) return;
+
+    const isoTime = el.getAttribute("data-time");
+
+    setSelectedTime(isoTime);
+    setShowCalendarPopup(true);
+  };
+
   return (
     <div className="mt-6 space-y-3">
       {messages.map((msg) => (
         <div
           key={msg.id}
           onMouseMove={onHover}
-          className="p-3 border rounded-xl bg-gray-50"
+          onClick={handleClick}
+          className="p-3  rounded-[8px] bg-[#F2F7FF]"
         >
           <div
             dangerouslySetInnerHTML={{
@@ -109,6 +92,31 @@ export default function MessageList({
           />
         </div>
       ))}
+
+      {showCalendarPopup && (
+        <div className="fixed bottom-6 right-6 bg-white shadow-xl rounded-xl p-4 border z-50">
+          <div className="text-sm font-semibold mb-2">
+            Add to Calendar?
+          </div>
+
+          <button
+            onClick={() => {
+              addToGoogleCalendar(selectedTime);
+              setShowCalendarPopup(false);
+            }}
+            className="bg-blue-500 text-white px-3 py-1 rounded mr-2"
+          >
+            Google Calendar
+          </button>
+
+          <button
+            onClick={() => setShowCalendarPopup(false)}
+            className="text-gray-500"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
     </div>
   );
 }
