@@ -1,385 +1,285 @@
-"use client";
-
-import { useDispatch, useSelector } from "react-redux";
+'use client'
 import { fetchCollaborators } from "@/store/actionable/actionableThunks";
-import { useState, useRef, useEffect } from "react";
-import moment from "moment";
+import { useEffect, useRef, useState } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import MessageList from "./MessageList";
 
-const channels = [
-  { id: 1, name: "general" },
-  { id: 2, name: "development" },
-  { id: 3, name: "design" },
-];
-
-export default function MentionInput() {
-  const [isSelecting, setIsSelecting] = useState(false);
-  const [hoveredUserId, setHoveredUserId] = useState(null);
-  const [value, setValue] = useState("");
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [type, setType] = useState(null);
-  const [filtered, setFiltered] = useState([]);
-  const [activeIndex, setActiveIndex] = useState(0);
-
-  const textareaRef = useRef(null);
+export default function SlackEditor() {
   const dispatch = useDispatch();
-
   const { collaboratorsList } = useSelector(
     (state) => state.actionable
   );
 
-  const users = collaboratorsList.map((c) => ({
-    id: c.userCode,
-    name: c.name,
-    avatar: c.dpURL,
-  }));
+  const editorRef = useRef(null);
 
+  const [isEmpty, setIsEmpty] = useState(true);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [query, setQuery] = useState("");
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  const [hoveredUser, setHoveredUser] = useState(null);
+  const [tooltipPos, setTooltipPos] = useState({ top: 0, left: 0 });
+
+  const [messages, setMessages] = useState([]);
+
+  // =========================
+  // FETCH USERS
+  // =========================
   useEffect(() => {
     dispatch(fetchCollaborators({ search: "", offset: 0 }));
   }, [dispatch]);
 
-  const getMatches = (trigger, q) => {
-    const list = trigger === "@" ? users : channels;
+  const filtered = collaboratorsList?.filter((u) =>
+    u.name.toLowerCase().includes(query.toLowerCase())
+  );
 
-    return list.filter((item) =>
-      item.name.toLowerCase().includes(q.toLowerCase())
-    );
-  };
+  // =========================
+  // HANDLE INPUT
+  // =========================
+  const handleInput = () => {
+    const selection = window.getSelection();
+    const text = selection.anchorNode?.textContent || "";
 
-  const handleChange = (e) => {
-    const text = e.target.value;
-    setValue(text);
+    const content = editorRef.current.innerText.trim();
+    setIsEmpty(content.length === 0);
 
-    const cursorPos = e.target.selectionStart;
-    const textUntilCursor = text.slice(0, cursorPos);
-
-    const match = textUntilCursor.match(/([@#])([\w\s]*)$/);
+    const match = text.slice(0, selection.anchorOffset).match(/@(\w*)$/);
 
     if (match) {
-      const trigger = match[1];
-      const q = match[2];
-
-      setType(trigger === "@" ? "user" : "channel");
-      setFiltered(getMatches(trigger, q));
+      setQuery(match[1]);
       setShowDropdown(true);
-      setActiveIndex(0);
     } else {
       setShowDropdown(false);
     }
   };
 
+  // =========================
+  // ADD MESSAGE
+  // =========================
+  const addMessage = () => {
+    const html = editorRef.current.innerHTML.trim();
+    const text = editorRef.current.innerText.trim();
+
+    if (!text) return;
+
+    const newMessage = {
+      id: Date.now(),
+      html,
+    };
+
+    setMessages((prev) => [newMessage, ...prev]);
+
+    editorRef.current.innerHTML = "";
+    setIsEmpty(true);
+  };
+
+  // =========================
+  // KEYBOARD CONTROL
+  // =========================
   const handleKeyDown = (e) => {
-    if (!showDropdown) return;
+    if (showDropdown) {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setActiveIndex((prev) =>
+          prev < filtered.length - 1 ? prev + 1 : 0
+        );
+      }
 
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setActiveIndex((prev) =>
-        prev < filtered.length - 1 ? prev + 1 : prev
-      );
-    }
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setActiveIndex((prev) =>
+          prev > 0 ? prev - 1 : filtered.length - 1
+        );
+      }
 
-    if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setActiveIndex((prev) => (prev > 0 ? prev - 1 : 0));
+      if (e.key === "Enter") {
+        e.preventDefault();
+        insertMention(filtered[activeIndex]);
+      }
+
+      return;
     }
 
     if (e.key === "Enter") {
       e.preventDefault();
-      if (filtered[activeIndex]) {
-        handleSelect(filtered[activeIndex]);
-      }
+      addMessage();
     }
   };
 
-  const handleSelect = (item) => {
-    const textarea = textareaRef.current;
-    const cursorPos = textarea.selectionStart;
+  // =========================
+  // INSERT MENTION
+  // =========================
+  const insertMention = (user) => {
+    const selection = window.getSelection();
+    const range = selection.getRangeAt(0);
 
-    const textUntilCursor = value.slice(0, cursorPos);
-    const match = textUntilCursor.match(/([@#])([\w\s]*)$/);
+    range.setStart(
+      range.startContainer,
+      range.startOffset - query.length - 1
+    );
+    range.deleteContents();
 
-    if (!match) return;
+    const el = document.createElement("span");
+    el.textContent = `@${user.name}`;
+    el.className =
+      "text-blue-500 font-medium bg-blue-100 px-1 rounded cursor-pointer";
 
-    const start = cursorPos - match[0].length;
-    const insertText = match[1] + item.name + " ";
+    // ✅ FIX: use userCode
+    el.setAttribute("data-id", String(user.userCode));
+    el.setAttribute("data-name", user.name);
 
-    const newText =
-      value.slice(0, start) + insertText + value.slice(cursorPos);
+    el.contentEditable = "false";
 
-    const newCursorPos = start + insertText.length;
+    range.insertNode(el);
 
-    setValue(newText);
+    const space = document.createTextNode("\u00A0");
+    el.after(space);
+
+    range.setStartAfter(space);
+    range.collapse(true);
+
+    selection.removeAllRanges();
+    selection.addRange(range);
+
     setShowDropdown(false);
+    setQuery("");
+  };
 
-    requestAnimationFrame(() => {
-      textarea.focus();
-      textarea.setSelectionRange(newCursorPos, newCursorPos);
+  // =========================
+  // LIST TOOLTIP (FIXED 🔥)
+  // =========================
+  const handleListHover = (e) => {
+    const el = e.target.closest("[data-id]");
+    if (!el) return;
+
+    const userId = el.getAttribute("data-id");
+
+    // ✅ FIX: match with userCode
+    const user = collaboratorsList.find(
+      (u) => String(u.userCode) === String(userId)
+    );
+
+    if (!user) return;
+
+    const rect = el.getBoundingClientRect();
+
+    setHoveredUser(user);
+    setTooltipPos({
+      top: rect.top,
+      left: rect.left + rect.width / 2,
     });
   };
 
+  const handleListLeave = () => {
+    setHoveredUser(null);
+  };
+const handleHover = (e) => {
+  const el = e.target.closest("[data-id]");
 
-
-const parseDateTime = (text) => {
-  const now = moment();
-
-  // ✅ PRIORITY: combined date + time first
-  const regex =
-    /\b((\d{1,2}\s\w+\s\d{1,2}\s?(AM|PM))|((next\s)?(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\s\d{1,2}\s?(AM|PM))|((next\s)?(monday|tuesday|wednesday|thursday|friday|saturday|sunday))|(today|tomorrow)|(\d{1,2}:\d{2})|(\d{1,2}\s?(AM|PM)))\b/gi;
-
-  const matches = [...text.matchAll(regex)];
-
-  return matches.map((match) => {
-    const raw = match[0].trim().toLowerCase();
-    let parsed = null;
-
-    // =============================
-    // ✅ HANDLE "28 March 6 PM"
-    // =============================
-    parsed = moment(raw, ["D MMMM h A", "D MMM h A"], true);
-
-    // =============================
-    // ✅ HANDLE "Monday 5 PM"
-    // =============================
-    if (!parsed.isValid()) {
-      parsed = moment(raw, ["dddd h A"], true);
-      if (parsed.isValid() && parsed.isBefore(now)) {
-        parsed.add(7, "days"); // next week
-      }
+  // ❌ If NOT hovering mention → instantly close
+  if (!el) {
+    if (hoveredUser !== null) {
+      setHoveredUser(null);
     }
+    return;
+  }
 
-    // =============================
-    // ✅ HANDLE "Monday"
-    // =============================
-    if (!parsed.isValid()) {
-      const dayMatch = raw.match(
-        /(monday|tuesday|wednesday|thursday|friday|saturday|sunday)/
-      );
+  const userId = el.getAttribute("data-id");
 
-      if (dayMatch) {
-        parsed = moment().day(dayMatch[0]);
-        if (parsed.isBefore(now)) parsed.add(7, "days");
-      }
-    }
+  const user = collaboratorsList.find(
+    (u) => String(u.userCode) === String(userId)
+  );
 
-    // =============================
-    // ✅ HANDLE TODAY / TOMORROW
-    // =============================
-    if (!parsed.isValid()) {
-      if (raw === "today") parsed = moment();
-      if (raw === "tomorrow") parsed = moment().add(1, "day");
-    }
+  if (!user) {
+    setHoveredUser(null);
+    return;
+  }
 
-    // =============================
-    // ✅ HANDLE TIME ONLY
-    // =============================
-    if (!parsed.isValid()) {
-      parsed = moment(raw, ["h:mm", "h:mm A", "h A"], true);
+  const rect = el.getBoundingClientRect();
 
-      if (parsed.isValid()) {
-        parsed.set({
-          year: now.year(),
-          month: now.month(),
-          date: now.date(),
-        });
-
-        // if time passed → next day
-        if (parsed.isBefore(now)) {
-          parsed.add(1, "day");
-        }
-      }
-    }
-
-    // =============================
-    // FINAL FALLBACK
-    // =============================
-    if (!parsed.isValid()) {
-      parsed = moment(raw);
-    }
-
-    return {
-      text: match[0],
-      date: parsed.toDate(),
-      isFuture: parsed.isValid() && parsed.isAfter(now),
-      start: match.index,
-      end: match.index + match[0].length,
-    };
+  setHoveredUser(user);
+  setTooltipPos({
+    top: rect.top,
+    left: rect.left + rect.width / 2,
   });
 };
 
-const getStyledText = () => {
-  const parts = value.split(/(@[^\s]+(?:\s[^\s]+)?)|(#\w+)/g);
-
-  return parts.map((part, i) => {
-    if (!part) return null;
-
-    // =============================
-    // ✅ USER MENTION (UNCHANGED)
-    // =============================
-    if (part.startsWith("@")) {
-      const clean = part.slice(1).trim();
-
-      const user = users.find(
-        (u) =>
-          clean === u.name ||
-          clean.startsWith(u.name + " ")
-      );
-
-      if (user) {
-        return (
-          <span
-            key={i}
-            className="relative text-blue-500 font-medium pointer-events-auto"
-          >
-            <span
-              onMouseEnter={() => setHoveredUserId(user.id)}
-              onMouseLeave={() => setHoveredUserId(null)}
-              className="inline-block"
-            >
-              @{user.name}
-            </span>
-
-            {hoveredUserId === user.id && (
-              <div className="absolute bg-[#1f1f1f] text-white text-xs px-3 py-2 rounded-xl -top-14 left-0 z-50 shadow-xl min-w-[180px]">
-                <div className="flex items-center gap-2">
-                  <img
-                    src={user.avatar || "/fallback.png"}
-                    className="w-8 h-8 rounded-full"
-                  />
-                  <div>
-                    <div className="font-semibold">
-                      {user.name}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </span>
-        );
-      }
-
-      return <span key={i}>{part}</span>;
-    }
-
-    // =============================
-    // ✅ CHANNEL (UNCHANGED)
-    // =============================
-    if (part.startsWith("#")) {
-      const name = part.slice(1);
-
-      const ch = channels.find(
-        (c) => c.name.toLowerCase() === name.toLowerCase()
-      );
-
-      if (ch) {
-        return (
-          <span key={i} className="text-green-500 font-medium">
-            #{ch.name}
-          </span>
-        );
-      }
-    }
-
-    // =============================
-    // 🚀 DATE/TIME PARSING (NEW)
-    // =============================
-
-    const parsed = parseDateTime(part);
-
-    if (!parsed.length) {
-      return <span key={i}>{part}</span>;
-    }
-
-    let subParts = [];
-    let lastIndex = 0;
-
-    parsed.forEach(({ text, isFuture }, idx) => {
-      const index = part.indexOf(text, lastIndex);
-      if (index === -1) return;
-
-      // normal text before match
-      if (index > lastIndex) {
-        subParts.push(part.slice(lastIndex, index));
-      }
-
-      // styled date/time
-      subParts.push(
-        <span
-          key={`${i}-${idx}`}
-          className={
-            isFuture
-              ? "underline decoration-gray-500 font-medium"
-              : ""
-          }
-        >
-          {text}
-        </span>
-      );
-
-      lastIndex = index + text.length;
-    });
-
-    subParts.push(part.slice(lastIndex));
-
-    return <span key={i}>{subParts}</span>;
-  });
-};
+  const handleLeave = () => {
+    setHoveredUser(null);
+  };
 
   return (
-    <div className="w-full flex justify-center pt-20">
-      <div className="w-full max-w-xl relative">
+    <div className="w-full max-w-xl mx-auto mt-20">
+      {/* ================= EDITOR ================= */}
+      <div className="relative border rounded-xl p-2">
+        {isEmpty && (
+          <div className="absolute left-4 top-4 text-gray-400 pointer-events-none">
+            Type @ to mention...
+          </div>
+        )}
 
-<textarea
-  ref={textareaRef}
-  value={value}
-  onChange={handleChange}
-  onKeyDown={handleKeyDown}
-  placeholder="Type @ for users or # for channels..."
-  className="w-full p-4 border border-black rounded-xl shadow-sm focus:outline-none bg-transparent relative z-10 text-transparent caret-black resize-none placeholder:text-gray-400 selection:bg-[#0002] selection:text-[#0002]
-  
-  whitespace-pre-wrap break-words
-  leading-[1.5] tracking-normal
-  [word-spacing:normal]
-  [tab-size:4]
-  "
-  rows={4}
-/>
+        <div
+          ref={editorRef}
+          contentEditable
+          onInput={handleInput}
+          onKeyDown={handleKeyDown}
+           onMouseMove={handleHover}
 
-<div
-  className="absolute inset-0 p-4 z-20 pointer-events-none
-  
-  whitespace-pre-wrap break-words
-  leading-[1.5] tracking-normal
-  [word-spacing:normal]
-  [tab-size:4]
-  "
->
-  {getStyledText()}
-</div>
+          className="min-h-[100px] p-2 focus:outline-none"
+          suppressContentEditableWarning
+        />
 
+        {/* DROPDOWN */}
         {showDropdown && filtered.length > 0 && (
-          <div className="border mt-2 rounded-xl shadow bg-white absolute z-30 w-full max-h-60 overflow-y-auto">
-            {filtered.map((item, index) => (
+          <div className="absolute top-[100%] left-0 w-full border mt-2 rounded-xl shadow bg-white max-h-60 overflow-y-auto">
+            {filtered.map((user, index) => (
               <div
-                key={item.id}
-                onClick={() => handleSelect(item)}
+                key={user.userCode}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  insertMention(user);
+                }}
                 className={`p-3 cursor-pointer flex items-center gap-2 ${index === activeIndex
                     ? "bg-gray-200"
                     : "hover:bg-gray-100"
                   }`}
               >
-                {type === "user" && (
-                  <img
-                    src={item.avatar}
-                    className="w-6 h-6 rounded-full"
-                  />
-                )}
-                <span className="font-medium">
-                  {item.name}
-                </span>
+                <img src={user.dpURL} className="w-6 h-6 rounded-full" />
+                <span>{user.name}</span>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* ================= LIST ================= */}
+      <MessageList
+        messages={messages}
+         onHover={handleHover}
+      />
+
+      {/* ================= TOOLTIP ================= */}
+      {hoveredUser && (
+        <div
+          style={{
+            position: "fixed",
+            top: tooltipPos.top,
+            left: tooltipPos.left,
+            transform: "translate(-50%, -110%)",
+          }}
+          className="z-50 bg-[#1f1f1f] text-white px-3 py-2 rounded-xl shadow-xl min-w-[180px]"
+        >
+          <div className="flex items-center gap-2">
+            <img
+              src={hoveredUser.dpURL}
+              className="w-8 h-8 rounded-full"
+            />
+            <div className="font-semibold text-sm">
+              {hoveredUser.name}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
