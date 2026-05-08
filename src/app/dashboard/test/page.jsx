@@ -76,7 +76,7 @@ export default function SlackEditor() {
   };
 
   // =========================
-  // KEYBOARD CONTROL
+  // KEYBOARD CONTROLS
   // =========================
   const handleKeyDown = (e) => {
     if (showDropdown) {

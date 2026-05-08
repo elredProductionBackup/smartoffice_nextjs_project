@@ -5,51 +5,106 @@ import { useState } from "react";
 import * as chrono from "chrono-node";
 
 // =========================
+// 🔧 NORMALIZE TIME EXPRESSIONS
+// =========================
+const normalizeTimeText = (text) => {
+  return text
+    // 5.p.m / 5.p.m. / 5.pm / 5pm -> 5 PM
+    .replace(
+      /\b(\d{1,2})\s*\.?\s*p\.?\s*m\.?\b/gi,
+      (_, hour) => `${hour} PM`
+    )
+    // 5 a.m / 5.am / 5a.m -> 5 AM
+    .replace(
+      /\b(\d{1,2})\s*\.?\s*a\.?\s*m\.?\b/gi,
+      (_, hour) => `${hour} AM`
+    )
+    // 5pm / 5 am (no dot, no space)
+    .replace(/\b(\d{1,2})(am|pm)\b/gi, (_, hour, meridiem) => {
+      return `${hour} ${meridiem.toUpperCase()}`;
+    });
+};
+
+// =========================
 // 🧠 DATE PARSER (SAFE)
 // =========================
-const highlightFutureDates = (html) => {
-  if (!html) return html;
+const highlightFutureDates = (text) => {
+  if (!text) return text;
 
   const now = moment();
 
-  const results = chrono.parse(html);
+  // =========================
+  // 1. Protect mentions first
+  // =========================
+  const mentionMap = [];
+  let safeText = text.replace(/@[^\s]+(?:\s[^\s]+)?/g, (match) => {
+    const token = `__MENTION_${mentionMap.length}__`;
+    mentionMap.push(match);
+    return token;
+  });
 
-  if (!results.length) return html;
+  // =========================
+  // 2. Normalize time text
+  // =========================
+  safeText = normalizeTimeText(safeText);
 
-  let output = html;
+  // =========================
+  // 3. Parse dates
+  // =========================
+  const results = chrono.parse(safeText);
 
-  // sort reverse to avoid index shifting issues
+  if (!results.length) {
+    // restore mentions
+    return restoreMentions(safeText, mentionMap);
+  }
+
+  let output = safeText;
+  let offset = 0;
+
   results
-    .filter(r => r.start?.date)
-    .sort((a, b) => b.index - a.index)
+    .filter((r) => r.start?.date())
+    .sort((a, b) => a.index - b.index)
     .forEach((res, i) => {
       const date = moment(res.start.date());
+      if (!date.isValid() || date.isBefore(now)) return;
 
-      if (!date.isValid()) return;
-      if (date.isBefore(now)) return;
-
-      const text = res.text;
+      const textMatch = res.text;
 
       const safeSpan = `
         <span 
           class="underline cursor-pointer decoration-gray-500 font-medium"
           data-time="${date.toISOString()}"
-          data-key="dt-${i}"
-        >${text}</span>
+        >${textMatch}</span>
       `;
 
-      // replace only first occurrence from that index
+      const startIndex = res.index + offset;
+      const endIndex = startIndex + textMatch.length;
+
       output =
-        output.slice(0, res.index) +
+        output.slice(0, startIndex) +
         safeSpan +
-        output.slice(res.index + text.length);
+        output.slice(endIndex);
+
+      offset += safeSpan.length - textMatch.length;
     });
 
-  return output;
+  // =========================
+  // 4. Restore mentions
+  // =========================
+  return restoreMentions(output, mentionMap);
 };
 
 // =========================
-// COMPONENT
+// restore @mentions safely
+// =========================
+const restoreMentions = (text, map) => {
+  return text.replace(/__MENTION_(\d+)__/g, (_, i) => {
+    return map[i] || "";
+  });
+};
+
+// =========================
+// COMPONENTS
 // =========================
 export default function MessageList({ messages, onHover }) {
   const [selectedTime, setSelectedTime] = useState(null);
