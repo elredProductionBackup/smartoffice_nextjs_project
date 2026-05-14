@@ -54,11 +54,11 @@ const Header = () => {
       <div className="min-h-20 bg-[#F2F7FF] flex items-center justify-between px-[50px]">
         <Image src={logo} alt="logo" width={96} height={40} />
 
-        <div className="flex gap-10">
+        <div className="flex gap-6 ">
           {/* Notification */}
           <div className="flex gap-[10px] items-center cursor-pointer">
             <Image src={bell} alt="bell" />
-            <div className="text-xl font-medium">Notification</div>
+            {/* <div className="text-xl font-medium">Notification</div> */}
           </div>
 
           {/* Me dropdown */}
@@ -74,7 +74,7 @@ const Header = () => {
                 height={40}
                 className="rounded-full"
               />
-              <div>Me</div>
+              {/* <div>Me</div> */}
             </div>
 
             {open && (
