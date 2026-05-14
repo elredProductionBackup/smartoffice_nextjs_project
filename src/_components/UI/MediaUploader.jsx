@@ -166,8 +166,10 @@ export default function MediaUploader({
         </div>
       )}
 
-      <p className="text-[#666666] text-center" style={{ fontFamily: 'Nunito Sans, sans-serif', fontSize: '18px', fontWeight: 400, lineHeight: '24px' }}>
-        Any media added will be publicly visible to attendees
+      <p
+        className={`text-[#999999] leading-[24px] text-[18px] font-normal font-['Nunito_Sans'] ${displayList.length === 0 ? 'text-center mt-0' : 'text-left mt-[40px]'}`}
+      >
+        Note: Any media added will be publicly visible to attendees
       </p>
     </div>
   );
