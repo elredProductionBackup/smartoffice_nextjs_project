@@ -12,8 +12,8 @@ import { setActiveTab,setPage  } from "@/store/events/eventsSlice";
 import Pagination from "@/_components/UI/Pagination";
 
 const EVENT_TABS = [
-  { label: "Upcoming events", value: "upcomming" },
-  { label: "Past events", value: "past" },
+  { label: "Past", value: "past" },
+  { label: "Upcoming", value: "upcomming" },
   { label: "Draft", value: "draft" },
 ];
 
