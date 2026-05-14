@@ -27,14 +27,14 @@ export default function MediaUploader({
   const handleFiles = (e) => {
     const selected = Array.from(e.target.files || []);
 
-const validFiles = selected.filter((file) =>
-  [
-    "image/png",
-    "image/jpeg",
-    "image/jpg",
-    "application/pdf",
-  ].includes(file.type)
-);
+    const validFiles = selected.filter((file) =>
+      [
+        "image/png",
+        "image/jpeg",
+        "image/jpg",
+        "application/pdf",
+      ].includes(file.type)
+    );
 
     if (!validFiles.length) return;
 
@@ -96,7 +96,7 @@ const validFiles = selected.filter((file) =>
       />
 
       {fetched && displayList.length === 0 ? (
-        <div className="flex justify-center items-center py-[50px]">
+        <div className="flex justify-center items-center pt-[50px] pb-[20px]">
           <button
             onClick={() => inputRef.current?.click()}
             className="w-[180px] aspect-square border-[1px] border-[#147BFF] rounded-[16px] flex flex-col items-center justify-center text-[#667085] bg-[#F2F7FF] gap-[10px]"
@@ -165,6 +165,10 @@ const validFiles = selected.filter((file) =>
           <div className="w-[24px] h-[24px] border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
         </div>
       )}
+
+      <p className="text-[#666666] text-center" style={{ fontFamily: 'Nunito Sans, sans-serif', fontSize: '18px', fontWeight: 400, lineHeight: '24px' }}>
+        Any media added will be publicly visible to attendees
+      </p>
     </div>
   );
 }
