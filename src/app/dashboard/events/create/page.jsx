@@ -260,12 +260,6 @@ useEffect(() => {
                 onChange={(v) => update("attendees", v)}
               />
 
-             <RegistrationToggle
-                value={form.registrationOpen}
-                onChange={() =>
-                  update("registrationOpen", !form.registrationOpen)
-                }
-              />
 
               <ResourceSpeaker
                 value={form.speaker}
@@ -297,6 +291,13 @@ useEffect(() => {
                 onChange={(e) => update("additionalNote", e.target.value)}
                 icon={<span className="meteor-icons--pencil"></span>}
                 error={errors.additionalNote}
+              />
+
+               <RegistrationToggle
+                value={form.registrationOpen}
+                onChange={() =>
+                  update("registrationOpen", !form.registrationOpen)
+                }
               />
 
 

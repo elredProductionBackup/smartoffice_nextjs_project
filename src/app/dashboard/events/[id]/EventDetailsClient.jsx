@@ -114,17 +114,17 @@ export default function EventDetailsClient() {
   });
 
   // ================= DATA FETCH =================
-useEffect(() => {
-  if (!eventId) return;
+  useEffect(() => {
+    if (!eventId) return;
 
-  if (activeTab === "memberMedia") {
-    dispatch(fetchMembersMedia({ eventId, page: 1, limit: 20 }));
-  }
+    if (activeTab === "memberMedia") {
+      dispatch(fetchMembersMedia({ eventId, page: 1, limit: 20 }));
+    }
 
-  if (activeTab === "documents") {
-    dispatch(fetchDocuments({ eventId, page: 1, limit: 20 }));
-  }
-}, [activeTab, eventId]);
+    if (activeTab === "documents") {
+      dispatch(fetchDocuments({ eventId, page: 1, limit: 20 }));
+    }
+  }, [activeTab, eventId]);
 
   useEffect(() => {
     if (eventId) {
@@ -173,7 +173,7 @@ useEffect(() => {
       <div className="bg-white rounded-2xl pt-6 flex justify-between gap-[105px] w-full relative z-[15]">
         <div className="flex-1 flex gap-[40px]">
           <div className="w-[250px] min-h-[320px] relative rounded-[20px] overflow-hidden flex justify-center items-center">
-           <Image
+            <Image
               src={
                 isValidImage(event?.eventImage)
                   ? event.eventImage
@@ -181,9 +181,9 @@ useEffect(() => {
               }
               alt={event?.eventName || "event"}
               fill
-              className={ isValidImage(event?.eventImage)
-                  ? "object-cover"
-                  : "object-contain max-h-[60%] grid place-items-center"}
+              className={isValidImage(event?.eventImage)
+                ? "object-cover"
+                : "object-contain max-h-[60%] grid place-items-center"}
             />
           </div>
 
@@ -322,11 +322,11 @@ useEffect(() => {
           <div className="min-h-[calc(100dvh-180px)] bg-[#f2f7ff] rounded-[20px] overflow-y-auto mb-10 p-4">
             <LogisticsContent /></div>}
         {activeTab === "checklist" &&
-         <div className="min-h-[calc(100dvh-180px)] bg-[#f2f7ff] rounded-[20px] overflow-y-auto mb-10 p-4" >
-         <ChecklistContent eventId={eventId}/></div>}
-          {activeTab === "eventcosting" &&
-         <div className="min-h-[calc(100dvh-180px)] overflow-y-auto mb-10 p-4" >
-         <Eventcosting/></div>}
+          <div className="min-h-[calc(100dvh-180px)] bg-[#f2f7ff] rounded-[20px] overflow-y-auto mb-10 p-4" >
+            <ChecklistContent eventId={eventId} /></div>}
+        {activeTab === "eventcosting" &&
+          <div className="min-h-[calc(100dvh-180px)] overflow-y-auto mb-10 p-4" >
+            <Eventcosting /></div>}
       </>
 
       {currentModal?.type === "CONFIRM_CLOSE_EVENT" && eventId && (

@@ -127,6 +127,7 @@ const userMenu = [
     // { name: "Archive", path: "/dashboard/archive", logo: archiveLogo },
     // { name: "Alliances", path: "/dashboard/alliances", logo: alliancesLogo },
 
+  console.log('deployyed')
   return (
     <ProtectedRoute>
       <div className="h-screen flex flex-col">
