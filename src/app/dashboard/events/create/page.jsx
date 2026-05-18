@@ -220,9 +220,21 @@ useEffect(() => {
                     update("endDate", mergeDateAndTime(date, getTimeFromDate(form.endDate)))
                   }
 
-                  onStartTimeChange={(time) =>
-                    update("startDate", mergeDateAndTime(form.startDate, time))
-                  }
+                  onStartTimeChange={(time) => {
+                    const newStartDate = mergeDateAndTime(form.startDate, time);
+
+                    update("startDate", newStartDate);
+
+                    const isSameDay = moment(form.startDate).isSame(form.endDate, "day");
+
+                    if (isSameDay) {
+                      const newEndDate = moment(newStartDate)
+                        .add(1, "hour")
+                        .toDate();
+
+                      update("endDate", newEndDate);
+                    }
+                  }}
 
                   onEndTimeChange={(time) =>
                     update("endDate", mergeDateAndTime(form.endDate, time))
