@@ -1,312 +1,3 @@
-// "use client";
-
-// import { useState } from "react";
-// import moment from "moment";
-// import { BsCheck } from "react-icons/bs";
-
-// export default function ActionableDetailsModal({
-//   task,
-//   onClose,
-//   onAddSubtask,
-//   onToggleSubtask,
-//   onUpdateSubtask,
-//   onDeleteSubtask
-// }) {
-//   const [showSubtaskInput, setShowSubtaskInput] = useState(false);
-//   const [subtaskValue, setSubtaskValue] = useState("");
-//   const [editingSubtaskId, setEditingSubtaskId] = useState(null);
-//   const [editingValue, setEditingValue] = useState("");
-
-
-//   if (!task) return null;
-
-// const commitSubtask = () => {
-//   const value = subtaskValue.trim();
-
-//   if (!value) {
-//     setShowSubtaskInput(false);
-//     return;
-//   }
-
-//   if ((task.subtasks?.length || 0) >= 10) {
-//     setShowSubtaskInput(false);
-//     return;
-//   }
-
-//   onAddSubtask(task.id, value);
-
-//   setSubtaskValue("");
-//   setShowSubtaskInput(false);
-// };
-
-// const commitEdit = (taskId, subtaskId) => {
-//   const value = editingValue.trim();
-
-//   if (!value) {
-//     setEditingSubtaskId(null);
-//     return;
-//   }
-
-//   onUpdateSubtask(taskId, subtaskId, value);
-
-//   setEditingSubtaskId(null);
-//   setEditingValue("");
-// };
-
-
-
-
-//   return (
-//     <div
-//       className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center"
-//       onClick={onClose}
-//     >
-//       <div
-//         onClick={(e) => e.stopPropagation()}
-//         className="relative bg-white w-[600px] max-h-[90vh] rounded-[20px] px-[40px] flex flex-col gap-[20px] overflow-y-auto"
-//       >
-//         <div className="sticky top-[0] w-[100%] pt-[40px] pb-[20px]  flex flex-col gap-[20px] bg-[#FFFFFF] z-[5]">
-//           {/* Header */}
-//           <div className="flex justify-between items-start">
-//             <h2 className="text-[32px] font-[700] leading-[44px] text-[#333333] mr-[36px]">
-//               {task.text}
-//             </h2>
-//             <div className="absolute right-[0px] top-[40px] flex flex-col gap-[40px]">
-//               <button onClick={onClose} className="h-[24px] min-w-[24px] rounded-full grid place-items-center bg-[#eee] text-[#999999] cursor-pointer"><span className="akar-icons--cross small-cross"></span></button>
-//               <button className="text-[#666666] cursor-pointer">
-//                 <span className="iconamoon--edit-light"></span>
-//               </button>
-//             </div>
-//           </div>
-
-//           {/* Created By */}
-//           <div className="flex items-center gap-[10px]">
-//             <div className="w-[32px] h-[32px] rounded-full bg-[#CCCCCC]" />
-//             <span className="text-[#333333] font-[600]">
-//               {task.addedBy}
-//             </span>
-//           </div>
-
-//         </div>
-
-//         {/* Link to Event (Disabled) */}
-//         <div className="flex flex-col gap-[12px] opacity-50 pt-[20px]">
-//           <span className="text-[20px] text-[#333333] font-[700] uppercase">
-//             Link to event
-//           </span>
-//           <div className="flex border-[1.4px] border-[#CCCCCC] rounded-[4px] p-[8px] cursor-not-allowed">
-//             <div className="flex items-center gap-[6px] border-1 border-[#B1B1B1] p-[4px] text-[14px] rounded-[100px]">
-//               <span className="h-[24px] w-[24px] bg-[#CCCCCC] rounded-full"></span> Figma Config <span className="akar-icons--cross small-cross mr-[10px]"></span></div>
-//           </div>
-//         </div>
-
-//       {/* Subtasks */}
-//       <div className="flex flex-col gap-[12px] pt-[20px]">
-//         {/* Header */}
-//         <div className="flex justify-between items-center ">
-//           <span className="flex items-center gap-[10px] text-[20px] text-[#333333]">
-//             <span className="uppercase font-[700]">Subtask</span> <span className="text-[14px] font-[500]">(Max. 10 subtask can be added)</span>
-//           </span>
-
-//           <button
-//             disabled={(task.subtasks?.length || 0) >= 10}
-//             onClick={() => {
-//               if ((task.subtasks?.length || 0) >= 10) return;
-//               setShowSubtaskInput(true);
-//               setSubtaskValue("");
-//             }}
-//             className={`w-[24px] h-[24px] rounded-full flex items-center justify-center text-white text-[24px] cursor-pointer
-//               ${
-//                 (task.subtasks?.length || 0) >= 10
-//                   ? "cursor-not-allowed"
-//                   : "bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)]"
-//               }`}
-//           >
-//             +
-//           </button>
-
-//         </div>
-
-//           {/* Add Subtask Row (TOP) */}
-//           {showSubtaskInput && (
-//             <div className="flex items-center gap-[10px]">
-//               {/* Disabled checkbox */}
-//               <div className="h-[30px] flex items-center" >
-//                 <div
-//                 onClick={() => onToggleSubtask(task.id, s.id)}
-//                   className={`h-[18px] w-[18px] rounded-[4px] border-[2px] flex items-center justify-center cursor-pointer border-[#999999] bg-transparent`}
-//                 >
-//                 </div>
-//               </div>
-
-//               {/* Borderless input */}
-//               <input
-//                 autoFocus
-//                 value={subtaskValue}
-//                 placeholder="Add a new subtask"
-//                 onChange={(e) => setSubtaskValue(e.target.value)}
-//                 onBlur={commitSubtask} 
-//                 onKeyDown={(e) => {
-//                   if (e.key === "Enter") {
-//                     e.preventDefault(); 
-//                     commitSubtask(); 
-//                   }
-//                 }}
-//                 className="flex-1 outline-none text-[16px] font-[600] mr-[90px]"
-//               />
-//             </div>
-//           )}
-
-
-//           {/* Checklist */}
-//           {task.subtasks?.map((s) => (
-//             <div
-//               key={s.id}
-//               className="flex items-center gap-[10px]"
-//             >
-//               {/* Checkbox */}
-//               <div className="h-[30px] flex items-center" >
-//                 <div
-//                 onClick={() => onToggleSubtask(task.id, s.id)}
-//                   className={`h-[18px] w-[18px] rounded-[4px] border-[2px] flex items-center justify-center cursor-pointer transition-colors
-//                     ${
-//                       s.completed
-//                         ? "bg-[#E72D38] border-[#E72D38]"
-//                         : "border-[#999999] bg-transparent"
-//                     }
-//                   `}
-//                 >
-//                   {s.completed && <BsCheck size={18} color="#fff" />}
-//                 </div>
-//               </div>
-
-//               {/* TEXT / EDIT INPUT */}
-//               {editingSubtaskId === s.id ? (
-//                 <input
-//                   autoFocus
-//                   value={editingValue}
-//                   onChange={(e) => setEditingValue(e.target.value)}
-//                   onBlur={() => commitEdit(task.id, s.id)}
-//                   onKeyDown={(e) => {
-//                     if (e.key === "Enter") {
-//                       e.preventDefault();
-//                       commitEdit(task.id, s.id);
-//                     }
-//                     if (e.key === "Escape") {
-//                       setEditingSubtaskId(null);
-//                       setEditingValue("");
-//                     }
-//                   }}
-//                   className="flex-1 bg-transparent outline-none text-[16px] font-[600] mr-[22px]"
-//                 />
-//               ) : (
-//                 <span
-//                   className={`flex-1 text-[16px] font-[600] line-clamp-1 mr-[22px] ${
-//                     s.completed ? "line-through " : ""
-//                   }`}
-//                 >
-//                   {s.text}
-//                 </span>
-//               )}
-
-//               {/* ACTION ICONS */}
-//               <div className="flex gap-[10px] ">
-//                 {/* Edit */}
-//                 <button
-//                   onClick={() => {
-//                     setEditingSubtaskId(s.id);
-//                     setEditingValue(s.text);
-//                   }}
-//                   className="text-[#666666] cursor-pointer"
-//                 >
-//                   <span className="iconamoon--edit-light"></span>
-//                 </button>
-
-//                 {/* Delete */}
-//                 <button
-//                   onClick={() => onDeleteSubtask(task.id, s.id)}
-//                   className="text-[#666666] cursor-pointer"
-//                 >
-//                   <span class="fluent--delete-16-regular"></span>
-//                 </button>
-//               </div>
-//             </div>
-//           ))}
-
-//         </div>
-
-
-
-//         {/* Collaborators */}
-//         <div className="flex flex-col gap-[6px] pt-[20px]">
-//           <span className="text-[20px] text-[#333333] font-[700] uppercase">
-//             Collaborators
-//           </span>
-//           <div className="flex border-[1.4px] border-[#CCCCCC] rounded-[4px] p-[8px] min-h-[48px]"></div>
-//         </div>
-
-//         {/* Notes */}
-//         <div className="flex flex-col gap-[6px] pt-[20px]">
-//           <span className="text-[20px] text-[#333333] font-[700] uppercase">
-//             Notes
-//           </span>
-//           <textarea
-//             placeholder="Write your notes here"
-//             rows={1}
-//             className="
-//               border-transparent
-//               min-h-[22px]
-//               max-h-[88px]
-//               overflow-y-auto
-//               outline-none
-//               text-[16px]
-//               font-[600]
-//               resize-none
-//             "
-//             onInput={(e) => {
-//               const el = e.currentTarget;
-//               el.style.height = "22px";              
-//               el.style.height = `${Math.min(el.scrollHeight, 88)}px`;
-//             }}
-//           />
-//         </div>
-
-//         {/* Comments */}
-//         <div className="flex flex-col gap-[12px] pt-[20px]">
-//           <span className="text-[20px] text-[#333333] font-[700] uppercase">
-//             Comments
-//           </span>
-
-//           <div className="flex gap-[10px] items-center">
-//             <div className="w-[32px] h-[32px] rounded-full bg-gray-300" />
-//             <input
-//               placeholder="Add your comment"
-//               className="flex-1 border rounded-[20px] px-[14px] py-[10px] text-[14px]"
-//             />
-//             <button className="text-white py-[5px] px-[24px] rounded-[100px] bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)]">
-//               Post
-//             </button>
-//           </div>
-//         </div>
-
-//         {/* Footer */}
-//         <div className="flex justify-center w-[100%] gap-[60px] pb-[44px] pt-[20px]">
-//           <button
-//             onClick={onClose}
-//             className="w-[150px] py-[8px] rounded-[20px] bg-[#eee]"
-//           >
-//             Cancel
-//           </button>
-//           <button className="w-[150px] py-[8px] rounded-[20px] bg-[#eee] text-white bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)]">
-//             Save
-//           </button>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }
-
-
 "use client";
 
 import ModalHeader from "./ActionableDetailModal/ModalHeader";
@@ -315,93 +6,235 @@ import NotesSection from "./ActionableDetailModal/NotesSection";
 import CommentsSection from "./ActionableDetailModal/CommentsSection";
 import FooterActions from "./ActionableDetailModal/FooterActions";
 import CollaboratorSection from "./ActionableDetailModal/CollaboratorSection";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { createComment, fetchComments, removeComment } from "@/store/actionable/actionableThunks";
+import Image from "next/image";
 
 export default function ActionableDetailsModal({
-  task,
-  onClose,
-  onAddSubtask,
-  onToggleSubtask,
-  onUpdateSubtask,
-  onDeleteSubtask,
+  task, onClose, onSave, onAddSubtask,
+  onToggleSubtask, onUpdateSubtask,
+  onDeleteSubtask, onAddComment,
+  onDeleteComment, hideLinkEvent,
+  canEdit
 }) {
   if (!task) return null;
-    const [draft, setDraft] = useState(task);
 
-  useEffect(() => {
-    setDraft(task);
-  }, [task]);
+  const scrollRef = useRef(null);
+  const [showAllComments, setShowAllComments] = useState(false);
+  const dispatch = useDispatch();
 
-  if (!draft) return null;
+  const [draft, setDraft] = useState({
+    title: task.title,
+    collaborators: task.collaborators || [],
+    notes: task.notes || "",
+  });
+
+const commentsState = useSelector(
+  (state) =>
+    state.actionable.comments.byActionableId[task.actionableId]
+) || {
+  list: task.comments || [],
+  page: 1,
+  total: task.comments?.length || 0,
+  hasMore: false,
+  loading: false,
+};
+
+
+useEffect(() => {
+  setDraft({
+    title: task.title,
+    collaborators: task.collaborators || [],
+    notes: task.notes || "",
+  });
+}, [task.actionableId]);
+
+
+  const reduxActionable = useSelector((state) =>
+    state.actionable.items.find((i) => i.actionableId === task.actionableId)
+  );
+
+  const actionable = reduxActionable || task;
+
+  if (!actionable) return null;
 
   const handleSave = () => {
-    onSave(draft.id, draft);
+    onSave(task.actionableId, {
+      title: draft.title,
+      notes: draft.notes,
+      collaborators: draft.collaborators,
+    });
+
     onClose();
   };
 
+  const { user } = useSelector((state) => state.auth);
+  const isAdmin = user?.userType?.toLowerCase() === "admin";
+
+  const canEditOrDelete = canEdit !== undefined ? canEdit : isAdmin;
+
+  // --- Initial fetch ---
+  useEffect(() => {
+    if (!actionable || task.isLocal) return;
+    if (commentsState.page === 0) {
+      dispatch(fetchComments({
+        actionableId: actionable.actionableId,
+        page: 1,
+        limit: 10,
+      }));
+    }
+  }, [actionable?.actionableId, task.isLocal]);
+
+  // --- Infinite Scroll ---
+  const isFetchingRef = useRef(false);
+  const commentsStateRef = useRef(commentsState);
+
+  useEffect(() => {
+    commentsStateRef.current = commentsState;
+  }, [commentsState]);
+useEffect(() => {
+  const scrollEl = scrollRef.current;
+  if (!scrollEl || !showAllComments || task.isLocal) return;
+
+  const handleScroll = () => {
+    const state = commentsStateRef.current;
+    const offset = 10;
+    const maxPage = Math.ceil(state.total / offset); 
+
+    if (isFetchingRef.current || state.loading || state.page >= maxPage) return;
+
+    const scrollTop = scrollEl.scrollTop;
+    const scrollHeight = scrollEl.scrollHeight;
+    const clientHeight = scrollEl.clientHeight;
+
+    if (scrollHeight - scrollTop - clientHeight < 50) {
+      isFetchingRef.current = true;
+
+      const nextPage = state.page + 1;
+
+      dispatch(fetchComments({
+        actionableId: actionable.actionableId,
+        page: nextPage,
+        limit: offset,
+      })).finally(() => {
+        isFetchingRef.current = false;
+      });
+    }
+  };
+
+  scrollEl.addEventListener("scroll", handleScroll);
+  handleScroll();
+
+  return () => scrollEl.removeEventListener("scroll", handleScroll);
+}, [showAllComments, actionable?.actionableId, task.isLocal]);
+
+
+
   return (
     <div
-      className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center"
+      className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center font-nunito"
       onClick={onClose}
     >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="relative bg-white w-[600px] max-h-[90vh] rounded-[20px] px-[40px]  flex flex-col gap-[20px] overflow-y-auto"
-      >
+      <div className="bg-white w-[600px] rounded-[20px] flex flex-col items-center pr-[8px]">
+        <div
+          onClick={(e) => e.stopPropagation()}
+           ref={scrollRef}
+          id="custom-scroll"
+          className="relative w-[100%] max-h-[90vh] rounded-[20px] pl-[20px] pr-[7px] flex flex-col gap-[20px] overflow-y-auto"
+        >
         <ModalHeader
           title={draft.title}
-          addedBy={draft.createdBy?.name}
+          addedBy={actionable.createdBy}
           onClose={onClose}
-          onUpdateTitle={(text) =>
-            setDraft({
-              ...draft,
-              text,
-            })
+          onUpdateTitle={(title) =>
+            setDraft((prev) => ({
+              ...prev,
+              title,
+            }))
           }
+          canEditOrDelete={canEditOrDelete}
         />
 
-        {/* Link to Event (Disabled) */}
-         <div className="flex flex-col gap-[12px] opacity-50 ">
-           <span className="text-[20px] text-[#333333] font-[700] uppercase">
-             Link to event
-           </span>
-           <div className="flex border-[1.4px] border-[#CCCCCC] rounded-[4px] p-[8px] cursor-not-allowed">
-             <div className="flex items-center gap-[6px] border-1 border-[#B1B1B1] p-[4px] text-[14px] rounded-[100px]">
-               <span className="h-[24px] w-[24px] bg-[#CCCCCC] rounded-full"></span> Figma Config <span className="akar-icons--cross small-cross mr-[10px]"></span></div>
+        {/* Link to Event (Disabled for local tasks) */}
+         {!hideLinkEvent && (
+           <div className="flex flex-col gap-[12px] opacity-50 px-[20px]">
+             <span className="text-[20px] text-[#333333] font-[700] uppercase">
+               Link to event
+             </span>
+             <div className="flex border-[1.4px] border-[#CCCCCC] rounded-[4px] p-[8px] cursor-not-allowed">
+               <div className="flex items-center gap-[6px] border-1 border-[#B1B1B1] p-[4px] text-[14px] rounded-[100px]">
+                 <Image src={'/image/figma-config.webp'} alt="Events" height={24} width={24} className="min-h-[24px] max-h-[24px] shrink-0 min-w-[24px] bg-[#CCCCCC] rounded-full object-cover"/>
+                 Figma Config <span className="akar-icons--cross small-cross mr-[10px]"></span></div>
+             </div>
            </div>
-         </div>
+         )}
 
         <SubtaskSection
-          task={task}
+          task={actionable}
           onAddSubtask={onAddSubtask}
           onToggleSubtask={onToggleSubtask}
           onUpdateSubtask={onUpdateSubtask}
           onDeleteSubtask={onDeleteSubtask}
+          canEditOrDelete={canEditOrDelete}
         />
         <CollaboratorSection 
+          task={actionable}
           collaborators={draft.collaborators}
           onChange={(collaborators) =>
             setDraft({ ...draft, collaborators })
-          }/>
-        <NotesSection />
-        <CommentsSection
-          comments={draft.comments}
-          onAdd={(newComment) =>
-            setDraft({
-              ...draft,
-              comments: [newComment, ...draft.comments],
-            })
           }
-          onDelete={(id) =>
-            setDraft({
-              ...draft,
-              comments: draft.comments.filter((c) => c.id !== id),
-            })
+          canEditOrDelete={canEditOrDelete}
+          />
+        <NotesSection
+          value={draft.notes}
+          onChange={(notes) =>
+            setDraft((prev) => ({
+              ...prev,
+              notes,
+            }))
           }
+          canEditOrDelete={canEditOrDelete}
         />
+        <CommentsSection
+            comments={commentsState.list}
+            total={commentsState.total}
+            loading={commentsState.loading}
+            hasMore={commentsState.hasMore}
+            // loadMoreRef={loadMoreRef}
+            showAll={showAllComments}
+            setShowAll={setShowAllComments}
+            canEditOrDelete={canEditOrDelete}
+            onAdd={(value, user) => {
+              if (onAddComment) {
+                onAddComment(actionable.actionableId, value);
+              } else {
+                const tempId = `temp-comment-${Date.now()}`;
+                dispatch(createComment({
+                  tempId,
+                  actionableId: actionable.actionableId,
+                  comment: value,
+                  user,
+                }));
+              }
+            }}
+            onDelete={(id) => {
+              if (onDeleteComment) {
+                onDeleteComment(actionable.actionableId, id);
+              } else {
+                dispatch(removeComment({
+                  actionableId: actionable.actionableId,
+                  commentId: id,
+                }));
+              }
+            }}
+          />
 
-        <FooterActions onClose={onClose} onSave={handleSave}/>
+
+        {canEditOrDelete && <FooterActions onClose={onClose} onSave={handleSave}/>}
+      </div>
       </div>
     </div>
   );
 }
+

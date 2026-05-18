@@ -4,6 +4,7 @@ const nextConfig = {
     domains: [
       "res.cloudinary.com",
       "assets-pretest.elred.io",
+      "randomuser.me",
     ],
   },
 };

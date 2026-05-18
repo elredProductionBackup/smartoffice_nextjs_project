@@ -3,9 +3,10 @@ import api from "@/services/axios";
 export const getActionables = ({
   networkClusterCode,
   start = 1,
-  offset = 20,
+  offset = 10,
   search = "",
-  dueSearchKey = "today", // past | today | all
+  dueSearchKey = "today",
+  eventId = ""
 }) => {
   return api.get("/smartOffice/actionables", {
     params: {
@@ -14,6 +15,7 @@ export const getActionables = ({
       offset,
       search,
       dueSearchKey,
+      eventId
     },
   });
 };
@@ -58,7 +60,9 @@ export const getComments = ({
 
 /** DELETE comment */
 export const deleteComment = (payload) => {
-  return api.patch("/smartOffice/deleteComment", payload);
+  return api.delete("/smartOffice/deleteComment", {
+    data: payload,
+  });
 };
 
 /* ===================== SUB TASK ===================== */
@@ -68,16 +72,25 @@ export const addSubTask = (payload) => {
   return api.patch("/smartOffice/addSubTask", payload);
 };
 
-/** DELETE subtask */
 export const deleteSubTask = (payload) => {
-  return api.patch("/smartOffice/deleteSubTask", payload);
+  return api.delete("/smartOffice/deleteSubTask", {
+    data: payload,
+  });
 };
 
 /* ===================== COLLABORATORS ===================== */
 
 /** GET collaborators */
-export const getCollaborators = ({ networkClusterCode }) => {
+export const getCollaborators = ({
+  networkClusterCode,
+  offset = 0,
+  search = "",
+}) => {
   return api.get("/smartOffice/collaborators", {
-    params: { networkClusterCode },
+    params: {
+      networkClusterCode,
+      offset,
+      search,
+    },
   });
 };

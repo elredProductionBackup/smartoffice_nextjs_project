@@ -16,7 +16,7 @@ const LoginInput = ({ email, setEmail, invalidEmail, setInvalidEmail }) => {
         type="text"
         placeholder="Your email ID"
         autoComplete="off"
-        className="border border-[#E1E2E6] w-full h-[55px] bg-[#F2F6FC] rounded-lg outline-none px-5 text-base font-medium text-[#333333]"
+        className={`border ${invalidEmail?'border-[#F12632]':'border-[#E1E2E6]'} w-full h-[55px] bg-[#F2F6FC] rounded-lg outline-none px-5 text-base font-medium text-[#333333]`}
       />
 
       {/* Error (conditionally visible, but space preserved) */}

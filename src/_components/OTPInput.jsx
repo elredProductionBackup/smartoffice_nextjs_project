@@ -241,6 +241,8 @@ export default function OtpInput({
         {Array.from({ length }).map((_, index) => (
           <input
             key={index}
+            type="tel"
+            inputMode="numeric"
             ref={(el) => (inputRefs.current[index] = el)}
             maxLength={1}
             value={otp[index] || ""}
@@ -269,11 +271,11 @@ export default function OtpInput({
           )}
         </div>
 
-        <div className="text-sm text-[#333] text-right">
+        <div className="text-sm text-[#333] font-[500] text-right">
           {timeLeft === 0 ? (
             <span
               onClick={resendOtp}
-              className="cursor-pointer text-blue-600 font-medium"
+              className="cursor-pointer text-[#F12632] font-medium"
             >
               Resend OTP
             </span>

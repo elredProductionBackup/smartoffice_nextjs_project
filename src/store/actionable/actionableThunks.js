@@ -7,8 +7,10 @@ import {
   addSubTask,
   deleteSubTask,
   deleteActionable,
+  getCollaborators,
 } from "@/services/actionable.service";
 import { createAsyncThunk } from "@reduxjs/toolkit";
+import moment from "moment";
 
 /* ================= ACTIONABLE ================= */
 
@@ -19,8 +21,7 @@ export const fetchActionables = createAsyncThunk(
       const networkClusterCode = localStorage.getItem("networkClusterCode");
 
       const start = (page - 1) * limit + 1;
-      console.log(start)
-      const offset = page * limit;
+      const offset = limit;
 
       const res = await getActionables({
         networkClusterCode,
@@ -42,39 +43,95 @@ export const fetchActionables = createAsyncThunk(
 
 export const createActionable = createAsyncThunk(
   "actionable/createActionable",
-  async (payload, { dispatch, rejectWithValue }) => {
+  async (payload, { rejectWithValue }) => {
     try {
-      await addActionable(payload);
-      dispatch(fetchActionables({ page: 1, limit: 10, search: "", dueSearchKey: "today" }));
+      const { tempId, ...rest } = payload;
+
+      const apiPayload = {
+        ...rest,
+        actionableId: "",
+      };
+
+      const res = await addActionable(apiPayload);
+
+      if (!res.data.success) {
+        return rejectWithValue({
+          message: res.data.message,
+          tempId,
+        });
+      }
+
+      return {
+        item: res.data.result[0],
+        tempId,
+      };
     } catch (err) {
-      return rejectWithValue(err.message);
+      return rejectWithValue({
+        message: err.message,
+        tempId: payload.tempId,
+      });
     }
   }
 );
 
-/** DELETE ACTIONABLE */
-/** DELETE ACTIONABLE */
+// actionableThunks.js
+export const updateActionable = createAsyncThunk(
+  "actionable/updateActionable",
+  async (
+    { actionableId, title, notes, collaborators },
+    { rejectWithValue }
+  ) => {
+    try {
+      const networkClusterCode = localStorage.getItem("networkClusterCode");
+
+      const res = await addActionable({
+        actionableId,
+        networkClusterCode,
+        title,
+        notes,
+        collaborators: collaborators.map(
+          (c) => c.userCode
+        ),
+      });
+
+      if (!res.data?.success) {
+        return rejectWithValue(res.data?.message);
+      }
+
+      return {
+        actionableId,
+        title,
+        notes,
+        collaborators,
+      };
+    } catch (err) {
+      return rejectWithValue(
+        err.response?.data?.message || err.message
+      );
+    }
+  }
+);
+
+
+
 export const removeActionable = createAsyncThunk(
   "actionable/deleteActionable",
-  async (payload, { dispatch, getState, rejectWithValue }) => {
+  async (payload, { getState, rejectWithValue }) => {
+    const state = getState().actionable;
+
+    const item = state.items.find(
+      (i) => i.actionableId === payload.actionableId
+    );
+
+    if (item?.isOptimistic) {
+      return {
+        actionableId: payload.actionableId,
+        skipApi: true,
+      };
+    }
+
     try {
       await deleteActionable(payload);
-
-      const {
-        page,
-        limit,
-        activeTab,
-        search,
-      } = getState().actionable;
-
-      dispatch(
-        fetchActionables({
-          page,
-          limit,
-          search,
-          dueSearchKey: activeTab, 
-        })
-      );
 
       return { actionableId: payload.actionableId };
     } catch (err) {
@@ -83,79 +140,292 @@ export const removeActionable = createAsyncThunk(
   }
 );
 
-
 export const toggleActionable = createAsyncThunk(
   "actionable/toggleActionable",
   async ({ actionableId, isCompleted }, { rejectWithValue }) => {
     try {
       const networkClusterCode = localStorage.getItem("networkClusterCode");
 
-      await addActionable({
+      const res = await addActionable({
         actionableId,
         networkClusterCode,
         isCompleted,
       });
 
+      if (!res.data?.success) {
+        return rejectWithValue(res.data?.message);
+      }
+
       return { actionableId, isCompleted };
     } catch (err) {
-      return rejectWithValue(err.message);
+      return rejectWithValue(
+        err.response?.data?.message || err.message
+      );
     }
   }
 );
 
-
-/* ================= COMMENTS ================= */
-
-export const fetchComments = createAsyncThunk(
-  "actionable/fetchComments",
-  async ({ actionableId }, { rejectWithValue }) => {
+export const changeDueDateTime = createAsyncThunk(
+  "actionable/changeDueDateTime",
+  async ({ actionableId, dueDate, dueTime }, { rejectWithValue }) => {
     try {
       const networkClusterCode = localStorage.getItem("networkClusterCode");
+
+      const currentUtcTime = moment.utc();
+
+      const utcMoment = moment.utc(
+        `${dueDate} ${currentUtcTime.format("HH:mm:ss")}`,
+        "YYYY-MM-DD HH:mm:ss"
+      );
+
+      const dueDateTimeStamp = utcMoment.format(
+        "YYYY-MM-DDTHH:mm:ss.SSS[Z]"
+      );
+
+      const istMoment = utcMoment.clone().add(5, "hours").add(30, "minutes");
+
+      const res = await addActionable({
+        actionableId,
+        networkClusterCode,
+        dueDateTimeStamp,
+      });
+
+      if (!res.data?.success) {
+        return rejectWithValue(res.data?.message);
+      }
+
+      return {
+        actionableId,
+        dueDateTimeStamp,
+
+        dueDate: istMoment.format("DD MMM YYYY"),
+        dueTime: istMoment.format("h:mm A"),
+
+        message: "Due date updated successfully",
+      };
+    } catch (err) {
+      return rejectWithValue(
+        err.response?.data?.message || err.message
+      );
+    }
+  }
+);
+
+/* ================= COMMENTS ================= */
+export const fetchComments = createAsyncThunk(
+  "actionable/fetchComments",
+  async ({ actionableId, page = 1, limit = 5 }, { rejectWithValue }) => {
+    try {
+      const networkClusterCode = localStorage.getItem("networkClusterCode");
+      // const start = (page - 1) * limit;
+      const offset = limit;
 
       const res = await getComments({
         networkClusterCode,
         actionableId,
-        start: 1,
-        offset: 5,
+        start: page,
+        offset,
       });
 
-      return { actionableId, comments: res.data?.result || [] };
+      return {
+        actionableId,
+        comments: res.data?.result?.[0].comments || [],
+        total: res.data?.totalNumberofComments || 0,
+        page,
+      };
     } catch (err) {
       return rejectWithValue(err.message);
     }
   }
 );
 
-export const createComment = createAsyncThunk(
-  "actionable/createComment",
-  async (payload, { dispatch }) => {
-    await addComment(payload);
-    dispatch(fetchComments({ actionableId: payload.actionableId }));
-  }
-);
-
-export const removeComment = createAsyncThunk(
-  "actionable/removeComment",
-  async ({ actionableId, commentId, networkClusterCode }, { dispatch }) => {
-    await deleteComment({ actionableId, commentId, networkClusterCode });
-    dispatch(fetchComments({ actionableId }));
-  }
-);
 
 /* ================= SUBTASK ================= */
 
+/* ================= CREATE SUBTASK ================= */
 export const createSubTask = createAsyncThunk(
   "actionable/createSubTask",
-  async (payload, { dispatch }) => {
-    await addSubTask(payload);
-    dispatch(fetchActionables({ page: 1, limit: 10, search: "", dueSearchKey: "today" }));
+  async (payload, { rejectWithValue }) => {
+    try {
+      const { tempId, ...rest } = payload;
+      const networkClusterCode = localStorage.getItem("networkClusterCode");
+
+      const res = await addSubTask({
+        ...rest,
+        _id: "",
+        networkClusterCode,
+      });
+
+      if (!res.data?.success) {
+        return rejectWithValue({
+          message: res.data.message,
+          tempId,
+          actionableId: payload.actionableId,
+        });
+      }
+
+      return {
+        actionableId: payload.actionableId,
+        subTask: res.data.result[0],
+        tempId,
+      };
+    } catch (err) {
+      return rejectWithValue({
+        message: err.message,
+        tempId: payload.tempId,
+        actionableId: payload.actionableId,
+      });
+    }
   }
 );
 
+/* ================= UPDATE SUBTASK ================= */
+export const updateSubTask = createAsyncThunk(
+  "actionable/updateSubTask",
+  async (payload, { rejectWithValue }) => {
+    try {
+      const networkClusterCode = localStorage.getItem("networkClusterCode");
+
+      const res = await addSubTask({
+        ...payload,
+        networkClusterCode,
+      });
+
+      if (!res.data?.success) {
+        return rejectWithValue({
+          message: res.data.message,
+          actionableId: payload.actionableId,
+          subTaskId: payload._id,
+          previous: payload.previous,
+        });
+      }
+
+      return {
+        actionableId: payload.actionableId,
+        subTask: res.data.result,
+      };
+    } catch (err) {
+      return rejectWithValue({
+        message: err.message,
+        actionableId: payload.actionableId,
+        subTaskId: payload._id,
+        previous: payload.previous,
+      });
+    }
+  }
+);
+
+
+
 export const removeSubTask = createAsyncThunk(
   "actionable/removeSubTask",
-  async (payload, { dispatch }) => {
-    await deleteSubTask(payload);
-    dispatch(fetchActionables({ page: 1, limit: 10, search: "", dueSearchKey: "today" }));
+  async ({ actionableId, subTaskId }, { rejectWithValue }) => {
+    try {
+      const networkClusterCode = localStorage.getItem("networkClusterCode");
+      await deleteSubTask({ _id: subTaskId, networkClusterCode, actionableId });
+      return { actionableId, subTaskId };
+    } catch (err) {
+      return rejectWithValue(err.response?.data || err.message);
+    }
+  }
+);
+
+// Fetch Collaborators
+export const fetchCollaborators = createAsyncThunk(
+  "actionable/fetchCollaborators",
+  async ({ search = "", offset = 0 }, { rejectWithValue }) => {
+    try {
+      const networkClusterCode =
+        localStorage.getItem("networkClusterCode");
+
+      const res = await getCollaborators({
+        networkClusterCode,
+        search,
+        offset,
+      });
+
+      return res?.data?.result;
+    } catch (err) {
+      return rejectWithValue(err?.response?.data);
+    }
+  }
+);
+
+// Comments
+/* ================= CREATE COMMENT ================= */
+export const createComment = createAsyncThunk(
+  "actionable/createComment",
+  async (payload, { rejectWithValue }) => {
+    try {
+      const { tempId, actionableId, comment, user } = payload;
+      const networkClusterCode = localStorage.getItem("networkClusterCode");
+
+
+      const res = await addComment({
+        _id: "",
+        comment,
+        actionableId,
+        networkClusterCode,
+      });
+
+      if (!res.data?.success) {
+        return rejectWithValue({
+          message: res.data.message,
+          tempId,
+          actionableId,
+        });
+      }
+
+      return {
+        actionableId,
+        comment: {
+          ...res.data.result[0], name: user?.firstname,
+          dpURL: user?.dpURL, email: user?.email
+        },
+        tempId,
+      };
+    } catch (err) {
+      return rejectWithValue({
+        message: err.message,
+        tempId: payload.tempId,
+        actionableId: payload.actionableId,
+      });
+    }
+  }
+);
+
+/* ================= REMOVE COMMENT ================= */
+export const removeComment = createAsyncThunk(
+  "actionable/removeComment",
+  async (payload, { rejectWithValue }) => {
+    try {
+      const { actionableId, commentId } = payload;
+      const networkClusterCode = localStorage.getItem("networkClusterCode");
+
+      const res = await deleteComment({
+        commentId: commentId,
+        actionableId,
+        networkClusterCode,
+      });
+
+      if (!res.data?.success) {
+        return rejectWithValue({
+          message: res.data.message,
+          actionableId,
+          commentId,
+        });
+      }
+
+      return {
+        actionableId,
+        commentId,
+      };
+    } catch (err) {
+      return rejectWithValue({
+        message: err.message,
+        actionableId: payload.actionableId,
+        commentId: payload.commentId,
+      });
+    }
   }
 );

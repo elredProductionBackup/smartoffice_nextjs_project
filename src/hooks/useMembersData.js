@@ -31,7 +31,7 @@ export function useMembersData({
             networkClusterCode: networkClusterCode,
             start,
             offset,
-            filterBy: tab === "board" ? "board" : "member",
+            filterBy: tab,
             searchBy: searchBy.toLowerCase(),
             searchKey: search?.trim() || "",
           },
@@ -48,9 +48,12 @@ export function useMembersData({
             email: item.email,
             phone: item.phoneNumber,
             userType: item.userType,
-            title: item.title?.[0]?.value || "",
+            title: item.title || [],
             avatar: item.dpURL,
             location: item.location,
+            documents:item?.documents || [],
+            spouse:item?.spouseDetails?.name || "",
+            children: item?.childrenDetails || []
           }));
 
           setData(formattedData);

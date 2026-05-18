@@ -23,7 +23,7 @@ const ShimmerRow = () => {
 
 const ActionableShimmer = () => {
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col px-[30px]">
       
       {/* Header shimmer */}
       <div className="h-[56px] pb-[14px] flex items-start ">

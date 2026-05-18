@@ -7,7 +7,7 @@ export default function PastItems({ items, onToggle }) {
         <ActionItem
            key={item.actionableId}
           item={item}
-          completed
+          past
           onCheck={() => onToggle(item)} 
         />
       ))}

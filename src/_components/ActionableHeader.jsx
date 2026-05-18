@@ -8,7 +8,7 @@ export default function ActionableHeader({
   searchPlaceholder = "Search",
   onSearch = () => {},
   taskCount,
-  refresh 
+  refresh = false
 }) {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -61,7 +61,7 @@ export default function ActionableHeader({
       </div>
 
       {/* RIGHT — Refresh Button */}
-      {typeof refresh && (
+      {refresh && (
         <button
           onClick={() => window.location.reload()}
           className="h-[35px] w-[35px] flex items-center justify-center rounded-full border-[1.2px] border-[#E9E9E9] hover:bg-[#F5F5F5] transition cursor-pointer"

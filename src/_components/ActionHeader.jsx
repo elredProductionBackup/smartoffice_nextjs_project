@@ -4,6 +4,8 @@ import { IoChevronBack, IoChevronForward } from "react-icons/io5";
 
 import { addWeeks, formatWeekRange } from "@/utils/week";
 import { useEffect } from "react";
+import { useSelector } from "react-redux";
+
 
 export default function ActionHeader({
   activeItem,
@@ -17,25 +19,34 @@ export default function ActionHeader({
   onSearchChange,
   onAdd,
   onTabChange,
-  debounceRef,
+  // debounceRef,
+  disableWhileAdd
 }) {
   const isWeekly = activeItem === "weekly";
   const week = formatWeekRange(weekDate);
+  const { user } = useSelector((state) => state.auth);
+  const isAdmin = user?.userType?.toLowerCase() === "admin";
+
+  const canEditOrDelete = isAdmin;
   
 
   return (
-    <div className="flex items-center justify-between mb-[20px]">
+    <div className="flex items-center justify-between mb-[20px] mx-[30px]">
       {/* LEFT */}
       <div className="flex items-center gap-[20px]">
         <h2 className="text-[24px] font-[700] text-[#666]">
           Action Items
         </h2>
 
-        {activeItem === "today" && (
+        {activeItem === "today" && canEditOrDelete && (
           <button
-            onClick={onAdd}
-            className="w-[50px] h-[36px] rounded-full bg-gradient-to-r from-[#5597ED] to-[#00449C] text-white flex items-center justify-center cursor-pointer"
-          >
+            onClick={!disableWhileAdd ? onAdd : undefined}
+            disabled={disableWhileAdd}
+            className={`w-[50px] h-[36px] rounded-full bg-gradient-to-r from-[#5597ED] to-[#00449C] text-white flex items-center justify-center cursor-pointer       
+            ${ disableWhileAdd
+                ? "opacity-50 cursor-not-allowed pointer-events-none"
+                : "cursor-pointer"
+            }`}>
             <FaPlus size={16} />
           </button>
         )}
@@ -75,8 +86,7 @@ export default function ActionHeader({
 
           {searchOpen && (
             <>
-              <input 
-                ref={debounceRef}
+              <input
                 autoFocus
                 value={searchValue}
                 onChange={(e) => onSearchChange(e.target.value)}

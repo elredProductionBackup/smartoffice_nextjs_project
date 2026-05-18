@@ -1,13 +1,15 @@
-import { removeActionable } from "@/store/actionable/actionableThunks";
+import { openModal } from "@/store/actionable/actionableUiSlice";
 import moment from "moment";
+import Image from "next/image";
 import { useRef, useEffect, useState } from "react";
 import { BsCheck, BsThreeDotsVertical } from "react-icons/bs";
 import { useDispatch, useSelector } from "react-redux";
+import TitleTooltipHover from "./UI/TitleTooltipHover";
 
 export default function ActionItem({
   item,
   onCheck,
-  onOpen,
+  past=false,
   handleDelete,
   today = false
 })  {
@@ -21,6 +23,54 @@ export default function ActionItem({
     dueTime,
     collaborators = [],
   } = item;
+    const dispatch = useDispatch();
+    const titleRef = useRef(null);
+const [isOverflowing, setIsOverflowing] = useState(false);
+useEffect(() => {
+  const el = titleRef.current;
+  if (!el) return;
+
+  const checkLines = () => {
+    const style = window.getComputedStyle(el);
+    const lineHeight = parseFloat(style.lineHeight);
+
+    const lines = Math.round(el.scrollHeight / lineHeight);
+
+    setIsOverflowing(lines > 2);
+  };
+
+  checkLines();
+
+  const observer = new ResizeObserver(checkLines);
+  observer.observe(el);
+
+  return () => observer.disconnect();
+}, [title]);
+
+  const openTaskModal = (actionableId) => {
+    dispatch(
+      openModal({
+        type: "DETAILS",
+        taskId: actionableId,
+      })
+    );
+  };
+  const openMoveModal = (actionableId) => {
+    dispatch(
+      openModal({
+        type: "MOVE",
+        taskId: actionableId,
+      })
+    );
+  };
+  const openDeleteModal = (actionableId) => {
+    dispatch(
+      openModal({
+        type: "DELETE",
+        taskId: actionableId,
+      })
+    );
+  };
 
   const [openMenu, setOpenMenu] = useState(false);
   const menuRef = useRef(null);
@@ -45,49 +95,59 @@ export default function ActionItem({
 
     const isDeleting = deletingId === item.actionableId;
 
+    const { user } = useSelector((state) => state.auth);
+    const isAdmin = user?.userType?.toLowerCase() === "admin";
+
+    const canEditOrDelete = isAdmin;
+
 
   return (
-    <div className="flex items-start justify-between gap-[20px] border-b border-[#D4DFF1] pb-[20px] last:border-b-0 relative cursor-pointer" onClick={onOpen}>
+    <div className="flex items-start justify-between gap-[20px] border-b border-[#D4DFF1] pb-[20px] last:border-b-0 relative cursor-pointer" onClick={()=>{ if (item.isOptimistic) return; openTaskModal(actionableId)}}>
 
       {/* LEFT */}
-      <div className="flex w-[55%] items-start gap-[14px] pr-[40px]">
+      <div className={`flex w-[55%] items-start ${canEditOrDelete || isCompleted? 'gap-[14px]':''} pr-[40px]`}>
         {/* Checkbox */}
-        <div className="h-[30px] flex items-center">
-          <div
-             onClick={(e) => {
-                e.stopPropagation();
-                onCheck();
-              }}
-            className={`h-[18px] w-[18px] rounded-[4px] border-[2px] flex items-center justify-center cursor-pointer transition-colors
-              ${
-                    isCompleted
-                  ? "bg-[#E72D38] border-[#E72D38]"
-                  : "border-[#666666] bg-transparent"
-              }
-            `}
-          >
+        <div className="h-[30px] flex items-center" >
+        {item.isOptimistic ?<span className="loader"></span>:
+        canEditOrDelete || isCompleted?
+          <div onClick={(e) => {
+              e.stopPropagation();
+              if (!canEditOrDelete) return;
+              if (item.isOptimistic) return; 
+              onCheck();
+            }}
+            className={`h-[18px] w-[18px] rounded-[4px] border-[2px] flex items-center justify-center ${canEditOrDelete?`cursor-pointer`:`pointer-events-none cursor-not-allowed`} transition-colors
+              ${ isCompleted
+                  ? `${isCompleted && !canEditOrDelete?'bg-[#999999] border-[#999999]':'bg-[#E72D38] border-[#E72D38]'}`
+                  : "border-[#666666] bg-transparent"}`} >
             {isCompleted && <BsCheck size={18} color="#fff" />}
-          </div>
+          </div>:<></>}
         </div>
 
         {/* Text */}
         <div
           className={`flex flex-col text-[20px] font-medium mt-[5px] gap-[6px] text-[#333333] `}  >
-          <div className={`line-clamp-1 leading-[22px] ${
-                    isCompleted ? "line-through" : ""
-              }`}>{title}</div>
+          <TitleTooltipHover title={isOverflowing ? title : ""}>
+  <div
+    ref={titleRef}
+    className={`line-clamp-2 leading-[22px] ${
+      isCompleted ? "line-through" : ""
+    }`}
+  >
+    {title}
+  </div>
+</TitleTooltipHover>
 
           {subTask.length > 0 && (
             <ul className="ml-[30px] flex flex-col gap-[8px] list-disc text-[20px] font-[500] text-[#333333]">
               {subTask.slice(0, 2).map((sub, index) => {
                 const isLastVisible = index === 1 && subTask.length > 2;
-
                 return (
-                  <li key={sub.id} className={`leading-[20px] ${    isCompleted ? "line-through" : ""}`}>
+                  <li key={`preview-${sub._id}`} className={`leading-[20px] ${sub?.isCompleted ? "line-through" : ""}`}>
                     <div className="flex items-center gap-[60px]">
                       {/* TEXT */}
                       <span className={`line-clamp-1 ${!isLastVisible && 'flex-1'}`}>
-                        {sub.text}
+                        {sub.title}
                       </span>
 
                       {/* +X subTask (only on last visible item) */}
@@ -104,7 +164,9 @@ export default function ActionItem({
             </ul>
           )}
 
-         {createdBy && dueTime && (
+          {item.isOptimistic &&  <div className="h-[12px] w-[200px] rounded-full bg-[#E1E8F6]" />}
+
+         {!item.isOptimistic && createdBy && dueTime && (
             <div className="text-[16px] font-[600] text-[#666666]">
               <span className="capitalize">{createdBy?.name}</span> | {dueTime.toLowerCase()} IST
             </div>
@@ -123,10 +185,14 @@ export default function ActionItem({
 
           {collaborators.length > 0 && (
             <div className="flex items-center gap-[8px]">
-              {visibleAvatars.map((_, i) => (
-                <div
-                  key={i}
+              {visibleAvatars.map((collaborators,index) => (
+                <Image
+                  key={index}
                   className="h-[32px] w-[32px] rounded-full bg-[#E5E7EB] border border-[#CCCCCC]"
+                  src={collaborators.dp || collaborators.dpURL}
+                  alt="Collaborators Image"
+                  height={32}
+                  width={32}
                 />
               ))}
 
@@ -140,17 +206,32 @@ export default function ActionItem({
         </div>
       )}
 
+      {past && canEditOrDelete && <button
+              className="flex items-center justify-end gap-[6px] w-[180px] px-[14px] text-[18px] font-[500] text-[#666666] cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation();
+                openDeleteModal(actionableId)
+                // handleDelete();
+              }}
+            >
+              <span className="fluent--delete-16-regular"></span>
+            </button>}
+
       {/* Menu — ENABLED for both Today & Past */}
-      {!    isCompleted &&
+      {!isCompleted && canEditOrDelete &&
       <div className="relative" ref={menuRef}>
-        <BsThreeDotsVertical
-          size={22}
-          className="text-gray-500 cursor-pointer"
+        <div className="h-[24px] w-[24px] rounded-[8px] hover:bg-[#D3E3FD] grid place-items-center">
+          <BsThreeDotsVertical
+          size={20}
+          className={`text-gray-500  ${item.isOptimistic ? 'opacity-50':'cursor-pointer'}`}
             onClick={(e) => {
+              
             e.stopPropagation(); 
+             if (item.isOptimistic) return; 
             setOpenMenu((prev) => !prev)
           }}
         />
+        </div>
 
         {openMenu && (
           <div
@@ -160,22 +241,23 @@ export default function ActionItem({
               padding: "20px",
             }}
           >
-            <button
-              className="flex items-center gap-[6px] w-[180px] px-[14px] py-[10px] text-[18px] font-[500] text-[#333]"
-              onClick={() => {
-                setOpenMenu(false);
-                console.log("Move item");
-              }}
+              <button
+                className="flex items-center gap-[6px] w-[180px] px-[14px] py-[10px] text-[18px] font-[500] text-[#333] cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setOpenMenu(false);
+                  openMoveModal(actionableId);
+                }}
             >
               <span className="tabler--calendar-star"></span> Move item
             </button>
 
             <button
-              className="flex items-center gap-[6px] w-[180px] px-[14px] py-[10px] text-[18px] font-[500] text-[#333]"
+              className="flex items-center gap-[6px] w-[180px] px-[14px] py-[10px] text-[18px] font-[500] text-[#333] cursor-pointer"
               onClick={(e) => {
                 e.stopPropagation();
-                setOpenMenu(false);
-                handleDelete();
+                openDeleteModal(actionableId)
+                // handleDelete();
               }}
             >
               <span className="fluent--delete-16-regular"></span> {isDeleting ? "Deleting..." : "Delete"} item

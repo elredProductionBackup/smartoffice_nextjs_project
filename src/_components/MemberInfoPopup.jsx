@@ -4,7 +4,7 @@ import Image from "next/image";
 import { FaWhatsapp, FaEnvelope, FaPhone } from "react-icons/fa";
 import { LuCopy } from "react-icons/lu";
 import { useModalStore } from "@/store/useModalStore";
-import userImage from "@/assets/image/user.jpeg";
+// import userImage from "@/assets/image/user.jpeg";
 
 export default function MemberInfoPopup() {
   const { isOpen, modalData, close } = useModalStore();
