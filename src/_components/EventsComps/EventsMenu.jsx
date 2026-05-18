@@ -19,7 +19,7 @@ const EventsMenu = ({ onEdit, onCancel, onComplete, isPast }) => {
 
   return (
     <div
-      className="absolute right-0 mt-2 bg-white flex flex-col animate-in fade-in zoom-in duration-200 z-100 w-[220px] h-[183px] rounded-[20px] p-5 gap-2.5 opacity-1"
+      className="absolute right-0 mt-2 bg-white flex flex-col animate-in fade-in zoom-in duration-200 z-[100] w-[220px] h-[183px] rounded-[20px] p-5 gap-2.5"
       style={{
         boxShadow: "0px 4px 4px 0px #99999940",
       }}
