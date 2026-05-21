@@ -75,8 +75,8 @@ const confirmLogout = () => {
               <Image
                 src="/logo/user-icon.svg"
                 alt="user"
-                width={40}
-                height={40}
+                width={32}
+                height={32}
                 className="rounded-full"
               />
               {/* <div>Me</div> */}
