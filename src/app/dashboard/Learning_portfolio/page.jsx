@@ -39,8 +39,8 @@ const eventsData = [
     image: "/image/spring-networking.png",
     name: "Spring Networking Event",
     portfolio: "Learning Portfolio",
-    budget: "₹11,500",
-    expenses: "₹5,000",
+    budget: "₹21,500",
+    expenses: "₹18,000",
     location: "Delhi",
     attendees: 75,
     isFeatured: true,
@@ -68,7 +68,7 @@ const LearningPortfolio = () => {
             {/* Header section with back arrow */}
             <div className="flex flex-col gap-1 mb-6">
                 <div className="flex items-center gap-3">
-                    <button 
+                    <button
                         onClick={() => router.push("/dashboard/finance")}
                         className="text-[#333333] hover:opacity-80 transition-opacity flex items-center justify-center cursor-pointer border-0 bg-transparent p-0 outline-none"
                     >
@@ -86,14 +86,17 @@ const LearningPortfolio = () => {
             <div className="event-div w-full min-h-full h-auto rounded-[20px] bg-[#F2F7FF] p-[30px] mb-2 overflow-x-auto">
                 <div className="min-w-[950px]">
                     {/* Table Header */}
-                    <div className="grid grid-cols-[1.2fr_2.8fr_1fr_1fr_1.2fr_1fr_2fr] gap-4 pb-4 border-b border-[#D4DFF1] text-[#333333] text-[16px] font-bold font-nunito items-center">
-                        <div>Date</div>
-                        <div>Event name</div>
-                        <div className="text-center">Budget</div>
-                        <div className="text-center">Expenses</div>
-                        <div className="text-center">Location</div>
-                        <div className="text-center">Attendees</div>
-                        <div className="text-center">Actions</div>
+                    <div
+                        className="grid gap-4 pb-4 border-b border-[#D4DFF1] text-[#333333] text-[16px] font-bold font-nunito items-center"
+                        style={{ gridTemplateColumns: "1.2fr 2.8fr 1fr 1fr 1.2fr 1fr 2fr" }}
+                    >
+                        <div className="text-left">Date</div>
+                        <div className="text-left">Event name</div>
+                        <div className="text-left">Budget</div>
+                        <div className="text-left">Expenses</div>
+                        <div className="text-left">Location</div>
+                        <div className="text-left">Attendees</div>
+                        <div className="text-left pl-6">Actions</div>
                     </div>
 
                     {/* Table Body */}
@@ -101,27 +104,33 @@ const LearningPortfolio = () => {
                         <div key={event.id}>
                             {/* Month Group Header */}
                             {index === 0 && (
-                                <div className="grid grid-cols-[1.2fr_2.8fr_1fr_1fr_1.2fr_1fr_2fr] gap-4 pt-5 pb-1">
-                                    <div className="text-[16px] font-bold text-[#333333] font-nunito">
+                                <div
+                                    className="grid gap-4 pt-5 pb-1"
+                                    style={{ gridTemplateColumns: "1.2fr 2.8fr 1fr 1fr 1.2fr 1fr 2fr" }}
+                                >
+                                    <div className="text-[16px] font-bold text-[#333333] font-nunito text-left">
                                         {event.month}
                                     </div>
                                 </div>
                             )}
 
                             {/* Event Row */}
-                            <div className="grid grid-cols-[1.2fr_2.8fr_1fr_1fr_1.2fr_1fr_2fr] gap-4 py-5 border-b border-[#D4DFF1] last:border-b-0 items-center">
+                            <div
+                                className="grid gap-4 py-5 border-b border-[#D4DFF1] last:border-b-0 items-center"
+                                style={{ gridTemplateColumns: "1.2fr 2.8fr 1fr 1fr 1.2fr 1fr 2fr" }}
+                            >
                                 {/* Date */}
-                                <div className="text-[#333333] font-semibold leading-[136%] text-center text-[16px] font-nunito">
+                                <div className="text-[#333333] font-semibold leading-[136%] text-left text-[16px] font-nunito">
                                     {event.date}
                                 </div>
 
                                 {/* Event Name */}
                                 <div className="flex items-center gap-3.5">
                                     <div className="w-[50px] h-[50px] rounded-full overflow-hidden shrink-0 bg-gray-200">
-                                        <img 
-                                            src={event.image} 
-                                            alt={event.name} 
-                                            className="w-full h-full object-cover" 
+                                        <img
+                                            src={event.image}
+                                            alt={event.name}
+                                            className="w-full h-full object-cover"
                                         />
                                     </div>
                                     <div className="flex flex-col">
@@ -135,27 +144,27 @@ const LearningPortfolio = () => {
                                 </div>
 
                                 {/* Budget */}
-                                <div className="text-[#0B57D0] font-bold text-[16px] font-nunito text-center">
+                                <div className="text-[#0B57D0] font-bold text-[16px] font-nunito text-left">
                                     {event.budget}
                                 </div>
 
                                 {/* Expenses */}
-                                <div className="text-[#43AE34] font-bold text-[16px] font-nunito text-center">
+                                <div className="text-[#43AE34] font-bold text-[16px] font-nunito text-left">
                                     {event.expenses}
                                 </div>
 
                                 {/* Location */}
-                                <div className="text-[#333333] text-[16px] text-center font-medium font-nunito">
+                                <div className="text-[#333333] text-[16px] text-left font-medium font-nunito">
                                     {event.location}
                                 </div>
 
                                 {/* Attendees */}
-                                <div className="text-[#333333] text-[16px] text-center font-medium font-nunito">
+                                <div className="text-[#333333] text-[16px] text-left font-medium font-nunito pl-4">
                                     {event.attendees}
                                 </div>
 
                                 {/* Actions */}
-                                <div className="flex items-center justify-center gap-6">
+                                <div className="flex items-center justify-start gap-6 pl-4">
                                     <button className="flex items-center gap-2 text-[#0B57D0] hover:opacity-80 transition-opacity font-bold text-[15px] font-nunito cursor-pointer bg-transparent border-0 p-0 outline-none">
                                         <FiPieChart className="text-[18px] stroke-[2.5]" />
                                         <span>Breakdown</span>
