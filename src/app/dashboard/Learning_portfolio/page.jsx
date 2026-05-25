@@ -1,11 +1,11 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { FaArrowLeft, FaStar, FaRegStar } from "react-icons/fa6";
 import { FiPieChart } from "react-icons/fi";
 
-const eventsData = [
+const initialEventsData = [
   {
     id: 1,
     date: "12th - 14th",
@@ -62,6 +62,32 @@ const eventsData = [
 
 const LearningPortfolio = () => {
     const router = useRouter();
+    const [events, setEvents] = useState([]);
+
+    useEffect(() => {
+        const stored = localStorage.getItem("smartoffice_events");
+        if (stored) {
+            try {
+                setEvents(JSON.parse(stored));
+            } catch (e) {
+                setEvents(initialEventsData);
+            }
+        } else {
+            setEvents(initialEventsData);
+            localStorage.setItem("smartoffice_events", JSON.stringify(initialEventsData));
+        }
+    }, []);
+
+    const toggleFeature = (id) => {
+        const updated = events.map(event => {
+            if (event.id === id) {
+                return { ...event, isFeatured: !event.isFeatured };
+            }
+            return event;
+        });
+        setEvents(updated);
+        localStorage.setItem("smartoffice_events", JSON.stringify(updated));
+    };
 
     return (
         <div className="p-6 min-h-screen bg-white">
@@ -100,7 +126,7 @@ const LearningPortfolio = () => {
                     </div>
 
                     {/* Table Body */}
-                    {eventsData.map((event, index) => (
+                    {events.map((event, index) => (
                         <div key={event.id}>
                             {/* Month Group Header */}
                             {index === 0 && (
@@ -169,7 +195,10 @@ const LearningPortfolio = () => {
                                         <FiPieChart className="text-[18px] stroke-[2.5]" />
                                         <span>Breakdown</span>
                                     </button>
-                                    <button className={`flex items-center gap-1.5 font-bold text-[15px] font-nunito cursor-pointer bg-transparent border-0 p-0 outline-none transition-all duration-200 hover:opacity-85 ${event.isFeatured ? "text-[#F59E0B]" : "text-[#666666]"}`}>
+                                    <button 
+                                        onClick={() => toggleFeature(event.id)}
+                                        className={`flex items-center gap-1.5 font-bold text-[15px] font-nunito cursor-pointer bg-transparent border-0 p-0 outline-none transition-all duration-200 hover:opacity-85 ${event.isFeatured ? "text-[#F59E0B]" : "text-[#666666]"}`}
+                                    >
                                         {event.isFeatured ? <FaStar className="text-[18px]" /> : <FaRegStar className="text-[18px]" />}
                                         <span>Feature</span>
                                     </button>
