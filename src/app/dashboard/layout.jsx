@@ -129,13 +129,13 @@ const userMenu = [
 
   return (
     <ProtectedRoute>
-      <div className="h-screen flex flex-col">
+      <div className="h-screen flex flex-col overflow-hidden">
         {/* Navbar */}
         <Header />
 
         {/* Main */}
-        <div className="flex flex-1 max-h-[calc(100vh - 80px)]">
-          <div className="p-5">
+        <div className="flex flex-1 overflow-hidden" style={{ maxHeight: "calc(100vh - 80px)" }}>
+          <div className="p-5 flex-shrink-0">
             <div className="w-21 bg-[#F2F7FF] h-full p-5 rounded-2xl">
               <ul className="space-y-10">
                 {menu.map((item) => {
@@ -163,7 +163,7 @@ const userMenu = [
           </div>
 
           {/* Nested Page */}
-          <div className="flex-1 flex flex-col mx-5 overflow-y-auto">{children}</div>
+          <div className="flex-1 flex flex-col mx-5 overflow-y-auto py-5">{children}</div>
         </div>
       </div>
     </ProtectedRoute>
