@@ -22,3 +22,53 @@ export const maskEmail = (email) => {
       src.startsWith("/"))
   );
 };
+
+export const formatText = (text = "") => {
+  if (!text) return null;
+
+  const lines = text
+    .replace(/\\n/g, "\n")
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+
+  return lines.map((line, i) => {
+    const isBullet =
+      line.startsWith("●") ||
+      line.startsWith("-") ||
+      line.startsWith("*");
+
+    const isNumbered = /^\d+\./.test(line);
+
+    if (isBullet) {
+      return (
+        <li
+          key={i}
+          className="list-disc ml-[30px]  text-left"
+        >
+          {line.replace(/^[●*\-]\s?/, "")}
+        </li>
+      );
+    }
+
+    if (isNumbered) {
+      return (
+        <li
+          key={i}
+          className="list-decimal ml-[30px]  text-left"
+        >
+          {line.replace(/^\d+\.\s?/, "")}
+        </li>
+      );
+    }
+
+    return (
+      <p
+        key={i}
+        className="mb-1 text-left"
+      >
+        {line}
+      </p>
+    );
+  });
+};

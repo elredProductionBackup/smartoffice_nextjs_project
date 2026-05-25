@@ -2,6 +2,7 @@
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import TitleTooltipHover from "@/_components/UI/TitleTooltipHover";
+import { formatText } from "@/utils/functions";
 export default function ModalHeader({
   title,
   addedBy,
@@ -94,7 +95,7 @@ useEffect(() => {
               ref={titleRef}
               className="text-[32px] font-[700] leading-[44px] text-[#333] mr-[36px] line-clamp-4 break-words"
             >
-              {title}
+              {formatText(title)}
             </h2>
           </TitleTooltipHover>
         ) : (
