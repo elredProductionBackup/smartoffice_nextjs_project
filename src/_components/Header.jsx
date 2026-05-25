@@ -59,10 +59,10 @@ const confirmLogout = () => {
       <div className="min-h-20 bg-[#F2F7FF] flex items-center justify-between px-[50px]">
         <Image src={'/logo/smart-networks.svg'} alt="logo" width={155} height={40} className="object-contain" />
 
-        <div className="flex gap-6">
+        <div className="flex gap-[30px]">
           {/* Notification */}
           <div className="flex gap-[10px] items-center cursor-pointer">
-            <Image src={bell} alt="bell" />
+            <Image src={bell} alt="bell" height={32} width={32}/>
             {/* <div className="text-xl font-medium">Notification</div> */}
           </div>
 
@@ -75,8 +75,8 @@ const confirmLogout = () => {
               <Image
                 src="/logo/user-icon.svg"
                 alt="user"
-                width={40}
-                height={40}
+                width={32}
+                height={32}
                 className="rounded-full"
               />
               {/* <div>Me</div> */}

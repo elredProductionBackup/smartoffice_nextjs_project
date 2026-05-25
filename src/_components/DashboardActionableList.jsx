@@ -10,6 +10,19 @@ export default function DashboardActionableList({ data = [], loading = false, })
   //   return null;
   // }
 
+  const cleanText = (text = "") => {
+  return text
+    .replace(/\\n/g, "\n")
+
+    .replace(/\\t/g, "\t")
+
+    .replace(/\\\\/g, "\\")
+
+    .replace(/\n{3,}/g, "\n\n")
+
+    .trim();
+};
+
   return (
     <div className="flex flex-col mt-6 rounded-2xl bg-[#F2F7FF] px-[24px] pt-[24px] min-h-[450px] max-h-[450px] ">
 
@@ -59,7 +72,7 @@ export default function DashboardActionableList({ data = [], loading = false, })
 
                       <div className="flex flex-col gap-[6px]">
                         <p className="text-[16px] leading-[21px] font-[500] text-[#333] line-clamp-2">
-                          {item.title ?? "—"}
+                          {cleanText(item.title ?? "—")}
                         </p>
 
                         {(item?.createdBy || item?.dueTime) &&
