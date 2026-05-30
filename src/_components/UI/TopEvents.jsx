@@ -17,7 +17,7 @@ const initialEventsData = [
     amount: "₹8,500",
     expenses: "₹8,200",
     location: "Hyderabad",
-    attendees: 102,
+    attendees: 102,  
     isFeatured: false,
   },
   {

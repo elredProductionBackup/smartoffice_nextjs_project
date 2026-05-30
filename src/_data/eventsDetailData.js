@@ -1,8 +1,39 @@
 export const EVENTS_DETAIL_DATA = [
   {
     id: 1,
+    title: "Figma Config",
+    date: "12th - 14th August, 2026",
+    location: "Hyderabad",
+    portfolio: "Learning Portfolio",
+    attendees: 102,
+    format: "Conference",
+    theme: "Design & Tools",
+    totalBudget: 8500,
+    actualExpense: 8200,
+    notes: "Annual Figma global design conference Config 2026",
+    budgetDistribution: [
+      { name: "Tickets", value: 40, color: "#885df1" },
+      { name: "Travelling", value: 30, color: "#ec4899" },
+      { name: "Accommodation", value: 20, color: "#5cbbf6" },
+      { name: "Other", value: 10, color: "#9ca3af" },
+    ],
+    detailedBreakdown: [
+      { name: "Event Management Expenses", amount: 4000 },
+      { name: "Accommodation Charges", amount: 1800 },
+      { name: "Travelling Expenses", amount: 1200 },
+      { name: "Food & Beverages", amount: 800 },
+      { name: "Gift & Gratuities", amount: 200 },
+      { name: "Resource Cost - Event Management", amount: 100 },
+      { name: "Reimbursement of Event Expenditure", amount: 0 },
+      { name: "Postage & Courier Expenses", amount: 0 },
+      { name: "Designing Charges", amount: 50 },
+      { name: "Printing & Stationary", amount: 50 }
+    ]
+  },
+  {
+    id: 2,
     title: "Summer Leadership Workshop",
-    date: "7/20/2026",
+    date: "22nd August, 2026",
     location: "Mountain Resort",
     portfolio: "Learning Portfolio",
     attendees: 50,
@@ -20,18 +51,30 @@ export const EVENTS_DETAIL_DATA = [
       { name: "Travelling", value: 8, color: "#ec4899" },
       { name: "Other", value: 25, color: "#9ca3af" },
     ],
+    detailedBreakdown: [
+      { name: "Event Management Expenses", amount: 8500 },
+      { name: "Accommodation Charges", amount: 2500 },
+      { name: "Travelling Expenses", amount: 800 },
+      { name: "Food & Beverages", amount: 1600 },
+      { name: "Gift & Gratuities", amount: 400 },
+      { name: "Resource Cost - Event Management", amount: 600 },
+      { name: "Reimbursement of Event Expenditure", amount: 0 },
+      { name: "Postage & Courier Expenses", amount: 50 },
+      { name: "Designing Charges", amount: 200 },
+      { name: "Printing & Stationary", amount: 250 }
+    ]
   },
   {
-    id: 2,
+    id: 3,
     title: "Spring Networking Event",
-    date: "6/15/2026",
+    date: "26th August, 2026",
     location: "Grand Hotel Ballroom",
     portfolio: "Learning Portfolio",
     attendees: 75,
     format: "Networking Session",
     theme: "Business Growth",
-    totalBudget: 11500,
-    actualExpense: 5000,
+    totalBudget: 21500,
+    actualExpense: 18000,
     notes: "Annual spring networking event for members and industry guests",
     budgetDistribution: [
       { name: "Venue", value: 30, color: "#885df1" },
@@ -41,11 +84,23 @@ export const EVENTS_DETAIL_DATA = [
       { name: "Entertainment", value: 12, color: "#ec4899" },
       { name: "Other", value: 8, color: "#9ca3af" },
     ],
+    detailedBreakdown: [
+      { name: "Event Management Expenses", amount: 9500 },
+      { name: "Accommodation Charges", amount: 3000 },
+      { name: "Travelling Expenses", amount: 1500 },
+      { name: "Food & Beverages", amount: 2200 },
+      { name: "Gift & Gratuities", amount: 1000 },
+      { name: "Resource Cost - Event Management", amount: 500 },
+      { name: "Reimbursement of Event Expenditure", amount: 0 },
+      { name: "Postage & Courier Expenses", amount: 50 },
+      { name: "Designing Charges", amount: 150 },
+      { name: "Printing & Stationary", amount: 100 }
+    ]
   },
   {
-    id: 3,
+    id: 4,
     title: "Annual Company Retreat",
-    date: "6/15/2026",
+    date: "30th August, 2026",
     location: "Grand Hotel Ballroom",
     portfolio: "Networking Portfolio",
     attendees: 80,
@@ -61,5 +116,17 @@ export const EVENTS_DETAIL_DATA = [
       { name: "Transport", value: 15, color: "#ec4899" },
       { name: "Other", value: 10, color: "#9ca3af" },
     ],
+    detailedBreakdown: [
+      { name: "Event Management Expenses", amount: 2000 },
+      { name: "Accommodation Charges", amount: 1000 },
+      { name: "Travelling Expenses", amount: 500 },
+      { name: "Food & Beverages", amount: 600 },
+      { name: "Gift & Gratuities", amount: 200 },
+      { name: "Resource Cost - Event Management", amount: 100 },
+      { name: "Reimbursement of Event Expenditure", amount: 0 },
+      { name: "Postage & Courier Expenses", amount: 20 },
+      { name: "Designing Charges", amount: 30 },
+      { name: "Printing & Stationary", amount: 50 }
+    ]
   },
 ];

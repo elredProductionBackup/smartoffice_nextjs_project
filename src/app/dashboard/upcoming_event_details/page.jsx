@@ -13,6 +13,10 @@ import {
   Legend,
 } from "recharts";
 import { EVENTS_DETAIL_DATA } from "@/_data/eventsDetailData";
+import BreakdownPopup from "@/_components/BreakdownPopup";
+
+const INFO_VALUE_CLASS = "font-nunito font-bold text-[18px] leading-[136%] tracking-normal text-[#333333]";
+const INFO_TITLE_CLASS = "font-nunito font-medium text-[16px] leading-[136%] tracking-normal text-[#666666]";
 
 // ─── Custom Legend Label rendered outside the chart ───────────────────────────
 const RADIAN = Math.PI / 180;
@@ -26,20 +30,21 @@ const renderCustomLabel = ({
   name,
   value,
   index,
+  payload,
 }) => {
   const radius = outerRadius + 36;
   const x = cx + radius * Math.cos(-midAngle * RADIAN);
   const y = cy + radius * Math.sin(-midAngle * RADIAN);
+  const labelColor = payload?.color || "#555";
 
   return (
     <text
       x={x}
       y={y}
-      fill="#555"
+      fill={labelColor}
       textAnchor={x > cx ? "start" : "end"}
       dominantBaseline="central"
-      fontSize={11}
-      fontFamily="Nunito Sans, sans-serif"
+      className="font-nunito leading-[136%] font-semibold text-[10px] "
     >
       {`${name}: ${value}%`}
     </text>
@@ -51,6 +56,7 @@ function EventDetailContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const id = parseInt(searchParams.get("id") || "1", 10);
+  const [isBreakdownOpen, setIsBreakdownOpen] = React.useState(false);
 
   const event = EVENTS_DETAIL_DATA.find((e) => e.id === id) || EVENTS_DETAIL_DATA[0];
 
@@ -76,15 +82,18 @@ function EventDetailContent() {
               {event.title}
             </h1>
           </div>
-          <p className="font-nunito font-medium text-[18px] leading-[136%] text-[#777777] tracking-normal pl-11">
+          <p className="font-nunito font-medium text-[18px] leading-[136%] text-[#666666] tracking-normal pl-11">
             {event.portfolio}
           </p>
         </div>
 
         {/* View Breakdown button */}
-        <button className="flex items-center gap-2 border border-[#333333] rounded-full px-5 py-2 text-[#333333] font-semibold text-[15px] hover:bg-gray-50 transition-colors cursor-pointer bg-white outline-none">
+        <button
+          onClick={() => setIsBreakdownOpen(true)}
+          className="flex items-center gap-2 border border-[#0B57D0] rounded-full px-5 py-2 text-[#0B57D0] font-medium text-[20px] hover:bg-gray-50 transition-colors cursor-pointer bg-white outline-none"
+        >
           <FiPieChart size={18} />
-          <span>View breakdown</span>
+          <span className="leading-[100%] tracking-[-2%]">View breakdown</span>
         </button>
       </div>
 
@@ -92,7 +101,7 @@ function EventDetailContent() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-6">
 
         {/* LEFT – Budget Summary */}
-        <div className="bg-white border border-[#E2E8F2] rounded-[16px] p-6">
+        <div className="bg-white border border-[#E2E8F2] rounded-[16px] p-6 shadow-[0px_1px_3px_0px_#0000001A,_0px_0px_4px_-1px_#8B878733]">
           <h2 className="font-nunito font-bold text-[20px] text-[#333333] mb-5">
             Budget Summary
           </h2>
@@ -100,58 +109,62 @@ function EventDetailContent() {
           {/* Colored summary rows */}
           <div className="flex flex-col gap-3 mb-4">
             {/* Total Budget */}
-            <div className="flex items-center justify-between bg-[#D3E3FD] rounded-[8px] px-4 py-3">
-              <span className="text-[#333333] font-medium text-[15px]">Total Budget</span>
-              <span className="text-[#0B57D0] font-bold text-[16px]">
+            <div className="flex items-center justify-between bg-[#D3E3FD] rounded-lg px-4 py-3">
+              <span className={INFO_TITLE_CLASS}>Total Budget</span>
+              <span className="text-[#0B57D0] font-bold text-[20px] leading-[136%]">
                 {formatCurrency(event.totalBudget)}
               </span>
             </div>
 
             {/* Actual Expense */}
-            <div className="flex items-center justify-between bg-[#D1FAE5] rounded-[8px] px-4 py-3">
-              <span className="text-[#333333] font-medium text-[15px]">Actual Expense</span>
-              <span className="text-[#059669] font-bold text-[16px]">
+            <div className="flex items-center justify-between bg-[#D1FAE5] rounded-lg px-4 py-3">
+              <span className={INFO_TITLE_CLASS}>Actual Expense</span>
+              <span className="text-[#059669] font-bold text-[20px] leading-[136%]">
                 {formatCurrency(event.actualExpense)}
               </span>
             </div>
 
             {/* Remaining */}
-            <div className="flex items-center justify-between bg-[#EDE9FE] rounded-[8px] px-4 py-3">
-              <span className="text-[#333333] font-medium text-[15px]">Remaining</span>
-              <span className="text-[#7C3AED] font-bold text-[16px]">
+            <div className="flex items-center justify-between bg-[#EDE9FE] rounded-lg px-4 py-3">
+              <span className={INFO_TITLE_CLASS}>Remaining</span>
+              <span className="text-[#7C3AED] font-bold text-[20px] leading-[136%]">
                 {formatCurrency(remaining)}
+              </span>
+            </div>
+
+            {/* Utilization */}
+            <div className="flex items-center justify-between rounded-lg px-4 py-3 bg-[linear-gradient(135deg,_#FFFFFF_0%,_#F1F1F1_100%)]">              
+              <span className={INFO_TITLE_CLASS}>Utilization</span>
+              <span className="text-[#333333] font-bold text-[20px] leading-[136%]">
+                {utilization}%
               </span>
             </div>
           </div>
 
           {/* Info rows */}
-          <div className="flex flex-col divide-y divide-[#F1F5F9]">
-            <div className="flex items-center justify-between py-3">
-              <span className="text-[#777777] text-[14px]">Utilization</span>
-              <span className="text-[#333333] font-bold text-[15px]">{utilization}%</span>
+          <div className="flex flex-col gap-2.5">
+            <div className="flex items-center justify-between">
+              <span className={INFO_TITLE_CLASS}>Date</span>
+              <span className={INFO_VALUE_CLASS}>{event.date}</span>
             </div>
-            <div className="flex items-center justify-between py-3">
-              <span className="text-[#777777] text-[14px]">Date</span>
-              <span className="text-[#333333] font-medium text-[15px]">{event.date}</span>
+            <div className="flex items-center justify-between">
+              <span className={INFO_TITLE_CLASS}>Location</span>
+              <span className={INFO_VALUE_CLASS}>{event.location}</span>
             </div>
-            <div className="flex items-center justify-between py-3">
-              <span className="text-[#777777] text-[14px]">Location</span>
-              <span className="text-[#333333] font-bold text-[15px]">{event.location}</span>
+            <div className="flex items-center justify-between">
+              <span className={INFO_TITLE_CLASS}>Attendees</span>
+              <span className={INFO_VALUE_CLASS}>{event.attendees}</span>
             </div>
-            <div className="flex items-center justify-between py-3">
-              <span className="text-[#777777] text-[14px]">Attendees</span>
-              <span className="text-[#333333] font-bold text-[15px]">{event.attendees}</span>
+            <div className="flex items-center justify-between">
+              <span className={INFO_TITLE_CLASS}>Format</span>
+              <span className={INFO_VALUE_CLASS}>{event.format}</span>
             </div>
-            <div className="flex items-center justify-between py-3">
-              <span className="text-[#777777] text-[14px]">Format</span>
-              <span className="text-[#333333] font-bold text-[15px]">{event.format}</span>
-            </div>
-            <div className="flex items-center justify-between py-3">
-              <span className="text-[#777777] text-[14px]">Theme</span>
-              <span className="text-[#333333] font-bold text-[15px]">{event.theme}</span>
+            <div className="flex items-center justify-between">
+              <span className={INFO_TITLE_CLASS}>Theme</span>
+              <span className={INFO_VALUE_CLASS}>{event.theme}</span>
             </div>
           </div>
-        </div>
+        </div> 
 
         {/* RIGHT – Budget Distribution */}
         <div className="bg-white border border-[#E2E8F2] rounded-[16px] p-6">
@@ -160,7 +173,7 @@ function EventDetailContent() {
           </h2>
 
           {/* Donut Chart */}
-          <div className="w-full h-[280px]">
+          <div className="w-full h-[380px]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -195,14 +208,14 @@ function EventDetailContent() {
           {/* Budget totals below chart */}
           <div className="flex items-center justify-center gap-12 mt-2 pt-4 border-t border-[#E2E8F2]">
             <div className="flex flex-col items-center gap-1">
-              <span className="text-[#777777] text-[13px]">Total Budget</span>
-              <span className="text-[#333333] font-bold text-[16px]">
+              <span className="text-[#666666] leading-[136%] text-[14px]">Total Budget</span>
+              <span className="text-[#333333] font-bold text-[20px] leading-[136%]">
                 {formatCurrency(event.totalBudget)}
               </span>
             </div>
             <div className="flex flex-col items-center gap-1">
-              <span className="text-[#777777] text-[13px]">Remaining</span>
-              <span className="text-[#333333] font-bold text-[16px]">
+              <span className="text-[#666666] leading-[136%] text-[14px]">Remaining</span>
+              <span className="text-[#333333] font-bold text-[20px] leading-[136%]">
                 {formatCurrency(remaining)}
               </span>
             </div>
@@ -213,10 +226,16 @@ function EventDetailContent() {
       {/* ── Notes ── */}
       <div className="bg-white px-1">
         <h3 className="font-nunito font-bold text-[18px] text-[#333333] mb-2">Notes</h3>
-        <p className="text-[#777777] font-medium text-[15px] leading-[160%]">
+        <p className="text-[#666666] font-medium text-[16px] leading-[100%]">
           {event.notes}
         </p>
       </div>
+      {/* ── Detailed Budget Breakdown Modal ── */}
+      <BreakdownPopup
+        isOpen={isBreakdownOpen}
+        onClose={() => setIsBreakdownOpen(false)}
+        event={event}
+      />
     </div>
   );
 }

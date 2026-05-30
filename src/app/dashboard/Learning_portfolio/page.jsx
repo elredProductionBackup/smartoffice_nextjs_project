@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { FaArrowLeft, FaStar, FaRegStar } from "react-icons/fa6";
-import { FiPieChart } from "react-icons/fi";
 
 const initialEventsData = [
   {
@@ -142,7 +141,8 @@ const LearningPortfolio = () => {
 
                             {/* Event Row */}
                             <div
-                                className="grid gap-4 py-5 border-b border-[#D4DFF1] last:border-b-0 items-center"
+                                onClick={() => router.push(`/dashboard/upcoming_event_details?id=${event.id}`)}
+                                className="grid gap-4 py-5 border-b border-[#D4DFF1] last:border-b-0 items-center cursor-pointer hover:bg-[#EBF3FF] transition-colors duration-150 rounded-lg px-2"
                                 style={{ gridTemplateColumns: "1.2fr 2.8fr 1fr 1fr 1.2fr 1fr 2fr" }}
                             >
                                 {/* Date */}
@@ -191,12 +191,11 @@ const LearningPortfolio = () => {
 
                                 {/* Actions */}
                                 <div className="flex items-center justify-start gap-6 pl-4">
-                                    <button className="flex items-center gap-2 text-[#0B57D0] hover:opacity-80 transition-opacity font-bold text-[15px] font-nunito cursor-pointer bg-transparent border-0 p-0 outline-none">
-                                        <FiPieChart className="text-[18px] stroke-[2.5]" />
-                                        <span>Breakdown</span>
-                                    </button>
                                     <button 
-                                        onClick={() => toggleFeature(event.id)}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            toggleFeature(event.id);
+                                        }}
                                         className={`flex items-center gap-1.5 font-bold text-[15px] font-nunito cursor-pointer bg-transparent border-0 p-0 outline-none transition-all duration-200 hover:opacity-85 ${event.isFeatured ? "text-[#F59E0B]" : "text-[#666666]"}`}
                                     >
                                         {event.isFeatured ? <FaStar className="text-[18px]" /> : <FaRegStar className="text-[18px]" />}
