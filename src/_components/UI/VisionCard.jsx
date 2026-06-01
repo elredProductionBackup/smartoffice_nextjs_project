@@ -1,6 +1,9 @@
-import React from 'react';
+'use client';
+
+import React, { useState } from 'react';
 import { FiTrendingUp, FiTrendingDown } from 'react-icons/fi';
 import { MdCurrencyRupee } from 'react-icons/md';
+import IncomePopup from './IncomePopup';
 
 const cardsData = [
   {
@@ -13,6 +16,7 @@ const cardsData = [
     title: "Income",
     amount: "₹ 150,000",
     subtext: "Yearly Income 2026",
+    clickable: true,
   },
   {
     id: 2,
@@ -47,10 +51,17 @@ const SingleVisionCard = ({
   title,
   amount,
   subtext,
+  onClick,
+  clickable,
 }) => {
   return (
     <div
-      className={`${bgClass} border ${borderClass} rounded-[20px] p-6 shadow-[0px_1px_3px_0px_#0000001A,0px_0px_4px_-1px_#8B878733]`}
+      onClick={onClick}
+      className={`${bgClass} border ${borderClass} rounded-[20px] p-6 shadow-[0px_1px_3px_0px_#0000001A,0px_0px_4px_-1px_#8B878733] transition-all duration-200 ${
+        clickable
+          ? 'cursor-pointer hover:shadow-[0_0_0_2.5px_#22c55e55,0px_4px_16px_0px_#0000001A] hover:scale-[1.02]'
+          : ''
+      }`}
     >
       <div className="flex items-center gap-3 mb-4">
         <div
@@ -71,12 +82,24 @@ const SingleVisionCard = ({
 };
 
 const VisionCards = () => {
+  const [showIncomePopup, setShowIncomePopup] = useState(false);
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      {cardsData.map((card) => (
-        <SingleVisionCard key={card.id} {...card} />
-      ))}
-    </div>
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {cardsData.map((card) => (
+          <SingleVisionCard
+            key={card.id}
+            {...card}
+            onClick={card.clickable ? () => setShowIncomePopup(true) : undefined}
+          />
+        ))}
+      </div>
+
+      {showIncomePopup && (
+        <IncomePopup onClose={() => setShowIncomePopup(false)} />
+      )}
+    </>
   );
 };
 
