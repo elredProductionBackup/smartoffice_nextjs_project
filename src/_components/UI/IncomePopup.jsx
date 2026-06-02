@@ -296,7 +296,7 @@ export default function IncomePopup({ onClose }) {
                   return (
                     <div
                       key={src.id}
-                      className="bg-white border border-slate-200 rounded-xl px-4 py-3.5 flex items-start justify-between gap-3"
+                      className="group bg-white border border-slate-200 rounded-xl px-4 py-3.5 flex items-center justify-between gap-3"
                     >
                       <div className="flex-1">
                         <div className="flex items-center gap-2.5 mb-1">
@@ -321,8 +321,17 @@ export default function IncomePopup({ onClose }) {
                           </div>
                         )}
                       </div>
-                      <div className="text-[16px] font-extrabold text-[#0B57D0] whitespace-nowrap">
-                        ₹{formatRupees(src.amount)}
+                      <div className="flex items-center gap-3">
+                        <div className="text-[16px] font-extrabold text-[#0B57D0] whitespace-nowrap">
+                          ₹{formatRupees(src.amount)}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setSources((prev) => prev.filter((s) => s.id !== src.id))}
+                          className="opacity-0 group-hover:opacity-100 w-6 h-6 rounded-md flex items-center justify-center bg-red-50 hover:bg-red-100 text-red-500 cursor-pointer border-none transition-all duration-150"
+                        >
+                          <FiX className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     </div>
                   );
