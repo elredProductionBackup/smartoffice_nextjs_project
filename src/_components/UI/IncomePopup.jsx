@@ -86,7 +86,7 @@ function IncomeTypeDropdown({ value, onChange }) {
 
       {/* Dropdown panel — matches the reference image */}
       {open && (
-        <div className="absolute top-[calc(100%+6px)] left-0 w-[336px] h-[298px] bg-white rounded-[14px] z-[9999] overflow-y-auto p-2"
+        <div className="absolute top-[calc(100%+6px)] left-0 w-[336px] h-[298px] bg-white rounded-[14px] z-9999 overflow-y-auto p-2"
           style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.13)' }}
         >
           {INCOME_TYPES.map((t, i) => {
@@ -137,14 +137,14 @@ export default function IncomePopup({ onClose }) {
     <>
       {/* ── Overlay ── */}
       <div
-        className="fixed inset-0 z-[9998] backdrop-blur-sm"
+        className="fixed inset-0 z-9998 backdrop-blur-sm"
         style={{ background: 'rgba(15,23,42,0.45)' }}
         onClick={onClose}
       />
 
       {/* ── Modal ── */}
       <div
-        className="fixed z-[9999] flex flex-col overflow-hidden bg-white rounded-[20px] w-[800px] h-[900px] max-w-[95vw] max-h-[92vh] font-nunito"
+        className="fixed z-9999 flex flex-col overflow-hidden bg-white rounded-[20px] w-[800px] h-[900px] max-w-[95vw] max-h-[92vh] font-nunito"
         style={{
           top: '50%',
           left: '50%',
@@ -174,7 +174,7 @@ export default function IncomePopup({ onClose }) {
 
         {/* ── Total Income Banner ── */}
         <div
-          className="px-6 py-[14px] flex items-center justify-between border-b border-slate-100"
+          className="px-6 py-3.5 flex items-center justify-between border-b border-slate-100"
           style={{ background: 'linear-gradient(135deg,#f0fdf4,#e8f8f0)' }}
         >
           <div>
@@ -270,13 +270,13 @@ export default function IncomePopup({ onClose }) {
               <div className="flex gap-2.5">
                 <button
                   onClick={handleAddSource}
-                  className="bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)] text-white border-none rounded-full w-[160px] h-[35px] tracking-[-2%] font-medium text-[16px] leading-[100%] cursor-pointer"
+                  className="bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)] text-white border-none rounded-full w-40 h-[35px] tracking-[-2%] font-medium text-[16px] leading-[100%] cursor-pointer"
                 >
                   Add Source
                 </button>
                 <button
                   onClick={() => { setShowForm(false); setForm(EMPTY_FORM); }}
-                  className="text-white bg-[#999999] rounded-full w-[160px] h-[35px] leading-[100%] tracking-[-2%] font-medium text-[16px] cursor-pointer"
+                  className="text-white bg-[#999999] rounded-full w-40 h-[35px] leading-[100%] tracking-[-2%] font-medium text-[16px] cursor-pointer"
                 >
                   Cancel
                 </button>

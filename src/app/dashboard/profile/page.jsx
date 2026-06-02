@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import searchIcon from "@/assets/logo/search.svg";
 import DashboardActionableList from "@/_components/DashboardActionableList";
+import DashboardFinanceList from "@/_components/DashboardFinanceList";
 // import { actionableData } from "@/assets/helpers/sampleActionable";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchDashboardActionables } from "@/store/dashboard/dashboardThunks";
@@ -42,6 +43,7 @@ export default function ProfilePage() {
           data={items}
           loading={loading}
         />
+        <DashboardFinanceList />
       </div>
     </div>
   );

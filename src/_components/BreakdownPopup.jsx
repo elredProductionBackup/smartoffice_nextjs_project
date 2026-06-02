@@ -38,7 +38,7 @@ export default function BreakdownPopup({ isOpen, onClose, event }) {
           {event.detailedBreakdown?.map((item, index) => (
             <div
               key={index}
-              className="flex items-center justify-between bg-[#F2F7FF] border-[0.8px] border-[#E2E8F0] rounded-[4px] px-5 py-4 hover:bg-[#F1F5F9] transition-colors"
+              className="flex items-center justify-between bg-[#F2F7FF] border-[0.8px] border-[#E2E8F0] rounded-sm px-5 py-4 hover:bg-[#F1F5F9] transition-colors"
             >
               <span className="font-nunito font-bold leading-[100%] tracking-[-2%] text-[16px] text-[#333333]">
                 {index + 1}. {item.name}

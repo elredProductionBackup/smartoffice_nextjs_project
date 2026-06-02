@@ -68,7 +68,7 @@ export default function CustomDatePicker({ value, onChange }) {
       {/* Popover Calendar Panel */}
       {open && (
         <div
-          className="absolute top-[calc(100%+6px)] left-0 w-[336px] bg-white rounded-[24px] z-[9999] p-5 font-sans"
+          className="absolute top-[calc(100%+6px)] left-0 w-[336px] bg-white rounded-3xl z-9999 p-5 font-sans"
           style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}
         >
           {/* Header */}
