@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { FiTrendingUp, FiX, FiPlus, FiChevronDown } from 'react-icons/fi';
+import CustomDatePicker from './CustomDatePicker';
 
 const INCOME_TYPES = [
   'Initiation fee',
@@ -245,14 +246,9 @@ export default function IncomePopup({ onClose }) {
                   <label className="block text-[14px] font-bold text-[#333333] mb-1">
                     Date
                   </label>
-                  <input
-                    name="date"
-                    type="date"
-                    value={toInputDate(form.date)}
-                    onChange={(e) =>
-                      setForm((prev) => ({ ...prev, date: fromInputDate(e.target.value) }))
-                    }
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-[0.84rem] text-slate-800 bg-white outline-none"
+                  <CustomDatePicker
+                    value={form.date}
+                    onChange={(dateStr) => setForm((prev) => ({ ...prev, date: dateStr }))}
                   />
                 </div>
                 <div>
