@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
-import { FiX, FiUpload } from 'react-icons/fi';
+import React, { useState, useRef, useEffect } from 'react';
+import { FiX, FiUpload, FiChevronDown } from 'react-icons/fi';
 import CustomDatePicker from './CustomDatePicker';
 
 const EVENTS = [
@@ -18,6 +18,79 @@ const PORTFOLIOS = [
   'Marketing Portfolio',
   'Operations Portfolio',
 ];
+
+/* ── Reusable Custom Select Dropdown (matches IncomeTypeDropdown style) ── */
+function CustomSelectDropdown({ value, onChange, options, placeholder }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const isPlaceholder = !value;
+
+  return (
+    <div ref={ref} className="relative w-full">
+      {/* Trigger button */}
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center justify-between px-4 py-3 border border-gray-300 rounded-[14px] bg-white text-[15px] cursor-pointer outline-none text-left focus:border-[#1A73E8] transition-colors"
+        style={{ color: isPlaceholder ? '#94a3b8' : '#1e293b' }}
+      >
+        <span>{value || placeholder}</span>
+        <FiChevronDown
+          className="ml-2 shrink-0 text-slate-500 transition-transform duration-200"
+          style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
+        />
+      </button>
+
+      {/* Dropdown panel */}
+      {open && (
+        <div
+          className="absolute top-[calc(100%+6px)] left-0 w-full bg-white rounded-[14px] z-[9999] overflow-y-auto p-2"
+          style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.13)', maxHeight: '280px' }}
+        >
+          {placeholder && (
+            <button
+              type="button"
+              onMouseDown={() => { onChange(''); setOpen(false); }}
+              className={[
+                'block w-full text-left px-4 py-2.5 cursor-pointer border-none rounded-lg transition-colors duration-150',
+                "font-['Nunito_Sans'] font-medium text-[16px] leading-[136%] tracking-[0%] text-slate-400",
+                !value ? 'bg-indigo-50' : 'bg-transparent hover:bg-slate-50',
+              ].join(' ')}
+            >
+              {placeholder}
+            </button>
+          )}
+          {options.map((opt) => {
+            const isSelected = opt === value;
+            return (
+              <button
+                key={opt}
+                type="button"
+                onMouseDown={() => { onChange(opt); setOpen(false); }}
+                className={[
+                  'block w-full text-left px-4 py-2.5 cursor-pointer border-none rounded-lg transition-colors duration-150',
+                  "font-['Nunito_Sans'] font-medium text-[16px] leading-[136%] tracking-[0%] text-[#333333]",
+                  isSelected ? 'bg-indigo-50' : 'bg-transparent hover:bg-slate-50',
+                ].join(' ')}
+              >
+                {opt}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function NewExpensesPopup({ onClose, onSave }) {
   const [description, setDescription] = useState('');
@@ -174,45 +247,23 @@ export default function NewExpensesPopup({ onClose, onSave }) {
           {/* Event (Optional) */}
           <div className="flex flex-col gap-1.5">
             <label className="text-[14px] font-bold text-[#333]">Event (Optional)</label>
-            <div className="relative">
-              <select
-                value={event}
-                onChange={(e) => setEvent(e.target.value)}
-                className="w-full appearance-none border border-gray-300 rounded-[14px] px-4 py-3 text-[15px] text-slate-800 bg-white outline-none focus:border-[#1A73E8] transition-colors cursor-pointer"
-              >
-                <option value="">Select Event</option>
-                {EVENTS.map((ev) => (
-                  <option key={ev} value={ev}>{ev}</option>
-                ))}
-              </select>
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
-            </div>
+            <CustomSelectDropdown
+              value={event}
+              onChange={setEvent}
+              options={EVENTS}
+              placeholder="Select Event"
+            />
           </div>
 
           {/* Portfolio */}
           <div className="flex flex-col gap-1.5">
             <label className="text-[14px] font-bold text-[#333]">Portfolio</label>
-            <div className="relative">
-              <select
-                value={portfolio}
-                onChange={(e) => setPortfolio(e.target.value)}
-                className="w-full appearance-none border border-gray-300 rounded-[14px] px-4 py-3 text-[15px] text-slate-800 bg-white outline-none focus:border-[#1A73E8] transition-colors cursor-pointer"
-              >
-                <option value="">Select Portfolio</option>
-                {PORTFOLIOS.map((p) => (
-                  <option key={p} value={p}>{p}</option>
-                ))}
-              </select>
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
-            </div>
+            <CustomSelectDropdown
+              value={portfolio}
+              onChange={setPortfolio}
+              options={PORTFOLIOS}
+              placeholder="Select Portfolio"
+            />
           </div>
 
           {/* Expense Date */}
