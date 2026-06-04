@@ -1,7 +1,63 @@
 'use client';
 import React, { useState } from 'react';
-import ExportAsExcelButton from './ExportAsExcelButton';
+import { FiEdit2, FiChevronDown } from 'react-icons/fi';
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts';
 import AddBudgets from './AddBudgets';
+
+const PORTFOLIO_BUDGET = 1200000;
+const EVENT_BUDGET_UTILIZED = 200000;
+const UTILIZATION_PERCENT = 20.0;
+
+const EVENT_BUDGET_DISTRIBUTION = [
+  { name: 'Venue Rental', value: 45, color: '#885df1' },
+  { name: 'Accommodation Charges', value: 20, color: '#ec4899' },
+  { name: 'Food & Beverages', value: 15, color: '#f59e0b' },
+  { name: 'Resource Cost', value: 8, color: '#14b8a6' },
+  { name: 'Event Management', value: 7, color: '#06b6d4' },
+  { name: 'Printing & Stationary', value: 2, color: '#3b82f6' },
+  { name: 'Reimbursement of Event Expenditure (Misc)', value: 2, color: '#6366f1' },
+  { name: 'Training Expenses', value: 1, color: '#84cc16' },
+];
+
+const RADIAN = Math.PI / 180;
+
+const renderCustomLabel = ({
+  cx,
+  cy,
+  midAngle,
+  outerRadius,
+  name,
+  value,
+  payload,
+}) => {
+  const radius = outerRadius + 36;
+  const x = cx + radius * Math.cos(-midAngle * RADIAN);
+  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+  const labelColor = payload?.color || '#555';
+
+  return (
+    <text
+      x={x}
+      y={y}
+      fill={labelColor}
+      textAnchor={x > cx ? 'start' : 'end'}
+      dominantBaseline="central"
+      className="font-nunito font-semibold text-[10px]"
+    >
+      {`${name}: ${value}%`}
+    </text>
+  );
+};
+
+function formatIndianCurrency(amount) {
+  return `₹${amount.toLocaleString('en-IN')}`;
+}
 
 // ─── Reusable Expense Section ───────────────────────────────────────────────
 const ExpenseSection = ({ title }) => {
@@ -143,22 +199,108 @@ const Eventcosting = () => {
   return (
     <div className='flex flex-col'>
 
-      {/* ================ Total cost and dropdown section ============================== */}
-      <div className='w-[1210px] h-[50px] flex flex-row justify-between items-center mb-[60px]'>
-        <div className='flex flex-row items-center gap-[40px]'>
-          <div 
-            onClick={() => setIsBudgetOpen(true)}
-            className='dropdown border border-[#DDDDDD] flex flex-row justify-between items-center px-[20px] py-[10px] h-[48px] w-[250px] rounded-md cursor-pointer'
-          >
-            <p className='font-[600] text-[20px]'>Budget</p>
-            <img src="/image/right-arrow.svg" width={6} height={12} />
+      {/* ================ Portfolio budget & distribution ============================== */}
+      <div className="w-full max-w-[1210px] grid grid-cols-1 lg:grid-cols-2 gap-8 mb-[60px] font-nunito">
+        {/* Left – Portfolio Budget */}
+        <div className="flex flex-col">
+          <p className="text-[14px] font-medium text-[#777777] mb-1">Portfolio Budget</p>
+          <h1 className="text-[32px] font-bold text-[#333333] mb-5 leading-tight">
+            {formatIndianCurrency(PORTFOLIO_BUDGET)}
+          </h1>
+
+          <div className="bg-[#F2F7FF] rounded-2xl px-5 py-4 mb-5">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[14px] font-medium text-[#333333]">
+                Event Budget Utilized
+              </span>
+              <span className="text-[14px] font-bold text-[#2B7FFF]">
+                {UTILIZATION_PERCENT.toFixed(1)}%
+              </span>
+            </div>
+            <div className="w-full h-2.5 rounded-full bg-[#E2E8F0] overflow-hidden mb-2">
+              <div
+                className="h-full rounded-full bg-[#2B7FFF] transition-all duration-300"
+                style={{ width: `${UTILIZATION_PERCENT}%` }}
+              />
+            </div>
+            <p className="text-[12px] font-medium text-[#777777]">
+              {formatIndianCurrency(EVENT_BUDGET_UTILIZED)} of{' '}
+              {formatIndianCurrency(PORTFOLIO_BUDGET)}
+            </p>
           </div>
-          <div className='totalcosting'>
-            <h1 className='text-[32px] text-[#333333] font-[600]'>Total Budget : 12,00,000</h1>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setIsBudgetOpen(true)}
+              className="inline-flex items-center justify-center gap-2 h-[44px] px-5 rounded-full border-2 border-[#2B7FFF] bg-white text-[#2B7FFF] text-[15px] font-semibold cursor-pointer hover:bg-[#F2F7FF] transition-colors outline-none"
+            >
+              <FiEdit2 className="w-4 h-4" />
+              Edit Budget
+            </button>
+            <button
+              type="button"
+              className="inline-flex items-center justify-center gap-2 h-[44px] px-5 rounded-full bg-[#2B7FFF] text-white text-[15px] font-semibold cursor-pointer hover:bg-[#1a6fe6] transition-colors border-0 outline-none"
+            >
+              Event Budget
+              <FiChevronDown className="w-4 h-4" />
+            </button>
           </div>
         </div>
-        
-        <ExportAsExcelButton onClick={() => console.log("Exporting...")} />
+
+        {/* Right – Event Budget Distribution */}
+        <div className="flex flex-col">
+          <p className="text-[14px] font-medium text-[#777777] mb-4">
+            Event Budget Distribution
+          </p>
+
+          <div className="w-full h-[280px] sm:h-[320px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={EVENT_BUDGET_DISTRIBUTION}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={0}
+                  outerRadius={90}
+                  dataKey="value"
+                  stroke="#fff"
+                  strokeWidth={2}
+                  labelLine
+                  label={renderCustomLabel}
+                >
+                  {EVENT_BUDGET_DISTRIBUTION.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  formatter={(value, name) => [`${value}%`, name]}
+                  contentStyle={{
+                    borderRadius: '8px',
+                    border: 'none',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                    fontSize: '13px',
+                    fontFamily: 'Nunito, sans-serif',
+                  }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5 mt-2">
+            {EVENT_BUDGET_DISTRIBUTION.map((item) => (
+              <div key={item.name} className="flex items-center gap-2 min-w-0">
+                <span
+                  className="w-2.5 h-2.5 rounded-full shrink-0"
+                  style={{ backgroundColor: item.color }}
+                />
+                <span className="text-[12px] font-medium text-[#333333] truncate">
+                  {item.name}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* ================ Expenses Header ============================================ */}
