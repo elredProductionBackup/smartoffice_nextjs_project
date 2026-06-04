@@ -1,70 +1,33 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { FiUpload } from "react-icons/fi";
 import NewExpensesPopup from "./UI/NewExpensesPopup";
-
-const dummyFinanceItems = [
-  {
-    id: 1,
-    status: "Approval pending",
-    statusType: "approval",
-    title: "Invoice Approval Request",
-    description: "Stationary bill for office supplies and materials",
-    time: "3d ago",
-    timeType: "warning",
-    user: {
-      initials: "RK",
-      name: "Rajesh Kumar",
-      avatarColor: "bg-[#1A73E8]",
-    },
-  },
-  {
-    id: 2,
-    status: "Approval pending",
-    statusType: "approval",
-    title: "Invoice Approval Request",
-    description: "Travel expenses for Annual Conference 2026",
-    time: "1d ago",
-    timeType: "warning",
-    user: {
-      initials: "PS",
-      name: "Priya Sharma",
-      avatarColor: "bg-[#1A73E8]",
-    },
-  },
-  {
-    id: 3,
-    status: "Payment pending",
-    statusType: "payment",
-    title: "Vendor Payment Required",
-    description: "Office supplies and equipment",
-    time: "5d ago",
-    timeType: "danger",
-    user: {
-      initials: "OD",
-      name: "Office Depot Inc.",
-      avatarColor: "bg-[#0F9D58]",
-    },
-  },
-  {
-    id: 4,
-    status: "Payment pending",
-    statusType: "payment",
-    title: "Reimbursement Pending",
-    description: "Client meeting expenses at hotel",
-    time: "2d ago",
-    timeType: "danger",
-    user: {
-      initials: "RH",
-      name: "The Ritz Hotel",
-      avatarColor: "bg-[#0F9D58]",
-    },
-  },
-];
+import { useFinanceStore } from "@/store/useFinanceStore";
 
 export default function DashboardFinanceList() {
   const [showNewExpense, setShowNewExpense] = useState(false);
+  const listRef = useRef(null);
+
+  const financeItems = useFinanceStore((state) => state.items);
+  const hydrateFromStorage = useFinanceStore((state) => state.hydrateFromStorage);
+  const addExpenseFromForm = useFinanceStore((state) => state.addExpenseFromForm);
+
+  useEffect(() => {
+    hydrateFromStorage();
+  }, [hydrateFromStorage]);
+
+  const handleSaveExpense = (expense) => {
+    addExpenseFromForm(expense);
+    setShowNewExpense(false);
+    requestAnimationFrame(() => {
+      listRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  };
+
+  const handleClosePopup = () => {
+    setShowNewExpense(false);
+  };
 
   return (
     <div className="flex flex-col mt-6 rounded-2xl bg-[#F2F7FF] px-6 py-6 min-h-[600px] max-h-[600px]">
@@ -80,8 +43,11 @@ export default function DashboardFinanceList() {
       </div>
 
       {/* List */}
-      <div className="flex-1 flex flex-col gap-3 overflow-y-auto min-h-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-        {dummyFinanceItems.map((item) => (
+      <div
+        ref={listRef}
+        className="flex-1 flex flex-col gap-3 overflow-y-auto min-h-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+      >
+        {financeItems.map((item) => (
           <div
             key={item.id}
             className="bg-white rounded-2xl p-4 flex flex-col gap-2.5 border border-[#E8ECEF] shadow-[0_1px_3px_rgba(0,0,0,0.02)]"
@@ -150,10 +116,11 @@ export default function DashboardFinanceList() {
 
       {/* NewExpensesPopup Modal */}
       {showNewExpense && (
-        <NewExpensesPopup onClose={() => setShowNewExpense(false)} />
+        <NewExpensesPopup
+          onClose={handleClosePopup}
+          onSave={handleSaveExpense}
+        />
       )}
     </div>
   );
 }
-
-

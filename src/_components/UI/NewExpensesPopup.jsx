@@ -137,22 +137,28 @@ export default function NewExpensesPopup({ onClose, onSave }) {
     }
   };
 
-  const handleSave = () => {
+  const handleSave = (e) => {
+    e?.preventDefault?.();
+    e?.stopPropagation?.();
+
+    const payload = {
+      description,
+      expenseType,
+      event,
+      portfolio,
+      date,
+      totalAmount: parseFloat(totalAmount) || 0,
+      paid: parseFloat(paid) || 0,
+      balance: parseFloat(balance) || 0,
+      vendorName,
+      fileName,
+    };
+
     if (onSave) {
-      onSave({
-        description,
-        expenseType,
-        event,
-        portfolio,
-        date,
-        totalAmount: parseFloat(totalAmount) || 0,
-        paid: parseFloat(paid) || 0,
-        balance: parseFloat(balance) || 0,
-        vendorName,
-        fileName,
-      });
+      onSave(payload);
+    } else if (onClose) {
+      onClose();
     }
-    onClose();
   };
 
   return (
@@ -172,6 +178,8 @@ export default function NewExpensesPopup({ onClose, onSave }) {
           transform: 'translate(-50%, -50%)',
           boxShadow: '0 24px 60px rgba(0,0,0,0.15)',
         }}
+        onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-8 pt-6 pb-4 border-b border-[#F1F3F5] shrink-0">
