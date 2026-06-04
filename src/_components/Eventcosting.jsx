@@ -9,21 +9,13 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import AddBudgets from './AddBudgets';
+import EventBudgetPopup, {
+  DEFAULT_EVENT_BUDGET_CATEGORIES,
+} from './EventBudgetPopup';
 
 const PORTFOLIO_BUDGET = 1200000;
 const EVENT_BUDGET_UTILIZED = 200000;
 const UTILIZATION_PERCENT = 20.0;
-
-const EVENT_BUDGET_DISTRIBUTION = [
-  { name: 'Venue Rental', value: 45, color: '#885df1' },
-  { name: 'Accommodation Charges', value: 20, color: '#ec4899' },
-  { name: 'Food & Beverages', value: 15, color: '#f59e0b' },
-  { name: 'Resource Cost', value: 8, color: '#14b8a6' },
-  { name: 'Event Management', value: 7, color: '#06b6d4' },
-  { name: 'Printing & Stationary', value: 2, color: '#3b82f6' },
-  { name: 'Reimbursement of Event Expenditure (Misc)', value: 2, color: '#6366f1' },
-  { name: 'Training Expenses', value: 1, color: '#84cc16' },
-];
 
 const RADIAN = Math.PI / 180;
 
@@ -190,10 +182,17 @@ const ExpenseSection = ({ title }) => {
 // ─── Main Component ──────────────────────────────────────────────────────────
 const Eventcosting = () => {
   const [isBudgetOpen, setIsBudgetOpen] = useState(false);
+  const [isEventBudgetOpen, setIsEventBudgetOpen] = useState(false);
+  const [budgetDistribution, setBudgetDistribution] = useState(
+    DEFAULT_EVENT_BUDGET_CATEGORIES
+  );
 
   const handleBudgetSave = (data) => {
     console.log('Budget saved:', data);
-    // You can add more logic here to handle the saved budget data
+  };
+
+  const handleEventBudgetSave = (categories) => {
+    setBudgetDistribution(categories);
   };
 
   return (
@@ -240,10 +239,10 @@ const Eventcosting = () => {
             </button>
             <button
               type="button"
+              onClick={() => setIsEventBudgetOpen(true)}
               className="inline-flex items-center justify-center gap-2 h-[44px] px-5 rounded-full bg-[#2B7FFF] text-white text-[15px] font-semibold cursor-pointer hover:bg-[#1a6fe6] transition-colors border-0 outline-none"
             >
               Event Budget
-              <FiChevronDown className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -258,7 +257,7 @@ const Eventcosting = () => {
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={EVENT_BUDGET_DISTRIBUTION}
+                  data={budgetDistribution}
                   cx="50%"
                   cy="50%"
                   innerRadius={0}
@@ -269,7 +268,7 @@ const Eventcosting = () => {
                   labelLine
                   label={renderCustomLabel}
                 >
-                  {EVENT_BUDGET_DISTRIBUTION.map((entry, index) => (
+                  {budgetDistribution.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
@@ -288,7 +287,7 @@ const Eventcosting = () => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5 mt-2">
-            {EVENT_BUDGET_DISTRIBUTION.map((item) => (
+            {budgetDistribution.map((item) => (
               <div key={item.name} className="flex items-center gap-2 min-w-0">
                 <span
                   className="w-2.5 h-2.5 rounded-full shrink-0"
@@ -320,10 +319,18 @@ const Eventcosting = () => {
         <ExpenseSection title="Recce costing" />
       </div>
 
-      <AddBudgets 
-        isOpen={isBudgetOpen} 
-        onClose={() => setIsBudgetOpen(false)} 
+      <AddBudgets
+        isOpen={isBudgetOpen}
+        onClose={() => setIsBudgetOpen(false)}
         onSave={handleBudgetSave}
+      />
+
+      <EventBudgetPopup
+        isOpen={isEventBudgetOpen}
+        onClose={() => setIsEventBudgetOpen(false)}
+        onSave={handleEventBudgetSave}
+        totalBudget={PORTFOLIO_BUDGET}
+        categories={budgetDistribution}
       />
     </div>
   );
