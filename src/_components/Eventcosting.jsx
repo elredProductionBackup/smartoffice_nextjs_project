@@ -1,6 +1,6 @@
 'use client';
-import React, { useState } from 'react';
-import { FiEdit2, FiChevronDown, FiX, FiUpload } from 'react-icons/fi';
+import React, { useState, useRef, useEffect } from 'react';
+import { FiEdit2, FiChevronDown, FiPlus } from 'react-icons/fi';
 import {
   PieChart,
   Pie,
@@ -12,6 +12,7 @@ import AddBudgets from './AddBudgets';
 import EventBudgetPopup, {
   DEFAULT_EVENT_BUDGET_CATEGORIES,
 } from './EventBudgetPopup';
+import EventCostingCard from './UI/EventCostingCards';
 
 const PORTFOLIO_BUDGET = 1200000;
 const EVENT_BUDGET_UTILIZED = 200000;
@@ -51,186 +52,18 @@ function formatIndianCurrency(amount) {
   return `₹${amount.toLocaleString('en-IN')}`;
 }
 
-const EXPENSE_INPUT_CLASS =
-  'h-[44px] w-full rounded-[8px] border border-[#DDDDDD] bg-[#E5E7EB] px-3 text-[14px] text-[#666666] outline-none focus:border-[#5597ED] font-nunito';
-const EXPENSE_LABEL_CLASS = 'text-[14px] font-medium text-[#111827] mb-1 font-nunito';
 
-// ─── Reusable Expense Section (Venue Rental style card) ───────────────────────
-const ExpenseSection = ({ title, onRemove, approvalStatus = 'Pending' }) => {
-  const [narrative, setNarrative] = useState('');
-  const [cost, setCost] = useState('');
-  const [advancePayment, setAdvancePayment] = useState('');
-  const [balancePayment, setBalancePayment] = useState('');
-  const [subItems, setSubItems] = useState([
-    { id: 1, description: '', attendees: '', amount: '' },
-  ]);
 
-  const addSubItem = () => {
-    setSubItems((prev) => [
-      ...prev,
-      { id: Date.now(), description: '', attendees: '', amount: '' },
-    ]);
-  };
-
-  const removeSubItem = (id) => {
-    setSubItems((prev) =>
-      prev.length > 1 ? prev.filter((item) => item.id !== id) : prev
-    );
-  };
-
-  const updateSubItem = (id, field, value) => {
-    setSubItems((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, [field]: value } : item))
-    );
-  };
-
-  const uploadId = `upload-${title.replace(/\s+/g, '-').toLowerCase()}`;
-
-  return (
-    <div className="w-full rounded-[12px] border border-[#E8ECEF] bg-white p-6 mb-6 font-nunito shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-      {/* Header */}
-      <div className="flex items-start justify-between mb-5">
-        <h2 className="text-[20px] font-bold text-[#1e3a8a] leading-tight">{title}</h2>
-        <button
-          type="button"
-          onClick={onRemove}
-          className="text-[#EF4444] hover:text-[#DC2626] bg-transparent border-0 p-1 cursor-pointer outline-none shrink-0"
-          aria-label={`Remove ${title}`}
-        >
-          <FiX className="w-5 h-5" strokeWidth={2.5} />
-        </button>
-      </div>
-
-      {/* Row 1: Narrative + Upload */}
-      <div className="flex flex-col lg:flex-row gap-4 mb-4">
-        <div className="flex flex-col flex-1 min-w-0">
-          <label className={EXPENSE_LABEL_CLASS}>Narrative</label>
-          <input
-            type="text"
-            placeholder="Enter narration"
-            value={narrative}
-            onChange={(e) => setNarrative(e.target.value)}
-            className={EXPENSE_INPUT_CLASS}
-          />
-        </div>
-        <div className="flex flex-col lg:w-[280px] shrink-0">
-          <label className={EXPENSE_LABEL_CLASS}>Upload Proforma/Final bill</label>
-          <label
-            htmlFor={uploadId}
-            className={`${EXPENSE_INPUT_CLASS} flex items-center justify-center gap-2 cursor-pointer hover:bg-[#dfe3e8] transition-colors`}
-          >
-            <span className="text-[14px] font-medium text-[#666666]">Upload file</span>
-            <FiUpload className="w-[18px] h-[18px] text-[#666666]" />
-            <input id={uploadId} type="file" className="hidden" />
-          </label>
-        </div>
-      </div>
-
-      {/* Row 2: Cost, Advance, Balance */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
-        <div className="flex flex-col">
-          <label className={EXPENSE_LABEL_CLASS}>Cost</label>
-          <input
-            type="text"
-            placeholder="Enter Value"
-            value={cost}
-            onChange={(e) => setCost(e.target.value)}
-            className={EXPENSE_INPUT_CLASS}
-          />
-        </div>
-        <div className="flex flex-col">
-          <label className={EXPENSE_LABEL_CLASS}>Advance payment</label>
-          <input
-            type="text"
-            placeholder="Enter Value"
-            value={advancePayment}
-            onChange={(e) => setAdvancePayment(e.target.value)}
-            className={EXPENSE_INPUT_CLASS}
-          />
-        </div>
-        <div className="flex flex-col">
-          <label className={EXPENSE_LABEL_CLASS}>Balance payment</label>
-          <input
-            type="text"
-            placeholder="Enter Value"
-            value={balancePayment}
-            onChange={(e) => setBalancePayment(e.target.value)}
-            className={EXPENSE_INPUT_CLASS}
-          />
-        </div>
-      </div>
-
-      {/* Sub-items */}
-      <div className="flex flex-col gap-3 mb-4">
-        {subItems.map((sub) => (
-          <div key={sub.id} className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => removeSubItem(sub.id)}
-              className="w-6 h-6 flex items-center justify-center text-[#9CA3AF] hover:text-[#666666] bg-transparent border-0 p-0 cursor-pointer shrink-0 outline-none"
-              aria-label="Remove sub-item"
-            >
-              <FiX className="w-4 h-4" />
-            </button>
-            <input
-              type="text"
-              placeholder="Description (e.g., Day 1 Lunch)"
-              value={sub.description}
-              onChange={(e) => updateSubItem(sub.id, 'description', e.target.value)}
-              className={`${EXPENSE_INPUT_CLASS} flex-[2] min-w-0`}
-            />
-            <input
-              type="text"
-              placeholder="No. of Attendees"
-              value={sub.attendees}
-              onChange={(e) => updateSubItem(sub.id, 'attendees', e.target.value)}
-              className={`${EXPENSE_INPUT_CLASS} flex-1 min-w-[120px]`}
-            />
-            <input
-              type="text"
-              placeholder="Amount"
-              value={sub.amount}
-              onChange={(e) => updateSubItem(sub.id, 'amount', e.target.value)}
-              className={`${EXPENSE_INPUT_CLASS} flex-1 min-w-[100px]`}
-            />
-          </div>
-        ))}
-
-        <button
-          type="button"
-          onClick={addSubItem}
-          className="w-full h-[44px] rounded-[8px] border-2 border-dashed border-[#C5CCD6] bg-transparent text-[14px] font-medium text-[#666666] flex items-center justify-center gap-1 cursor-pointer hover:border-[#5597ED] hover:text-[#5597ED] transition-colors outline-none"
-        >
-          + Add sub-item (e.g., Day 1, Day 2)
-        </button>
-      </div>
-
-      {/* Footer: status + actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2 border-t border-[#F1F5F9]">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-[15px] font-semibold text-[#515161]">Approved status:</span>
-          <span className="inline-flex items-center px-3 py-0.5 rounded-md text-[13px] font-semibold bg-[#FEF7E0] text-[#B06000]">
-            {approvalStatus}
-          </span>
-        </div>
-        <div className="flex items-center gap-3 shrink-0">
-          <button
-            type="button"
-            className="h-[40px] px-5 rounded-full border-2 border-[#2B7FFF] bg-white text-[#2B7FFF] text-[14px] font-semibold cursor-pointer hover:bg-[#F2F7FF] transition-colors outline-none whitespace-nowrap"
-          >
-            Send Reminder
-          </button>
-          <button
-            type="button"
-            className="h-[40px] px-5 rounded-full bg-[#2B7FFF] text-white text-[14px] font-semibold cursor-pointer hover:bg-[#1a6fe6] transition-colors border-0 outline-none whitespace-nowrap"
-          >
-            Send for approval
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
+const EXPENSE_CATEGORIES = [
+  'Venue Rental',
+  'Food & Beverages',
+  'Accommodation Charges',
+  'Printing & Stationary',
+  'Training Expenses',
+  'Resource Cost',
+  'Event Management',
+  'Reimbursement of Event Expenditure (Misc)',
+];
 
 // ─── Main Component ──────────────────────────────────────────────────────────
 const Eventcosting = () => {
@@ -248,10 +81,31 @@ const Eventcosting = () => {
     setBudgetDistribution(categories);
   };
 
-  const [expenseSections, setExpenseSections] = useState([
-    { id: 1, title: 'Catering Services' },
-    { id: 2, title: 'Recce costing' },
-  ]);
+  const [expenseSections, setExpenseSections] = useState([]);
+
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const handleAddNewSection = () => {
+    if (!selectedCategory) return;
+    const newSection = {
+      id: Date.now(),
+      title: selectedCategory,
+    };
+    setExpenseSections((prev) => [...prev, newSection]);
+    setSelectedCategory('');
+  };
 
   const removeExpenseSection = (id) => {
     setExpenseSections((prev) => prev.filter((section) => section.id !== id));
@@ -365,20 +219,84 @@ const Eventcosting = () => {
       </div>
 
       {/* ================ Expenses Header ============================================ */}
-      <div className="w-full flex items-center gap-4 mb-8">
-        <div className="flex items-center gap-2 cursor-pointer">
-          <span className="text-[24px] font-[600] text-[#333333]">Expenses</span>
-          <svg width="14" height="8" viewBox="0 0 14 8" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M1 1L7 7L13 1" stroke="#333333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </div>
+      <div className="w-full flex items-center gap-4 mb-6">
         <div className="flex-1 h-[1px] bg-[#EEEEEE]" />
+      </div>
+
+      {/* ================ Add Expense Category Input Row ============================= */}
+      <div className="w-full flex items-center gap-3 mb-8 font-nunito">
+        <div ref={dropdownRef} className="flex-1 relative">
+          <button
+            type="button"
+            onClick={() => setDropdownOpen((o) => !o)}
+            className={`w-full flex items-center justify-between px-4 h-[48px] border rounded-[14px] bg-white text-[15px] cursor-pointer outline-none text-left transition-colors ${
+              dropdownOpen ? 'border-[#2B7FFF]' : 'border-[#E2E8F0]'
+            }`}
+            style={{ color: !selectedCategory ? '#777777' : '#333333' }}
+          >
+            <span>{selectedCategory || 'Select Expense Category'}</span>
+            <FiChevronDown
+              className="ml-2 shrink-0 text-slate-500 transition-transform duration-200"
+              style={{ transform: dropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+            />
+          </button>
+
+          {dropdownOpen && (
+            <div
+              className="absolute top-[calc(100%+6px)] left-0 w-full bg-white rounded-[14px] z-[9999] overflow-y-auto p-2 border border-[#E2E8F0]"
+              style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.1)', maxHeight: '280px' }}
+            >
+              <button
+                type="button"
+                onMouseDown={() => {
+                  setSelectedCategory('');
+                  setDropdownOpen(false);
+                }}
+                className={`block w-full text-left px-4 py-2.5 cursor-pointer border-none rounded-lg transition-colors duration-150 font-nunito font-semibold text-[14px] ${
+                  !selectedCategory
+                    ? 'bg-[#F2F7FF] text-[#2B7FFF]'
+                    : 'bg-transparent text-[#777777] hover:bg-slate-50'
+                }`}
+              >
+                Select Expense Category
+              </button>
+              {EXPENSE_CATEGORIES.map((opt) => {
+                const isSelected = opt === selectedCategory;
+                return (
+                  <button
+                    key={opt}
+                    type="button"
+                    onMouseDown={() => {
+                      setSelectedCategory(opt);
+                      setDropdownOpen(false);
+                    }}
+                    className={`block w-full text-left px-4 py-2.5 cursor-pointer border-none rounded-lg transition-colors duration-150 font-nunito font-semibold text-[14px] ${
+                      isSelected
+                        ? 'bg-[#F2F7FF] text-[#2B7FFF]'
+                        : 'bg-transparent text-[#333333] hover:bg-slate-50'
+                    }`}
+                  >
+                    {opt}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={handleAddNewSection}
+          className="inline-flex items-center justify-center gap-2 h-[48px] px-5 border border-[#E2E8F0] rounded-[14px] bg-white text-[#777777] hover:bg-slate-50 transition-colors font-nunito font-semibold text-[14px] whitespace-nowrap outline-none cursor-pointer"
+        >
+          <FiPlus className="w-4 h-4 text-[#777777]" />
+          Add new item
+        </button>
       </div>
 
       {/* ================ Expense Sections ============================================ */}
       <div className="w-full flex flex-col gap-4">
         {expenseSections.map((section) => (
-          <ExpenseSection
+          <EventCostingCard
             key={section.id}
             title={section.title}
             onRemove={() => removeExpenseSection(section.id)}
