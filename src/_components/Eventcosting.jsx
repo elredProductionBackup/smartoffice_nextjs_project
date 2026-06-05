@@ -86,6 +86,7 @@ const Eventcosting = () => {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const dropdownMenuRef = useRef(null);
 
   useEffect(() => {
     const handler = (e) => {
@@ -96,6 +97,18 @@ const Eventcosting = () => {
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
+
+  useEffect(() => {
+    if (dropdownOpen) {
+      const timer = setTimeout(() => {
+        dropdownMenuRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+        });
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [dropdownOpen]);
 
   const handleAddNewSection = () => {
     if (!selectedCategory) return;
@@ -112,7 +125,7 @@ const Eventcosting = () => {
   };
 
   return (
-    <div className="flex flex-col w-full min-w-0">
+    <div className={`flex flex-col w-full min-w-0 ${dropdownOpen ? 'pb-[280px]' : ''}`}>
 
       {/* ================ Portfolio budget & distribution ============================== */}
       <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-8 mb-[60px] font-nunito">
@@ -243,6 +256,7 @@ const Eventcosting = () => {
 
           {dropdownOpen && (
             <div
+              ref={dropdownMenuRef}
               className="absolute top-[calc(100%+6px)] left-0 w-full bg-white rounded-[14px] z-[9999] overflow-y-auto p-2 border border-[#E2E8F0]"
               style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.1)', maxHeight: '280px' }}
             >
