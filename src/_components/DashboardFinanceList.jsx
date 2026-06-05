@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import { FiUpload } from "react-icons/fi";
 import NewExpensesPopup from "./UI/NewExpensesPopup";
 import { useFinanceStore } from "@/store/useFinanceStore";
@@ -34,12 +35,12 @@ export default function DashboardFinanceList() {
       {/* Header */}
       <div className="flex items-center justify-between mb-5 shrink-0">
         <h3 className="text-[20px] font-bold text-[#333]">Finance</h3>
-        <button
-          type="button"
+        <Link
+          href="/dashboard/expense-records"
           className="text-[14px] font-semibold text-[#0B57D0] border border-[#0B57D0] px-3.5 py-1 rounded-full cursor-pointer bg-transparent hover:bg-[#0B57D0]/5 transition-colors"
         >
           View All
-        </button>
+        </Link>
       </div>
 
       {/* List */}
