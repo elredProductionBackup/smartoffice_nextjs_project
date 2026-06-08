@@ -12,6 +12,7 @@ import EventBudgetPopup, {
   DEFAULT_EVENT_BUDGET_CATEGORIES,
 } from './EventBudgetPopup';
 import EventCostingCard from './UI/EventCostingCards';
+import { createBudgetPieChartTooltip } from './UI/BudgetPieChartTooltip';
 
 const DEFAULT_PORTFOLIO_BUDGET = 1200000;
 const EVENT_BUDGET_UTILIZED = 200000;
@@ -204,14 +205,8 @@ const Eventcosting = () => {
                   ))}
                 </Pie>
                 <Tooltip
-                  formatter={(value, name) => [`${value}%`, name]}
-                  contentStyle={{
-                    borderRadius: '8px',
-                    border: 'none',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                    fontSize: '13px',
-                    fontFamily: 'Nunito, sans-serif',
-                  }}
+                  content={createBudgetPieChartTooltip(portfolioBudget)}
+                  contentStyle={{ background: 'transparent', border: 'none', boxShadow: 'none', padding: 0 }}
                 />
               </PieChart>
             </ResponsiveContainer>

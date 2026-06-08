@@ -14,6 +14,7 @@ import {
 } from "recharts";
 import { EVENTS_DETAIL_DATA } from "@/_data/eventsDetailData";
 import BreakdownPopup from "@/_components/BreakdownPopup";
+import { createBudgetPieChartTooltip } from "@/_components/UI/BudgetPieChartTooltip";
 
 const INFO_VALUE_CLASS = "font-nunito font-bold text-[18px] leading-[136%] tracking-normal text-[#333333]";
 const INFO_TITLE_CLASS = "font-nunito font-medium text-[16px] leading-[136%] tracking-normal text-[#666666]";
@@ -192,14 +193,8 @@ function EventDetailContent() {
                   ))}
                 </Pie>
                 <Tooltip
-                  formatter={(value, name) => [`${value}%`, name]}
-                  contentStyle={{
-                    borderRadius: "8px",
-                    border: "none",
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                    fontSize: "13px",
-                    fontFamily: "Nunito Sans, sans-serif",
-                  }}
+                  content={createBudgetPieChartTooltip(event.totalBudget)}
+                  contentStyle={{ background: 'transparent', border: 'none', boxShadow: 'none', padding: 0 }}
                 />
               </PieChart>
             </ResponsiveContainer>
