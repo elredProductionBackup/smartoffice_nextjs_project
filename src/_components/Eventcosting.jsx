@@ -13,6 +13,8 @@ import EventBudgetPopup, {
 } from './EventBudgetPopup';
 import EventCostingCard from './UI/EventCostingCards';
 import { createBudgetPieChartTooltip } from './UI/BudgetPieChartTooltip';
+import { useExpenseRecordsStore } from '@/store/useExpenseRecordsStore';
+import { useFinanceStore } from '@/store/useFinanceStore';
 
 const DEFAULT_PORTFOLIO_BUDGET = 1200000;
 const EVENT_BUDGET_UTILIZED = 200000;
@@ -65,13 +67,27 @@ const EXPENSE_CATEGORIES = [
 ];
 
 // ─── Main Component ──────────────────────────────────────────────────────────
-const Eventcosting = () => {
+const Eventcosting = ({ eventName = '-', portfolio = '-' }) => {
   const [isBudgetOpen, setIsBudgetOpen] = useState(false);
   const [isEventBudgetOpen, setIsEventBudgetOpen] = useState(false);
   const [portfolioBudget, setPortfolioBudget] = useState(DEFAULT_PORTFOLIO_BUDGET);
   const [budgetDistribution, setBudgetDistribution] = useState(
     DEFAULT_EVENT_BUDGET_CATEGORIES
   );
+
+  const addExpenseFromEventCosting = useExpenseRecordsStore(
+    (state) => state.addExpenseFromEventCosting
+  );
+  const hydrateExpenseRecords = useExpenseRecordsStore(
+    (state) => state.hydrateFromStorage
+  );
+  const addFinanceItem = useFinanceStore((state) => state.addExpenseFromForm);
+  const hydrateFinance = useFinanceStore((state) => state.hydrateFromStorage);
+
+  useEffect(() => {
+    hydrateExpenseRecords();
+    hydrateFinance();
+  }, [hydrateExpenseRecords, hydrateFinance]);
 
   const utilizationPercent =
     portfolioBudget > 0 ? (EVENT_BUDGET_UTILIZED / portfolioBudget) * 100 : 0;
@@ -82,6 +98,27 @@ const Eventcosting = () => {
 
   const handleEventBudgetSave = (categories) => {
     setBudgetDistribution(categories);
+  };
+
+  const handleSendExpenseForApproval = (expenseData) => {
+    addExpenseFromEventCosting({
+      ...expenseData,
+      eventName,
+      portfolio,
+    });
+
+    addFinanceItem({
+      description: expenseData.narrative?.trim() || expenseData.category,
+      expenseType: 'Event Related',
+      event: eventName,
+      portfolio,
+      date: expenseData.date,
+      totalAmount: expenseData.totalAmount,
+      paid: expenseData.paid,
+      balance: expenseData.balance,
+      vendorName: expenseData.vendorName,
+      fileName: expenseData.billFileName,
+    });
   };
 
   const [expenseSections, setExpenseSections] = useState([]);
@@ -310,7 +347,10 @@ const Eventcosting = () => {
           <EventCostingCard
             key={section.id}
             title={section.title}
+            eventName={eventName}
+            portfolio={portfolio}
             onRemove={() => removeExpenseSection(section.id)}
+            onSendForApproval={handleSendExpenseForApproval}
           />
         ))}
       </div>

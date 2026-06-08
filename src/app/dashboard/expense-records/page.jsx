@@ -1,90 +1,13 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useMemo } from "react";
 import {
   FiFileText,
   FiSend,
   FiDownload,
   FiDollarSign,
 } from "react-icons/fi";
-
-const SUMMARY_CARDS = [
-  {
-    label: "Total Expenses",
-    value: "5",
-    sublabel: "All time submissions",
-    icon: FiFileText,
-    iconBg: "bg-[#E8F0FE]",
-    iconColor: "text-[#1A73E8]",
-  },
-  {
-    label: "Pending Approval",
-    value: "4",
-    sublabel: "Awaiting review",
-    icon: FiSend,
-    iconBg: "bg-[#FFF4E5]",
-    iconColor: "text-[#F59E0B]",
-  },
-  {
-    label: "Total Amount",
-    value: "₹1,10,000",
-    sublabel: "Submitted this month",
-    icon: FiDollarSign,
-    iconBg: "bg-[#E6F4EA]",
-    iconColor: "text-[#0F9D58]",
-  },
-];
-
-const EXPENSES = [
-  {
-    id: 1,
-    description: "Office supplies purchase",
-    type: "General",
-    event: "-",
-    portfolio: "Operations",
-    date: "2026-05-20",
-    totalAmount: 1500,
-    paid: 1500,
-    balance: 0,
-    vendor: "Office Depot Inc.",
-    bill: "invoice_may_2026.pdf",
-    paymentStatus: "Paid",
-    status: "Pending Approval",
-    canSend: true,
-  },
-  {
-    id: 2,
-    description: "Venue rental for conference",
-    type: "Event Related",
-    event: "Annual Conference 2026",
-    portfolio: "Marketing",
-    date: "2026-05-22",
-    totalAmount: 75000,
-    paid: 50000,
-    balance: 25000,
-    vendor: "Grand Ballroom Hotel",
-    bill: "venue_booking_receipt.pdf",
-    paymentStatus: "Pending",
-    status: "Pending Approval",
-    canSend: true,
-  },
-  {
-    id: 3,
-    description: "Catering services for speaker event",
-    type: "Event Related",
-    event: "How to Become a TEDx Speaker!",
-    portfolio: "Marketing",
-    date: "2026-05-23",
-    totalAmount: 15000,
-    paid: 15000,
-    balance: 0,
-    vendor: "Delicious Catering Co.",
-    bill: "catering_invoice_may.pdf",
-    paymentStatus: "Paid",
-    status: "Approved",
-    canSend: false,
-  },
-];
+import { useExpenseRecordsStore } from "@/store/useExpenseRecordsStore";
 
 const TABLE_COLUMNS =
   "minmax(160px,1.6fr) minmax(90px,1fr) minmax(140px,1.4fr) minmax(100px,1fr) minmax(100px,0.9fr) minmax(110px,1fr) minmax(90px,0.9fr) minmax(90px,0.9fr) minmax(130px,1.2fr) minmax(160px,1.3fr) minmax(110px,1fr) minmax(130px,1.1fr) minmax(150px,1.2fr)";
@@ -121,7 +44,45 @@ function getStatusBadgeVariant(status) {
 }
 
 export default function ExpenseRecordsPage() {
-  const pendingCount = EXPENSES.filter((e) => e.status === "Pending Approval").length;
+  const expenses = useExpenseRecordsStore((state) => state.expenses);
+  const hydrateFromStorage = useExpenseRecordsStore((state) => state.hydrateFromStorage);
+
+  useEffect(() => {
+    hydrateFromStorage();
+  }, [hydrateFromStorage]);
+
+  const pendingCount = expenses.filter((e) => e.status === "Pending Approval").length;
+
+  const summaryCards = useMemo(() => {
+    const totalAmount = expenses.reduce((sum, expense) => sum + expense.totalAmount, 0);
+
+    return [
+      {
+        label: "Total Expenses",
+        value: String(expenses.length),
+        sublabel: "All time submissions",
+        icon: FiFileText,
+        iconBg: "bg-[#E8F0FE]",
+        iconColor: "text-[#1A73E8]",
+      },
+      {
+        label: "Pending Approval",
+        value: String(pendingCount),
+        sublabel: "Awaiting review",
+        icon: FiSend,
+        iconBg: "bg-[#FFF4E5]",
+        iconColor: "text-[#F59E0B]",
+      },
+      {
+        label: "Total Amount",
+        value: formatCurrency(totalAmount),
+        sublabel: "Submitted this month",
+        icon: FiDollarSign,
+        iconBg: "bg-[#E6F4EA]",
+        iconColor: "text-[#0F9D58]",
+      },
+    ];
+  }, [expenses, pendingCount]);
 
   return (
     <div className="p-6 min-h-screen bg-white font-nunito">
@@ -137,7 +98,7 @@ export default function ExpenseRecordsPage() {
 
       {/* Summary cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
-        {SUMMARY_CARDS.map((card) => {
+        {summaryCards.map((card) => {
           const Icon = card.icon;
           return (
             <div
@@ -204,7 +165,7 @@ export default function ExpenseRecordsPage() {
             </div>
 
             {/* Table rows */}
-            {EXPENSES.map((expense) => (
+            {expenses.map((expense) => (
               <div
                 key={expense.id}
                 className="grid gap-3 py-6 border-b border-[#F1F5F9] last:border-b-0 items-center font-nunito text-[14px] text-[#333333]"
@@ -226,14 +187,18 @@ export default function ExpenseRecordsPage() {
                   {expense.vendor}
                 </div>
                 <div>
-                  <button
-                    type="button"
-                    className="inline-flex items-center gap-1.5 text-[#0B57D0] font-semibold text-[13px] bg-transparent border-0 p-0 cursor-pointer hover:underline max-w-full"
-                  >
-                    <FiFileText className="w-4 h-4 shrink-0" />
-                    <span className="truncate max-w-[100px]">{expense.bill}</span>
-                    <FiDownload className="w-3.5 h-3.5 shrink-0" />
-                  </button>
+                  {expense.bill && expense.bill !== "-" ? (
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-1.5 text-[#0B57D0] font-semibold text-[13px] bg-transparent border-0 p-0 cursor-pointer hover:underline max-w-full"
+                    >
+                      <FiFileText className="w-4 h-4 shrink-0" />
+                      <span className="truncate max-w-[100px]">{expense.bill}</span>
+                      <FiDownload className="w-3.5 h-3.5 shrink-0" />
+                    </button>
+                  ) : (
+                    <span className="text-[#94A3B8]">-</span>
+                  )}
                 </div>
                 <div>
                   <StatusBadge variant={getPaymentBadgeVariant(expense.paymentStatus)}>

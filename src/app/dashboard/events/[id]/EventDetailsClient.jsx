@@ -358,7 +358,10 @@ export default function EventDetailsClient() {
             <ChecklistContent eventId={eventId} /></div>}
         {activeTab === "eventcosting" &&
           <div className="min-h-[calc(100dvh-180px)] w-full overflow-y-auto p-4">
-            <Eventcosting />
+            <Eventcosting
+              eventName={event?.eventName || '-'}
+              portfolio={event?.portfolioName || event?.portfolio || '-'}
+            />
           </div>}
       </>
 

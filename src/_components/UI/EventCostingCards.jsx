@@ -1,26 +1,36 @@
 'use client';
 import React, { useState, useRef, useEffect } from 'react';
-import { FiX, FiUpload, FiBell, FiChevronDown, FiChevronLeft, FiChevronRight, FiCalendar } from 'react-icons/fi';
+import { FiX, FiUpload, FiBell, FiChevronDown, FiChevronLeft, FiChevronRight, FiCalendar, FiCheckCircle } from 'react-icons/fi';
 
 const EXPENSE_INPUT_CLASS =
   'h-[44px] w-full rounded-[8px] border border-[#DDDDDD] bg-[#E5E7EB] px-3 text-[14px] text-[#666666] outline-none focus:border-[#5597ED] font-nunito';
 const EXPENSE_LABEL_CLASS = 'text-[14px] font-medium text-[#111827] mb-1 font-nunito';
 
-const EventCostingCard = ({ title, onRemove, approvalStatus = 'Pending' }) => {
+const EventCostingCard = ({
+  title,
+  onRemove,
+  onSendForApproval,
+  eventName,
+  portfolio,
+  approvalStatus = 'Pending',
+}) => {
   const [narrative, setNarrative] = useState('');
   const [cost, setCost] = useState('');
   const [advancePayment, setAdvancePayment] = useState('');
   const [balancePayment, setBalancePayment] = useState('');
   const [vendorName, setVendorName] = useState('');
+  const [billFileName, setBillFileName] = useState('');
   const [selectedDate, setSelectedDate] = useState(null);
   const [showCalendar, setShowCalendar] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [showReminderDropdown, setShowReminderDropdown] = useState(false);
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   
   const calendarRef = useRef(null);
   const reminderRef = useRef(null);
   const calendarDropdownRef = useRef(null);
   const reminderDropdownRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -116,6 +126,43 @@ const EventCostingCard = ({ title, onRemove, approvalStatus = 'Pending' }) => {
 
   const uploadId = `upload-${title.replace(/\s+/g, '-').toLowerCase()}`;
 
+  const resetForm = () => {
+    setNarrative('');
+    setCost('');
+    setAdvancePayment('');
+    setBalancePayment('');
+    setVendorName('');
+    setBillFileName('');
+    setSelectedDate(null);
+    setShowCalendar(false);
+    setShowReminderDropdown(false);
+    setSubItems([{ id: Date.now(), description: '', attendees: '', amount: '' }]);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleSendForApproval = () => {
+    onSendForApproval?.({
+      narrative,
+      category: title,
+      eventName,
+      portfolio,
+      date: selectedDate,
+      totalAmount: cost,
+      paid: advancePayment,
+      balance: balancePayment,
+      vendorName,
+      billFileName,
+      approvalStatus,
+    });
+    resetForm();
+    setShowSuccessPopup(true);
+  };
+
+  const handleBillUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (file) setBillFileName(file.name);
+  };
+
   return (
     <div className="group w-full rounded-[12px] border border-[#E8ECEF] bg-white p-6 mb-6 font-nunito shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
       {/* Header */}
@@ -151,7 +198,7 @@ const EventCostingCard = ({ title, onRemove, approvalStatus = 'Pending' }) => {
           >
             <span className="text-[14px] font-medium text-[#666666]">Upload file</span>
             <FiUpload className="w-[18px] h-[18px] text-[#666666]" />
-            <input id={uploadId} type="file" className="hidden" />
+            <input ref={fileInputRef} id={uploadId} type="file" className="hidden" onChange={handleBillUpload} />
           </label>
         </div>
       </div>
@@ -371,12 +418,44 @@ const EventCostingCard = ({ title, onRemove, approvalStatus = 'Pending' }) => {
           </div>
           <button
             type="button"
+            onClick={handleSendForApproval}
             className="h-[40px] px-5 rounded-full bg-[#2B7FFF] text-white text-[14px] font-semibold cursor-pointer hover:bg-[#1a6fe6] transition-colors border-0 outline-none whitespace-nowrap"
           >
             Send for approval
           </button>
         </div>
       </div>
+
+      {showSuccessPopup && (
+        <div
+          className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/40 backdrop-blur-sm font-nunito p-4"
+          onClick={() => setShowSuccessPopup(false)}
+        >
+          <div
+            className="bg-white rounded-[20px] w-full max-w-[420px] shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex flex-col items-center text-center px-6 py-8">
+              <div className="w-14 h-14 rounded-full bg-[#E6F4EA] flex items-center justify-center mb-4">
+                <FiCheckCircle className="w-7 h-7 text-[#0F9D58]" />
+              </div>
+              <h3 className="text-[20px] font-bold text-[#333333] mb-2">
+                Added to Expense Records
+              </h3>
+              <p className="text-[14px] font-medium text-[#777777] leading-relaxed mb-6">
+                Your expense has been successfully added to the expense record table.
+              </p>
+              <button
+                type="button"
+                onClick={() => setShowSuccessPopup(false)}
+                className="w-full max-w-[200px] h-[44px] rounded-full bg-[#2B7FFF] text-white text-[15px] font-semibold cursor-pointer hover:bg-[#1a6fe6] transition-colors border-0 outline-none"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

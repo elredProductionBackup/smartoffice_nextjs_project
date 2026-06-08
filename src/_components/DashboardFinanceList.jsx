@@ -5,6 +5,7 @@ import Link from "next/link";
 import { FiUpload } from "react-icons/fi";
 import NewExpensesPopup from "./UI/NewExpensesPopup";
 import { useFinanceStore } from "@/store/useFinanceStore";
+import { useExpenseRecordsStore } from "@/store/useExpenseRecordsStore";
 
 export default function DashboardFinanceList() {
   const [showNewExpense, setShowNewExpense] = useState(false);
@@ -13,6 +14,7 @@ export default function DashboardFinanceList() {
   const financeItems = useFinanceStore((state) => state.items);
   const hydrateFromStorage = useFinanceStore((state) => state.hydrateFromStorage);
   const addExpenseFromForm = useFinanceStore((state) => state.addExpenseFromForm);
+  const addExpenseRecord = useExpenseRecordsStore((state) => state.addExpenseFromForm);
 
   useEffect(() => {
     hydrateFromStorage();
@@ -20,6 +22,7 @@ export default function DashboardFinanceList() {
 
   const handleSaveExpense = (expense) => {
     addExpenseFromForm(expense);
+    addExpenseRecord(expense);
     setShowNewExpense(false);
     requestAnimationFrame(() => {
       listRef.current?.scrollTo({ top: 0, behavior: "smooth" });
