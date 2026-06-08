@@ -1,6 +1,4 @@
-'use client';
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { FiX } from 'react-icons/fi';
 
 export const DEFAULT_EVENT_BUDGET_CATEGORIES = [
@@ -30,10 +28,26 @@ export default function EventBudgetPopup({
   totalBudget,
   categories = DEFAULT_EVENT_BUDGET_CATEGORIES,
 }) {
+  const [localCategories, setLocalCategories] = useState([]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setLocalCategories(categories);
+    }
+  }, [isOpen, categories]);
+
   if (!isOpen) return null;
 
+  const handlePercentChange = (key, value) => {
+    setLocalCategories((prev) =>
+      prev.map((item) =>
+        item.key === key ? { ...item, value: value === '' ? '' : Number(value) } : item
+      )
+    );
+  };
+
   const handleSave = () => {
-    onSave?.(categories);
+    onSave?.(localCategories);
     onClose?.();
   };
 
@@ -54,7 +68,7 @@ export default function EventBudgetPopup({
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-lg text-[#94A3B8] hover:bg-gray-100 hover:text-[#333] transition-colors border-0 bg-transparent cursor-pointer outline-none"
+            className="w-8 h-8 flex items-center justify-center rounded-lg text-[#94A3B8] hover:bg-gray-100 hover:text-[#33] transition-colors border-0 bg-transparent cursor-pointer outline-none"
             aria-label="Close"
           >
             <FiX className="w-5 h-5" />
@@ -63,7 +77,7 @@ export default function EventBudgetPopup({
 
         {/* Scrollable list */}
         <div className="flex-1 overflow-y-auto px-6 py-4 flex flex-col gap-3 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full">
-          {categories.map((item, index) => {
+          {localCategories.map((item, index) => {
             const percent = Number(item.value) || 0;
             const amount = (totalBudget * percent) / 100;
 
@@ -72,7 +86,7 @@ export default function EventBudgetPopup({
                 key={item.key}
                 className="bg-[#F5F7FA] rounded-xl px-4 py-4"
               >
-                <div className="flex items-start justify-between gap-4">
+                <div className="flex items-center justify-between gap-4">
                   <span className="text-[15px] font-semibold text-[#333333] leading-snug flex-1 min-w-0">
                     {index + 1}. {item.name}
                   </span>
@@ -80,9 +94,19 @@ export default function EventBudgetPopup({
                     <span className="text-[18px] font-bold text-[#2B7FFF] leading-tight">
                       {formatIndianCurrency(amount)}
                     </span>
-                    <span className="text-[14px] font-medium text-[#777777] mt-1">
-                      {percent} % of budget
-                    </span>
+                    <div className="flex items-center gap-1.5 mt-2">
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={item.value}
+                        onChange={(e) => handlePercentChange(item.key, e.target.value)}
+                        className="w-[48px] h-[28px] text-center border border-[#DDDDDD] rounded-[4px] bg-white text-[13px] font-medium text-[#333333] outline-none focus:border-[#2B7FFF]"
+                      />
+                      <span className="text-[13px] font-medium text-[#777777]">
+                        % of budget
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>

@@ -131,7 +131,7 @@ const Eventcosting = () => {
       <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-8 mb-[60px] font-nunito">
         {/* Left – Portfolio Budget */}
         <div className="flex flex-col">
-          <p className="text-[14px] font-medium text-[#777777] mb-1">Portfolio Budget</p>
+          <p className="text-[14px] font-medium text-[#777777] mb-1">Budget</p>
           <h1 className="text-[32px] font-bold text-[#333333] mb-5 leading-tight">
             {formatIndianCurrency(PORTFOLIO_BUDGET)}
           </h1>
