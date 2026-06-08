@@ -1,6 +1,6 @@
 'use client';
-import React, { useState } from 'react';
-import { FiX, FiUpload } from 'react-icons/fi';
+import React, { useState, useRef, useEffect } from 'react';
+import { FiX, FiUpload, FiBell, FiChevronDown, FiChevronLeft, FiChevronRight, FiCalendar } from 'react-icons/fi';
 
 const EXPENSE_INPUT_CLASS =
   'h-[44px] w-full rounded-[8px] border border-[#DDDDDD] bg-[#E5E7EB] px-3 text-[14px] text-[#666666] outline-none focus:border-[#5597ED] font-nunito';
@@ -11,6 +11,86 @@ const EventCostingCard = ({ title, onRemove, approvalStatus = 'Pending' }) => {
   const [cost, setCost] = useState('');
   const [advancePayment, setAdvancePayment] = useState('');
   const [balancePayment, setBalancePayment] = useState('');
+  const [vendorName, setVendorName] = useState('');
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [showReminderDropdown, setShowReminderDropdown] = useState(false);
+  
+  const calendarRef = useRef(null);
+  const reminderRef = useRef(null);
+  const calendarDropdownRef = useRef(null);
+  const reminderDropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (calendarRef.current && !calendarRef.current.contains(e.target)) {
+        setShowCalendar(false);
+      }
+      if (reminderRef.current && !reminderRef.current.contains(e.target)) {
+        setShowReminderDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    if (showReminderDropdown) {
+      setTimeout(() => {
+        reminderDropdownRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 100);
+    }
+  }, [showReminderDropdown]);
+
+  useEffect(() => {
+    if (showCalendar) {
+      setTimeout(() => {
+        calendarDropdownRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 100);
+    }
+  }, [showCalendar]);
+
+  const prevMonth = () => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
+  };
+
+  const nextMonth = () => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
+  };
+
+  const getCalendarDays = () => {
+    const year = currentMonth.getFullYear();
+    const month = currentMonth.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const startPadding = firstDay.getDay(); 
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const days = [];
+    const prevMonthDays = new Date(year, month, 0).getDate();
+    for (let i = startPadding - 1; i >= 0; i--) {
+      days.push({
+        date: new Date(year, month - 1, prevMonthDays - i),
+        isCurrentMonth: false,
+      });
+    }
+    for (let i = 1; i <= daysInMonth; i++) {
+      days.push({
+        date: new Date(year, month, i),
+        isCurrentMonth: true,
+      });
+    }
+    const remainingCells = 42 - days.length;
+    for (let i = 1; i <= remainingCells; i++) {
+      days.push({
+        date: new Date(year, month + 1, i),
+        isCurrentMonth: false,
+      });
+    }
+    return days;
+  };
+
+  const calendarDays = getCalendarDays();
+
   const [subItems, setSubItems] = useState([
     { id: 1, description: '', attendees: '', amount: '' },
   ]);
@@ -76,10 +156,99 @@ const EventCostingCard = ({ title, onRemove, approvalStatus = 'Pending' }) => {
         </div>
       </div>
 
+      {/* Row: Vendor Name + Date Picker */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div className="flex flex-col">
+          <label className={EXPENSE_LABEL_CLASS}>Vendor Name</label>
+          <input
+            type="text"
+            placeholder="Enter vendor name"
+            value={vendorName}
+            onChange={(e) => setVendorName(e.target.value)}
+            className={EXPENSE_INPUT_CLASS}
+          />
+        </div>
+        
+        <div className="flex flex-col relative" ref={calendarRef}>
+          <label className={EXPENSE_LABEL_CLASS}>Date</label>
+          <button
+            type="button"
+            onClick={() => setShowCalendar(!showCalendar)}
+            className={`${EXPENSE_INPUT_CLASS} flex items-center justify-between px-3 cursor-pointer text-left`}
+          >
+            <span className={selectedDate ? 'text-[#111827]' : 'text-[#666666]'}>
+              {selectedDate ? selectedDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : 'Select date'}
+            </span>
+            <FiCalendar className="w-[18px] h-[18px] text-[#666666]" />
+          </button>
+          
+          {showCalendar && (
+            <div ref={calendarDropdownRef} className="absolute top-[calc(100%+6px)] left-0 w-[280px] bg-white rounded-[12px] shadow-[0_4px_20px_rgba(0,0,0,0.08)] border border-[#E8ECEF] p-4 z-20 font-nunito">
+              {/* Calendar Header */}
+              <div className="flex items-center justify-between mb-3">
+                <button
+                  type="button"
+                  onClick={prevMonth}
+                  className="p-1 rounded-full hover:bg-gray-100 text-gray-600 transition-colors border-0 cursor-pointer outline-none bg-transparent"
+                >
+                  <FiChevronLeft className="w-5 h-5" />
+                </button>
+                <span className="font-semibold text-[14px] text-[#111827]">
+                  {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                </span>
+                <button
+                  type="button"
+                  onClick={nextMonth}
+                  className="p-1 rounded-full hover:bg-gray-100 text-gray-600 transition-colors border-0 cursor-pointer outline-none bg-transparent"
+                >
+                  <FiChevronRight className="w-5 h-5" />
+                </button>
+              </div>
+              
+              {/* Week Days */}
+              <div className="grid grid-cols-7 gap-1 text-center mb-1">
+                {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((day) => (
+                  <span key={day} className="text-[12px] font-semibold text-gray-400">
+                    {day}
+                  </span>
+                ))}
+              </div>
+              
+              {/* Days Grid */}
+              <div className="grid grid-cols-7 gap-1 text-center">
+                {calendarDays.map((dayObj, idx) => {
+                  const isSelected = selectedDate && 
+                    dayObj.date.getDate() === selectedDate.getDate() &&
+                    dayObj.date.getMonth() === selectedDate.getMonth() &&
+                    dayObj.date.getFullYear() === selectedDate.getFullYear();
+                  
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => {
+                        setSelectedDate(dayObj.date);
+                        setShowCalendar(false);
+                      }}
+                      className={`h-8 w-8 rounded-full flex items-center justify-center text-[13px] transition-colors cursor-pointer border-0 outline-none
+                        ${!dayObj.isCurrentMonth ? 'text-gray-300 hover:bg-[#F9FAFB]' : 'text-[#111827] hover:bg-[#F2F7FF] hover:text-[#2B7FFF] bg-transparent'}
+                        ${isSelected ? 'bg-[#2B7FFF] text-white hover:bg-[#2B7FFF] hover:text-white font-semibold' : ''}
+                      `}
+                    >
+                      {dayObj.date.getDate()}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Row 2: Cost, Advance, Balance */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
         <div className="flex flex-col">
-          <label className={EXPENSE_LABEL_CLASS}>Cost</label>
+          <label className={EXPENSE_LABEL_CLASS}>Total</label>
           <input
             type="text"
             placeholder="Enter Value"
@@ -89,7 +258,7 @@ const EventCostingCard = ({ title, onRemove, approvalStatus = 'Pending' }) => {
           />
         </div>
         <div className="flex flex-col">
-          <label className={EXPENSE_LABEL_CLASS}>Advance payment</label>
+          <label className={EXPENSE_LABEL_CLASS}>Paid</label>
           <input
             type="text"
             placeholder="Enter Value"
@@ -99,7 +268,7 @@ const EventCostingCard = ({ title, onRemove, approvalStatus = 'Pending' }) => {
           />
         </div>
         <div className="flex flex-col">
-          <label className={EXPENSE_LABEL_CLASS}>Balance payment</label>
+          <label className={EXPENSE_LABEL_CLASS}>Balance</label>
           <input
             type="text"
             placeholder="Enter Value"
@@ -164,12 +333,42 @@ const EventCostingCard = ({ title, onRemove, approvalStatus = 'Pending' }) => {
           </span>
         </div>
         <div className="flex items-center gap-3 shrink-0">
-          <button
-            type="button"
-            className="h-[40px] px-5 rounded-full border-2 border-[#2B7FFF] bg-white text-[#2B7FFF] text-[14px] font-semibold cursor-pointer hover:bg-[#F2F7FF] transition-colors outline-none whitespace-nowrap"
-          >
-            Send Reminder
-          </button>
+          <div className="relative" ref={reminderRef}>
+            <button
+              type="button"
+              onClick={() => setShowReminderDropdown(!showReminderDropdown)}
+              className="h-[40px] px-4 rounded-[10px] border border-[#2B7FFF] bg-white text-[#2B7FFF] text-[14px] font-medium cursor-pointer hover:bg-[#F2F7FF] transition-colors outline-none whitespace-nowrap flex items-center gap-2"
+            >
+              <FiBell className="w-4 h-4" />
+              <span>Send Reminder</span>
+              <FiChevronDown className={`w-4 h-4 transition-transform ${showReminderDropdown ? 'rotate-180' : ''}`} />
+            </button>
+            {showReminderDropdown && (
+              <div ref={reminderDropdownRef} className="absolute right-0 mt-2 w-[180px] bg-white rounded-[12px] shadow-[0_4px_20px_rgba(0,0,0,0.08)] border border-[#E8ECEF] py-2 z-30 font-nunito">
+                <button
+                  type="button"
+                  onClick={() => setShowReminderDropdown(false)}
+                  className="w-full text-left px-4 py-2 text-[14px] text-[#333333] hover:bg-[#F2F7FF] hover:text-[#2B7FFF] transition-colors border-0 cursor-pointer bg-transparent outline-none"
+                >
+                  Via WhatsApp
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowReminderDropdown(false)}
+                  className="w-full text-left px-4 py-2 text-[14px] text-[#333333] hover:bg-[#F2F7FF] hover:text-[#2B7FFF] transition-colors border-0 cursor-pointer bg-transparent outline-none"
+                >
+                  Via Email
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowReminderDropdown(false)}
+                  className="w-full text-left px-4 py-2 text-[14px] text-[#333333] hover:bg-[#F2F7FF] hover:text-[#2B7FFF] transition-colors border-0 cursor-pointer bg-transparent outline-none"
+                >
+                  Both
+                </button>
+              </div>
+            )}
+          </div>
           <button
             type="button"
             className="h-[40px] px-5 rounded-full bg-[#2B7FFF] text-white text-[14px] font-semibold cursor-pointer hover:bg-[#1a6fe6] transition-colors border-0 outline-none whitespace-nowrap"
