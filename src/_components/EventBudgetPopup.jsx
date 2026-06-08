@@ -27,16 +27,25 @@ export default function EventBudgetPopup({
   onSave,
   totalBudget,
   categories = DEFAULT_EVENT_BUDGET_CATEGORIES,
+  mode = 'distribution',
 }) {
   const [localCategories, setLocalCategories] = useState([]);
+  const [localTotalBudget, setLocalTotalBudget] = useState('');
 
   useEffect(() => {
     if (isOpen) {
       setLocalCategories(categories);
+      setLocalTotalBudget(totalBudget ? String(totalBudget) : '');
     }
-  }, [isOpen, categories]);
+  }, [isOpen, categories, totalBudget]);
 
   if (!isOpen) return null;
+
+  const handleTotalBudgetChange = (value) => {
+    if (value === '' || /^\d*\.?\d*$/.test(value)) {
+      setLocalTotalBudget(value);
+    }
+  };
 
   const handlePercentChange = (key, value) => {
     setLocalCategories((prev) =>
@@ -47,9 +56,17 @@ export default function EventBudgetPopup({
   };
 
   const handleSave = () => {
-    onSave?.(localCategories);
+    if (mode === 'edit') {
+      const amount = Number(localTotalBudget);
+      if (!amount || amount <= 0) return;
+      onSave?.(amount);
+    } else {
+      onSave?.(localCategories);
+    }
     onClose?.();
   };
+
+  const parsedTotalBudget = Number(localTotalBudget) || Number(totalBudget) || 0;
 
   return (
     <div
@@ -63,7 +80,9 @@ export default function EventBudgetPopup({
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-[#E8ECEF] shrink-0">
           <h2 className="text-[20px] font-bold text-[#2B7FFF]">
-            Budget: {formatIndianCurrency(totalBudget)}
+            {mode === 'edit'
+              ? 'Edit Budget'
+              : `Budget: ${formatIndianCurrency(parsedTotalBudget)}`}
           </h2>
           <button
             type="button"
@@ -75,11 +94,34 @@ export default function EventBudgetPopup({
           </button>
         </div>
 
-        {/* Scrollable list */}
+        {mode === 'edit' ? (
+          <div className="flex-1 overflow-y-auto px-6 py-6">
+            <label className="block text-[15px] font-semibold text-[#333333] mb-3">
+              Enter budget amount
+            </label>
+            <input
+              type="text"
+              inputMode="decimal"
+              placeholder="Enter amount"
+              value={localTotalBudget}
+              onChange={(e) => handleTotalBudgetChange(e.target.value)}
+              className="w-full h-[52px] px-4 rounded-xl bg-[#F5F7FA] border border-[#DDDDDD] outline-none focus:border-[#2B7FFF] text-[18px] font-semibold text-[#333333] placeholder:text-[#CCCCCC]"
+            />
+            {parsedTotalBudget > 0 && (
+              <p className="mt-3 text-[14px] font-medium text-[#777777]">
+                Budget:{' '}
+                <span className="text-[#2B7FFF] font-bold">
+                  {formatIndianCurrency(parsedTotalBudget)}
+                </span>
+              </p>
+            )}
+          </div>
+        ) : (
+        /* Scrollable list */
         <div className="flex-1 overflow-y-auto px-6 py-4 flex flex-col gap-3 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full">
           {localCategories.map((item, index) => {
             const percent = Number(item.value) || 0;
-            const amount = (totalBudget * percent) / 100;
+            const amount = (parsedTotalBudget * percent) / 100;
 
             return (
               <div
@@ -113,6 +155,7 @@ export default function EventBudgetPopup({
             );
           })}
         </div>
+        )}
 
         {/* Footer */}
         <div className="flex items-center justify-between gap-4 px-6 py-5 border-t border-[#E8ECEF] shrink-0">
@@ -128,7 +171,7 @@ export default function EventBudgetPopup({
             onClick={handleSave}
             className="flex-1 max-w-[220px] h-[44px] rounded-full bg-[#2B7FFF] text-white text-[15px] font-semibold cursor-pointer hover:bg-[#1a6fe6] transition-colors border-0 outline-none"
           >
-            Save Distribution
+            {mode === 'edit' ? 'Save Budget' : 'Save Distribution'}
           </button>
         </div>
       </div>

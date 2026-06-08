@@ -8,15 +8,13 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import AddBudgets from './AddBudgets';
 import EventBudgetPopup, {
   DEFAULT_EVENT_BUDGET_CATEGORIES,
 } from './EventBudgetPopup';
 import EventCostingCard from './UI/EventCostingCards';
 
-const PORTFOLIO_BUDGET = 1200000;
+const DEFAULT_PORTFOLIO_BUDGET = 1200000;
 const EVENT_BUDGET_UTILIZED = 200000;
-const UTILIZATION_PERCENT = 20.0;
 
 const RADIAN = Math.PI / 180;
 
@@ -69,12 +67,16 @@ const EXPENSE_CATEGORIES = [
 const Eventcosting = () => {
   const [isBudgetOpen, setIsBudgetOpen] = useState(false);
   const [isEventBudgetOpen, setIsEventBudgetOpen] = useState(false);
+  const [portfolioBudget, setPortfolioBudget] = useState(DEFAULT_PORTFOLIO_BUDGET);
   const [budgetDistribution, setBudgetDistribution] = useState(
     DEFAULT_EVENT_BUDGET_CATEGORIES
   );
 
-  const handleBudgetSave = (data) => {
-    console.log('Budget saved:', data);
+  const utilizationPercent =
+    portfolioBudget > 0 ? (EVENT_BUDGET_UTILIZED / portfolioBudget) * 100 : 0;
+
+  const handleBudgetSave = (amount) => {
+    setPortfolioBudget(amount);
   };
 
   const handleEventBudgetSave = (categories) => {
@@ -133,7 +135,7 @@ const Eventcosting = () => {
         <div className="flex flex-col">
           <p className="text-[14px] font-medium text-[#777777] mb-1">Budget</p>
           <h1 className="text-[32px] font-bold text-[#333333] mb-5 leading-tight">
-            {formatIndianCurrency(PORTFOLIO_BUDGET)}
+            {formatIndianCurrency(portfolioBudget)}
           </h1>
 
           <div className="bg-[#F2F7FF] rounded-2xl px-5 py-4 mb-5">
@@ -142,18 +144,18 @@ const Eventcosting = () => {
                 Event Budget Utilized
               </span>
               <span className="text-[14px] font-bold text-[#2B7FFF]">
-                {UTILIZATION_PERCENT.toFixed(1)}%
+                {utilizationPercent.toFixed(1)}%
               </span>
             </div>
             <div className="w-full h-2.5 rounded-full bg-[#E2E8F0] overflow-hidden mb-2">
               <div
                 className="h-full rounded-full bg-[#2B7FFF] transition-all duration-300"
-                style={{ width: `${UTILIZATION_PERCENT}%` }}
+                style={{ width: `${Math.min(utilizationPercent, 100)}%` }}
               />
             </div>
             <p className="text-[12px] font-medium text-[#777777]">
               {formatIndianCurrency(EVENT_BUDGET_UTILIZED)} of{' '}
-              {formatIndianCurrency(PORTFOLIO_BUDGET)}
+              {formatIndianCurrency(portfolioBudget)}
             </p>
           </div>
 
@@ -318,18 +320,21 @@ const Eventcosting = () => {
         ))}
       </div>
 
-      <AddBudgets
+      <EventBudgetPopup
         isOpen={isBudgetOpen}
         onClose={() => setIsBudgetOpen(false)}
         onSave={handleBudgetSave}
+        totalBudget={portfolioBudget}
+        mode="edit"
       />
 
       <EventBudgetPopup
         isOpen={isEventBudgetOpen}
         onClose={() => setIsEventBudgetOpen(false)}
         onSave={handleEventBudgetSave}
-        totalBudget={PORTFOLIO_BUDGET}
+        totalBudget={portfolioBudget}
         categories={budgetDistribution}
+        mode="distribution"
       />
     </div>
   );
