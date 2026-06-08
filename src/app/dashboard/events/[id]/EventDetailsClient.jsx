@@ -143,7 +143,7 @@ export default function EventDetailsClient() {
 
   useEffect(() => {
     if (eventId) {
-      dispatch(fetchEventDetails({ eventId }));
+      dispatch(fetchEventDetails({ eventId, noSkip:true }));
     }
   }, [eventId]);
 
