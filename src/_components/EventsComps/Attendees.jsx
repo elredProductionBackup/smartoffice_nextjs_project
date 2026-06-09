@@ -60,7 +60,7 @@ const Attendees = ({ eventId }) => {
   return (
     <div className="flex flex-col h-full">
 
-      <div className="sticky top-0 z-20 bg-[#F2F7FF] ">
+      <div className="bg-[#F2F7FF]">
         <div className="flex items-center py-[16px] px-[30px] font-bold text-lg text-[#333333]">
           <div className="flex-3">Name / Title</div>
           <div className="flex-1">Actions</div>

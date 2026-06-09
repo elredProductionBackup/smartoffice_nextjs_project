@@ -312,7 +312,7 @@ export default function EventDetailsClient() {
 
       <>
         {activeTab === "attendees" &&
-          <div className="min-h-[calc(100dvh-180px)] bg-[#F2F7FF] rounded-[20px] overflow-y-auto">
+          <div className="min-h-[calc(100dvh-180px)] bg-[#F2F7FF] rounded-[20px]">
             <Attendees eventId={eventId} />
           </div>
         }
