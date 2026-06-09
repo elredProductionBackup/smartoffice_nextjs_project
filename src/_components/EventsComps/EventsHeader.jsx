@@ -47,6 +47,14 @@ export default function EventsHeader() {
           Master Checklist <span className="iconamoon--arrow-up-2-duotone full rotate-90"></span>
 
         </button>
+
+        {/* Budget Checklist */}
+        <button
+          onClick={() => router.push("/dashboard/events/budget-checklist")}
+          className="py-[8px] px-[20px] rounded-[100px] bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white text-[20px] font-[500] cursor-pointer flex items-center gap-[4px] shadow-sm transition-all duration-200"
+        >
+          Budget Checklist <span className="iconamoon--arrow-up-2-duotone full rotate-90"></span>
+        </button>
       </div>
     </div>
   );
