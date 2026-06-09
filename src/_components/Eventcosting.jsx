@@ -141,7 +141,7 @@ const Eventcosting = ({ eventName = '-', portfolio = '-' }) => {
         <div className="flex flex-col">
           <p className="text-[14px] font-medium text-[#777777] mb-1">Budget</p>
           <h1 className="text-[32px] font-bold text-[#333333] mb-5 leading-tight">
-            formatIndianCurrency(portfolioBudget)
+            {formatIndianCurrency(portfolioBudget)}
           </h1>
 
           <div className="bg-[#F2F7FF] rounded-2xl px-5 py-4 mb-5">
