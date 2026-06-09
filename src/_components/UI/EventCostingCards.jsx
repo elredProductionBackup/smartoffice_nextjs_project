@@ -13,24 +13,29 @@ const EventCostingCard = ({
   eventName,
   portfolio,
   approvalStatus = 'Pending',
+  initialData = null,
 }) => {
-  const [narrative, setNarrative] = useState('');
-  const [cost, setCost] = useState('');
-  const [advancePayment, setAdvancePayment] = useState('');
-  const [balancePayment, setBalancePayment] = useState('');
-  const [vendorName, setVendorName] = useState('');
-  const [billFileName, setBillFileName] = useState('');
-  const [selectedDate, setSelectedDate] = useState(null);
+  const [narrative, setNarrative] = useState(initialData?.narrative ?? initialData?.description ?? '');
+  const [cost, setCost] = useState(initialData?.totalAmount ?? initialData?.cost ?? '');
+  const [advancePayment, setAdvancePayment] = useState(initialData?.paid ?? initialData?.advancePayment ?? '');
+  const [balancePayment, setBalancePayment] = useState(initialData?.balance ?? initialData?.balancePayment ?? '');
+  const [vendorName, setVendorName] = useState(initialData?.vendorName ?? initialData?.vendor ?? '');
+  const [billFileName, setBillFileName] = useState(initialData?.billFileName ?? initialData?.bill ?? '');
+  const [selectedDate, setSelectedDate] = useState(
+    initialData?.date ? new Date(initialData.date) : null
+  );
   const [showCalendar, setShowCalendar] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [showReminderDropdown, setShowReminderDropdown] = useState(false);
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(initialData?.isSubmitted || false);
   
   const calendarRef = useRef(null);
   const reminderRef = useRef(null);
   const calendarDropdownRef = useRef(null);
   const reminderDropdownRef = useRef(null);
   const fileInputRef = useRef(null);
+  const isFirstRender = useRef(true);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -124,6 +129,36 @@ const EventCostingCard = ({
     );
   };
 
+  // Reset isSubmitted when any input fields change, but only if they differ from initialData
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+
+    const initialNarrative = initialData?.narrative ?? initialData?.description ?? '';
+    const initialCost = String(initialData?.totalAmount ?? initialData?.cost ?? '');
+    const initialAdvance = String(initialData?.paid ?? initialData?.advancePayment ?? '');
+    const initialBalance = String(initialData?.balance ?? initialData?.balancePayment ?? '');
+    const initialVendor = initialData?.vendorName ?? initialData?.vendor ?? '';
+    const initialBill = initialData?.billFileName ?? initialData?.bill ?? '';
+    const initialDateStr = initialData?.date ? new Date(initialData.date).toDateString() : '';
+    const currentDateStr = selectedDate ? selectedDate.toDateString() : '';
+
+    const hasChanged =
+      narrative !== initialNarrative ||
+      String(cost) !== initialCost ||
+      String(advancePayment) !== initialAdvance ||
+      String(balancePayment) !== initialBalance ||
+      vendorName !== initialVendor ||
+      billFileName !== initialBill ||
+      currentDateStr !== initialDateStr;
+
+    if (hasChanged) {
+      setIsSubmitted(false);
+    }
+  }, [narrative, cost, advancePayment, balancePayment, vendorName, billFileName, selectedDate, initialData]);
+
   const uploadId = `upload-${title.replace(/\s+/g, '-').toLowerCase()}`;
 
   const resetForm = () => {
@@ -138,9 +173,11 @@ const EventCostingCard = ({
     setShowReminderDropdown(false);
     setSubItems([{ id: Date.now(), description: '', attendees: '', amount: '' }]);
     if (fileInputRef.current) fileInputRef.current.value = '';
+    setIsSubmitted(false);
   };
 
   const handleSendForApproval = () => {
+    if (isSubmitted) return;
     onSendForApproval?.({
       narrative,
       category: title,
@@ -154,7 +191,7 @@ const EventCostingCard = ({
       billFileName,
       approvalStatus,
     });
-    resetForm();
+    setIsSubmitted(true);
     setShowSuccessPopup(true);
   };
 
@@ -196,7 +233,9 @@ const EventCostingCard = ({
             htmlFor={uploadId}
             className={`${EXPENSE_INPUT_CLASS} flex items-center justify-center gap-2 cursor-pointer hover:bg-[#dfe3e8] transition-colors`}
           >
-            <span className="text-[14px] font-medium text-[#666666]">Upload file</span>
+            <span className="text-[14px] font-medium text-[#666666]">
+              {billFileName || 'Upload file'}
+            </span>
             <FiUpload className="w-[18px] h-[18px] text-[#666666]" />
             <input ref={fileInputRef} id={uploadId} type="file" className="hidden" onChange={handleBillUpload} />
           </label>
@@ -419,9 +458,14 @@ const EventCostingCard = ({
           <button
             type="button"
             onClick={handleSendForApproval}
-            className="h-[40px] px-5 rounded-full bg-[#2B7FFF] text-white text-[14px] font-semibold cursor-pointer hover:bg-[#1a6fe6] transition-colors border-0 outline-none whitespace-nowrap"
+            disabled={isSubmitted}
+            className={`h-[40px] px-5 rounded-full text-white text-[14px] font-semibold transition-colors border-0 outline-none whitespace-nowrap ${
+              isSubmitted
+                ? 'bg-[#10B981] cursor-not-allowed'
+                : 'bg-[#2B7FFF] cursor-pointer hover:bg-[#1a6fe6]'
+            }`}
           >
-            Send for approval
+            {isSubmitted ? 'Sent' : 'Send for approval'}
           </button>
         </div>
       </div>

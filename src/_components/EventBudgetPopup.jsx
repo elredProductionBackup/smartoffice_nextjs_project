@@ -171,7 +171,7 @@ export default function EventBudgetPopup({
             onClick={handleSave}
             className="flex-1 max-w-[220px] h-[44px] rounded-full bg-[#2B7FFF] text-white text-[15px] font-semibold cursor-pointer hover:bg-[#1a6fe6] transition-colors border-0 outline-none"
           >
-            {mode === 'edit' ? 'Save Budget' : 'Save Distribution'}
+            {mode === 'edit' ? 'Save & Send for Approval' : 'Save Distribution'}
           </button>
         </div>
       </div>

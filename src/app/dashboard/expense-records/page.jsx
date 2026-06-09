@@ -8,9 +8,13 @@ import {
   FiDollarSign,
 } from "react-icons/fi";
 import { useExpenseRecordsStore } from "@/store/useExpenseRecordsStore";
+import { useRouter } from "next/navigation";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchEvents } from "@/store/events/eventsThunks";
+import { UPCOMING_EVENTS, PAST_EVENTS, DRAFT_EVENTS } from "@/assets/helpers/sampleEvents";
 
 const TABLE_COLUMNS =
-  "minmax(160px,1.6fr) minmax(90px,1fr) minmax(140px,1.4fr) minmax(100px,1fr) minmax(100px,0.9fr) minmax(110px,1fr) minmax(90px,0.9fr) minmax(90px,0.9fr) minmax(130px,1.2fr) minmax(160px,1.3fr) minmax(110px,1fr) minmax(130px,1.1fr) minmax(150px,1.2fr)";
+  "minmax(160px,1.6fr) minmax(90px,1fr) minmax(140px,1.4fr) minmax(100px,1fr) minmax(100px,0.9fr) minmax(110px,1fr) minmax(90px,0.9fr) minmax(90px,0.9fr) minmax(130px,1.2fr) minmax(160px,1.3fr) minmax(110px,1fr) minmax(130px,1.1fr) minmax(120px,1fr) minmax(150px,1.2fr)";
 
 function formatCurrency(amount) {
   return `₹${amount.toLocaleString("en-IN")}`;
@@ -47,9 +51,48 @@ export default function ExpenseRecordsPage() {
   const expenses = useExpenseRecordsStore((state) => state.expenses);
   const hydrateFromStorage = useExpenseRecordsStore((state) => state.hydrateFromStorage);
 
+  const router = useRouter();
+  const dispatch = useDispatch();
+  const rawEvents = useSelector((state) => state.events.rawEvents);
+
   useEffect(() => {
     hydrateFromStorage();
-  }, [hydrateFromStorage]);
+    dispatch(fetchEvents({ page: 1, limit: 100 }));
+  }, [hydrateFromStorage, dispatch]);
+
+  const eventMap = useMemo(() => {
+    const map = {};
+    
+    // 1. Static mock events from sampleEvents
+    [UPCOMING_EVENTS, PAST_EVENTS, DRAFT_EVENTS].forEach((list) => {
+      list.forEach((group) => {
+        group.items?.forEach((item) => {
+          if (item.name) {
+            map[item.name.toLowerCase().trim()] = item.id;
+          }
+        });
+      });
+    });
+
+    // 2. Dynamic events from Redux/API
+    if (Array.isArray(rawEvents)) {
+      rawEvents.forEach((evt) => {
+        if (evt.eventName) {
+          map[evt.eventName.toLowerCase().trim()] = evt.eventId;
+        }
+      });
+    }
+
+    return map;
+  }, [rawEvents]);
+
+  const handleExpenseClick = (expense) => {
+    if (!expense?.event) return;
+    const eventId = eventMap[expense.event.toLowerCase().trim()];
+    if (eventId) {
+      router.push(`/dashboard/events/${eventId}?tab=eventcosting&expenseId=${expense.id}`);
+    }
+  };
 
   const pendingCount = expenses.filter((e) => e.status === "Pending Approval").length;
 
@@ -145,7 +188,7 @@ export default function ExpenseRecordsPage() {
           to make the scrollbar minimal, sleek, and matching the UI.
         */}
         <div className="overflow-x-auto pb-3 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-[#F8FAFC] [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#CBD5E1] [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-[#94A3B8] transition-colors duration-200 [scrollbar-width:thin] [scrollbar-color:#CBD5E1_#F8FAFC]">
-          <div className="min-w-[1350px]">
+          <div className="min-w-[1470px]">
             {/* Table header */}
             <div
               className="grid gap-3 py-5 border-b border-[#E8ECEF] font-nunito font-bold text-[14px] text-[#666666]"
@@ -164,6 +207,7 @@ export default function ExpenseRecordsPage() {
               <div>Bill</div>
               <div>Payment Status</div>
               <div>Status</div>
+              <div>Reminder Sent</div>
               <div>Action</div>
             </div>
 
@@ -174,11 +218,35 @@ export default function ExpenseRecordsPage() {
                 className="grid gap-3 py-6 border-b border-[#F1F5F9] last:border-b-0 items-center font-nunito text-[14px] text-[#333333]"
                 style={{ gridTemplateColumns: TABLE_COLUMNS }}
               >
-                <div className="truncate font-medium" title={expense.description}>
+                 <div
+                  className={`truncate font-medium ${
+                    expense.type === "Event Related" && eventMap[expense.event?.toLowerCase()?.trim()]
+                      ? "text-[#0B57D0] hover:underline cursor-pointer"
+                      : ""
+                  }`}
+                  title={expense.description}
+                  onClick={() => {
+                    if (expense.type === "Event Related") {
+                      handleExpenseClick(expense);
+                    }
+                  }}
+                >
                   {expense.description}
                 </div>
                 <div className="font-medium">{expense.type}</div>
-                <div className="truncate" title={expense.event}>
+                <div
+                  className={`truncate ${
+                    expense.type === "Event Related" && eventMap[expense.event?.toLowerCase()?.trim()]
+                      ? "text-[#0B57D0] hover:underline cursor-pointer font-semibold"
+                      : ""
+                  }`}
+                  title={expense.event}
+                  onClick={() => {
+                    if (expense.type === "Event Related") {
+                      handleExpenseClick(expense);
+                    }
+                  }}
+                >
                   {expense.event}
                 </div>
                 <div>{expense.portfolio}</div>
@@ -213,6 +281,9 @@ export default function ExpenseRecordsPage() {
                   <StatusBadge variant={getStatusBadgeVariant(expense.status)}>
                     {expense.status}
                   </StatusBadge>
+                </div>
+                <div className="text-[#666666] font-medium">
+                  {typeof expense.id === "number" && expense.id % 2 === 0 ? "2 days ago" : "3 days ago"}
                 </div>
                 <div>
                   {expense.canSend ? (

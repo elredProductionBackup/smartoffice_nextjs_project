@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useRef, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { FiEdit2, FiChevronDown, FiPlus } from 'react-icons/fi';
 import {
   PieChart,
@@ -19,41 +20,9 @@ import { useFinanceStore } from '@/store/useFinanceStore';
 const DEFAULT_PORTFOLIO_BUDGET = 1200000;
 const EVENT_BUDGET_UTILIZED = 200000;
 
-const RADIAN = Math.PI / 180;
-
-const renderCustomLabel = ({
-  cx,
-  cy,
-  midAngle,
-  outerRadius,
-  name,
-  value,
-  payload,
-}) => {
-  const radius = outerRadius + 36;
-  const x = cx + radius * Math.cos(-midAngle * RADIAN);
-  const y = cy + radius * Math.sin(-midAngle * RADIAN);
-  const labelColor = payload?.color || '#555';
-
-  return (
-    <text
-      x={x}
-      y={y}
-      fill={labelColor}
-      textAnchor={x > cx ? 'start' : 'end'}
-      dominantBaseline="central"
-      className="font-nunito font-semibold text-[10px]"
-    >
-      {`${name}: ${value}%`}
-    </text>
-  );
-};
-
 function formatIndianCurrency(amount) {
   return `₹${amount.toLocaleString('en-IN')}`;
 }
-
-
 
 const EXPENSE_CATEGORIES = [
   'Venue Rental',
@@ -122,6 +91,35 @@ const Eventcosting = ({ eventName = '-', portfolio = '-' }) => {
   };
 
   const [expenseSections, setExpenseSections] = useState([]);
+  const expenses = useExpenseRecordsStore((state) => state.expenses);
+  const searchParams = useSearchParams();
+  const expenseId = searchParams.get('expenseId');
+  const processedExpenseIdRef = useRef(null);
+
+  useEffect(() => {
+    if (expenseId && expenses.length > 0 && processedExpenseIdRef.current !== expenseId) {
+      const matchedExpense = expenses.find((e) => String(e.id) === String(expenseId));
+      if (matchedExpense) {
+        processedExpenseIdRef.current = expenseId;
+        const title = matchedExpense.category || 'Event Related';
+        setExpenseSections((prev) => {
+          const exists = prev.some((section) => section.title === title || String(section.id) === String(matchedExpense.id));
+          if (exists) return prev;
+          return [
+            ...prev,
+            {
+              id: matchedExpense.id,
+              title,
+              initialData: {
+                ...matchedExpense,
+                isSubmitted: true
+              }
+            }
+          ];
+        });
+      }
+    }
+  }, [expenseId, expenses]);
 
   const [selectedCategory, setSelectedCategory] = useState('');
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -230,12 +228,11 @@ const Eventcosting = ({ eventName = '-', portfolio = '-' }) => {
                   cx="50%"
                   cy="50%"
                   innerRadius={0}
-                  outerRadius={90}
+                  outerRadius={125}
                   dataKey="value"
                   stroke="#fff"
                   strokeWidth={2}
-                  labelLine
-                  label={renderCustomLabel}
+                  className='cursor-pointer'
                 >
                   {budgetDistribution.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
@@ -351,6 +348,7 @@ const Eventcosting = ({ eventName = '-', portfolio = '-' }) => {
             portfolio={portfolio}
             onRemove={() => removeExpenseSection(section.id)}
             onSendForApproval={handleSendExpenseForApproval}
+            initialData={section.initialData}
           />
         ))}
       </div>
