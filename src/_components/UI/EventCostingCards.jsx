@@ -13,19 +13,22 @@ const EventCostingCard = ({
   eventName,
   portfolio,
   approvalStatus = 'Pending',
+  initialData = null,
 }) => {
-  const [narrative, setNarrative] = useState('');
-  const [cost, setCost] = useState('');
-  const [advancePayment, setAdvancePayment] = useState('');
-  const [balancePayment, setBalancePayment] = useState('');
-  const [vendorName, setVendorName] = useState('');
-  const [billFileName, setBillFileName] = useState('');
-  const [selectedDate, setSelectedDate] = useState(null);
+  const [narrative, setNarrative] = useState(initialData?.narrative ?? initialData?.description ?? '');
+  const [cost, setCost] = useState(initialData?.totalAmount ?? initialData?.cost ?? '');
+  const [advancePayment, setAdvancePayment] = useState(initialData?.paid ?? initialData?.advancePayment ?? '');
+  const [balancePayment, setBalancePayment] = useState(initialData?.balance ?? initialData?.balancePayment ?? '');
+  const [vendorName, setVendorName] = useState(initialData?.vendorName ?? initialData?.vendor ?? '');
+  const [billFileName, setBillFileName] = useState(initialData?.billFileName ?? initialData?.bill ?? '');
+  const [selectedDate, setSelectedDate] = useState(
+    initialData?.date ? new Date(initialData.date) : null
+  );
   const [showCalendar, setShowCalendar] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [showReminderDropdown, setShowReminderDropdown] = useState(false);
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(initialData?.isSubmitted || false);
   
   const calendarRef = useRef(null);
   const reminderRef = useRef(null);
@@ -126,14 +129,35 @@ const EventCostingCard = ({
     );
   };
 
-  // Reset isSubmitted when any input fields change
+  // Reset isSubmitted when any input fields change, but only if they differ from initialData
   useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false;
       return;
     }
-    setIsSubmitted(false);
-  }, [narrative, cost, advancePayment, balancePayment, vendorName, billFileName, selectedDate, subItems]);
+
+    const initialNarrative = initialData?.narrative ?? initialData?.description ?? '';
+    const initialCost = String(initialData?.totalAmount ?? initialData?.cost ?? '');
+    const initialAdvance = String(initialData?.paid ?? initialData?.advancePayment ?? '');
+    const initialBalance = String(initialData?.balance ?? initialData?.balancePayment ?? '');
+    const initialVendor = initialData?.vendorName ?? initialData?.vendor ?? '';
+    const initialBill = initialData?.billFileName ?? initialData?.bill ?? '';
+    const initialDateStr = initialData?.date ? new Date(initialData.date).toDateString() : '';
+    const currentDateStr = selectedDate ? selectedDate.toDateString() : '';
+
+    const hasChanged =
+      narrative !== initialNarrative ||
+      String(cost) !== initialCost ||
+      String(advancePayment) !== initialAdvance ||
+      String(balancePayment) !== initialBalance ||
+      vendorName !== initialVendor ||
+      billFileName !== initialBill ||
+      currentDateStr !== initialDateStr;
+
+    if (hasChanged) {
+      setIsSubmitted(false);
+    }
+  }, [narrative, cost, advancePayment, balancePayment, vendorName, billFileName, selectedDate, initialData]);
 
   const uploadId = `upload-${title.replace(/\s+/g, '-').toLowerCase()}`;
 

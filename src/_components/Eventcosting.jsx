@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useRef, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { FiEdit2, FiChevronDown, FiPlus } from 'react-icons/fi';
 import {
   PieChart,
@@ -90,6 +91,35 @@ const Eventcosting = ({ eventName = '-', portfolio = '-' }) => {
   };
 
   const [expenseSections, setExpenseSections] = useState([]);
+  const expenses = useExpenseRecordsStore((state) => state.expenses);
+  const searchParams = useSearchParams();
+  const expenseId = searchParams.get('expenseId');
+  const processedExpenseIdRef = useRef(null);
+
+  useEffect(() => {
+    if (expenseId && expenses.length > 0 && processedExpenseIdRef.current !== expenseId) {
+      const matchedExpense = expenses.find((e) => String(e.id) === String(expenseId));
+      if (matchedExpense) {
+        processedExpenseIdRef.current = expenseId;
+        const title = matchedExpense.category || 'Event Related';
+        setExpenseSections((prev) => {
+          const exists = prev.some((section) => section.title === title || String(section.id) === String(matchedExpense.id));
+          if (exists) return prev;
+          return [
+            ...prev,
+            {
+              id: matchedExpense.id,
+              title,
+              initialData: {
+                ...matchedExpense,
+                isSubmitted: true
+              }
+            }
+          ];
+        });
+      }
+    }
+  }, [expenseId, expenses]);
 
   const [selectedCategory, setSelectedCategory] = useState('');
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -318,6 +348,7 @@ const Eventcosting = ({ eventName = '-', portfolio = '-' }) => {
             portfolio={portfolio}
             onRemove={() => removeExpenseSection(section.id)}
             onSendForApproval={handleSendExpenseForApproval}
+            initialData={section.initialData}
           />
         ))}
       </div>
