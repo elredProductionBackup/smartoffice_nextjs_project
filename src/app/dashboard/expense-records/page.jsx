@@ -126,7 +126,6 @@ export default function ExpenseRecordsPage() {
         })}
       </div>
 
-
       {/* All Expenses table */}
       <div className="rounded-[20px] bg-white overflow-hidden mt-12 p-6 md:p-8 shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5">
@@ -142,7 +141,10 @@ export default function ExpenseRecordsPage() {
           </button>
         </div>
 
-        <div className="overflow-x-auto">
+        {/* MODIFIED: Added styling hooks to the overflow-x-auto div 
+          to make the scrollbar minimal, sleek, and matching the UI.
+        */}
+        <div className="overflow-x-auto pb-3 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-[#F8FAFC] [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#CBD5E1] [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-[#94A3B8] transition-colors duration-200 [scrollbar-width:thin] [scrollbar-color:#CBD5E1_#F8FAFC]">
           <div className="min-w-[1350px]">
             {/* Table header */}
             <div
