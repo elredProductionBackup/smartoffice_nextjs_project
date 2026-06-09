@@ -157,8 +157,9 @@ export default function ExpenseRecordsPage() {
               <div>Portfolio</div>
               <div>Date</div>
               <div>Total Amount</div>
-              <div>Paid</div>
-              <div>Balance</div>
+              <div>Remark</div>
+              {/* <div>Paid</div>
+              <div>Balance</div> */}
               <div>Vendor</div>
               <div>Bill</div>
               <div>Payment Status</div>
@@ -183,8 +184,9 @@ export default function ExpenseRecordsPage() {
                 <div>{expense.portfolio}</div>
                 <div className="text-[#666666]">{expense.date}</div>
                 <div className="font-bold">{formatCurrency(expense.totalAmount)}</div>
-                <div>{formatCurrency(expense.paid)}</div>
-                <div>{formatCurrency(expense.balance)}</div>
+                <div className="font-bold line-clamp-1">{(expense.remark)}</div>
+                {/* <div>{formatCurrency(expense.paid)}</div>
+                <div>{formatCurrency(expense.balance)}</div> */}
                 <div className="truncate" title={expense.vendor}>
                   {expense.vendor}
                 </div>

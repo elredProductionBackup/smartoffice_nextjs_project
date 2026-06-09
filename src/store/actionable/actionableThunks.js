@@ -330,6 +330,111 @@ export const removeSubTask = createAsyncThunk(
   }
 );
 
+/* ================= CREATE ATTACHMENT ================= */
+
+export const createAttachment = createAsyncThunk(
+  "actionable/createAttachment",
+  async (payload, { rejectWithValue }) => {
+    try {
+      const { tempId, ...rest } = payload;
+
+      const networkClusterCode = localStorage.getItem(
+        "networkClusterCode"
+      );
+
+      const res = await addAttachment({
+        ...rest,
+        _id: "",
+        networkClusterCode,
+      });
+
+      if (!res.data?.success) {
+        return rejectWithValue({
+          message: res.data.message,
+          tempId,
+          actionableId: payload.actionableId,
+        });
+      }
+
+      return {
+        actionableId: payload.actionableId,
+        attachment: res.data.result[0],
+        tempId,
+      };
+    } catch (err) {
+      return rejectWithValue({
+        message: err.message,
+        tempId: payload.tempId,
+        actionableId: payload.actionableId,
+      });
+    }
+  }
+);
+
+/* ================= UPDATE ATTACHMENT ================= */
+
+export const updateAttachment = createAsyncThunk(
+  "actionable/updateAttachment",
+  async (payload, { rejectWithValue }) => {
+    try {
+      const networkClusterCode = localStorage.getItem(
+        "networkClusterCode"
+      );
+
+      const res = await addAttachment({
+        ...payload,
+        networkClusterCode,
+      });
+
+      if (!res.data?.success) {
+        return rejectWithValue({
+          message: res.data.message,
+          actionableId: payload.actionableId,
+          attachmentId: payload._id,
+          previous: payload.previous,
+        });
+      }
+
+      return {
+        actionableId: payload.actionableId,
+        attachment: res.data.result,
+      };
+    } catch (err) {
+      return rejectWithValue({
+        message: err.message,
+        actionableId: payload.actionableId,
+        attachmentId: payload._id,
+        previous: payload.previous,
+      });
+    }
+  }
+);
+
+/* ================= REMOVE ATTACHMENT ================= */
+
+export const removeAttachment = createAsyncThunk(
+  "actionable/removeAttachment",
+  async ({ actionableId, attachmentId }, { rejectWithValue }) => {
+    try {
+      const networkClusterCode = localStorage.getItem(
+        "networkClusterCode"
+      );
+
+      await deleteAttachment({
+        _id: attachmentId,
+        networkClusterCode,
+        actionableId,
+      });
+
+      return { actionableId, attachmentId };
+    } catch (err) {
+      return rejectWithValue(
+        err.response?.data || err.message
+      );
+    }
+  }
+);
+
 // Fetch Collaborators
 export const fetchCollaborators = createAsyncThunk(
   "actionable/fetchCollaborators",

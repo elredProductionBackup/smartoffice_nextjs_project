@@ -103,6 +103,7 @@ export default function NewExpensesPopup({ onClose, onSave }) {
   const [balance, setBalance] = useState('');
   const [vendorName, setVendorName] = useState('');
   const [fileName, setFileName] = useState('');
+  const [remark, setRemark] = useState('')
 
   const fileInputRef = useRef(null);
 
@@ -141,15 +142,18 @@ export default function NewExpensesPopup({ onClose, onSave }) {
     e?.preventDefault?.();
     e?.stopPropagation?.();
 
+    const currentDate = new Date().toISOString().split("T")[0];
+
     const payload = {
       description,
       expenseType,
       event,
       portfolio,
-      date,
+      date: currentDate,
       totalAmount: parseFloat(totalAmount) || 0,
-      paid: parseFloat(paid) || 0,
-      balance: parseFloat(balance) || 0,
+      remark:remark,
+      // paid: parseFloat(paid) || 0,
+      // balance: parseFloat(balance) || 0,
       vendorName,
       fileName,
     };
@@ -275,13 +279,13 @@ export default function NewExpensesPopup({ onClose, onSave }) {
           </div>
 
           {/* Expense Date */}
-          <div className="flex flex-col gap-1.5">
+          {/* <div className="flex flex-col gap-1.5">
             <label className="text-[14px] font-bold text-[#333]">Expense Date</label>
             <CustomDatePicker value={date} onChange={setDate} />
-          </div>
+          </div> */}
 
           {/* Total Amount, Paid, Balance */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 gap-3">
             <div className="flex flex-col gap-1.5">
               <label className="text-[14px] font-bold text-[#333]">Total Amount</label>
               <input
@@ -293,7 +297,7 @@ export default function NewExpensesPopup({ onClose, onSave }) {
                 className="w-full border border-gray-300 rounded-[14px] px-4 py-3 text-[15px] text-slate-800 bg-white outline-none focus:border-[#1A73E8] transition-colors"
               />
             </div>
-            <div className="flex flex-col gap-1.5">
+            {/* <div className="flex flex-col gap-1.5">
               <label className="text-[14px] font-bold text-[#333]">Paid</label>
               <input
                 type="number"
@@ -313,7 +317,19 @@ export default function NewExpensesPopup({ onClose, onSave }) {
                 value={balance}
                 className="w-full border border-gray-200 rounded-[14px] px-4 py-3 text-[15px] text-slate-500 bg-gray-50 outline-none cursor-not-allowed"
               />
-            </div>
+            </div> */}
+          </div>
+
+          {/* Remark Field */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[14px] font-bold text-[#333]">Remark</label>
+            <textarea
+              type="text"
+              placeholder="Add comments or notes"
+              value={remark}
+              onChange={(e) => setRemark(e.target.value)}
+              className="w-full resize-none border border-gray-300 rounded-[14px] px-4 py-3 text-[15px] text-slate-800 bg-white outline-none focus:border-[#1A73E8] transition-colors"
+            />
           </div>
 
           {/* Vendor Name */}
