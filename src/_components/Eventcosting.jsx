@@ -19,41 +19,9 @@ import { useFinanceStore } from '@/store/useFinanceStore';
 const DEFAULT_PORTFOLIO_BUDGET = 1200000;
 const EVENT_BUDGET_UTILIZED = 200000;
 
-const RADIAN = Math.PI / 180;
-
-const renderCustomLabel = ({
-  cx,
-  cy,
-  midAngle,
-  outerRadius,
-  name,
-  value,
-  payload,
-}) => {
-  const radius = outerRadius + 36;
-  const x = cx + radius * Math.cos(-midAngle * RADIAN);
-  const y = cy + radius * Math.sin(-midAngle * RADIAN);
-  const labelColor = payload?.color || '#555';
-
-  return (
-    <text
-      x={x}
-      y={y}
-      fill={labelColor}
-      textAnchor={x > cx ? 'start' : 'end'}
-      dominantBaseline="central"
-      className="font-nunito font-semibold text-[10px]"
-    >
-      {`${name}: ${value}%`}
-    </text>
-  );
-};
-
 function formatIndianCurrency(amount) {
   return `₹${amount.toLocaleString('en-IN')}`;
 }
-
-
 
 const EXPENSE_CATEGORIES = [
   'Venue Rental',
@@ -173,7 +141,7 @@ const Eventcosting = ({ eventName = '-', portfolio = '-' }) => {
         <div className="flex flex-col">
           <p className="text-[14px] font-medium text-[#777777] mb-1">Budget</p>
           <h1 className="text-[32px] font-bold text-[#333333] mb-5 leading-tight">
-            {formatIndianCurrency(portfolioBudget)}
+            formatIndianCurrency(portfolioBudget)
           </h1>
 
           <div className="bg-[#F2F7FF] rounded-2xl px-5 py-4 mb-5">
@@ -230,12 +198,11 @@ const Eventcosting = ({ eventName = '-', portfolio = '-' }) => {
                   cx="50%"
                   cy="50%"
                   innerRadius={0}
-                  outerRadius={90}
+                  outerRadius={125}
                   dataKey="value"
                   stroke="#fff"
                   strokeWidth={2}
-                  labelLine
-                  label={renderCustomLabel}
+                  className='cursor-pointer'
                 >
                   {budgetDistribution.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
