@@ -25,12 +25,14 @@ const EventCostingCard = ({
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [showReminderDropdown, setShowReminderDropdown] = useState(false);
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
   
   const calendarRef = useRef(null);
   const reminderRef = useRef(null);
   const calendarDropdownRef = useRef(null);
   const reminderDropdownRef = useRef(null);
   const fileInputRef = useRef(null);
+  const isFirstRender = useRef(true);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -124,6 +126,15 @@ const EventCostingCard = ({
     );
   };
 
+  // Reset isSubmitted when any input fields change
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    setIsSubmitted(false);
+  }, [narrative, cost, advancePayment, balancePayment, vendorName, billFileName, selectedDate, subItems]);
+
   const uploadId = `upload-${title.replace(/\s+/g, '-').toLowerCase()}`;
 
   const resetForm = () => {
@@ -138,9 +149,11 @@ const EventCostingCard = ({
     setShowReminderDropdown(false);
     setSubItems([{ id: Date.now(), description: '', attendees: '', amount: '' }]);
     if (fileInputRef.current) fileInputRef.current.value = '';
+    setIsSubmitted(false);
   };
 
   const handleSendForApproval = () => {
+    if (isSubmitted) return;
     onSendForApproval?.({
       narrative,
       category: title,
@@ -154,7 +167,7 @@ const EventCostingCard = ({
       billFileName,
       approvalStatus,
     });
-    resetForm();
+    setIsSubmitted(true);
     setShowSuccessPopup(true);
   };
 
@@ -196,7 +209,9 @@ const EventCostingCard = ({
             htmlFor={uploadId}
             className={`${EXPENSE_INPUT_CLASS} flex items-center justify-center gap-2 cursor-pointer hover:bg-[#dfe3e8] transition-colors`}
           >
-            <span className="text-[14px] font-medium text-[#666666]">Upload file</span>
+            <span className="text-[14px] font-medium text-[#666666]">
+              {billFileName || 'Upload file'}
+            </span>
             <FiUpload className="w-[18px] h-[18px] text-[#666666]" />
             <input ref={fileInputRef} id={uploadId} type="file" className="hidden" onChange={handleBillUpload} />
           </label>
@@ -419,9 +434,14 @@ const EventCostingCard = ({
           <button
             type="button"
             onClick={handleSendForApproval}
-            className="h-[40px] px-5 rounded-full bg-[#2B7FFF] text-white text-[14px] font-semibold cursor-pointer hover:bg-[#1a6fe6] transition-colors border-0 outline-none whitespace-nowrap"
+            disabled={isSubmitted}
+            className={`h-[40px] px-5 rounded-full text-white text-[14px] font-semibold transition-colors border-0 outline-none whitespace-nowrap ${
+              isSubmitted
+                ? 'bg-[#10B981] cursor-not-allowed'
+                : 'bg-[#2B7FFF] cursor-pointer hover:bg-[#1a6fe6]'
+            }`}
           >
-            Send for approval
+            {isSubmitted ? 'Sent' : 'Send for approval'}
           </button>
         </div>
       </div>
