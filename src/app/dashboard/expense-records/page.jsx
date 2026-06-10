@@ -349,8 +349,21 @@ export default function ExpenseRecordsPage() {
                     {expense.status}
                   </StatusBadge>
                 </div>
-                <div className="text-[#666666] font-medium">
-                  {typeof expense.id === "number" && expense.id % 2 === 0 ? "2 days ago" : "3 days ago"}
+                <div className="flex flex-col gap-0.5">
+                  {expense.reminderCount > 0 ? (
+                    <>
+                      <span className="text-[13px] font-bold text-[#333333]">
+                        {expense.reminderCount} sent
+                      </span>
+                      <span className="text-[12px] font-medium text-[#94A3B8]">
+                        Last: {expense.lastReminderDate ?? "-"}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-[13px] font-medium text-[#C0C8D4] italic">
+                      No reminders
+                    </span>
+                  )}
                 </div>
                 <div>
                   {expense.canSend ? (

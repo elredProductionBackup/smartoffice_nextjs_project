@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-export const EXPENSE_RECORDS_STORAGE_KEY = "smartoffice_expense_records";
+export const EXPENSE_RECORDS_STORAGE_KEY = "smartoffice_expense_records_v2";
 
 export const initialExpenseRecords = [
   {
@@ -19,6 +19,8 @@ export const initialExpenseRecords = [
     paymentStatus: "Paid",
     status: "Pending Approval",
     canSend: true,
+    reminderCount: 2,
+    lastReminderDate: "2026-06-08",
   },
   {
     id: 2,
@@ -36,6 +38,8 @@ export const initialExpenseRecords = [
     paymentStatus: "Pending",
     status: "Pending Approval",
     canSend: true,
+    reminderCount: 1,
+    lastReminderDate: "2026-06-05",
   },
   {
     id: 3,
@@ -53,6 +57,8 @@ export const initialExpenseRecords = [
     paymentStatus: "Paid",
     status: "Approved",
     canSend: false,
+    reminderCount: 3,
+    lastReminderDate: "2026-06-09",
   },
 ];
 
