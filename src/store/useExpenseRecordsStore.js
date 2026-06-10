@@ -179,4 +179,12 @@ export const useExpenseRecordsStore = create((set, get) => ({
     set({ expenses, hydrated: true });
     return record;
   },
+
+  updatePaymentStatus: (id, paymentStatus) => {
+    const expenses = get().expenses.map((e) =>
+      e.id === id ? { ...e, paymentStatus } : e
+    );
+    persistExpenses(expenses);
+    set({ expenses });
+  },
 }));

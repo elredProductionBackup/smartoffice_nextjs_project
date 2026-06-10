@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import {
   FiFileText,
   FiSend,
@@ -8,6 +8,7 @@ import {
   FiDollarSign,
 } from "react-icons/fi";
 import { useExpenseRecordsStore } from "@/store/useExpenseRecordsStore";
+import { FiChevronDown } from "react-icons/fi";
 import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchEvents } from "@/store/events/eventsThunks";
@@ -20,17 +21,20 @@ function formatCurrency(amount) {
   return `₹${amount.toLocaleString("en-IN")}`;
 }
 
+const PAYMENT_STATUS_OPTIONS = ["Paid", "Pending", "Overdue"];
+
 function StatusBadge({ children, variant }) {
   const styles = {
     paid: "bg-[#E6F4EA] text-[#137333]",
     pending: "bg-[#FEF7E0] text-[#B06000]",
+    overdue: "bg-[#FEE2E2] text-[#B91C1C]",
     approved: "bg-[#E6F4EA] text-[#137333]",
     pendingApproval: "bg-[#FEF7E0] text-[#B06000]",
   };
 
   return (
     <span
-      className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-[12px] font-semibold font-nunito whitespace-nowrap ${styles[variant]}`}
+      className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-[12px] font-semibold font-nunito whitespace-nowrap ${styles[variant] ?? styles.pending}`}
     >
       {children}
     </span>
@@ -39,7 +43,67 @@ function StatusBadge({ children, variant }) {
 
 function getPaymentBadgeVariant(status) {
   if (status === "Paid") return "paid";
+  if (status === "Overdue") return "overdue";
   return "pending";
+}
+
+function PaymentStatusDropdown({ expenseId, currentStatus, onUpdate }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  const variant = getPaymentBadgeVariant(currentStatus);
+
+  return (
+    <div className="relative inline-block" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[12px] font-semibold font-nunito whitespace-nowrap cursor-pointer border-0 outline-none transition-opacity hover:opacity-80 ${
+          variant === "paid"
+            ? "bg-[#E6F4EA] text-[#137333]"
+            : variant === "overdue"
+            ? "bg-[#FEE2E2] text-[#B91C1C]"
+            : "bg-[#FEF7E0] text-[#B06000]"
+        }`}
+      >
+        {currentStatus}
+        <FiChevronDown
+          className={`w-3 h-3 transition-transform duration-150 ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+
+      {open && (
+        <div className="absolute left-0 top-[calc(100%+4px)] z-50 min-w-[120px] bg-white rounded-[10px] shadow-[0_4px_20px_rgba(0,0,0,0.10)] border border-[#E8ECEF] py-1.5 font-nunito">
+          {PAYMENT_STATUS_OPTIONS.map((opt) => (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => {
+                onUpdate(expenseId, opt);
+                setOpen(false);
+              }}
+              className={`w-full text-left px-4 py-2 text-[13px] font-medium transition-colors border-0 cursor-pointer bg-transparent outline-none hover:bg-[#F2F7FF] ${
+                opt === currentStatus
+                  ? "text-[#2B7FFF] font-semibold"
+                  : "text-[#333333]"
+              }`}
+            >
+              {opt}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 function getStatusBadgeVariant(status) {
@@ -50,6 +114,7 @@ function getStatusBadgeVariant(status) {
 export default function ExpenseRecordsPage() {
   const expenses = useExpenseRecordsStore((state) => state.expenses);
   const hydrateFromStorage = useExpenseRecordsStore((state) => state.hydrateFromStorage);
+  const updatePaymentStatus = useExpenseRecordsStore((state) => state.updatePaymentStatus);
 
   const router = useRouter();
   const dispatch = useDispatch();
@@ -273,9 +338,11 @@ export default function ExpenseRecordsPage() {
                   )}
                 </div>
                 <div>
-                  <StatusBadge variant={getPaymentBadgeVariant(expense.paymentStatus)}>
-                    {expense.paymentStatus}
-                  </StatusBadge>
+                  <PaymentStatusDropdown
+                    expenseId={expense.id}
+                    currentStatus={expense.paymentStatus}
+                    onUpdate={updatePaymentStatus}
+                  />
                 </div>
                 <div>
                   <StatusBadge variant={getStatusBadgeVariant(expense.status)}>
