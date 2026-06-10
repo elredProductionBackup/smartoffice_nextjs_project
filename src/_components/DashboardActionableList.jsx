@@ -10,8 +10,21 @@ export default function DashboardActionableList({ data = [], loading = false, })
   //   return null;
   // }
 
+  const cleanText = (text = "") => {
+  return text
+    .replace(/\\n/g, "\n")
+
+    .replace(/\\t/g, "\t")
+
+    .replace(/\\\\/g, "\\")
+
+    .replace(/\n{3,}/g, "\n\n")
+
+    .trim();
+};
+
   return (
-    <div className="flex flex-col mt-6 rounded-2xl bg-[#F2F7FF] px-[24px] pt-[24px] min-h-[450px] max-h-[450px] ">
+    <div className="flex flex-col rounded-2xl bg-[#F2F7FF] px-6 py-6 min-h-[600px] max-h-[600px] ">
 
       {/* SHIMMER */}
       {loading ?
@@ -59,7 +72,7 @@ export default function DashboardActionableList({ data = [], loading = false, })
 
                       <div className="flex flex-col gap-[6px]">
                         <p className="text-[16px] leading-[21px] font-[500] text-[#333] line-clamp-2">
-                          {item.title ?? "—"}
+                          {cleanText(item.title ?? "—")}
                         </p>
 
                         {(item?.createdBy || item?.dueTime) &&
@@ -82,8 +95,8 @@ export default function DashboardActionableList({ data = [], loading = false, })
                       </span>
 
                       {/* Avatars */}
-                      <div className="flex -space-x-2 h-[24px] w-[72px]">
-                      {/* <div className="flex -space-x-2 h-[24px] w-[24px]"> */}
+                      <div className="flex -space-x-2 h-6 w-[72px]">
+                      {/* <div className="flex -space-x-2 h-6 w-6"> */}
                         {Array.isArray(item.collaborators) &&
                           item.collaborators.slice(0, 3).map((_, index) => (
                             <Image
@@ -92,7 +105,7 @@ export default function DashboardActionableList({ data = [], loading = false, })
                               alt="Collaborator Avatar"
                               height={24}
                               width={24}
-                              className="h-[24px] w-[24px] rounded-full bg-[#D1D5DB] border-2 border-[#F2F6FC]"
+                              className="h-6 w-6 rounded-full bg-[#D1D5DB] border-2 border-[#F2F6FC]"
                             />
                           ))}
                       </div>

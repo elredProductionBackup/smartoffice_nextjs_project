@@ -8,6 +8,37 @@ const mapTabToFilter = (tab) => {
   if (tab === "upcoming") return "upcomming";
   return tab;
 };
+
+const mergeUniqueActionables = (lists = []) => {
+  const map = new Map();
+  lists.flat().forEach((item) => {
+    const id = item?.actionableId || item?._id || item?.id;
+    if (!id) return;
+    map.set(id, item);
+  });
+  return Array.from(map.values());
+};
+
+const actionableBelongsToEvent = (item, eventId) => {
+  if (!eventId) return true;
+  const target = String(eventId);
+
+  if (item?.eventId && String(item.eventId) === target) return true;
+  if (item?.linkedEventId && String(item.linkedEventId) === target) return true;
+
+  const linked = item?.linkedEvent || item?.linkedEvents;
+  if (Array.isArray(linked)) {
+    return linked.some((entry) => {
+      if (!entry) return false;
+      if (typeof entry === "string") return entry === target;
+      if (entry.eventId && String(entry.eventId) === target) return true;
+      if (entry._id && String(entry._id) === target) return true;
+      return false;
+    });
+  }
+
+  return false;
+};
 export const fetchEvents = createAsyncThunk(
   "events/fetchEvents",
   async ({ page, limit, search, filterBy }, { rejectWithValue }) => {
@@ -140,11 +171,11 @@ export const fetchEventMembers = createAsyncThunk(
 
 export const fetchEventDetails = createAsyncThunk(
   "events/fetchEventDetails",
-  async ({ eventId }, { getState, rejectWithValue }) => {
+  async ({ eventId, noSkip=false }, { getState, rejectWithValue }) => {
     try {
       const { events } = getState();
 
-      if (events.eventDetailsFetched?.[eventId]) {
+      if (!noSkip && events.eventDetailsFetched?.[eventId]) {
         return { eventId, skip: true };
       }
 
@@ -286,57 +317,59 @@ export const deleteDocument = createAsyncThunk(
 
 // ─── Event Checklist Thunks ─────────────────────
 
-// ─── localStorage helpers for persisting completed states per event ────────────
-const COMPLETED_KEY = (eventId) => `checklist_completed_${eventId}`;
-
-export const loadPersistedCompleted = (eventId) => {
-  try {
-    const raw = localStorage.getItem(COMPLETED_KEY(eventId));
-    return raw ? JSON.parse(raw) : {};
-  } catch {
-    return {};
-  }
-};
-
-export const persistCompleted = (eventId, actionableId, isCompleted) => {
-  try {
-    const map = loadPersistedCompleted(eventId);
-    if (isCompleted) {
-      map[actionableId] = true;
-    } else {
-      delete map[actionableId];
-    }
-    localStorage.setItem(COMPLETED_KEY(eventId), JSON.stringify(map));
-  } catch {}
-};
-// ──────────────────────────────────────────────────────────────────────────────
-
 export const fetchEventChecklist = createAsyncThunk(
   "events/fetchEventChecklist",
-  async ({ eventId, page = 1, limit = 100 }, { rejectWithValue }) => {
+  async ({ eventId, page = 1, limit = 100 }, { getState, rejectWithValue }) => {
     try {
       const networkClusterCode = localStorage.getItem("networkClusterCode");
       const start = (page - 1) * limit + 1;
-      const res = await getActionables({
-        networkClusterCode,
-        start,
-        offset: limit,
-        eventId,
-      });
+      const [allRes, pastRes] = await Promise.all([
+        getActionables({
+          networkClusterCode,
+          start,
+          offset: limit,
+          eventId,
+          dueSearchKey: "all",
+        }),
+        getActionables({
+          networkClusterCode,
+          start,
+          offset: limit,
+          eventId,
+          dueSearchKey: "past",
+        }),
+      ]);
 
-      // Merge persisted completed states so checked tasks survive page refresh
-      const completedMap = loadPersistedCompleted(eventId);
-      const list = (res.data.result || []).map((item) => {
-        const id = item.actionableId || item._id || item.id;
-        if (completedMap[id]) {
-          return { ...item, isCompleted: true };
-        }
-        return item;
-      });
+      const mergedList = mergeUniqueActionables([
+        allRes?.data?.result || [],
+        pastRes?.data?.result || [],
+      ]);
+      const list = mergedList.filter((item) => actionableBelongsToEvent(item, eventId));
+
+      if (process.env.NODE_ENV !== "production") {
+        const previous = getState()?.events?.eventChecklist || [];
+        const incomingIds = new Set(
+          list.map((item) => item.actionableId || item._id || item.id).filter(Boolean)
+        );
+        const missingCompleted = previous
+          .filter((item) => (item.isCompleted === true || item.isCompleted === "true"))
+          .filter((item) => !incomingIds.has(item.actionableId || item._id || item.id))
+          .map((item) => item.actionableId || item._id || item.id);
+
+        console.log("[events] fetchEventChecklist debug", {
+          eventId,
+          fetchedCount: list.length,
+          fetchedAllCount: (allRes?.data?.result || []).length,
+          fetchedPastCount: (pastRes?.data?.result || []).length,
+          prevCount: previous.length,
+          missingCompletedCount: missingCompleted.length,
+          missingCompletedIds: missingCompleted,
+        });
+      }
 
       return {
         list,
-        total: res.data?.totalEventsCount || 0,
+        total: list.length,
         eventId, // pass eventId to the slicer
       };
     } catch (err) {
@@ -356,21 +389,27 @@ export const fetchEventTaskSummaries = createAsyncThunk(
       await Promise.all(
         eventIds.map(async (eventId) => {
           try {
-            const res = await getActionables({
-              networkClusterCode,
-              start: 1,
-              offset: 100,
-              eventId,
-            });
+            const [allRes, pastRes] = await Promise.all([
+              getActionables({
+                networkClusterCode,
+                start: 1,
+                offset: 100,
+                eventId,
+                dueSearchKey: "all",
+              }),
+              getActionables({
+                networkClusterCode,
+                start: 1,
+                offset: 100,
+                eventId,
+                dueSearchKey: "past",
+              }),
+            ]);
 
-            const completedMap = loadPersistedCompleted(eventId);
-            const taskList = (res.data.result || []).map((item) => {
-              const id = item.actionableId || item._id || item.id;
-              if (completedMap[id]) {
-                return { ...item, isCompleted: true };
-              }
-              return item;
-            });
+            const taskList = mergeUniqueActionables([
+              allRes?.data?.result || [],
+              pastRes?.data?.result || [],
+            ]).filter((item) => actionableBelongsToEvent(item, eventId));
 
             // Replicated calculation logic
             const summary = {
@@ -444,10 +483,50 @@ export const updateEventActionable = createAsyncThunk(
 
 export const toggleEventActionable = createAsyncThunk(
   "events/toggleEventActionable",
-  async ({ actionableId, isCompleted }, { rejectWithValue }) => {
+  async ({ actionableId, isCompleted }, { getState, rejectWithValue }) => {
     try {
       const networkClusterCode = localStorage.getItem("networkClusterCode");
-      await addActionable({ actionableId, isCompleted, networkClusterCode });
+      const { events } = getState();
+      const existingTask = (events?.eventChecklist || []).find(
+        (item) => item.actionableId === actionableId || item._id === actionableId || item.id === actionableId
+      );
+
+      const payload = {
+        actionableId,
+        isCompleted,
+        networkClusterCode,
+      };
+
+      if (existingTask) {
+        if (typeof existingTask.title === "string") payload.title = existingTask.title;
+        if (typeof existingTask.category === "string") payload.category = existingTask.category;
+        if (typeof existingTask.notes === "string") payload.notes = existingTask.notes;
+        if (existingTask.dueDateTimeStamp) payload.dueDateTimeStamp = existingTask.dueDateTimeStamp;
+
+        if (Array.isArray(existingTask.collaborators)) {
+          payload.collaborators = existingTask.collaborators
+            .map((c) => (typeof c === "string" ? c : c?.userCode))
+            .filter(Boolean);
+        }
+
+        if (Array.isArray(existingTask.linkedEvent) && existingTask.linkedEvent.length > 0) {
+          payload.linkedEvent = existingTask.linkedEvent;
+        } else if (events?.selectedEvent?.id) {
+          payload.linkedEvent = [{ eventId: events.selectedEvent.id, name: "", url: "" }];
+        }
+      }
+
+      const res = await addActionable(payload);
+
+      if (process.env.NODE_ENV !== "production") {
+        console.log("[events] toggleEventActionable debug", {
+          actionableId,
+          isCompleted,
+          responseSuccess: res?.data?.success,
+          responseResult: res?.data?.result,
+        });
+      }
+
       return { actionableId, isCompleted };
     } catch (err) {
       return rejectWithValue(err?.response?.data?.message || err.message);

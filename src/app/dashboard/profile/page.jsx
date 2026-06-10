@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import searchIcon from "@/assets/logo/search.svg";
 import DashboardActionableList from "@/_components/DashboardActionableList";
+import DashboardFinanceList from "@/_components/DashboardFinanceList";
 // import { actionableData } from "@/assets/helpers/sampleActionable";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchDashboardActionables } from "@/store/dashboard/dashboardThunks";
@@ -19,8 +20,8 @@ export default function ProfilePage() {
     dispatch(fetchDashboardActionables());
   }, [dispatch]);
   return (
-    <div className="flex flex-col h-[calc(100vh-80px)] pt-5 overflow-auto relative">
-      <div className="mx-50">
+    <div className="flex flex-col h-[calc(100vh-80px)] overflow-auto relative">
+      {/* <div className="mx-50">
         <div className="relative border outline-none w-full h-15 border-[#E1E2E6] bg-[#F2F6FC] rounded-full px-6 ">
           <Image
             src={searchIcon}
@@ -35,13 +36,14 @@ export default function ProfilePage() {
             placeholder="Who may come handy to me ?"
           />
         </div>
-      </div>
+      </div> */}
 
-      <div className="dashboard-items mt-[20px] grid grid-cols-2 gap-4 flex-1 min-h-0 w-full overflow-y-auto">
+      <div className="dashboard-items  grid grid-cols-2 gap-4 flex-1 min-h-0 w-full overflow-y-auto">
         <DashboardActionableList
           data={items}
           loading={loading}
         />
+        <DashboardFinanceList />
       </div>
     </div>
   );

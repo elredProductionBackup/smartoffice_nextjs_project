@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { fetchActionables, toggleActionable, fetchComments, removeActionable, createActionable, changeDueDateTime, removeSubTask, createSubTask, updateSubTask, updateActionable, fetchCollaborators, createComment, removeComment, } from "./actionableThunks";
+import { fetchActionables, toggleActionable, fetchComments, removeActionable, createActionable, changeDueDateTime, removeSubTask, createSubTask, updateSubTask, updateActionable, fetchCollaborators, createComment, removeComment,createAttachment,updateAttachment,removeAttachment } from "./actionableThunks";
 import moment from "moment";
 
 const initialState = {
@@ -56,6 +56,7 @@ const actionableSlice = createSlice({
       })
       .addCase(fetchActionables.fulfilled, (state, action) => {
         state.loading = false;
+        console.log(action.payload.list)
         // Fallback filter to ensure event-checklist tasks are hidden even if API filter fails
         const filteredList = action.payload.list.filter(
           (item) => !item.category || item.category === "all"
@@ -354,6 +355,153 @@ const actionableSlice = createSlice({
 
         parent.subTaskCount = Math.max(
           (parent.subTaskCount || 1) - 1,
+          0
+        );
+      })
+
+      // ATTACHMENTS
+      .addCase(createAttachment.pending, (state, action) => {
+        const { tempId, actionableId, url } = action.meta.arg;
+
+        const parent = state.items.find(
+          (i) => i.actionableId === actionableId
+        );
+
+        if (!parent) return;
+
+        if (!parent.attachments) parent.attachments = [];
+
+        parent.attachments.unshift({
+          _id: tempId,
+          clientId: tempId,
+          url,
+          isOptimistic: true,
+        });
+
+        parent.attachmentCount = (parent.attachmentCount || 0) + 1;
+      })
+
+      .addCase(createAttachment.fulfilled, (state, action) => {
+        const { actionableId, attachment, tempId } = action.payload;
+
+        const parent = state.items.find(
+          (i) => i.actionableId === actionableId
+        );
+
+        if (!parent) return;
+
+        const index = parent.attachments.findIndex(
+          (a) => a.clientId === tempId
+        );
+
+        if (index !== -1) {
+          parent.attachments[index] = {
+            ...attachment,
+            clientId: tempId,
+            isOptimistic: false,
+          };
+        }
+      })
+
+      .addCase(createAttachment.rejected, (state, action) => {
+        const { actionableId, tempId } = action.payload || {};
+
+        const parent = state.items.find(
+          (i) => i.actionableId === actionableId
+        );
+
+        if (!parent) return;
+
+        parent.attachments = parent.attachments.filter(
+          (a) => a.clientId !== tempId
+        );
+
+        parent.attachmentCount = Math.max(
+          (parent.attachmentCount || 1) - 1,
+          0
+        );
+      })
+
+      .addCase(updateAttachment.pending, (state, action) => {
+        const { actionableId, _id, url } = action.meta.arg;
+
+        const parent = state.items.find(
+          (i) => i.actionableId === actionableId
+        );
+
+        if (!parent) return;
+
+        const attachment = parent.attachments.find(
+          (a) => a._id === _id
+        );
+
+        if (!attachment) return;
+
+        attachment._previous = {
+          url: attachment.url,
+        };
+
+        if (url !== undefined) {
+          attachment.url = url;
+        }
+      })
+
+      .addCase(updateAttachment.fulfilled, (state, action) => {
+        const { actionableId, attachment } = action.payload;
+
+        const parent = state.items.find(
+          (i) => i.actionableId === actionableId
+        );
+
+        if (!parent) return;
+
+        const index = parent.attachments.findIndex(
+          (a) => a._id === attachment._id
+        );
+
+        if (index !== -1) {
+          parent.attachments[index] = {
+            ...parent.attachments[index],
+            ...attachment,
+          };
+        }
+      })
+
+      .addCase(updateAttachment.rejected, (state, action) => {
+        const { actionableId, attachmentId } = action.payload || {};
+
+        const parent = state.items.find(
+          (i) => i.actionableId === actionableId
+        );
+
+        if (!parent) return;
+
+        const attachment = parent.attachments.find(
+          (a) => a._id === attachmentId
+        );
+
+        if (!attachment || !attachment._previous) return;
+
+        attachment.url = attachment._previous.url;
+
+        delete attachment._previous;
+      })
+
+      .addCase(removeAttachment.fulfilled, (state, action) => {
+        const { actionableId, attachmentId } = action.payload;
+
+        const parent = state.items.find(
+          (i) => i.actionableId === actionableId
+        );
+
+        if (!parent || !parent.attachments) return;
+
+        parent.attachments = parent.attachments.filter(
+          (a) => a._id !== attachmentId
+        );
+
+        parent.attachmentCount = Math.max(
+          (parent.attachmentCount || 1) - 1,
           0
         );
       })

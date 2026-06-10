@@ -1,41 +1,48 @@
 "use client";
 
-import { useState, useRef  } from "react";
+// import { Attachments } from "@/_components/UI/Attachments";
+import { useState, useRef, useEffect  } from "react";
 import { EventsInput } from "@/_components/UI/EventsInput";
 import { EventTypeDropdown } from "@/_components/UI/EventTypeDropdown";
 import { EventsTextarea } from "@/_components/UI/EventsTextarea";
 import { CheckboxGroup } from "@/_components/UI/CheckboxGroup";
 import { RegistrationToggle } from "@/_components/UI/RegistrationToggle";
-import { Attachments } from "@/_components/UI/Attachments";
 import { ResourceSpeaker } from "@/_components/UI/ResourceSpeaker";
 import DateTimeRangePicker from "@/_components/UI/DateTimeRangePicker";
 import { EventImage } from "@/_components/UI/EventImage";
 import ReminderField from "@/_components/EventsComps/ReminderField";
 import ReminderModal from "@/_components/EventsComps/ReminderModal";
 import { closeEventFormModal, openEventFormModal } from "@/store/events/eventsUiSlice";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import LocationModal from "@/_components/EventsComps/LocationModal";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import TravelModal from "@/_components/EventsComps/TravelModal";
 import { Collaborators } from "@/_components/EventsComps/Collaborators";
 import moment from "moment";
 import DraftApprovalModal from "@/_components/EventsComps/DraftApprovalModal";
 import { useEventForm } from "@/hooks/useEventForm";
 import { clearFieldError, validateEvent } from "@/utils/validation";
-import { buildEventPayload } from "@/utils/eventPayload";
+import { buildEventPayload, mapDraftToForm } from "@/utils/eventPayload";
 import { submitEvent } from "@/services/events.service";
 import { mergeDateAndTime } from "@/utils/dateUtils";
 import { addToast } from "@/store/toastSlice";
+import { fetchEventDetails } from "@/store/events/eventsThunks";
 
 const CreateEvent = () => {
+  const searchParams = useSearchParams();
+  const eventId = searchParams.get("id");
+  const isEditMode = !!eventId;
   const formContainerRef = useRef(null);
   const { form, update,setForm,errors,setErrors , updateEventType } = useEventForm();
   const [submitting, setSubmitting] = useState(false);
   const [draftSubmitting, setDraftSubmitting] = useState(false);
   const router = useRouter();
+  
+  const { eventDetailsMap,eventDetailsFormLoader } = useSelector((state) => state.events);
 
   const handleCreateEvent = async (e, isDraft = false) => {
     e?.preventDefault?.();
+
 
     const errs = validateEvent(form);
     if (Object.keys(errs).length) {
@@ -48,7 +55,7 @@ const CreateEvent = () => {
   return;
 }
 
-    const file = form.image?.file;
+    const file = form.image?.file || form.image?.previewUrl;
 
     if (!file) {
       dispatch(addToast({
@@ -64,10 +71,10 @@ const CreateEvent = () => {
   try {
     isDraft ? setDraftSubmitting(true) : setSubmitting(true);
 
-    const payload = buildEventPayload(form, isDraft);
+    const payload = buildEventPayload(form, isDraft, isEditMode);
     const res = await submitEvent(payload);
 
-    if (res.success) {
+    if (res?.success) {
       if (isDraft) {
         router.push("/dashboard/events?tab=draft");
         return;
@@ -79,14 +86,13 @@ const CreateEvent = () => {
       dispatch(addToast({
         message: {
           title: "Something Went Wrong",
-          descrip: "Please contact support if the problem persists",
+          descrip: res?.message?`${res.message}`:`Please try again in a moment.`,
         },
         type: "error",
       }));
     }
   } catch (error) {
-    console.error("Create Event Failed:", error?.response || error);
-
+    // console.error("Create Event Failed:", error?.response || error);
     if (error?.response?.data?.errors) {
       setErrors(error.response.data.errors);
       dispatch(addToast({ message: "Please fix the highlighted errors", type: "error" }));
@@ -96,7 +102,6 @@ const CreateEvent = () => {
     const message =
       error?.response?.data?.message ||
       "Something went wrong. Please try again.";
-
     dispatch(addToast({ message, type: "error" }));
     setErrors({ api: message });
 
@@ -128,6 +133,33 @@ const CreateEvent = () => {
         });
       }
     };
+    const loading = eventDetailsFormLoader?.[eventId];
+
+useEffect(() => {
+  if (!eventId) return;
+
+  dispatch(fetchEventDetails({ eventId, noSkip:true }));
+}, [eventId]);
+
+useEffect(() => {
+  if (!eventId) return;
+
+  const existing = eventDetailsMap[eventId];
+  if (!existing) return;
+
+  setForm(mapDraftToForm(existing)); 
+
+}, [eventDetailsMap, eventId]);
+
+    
+
+    if (loading) {
+  return (
+    <div className="h-[calc(100vh-80px)] flex items-center justify-center">
+      <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+}
 
   return (
     <div ref={formContainerRef} className="h-[calc(100vh-80px)] flex justify-center py-5 gap-[80px] overflow-auto relative">
@@ -138,7 +170,7 @@ const CreateEvent = () => {
 
         <div  className="flex-1 max-w-[500px] ">
           <div className="mb-[30px] text-[36px] font-[600] flex items-center gap-[20px]">
-           <span className="maki--arrow rotate-180 inline-block cursor-pointer" onClick={()=>router.back()}></span> Create event</div>
+           <span className="maki--arrow rotate-180 inline-block cursor-pointer" onClick={()=>router.back()}></span> {isEditMode && !form?.isDraft?'Update':'Create'} event</div>
             <div className="w-full flex flex-col gap-[30px]" >
 
               <EventsInput
@@ -174,7 +206,7 @@ const CreateEvent = () => {
               />
 
               <div data-error={'startDate'}>
-                <DateTimeRangePicker
+                                <DateTimeRangePicker
                   startDate={form.startDate}
                   endDate={form.endDate}
                   startTime={getTimeFromDate(form.startDate)}
@@ -188,9 +220,21 @@ const CreateEvent = () => {
                     update("endDate", mergeDateAndTime(date, getTimeFromDate(form.endDate)))
                   }
 
-                  onStartTimeChange={(time) =>
-                    update("startDate", mergeDateAndTime(form.startDate, time))
-                  }
+                  onStartTimeChange={(time) => {
+                    const newStartDate = mergeDateAndTime(form.startDate, time);
+
+                    update("startDate", newStartDate);
+
+                    const isSameDay = moment(form.startDate).isSame(form.endDate, "day");
+
+                    if (isSameDay) {
+                      const newEndDate = moment(newStartDate)
+                        .add(1, "hour")
+                        .toDate();
+
+                      update("endDate", newEndDate);
+                    }
+                  }}
 
                   onEndTimeChange={(time) =>
                     update("endDate", mergeDateAndTime(form.endDate, time))
@@ -228,12 +272,6 @@ const CreateEvent = () => {
                 onChange={(v) => update("attendees", v)}
               />
 
-             <RegistrationToggle
-                value={form.registrationOpen}
-                onChange={() =>
-                  update("registrationOpen", !form.registrationOpen)
-                }
-              />
 
               <ResourceSpeaker
                 value={form.speaker}
@@ -267,15 +305,22 @@ const CreateEvent = () => {
                 error={errors.additionalNote}
               />
 
+               <RegistrationToggle
+                value={form.registrationOpen}
+                onChange={() =>
+                  update("registrationOpen", !form.registrationOpen)
+                }
+              />
+
 
               {/* Actions */}
               <div className="flex gap-3 mb-[25px]">
                 <button className="flex-1 h-[50px] text-[20px] font-[500] border border-[#0B57D0] text-[#0B57D0] rounded-full cursor-pointer" disabled={submitting} onClick={()=> dispatch(openEventFormModal({ type: "APPROVAL" }))} 
                 >
                   Save as draft
-                </button>
+                </button> 
                 <button className="flex-1 h-[50px] text-[20px] font-[500] bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)] cursor-pointer text-white rounded-full flex items-center justify-center" type="button" disabled={submitting} onClick={handleCreateEvent}>
-                  {submitting?<div className="w-[20px] h-[20px] border-2 border-[white] border-t-transparent rounded-full animate-spin" />:'Create event'}
+                  {submitting?<div className="w-[20px] h-[20px] border-2 border-[white] border-t-transparent rounded-full animate-spin" />: isEditMode && !form?.isDraft ?'Update event':'Create event'}
                 </button>
               </div>
             </div>

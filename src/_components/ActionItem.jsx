@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useRef, useEffect, useState } from "react";
 import { BsCheck, BsThreeDotsVertical } from "react-icons/bs";
 import { useDispatch, useSelector } from "react-redux";
+// import TitleTooltipHover from "./UI/TitleTooltipHover";
 
 export default function ActionItem({
   item,
@@ -23,6 +24,28 @@ export default function ActionItem({
     collaborators = [],
   } = item;
     const dispatch = useDispatch();
+    const titleRef = useRef(null);
+const [isOverflowing, setIsOverflowing] = useState(false);
+useEffect(() => {
+  const el = titleRef.current;
+  if (!el) return;
+
+  const checkLines = () => {
+    const style = window.getComputedStyle(el);
+    const lineHeight = parseFloat(style.lineHeight);
+
+    const lines = Math.round(el.scrollHeight / lineHeight);
+
+    setIsOverflowing(lines > 2);
+  };
+
+  checkLines();
+
+  const observer = new ResizeObserver(checkLines);
+  observer.observe(el);
+
+  return () => observer.disconnect();
+}, [title]);
 
   const openTaskModal = (actionableId) => {
     dispatch(
@@ -76,8 +99,69 @@ export default function ActionItem({
     const isAdmin = user?.userType?.toLowerCase() === "admin";
 
     const canEditOrDelete = isAdmin;
+    const [expanded, setExpanded] = useState(false);
+    const [showReadMore, setShowReadMore] = useState(false);
 
+const textRef = useRef(null);
 
+useEffect(() => {
+  const element = textRef.current;
+
+  if (element) {
+    setShowReadMore(
+      element.scrollHeight > element.clientHeight
+    );
+  }
+}, [title, expanded]);
+const formatText = (text = "") => {
+  if (!text) return null;
+
+  const lines = text
+    .replace(/\\n/g, "\n")
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+
+  return lines.map((line, i) => {
+    const isBullet =
+      line.startsWith("●") ||
+      line.startsWith("-") ||
+      line.startsWith("*");
+
+    const isNumbered = /^\d+\./.test(line);
+
+    if (isBullet) {
+      return (
+        <li
+          key={i}
+          className="list-disc ml-[30px]  text-left"
+        >
+          {line.replace(/^[●*\-]\s?/, "")}
+        </li>
+      );
+    }
+
+    if (isNumbered) {
+      return (
+        <li
+          key={i}
+          className="list-decimal ml-[30px]  text-left"
+        >
+          {line.replace(/^\d+\.\s?/, "")}
+        </li>
+      );
+    }
+
+    return (
+      <p
+        key={i}
+        className="mb-1 text-left"
+      >
+        {line}
+      </p>
+    );
+  });
+};
   return (
     <div className="flex items-start justify-between gap-[20px] border-b border-[#D4DFF1] pb-[20px] last:border-b-0 relative cursor-pointer" onClick={()=>{ if (item.isOptimistic) return; openTaskModal(actionableId)}}>
 
@@ -103,8 +187,32 @@ export default function ActionItem({
 
         {/* Text */}
         <div
-          className={`flex flex-col text-[20px] font-medium mt-[5px] gap-[6px] text-[#333333] `}  >
-          <div className={`line-clamp-1 leading-[22px] ${ isCompleted ? "line-through" : ""}`}>{title}</div>
+          className={`flex flex-col text-[20px] font-medium mt-[5px] gap-[6px] text-[#333333] `} >
+          <div>
+            <div
+              ref={textRef}
+              className={`leading-[22px] ${
+                isCompleted ? "line-through" : ""
+              } ${expanded ? "" : "line-clamp-2"}`}
+            >
+              <ul className="space-y-1">
+                {formatText(title)}
+              </ul>
+            </div>
+
+            {showReadMore && (
+              <div
+                className="text-[16px] block text-[#0B57D0] font-[700] cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setExpanded((prev) => !prev);
+                }}
+              >
+                {expanded ? "Read less" : "Read more"}
+              </div>
+            )}
+          </div>
+        {/* </TitleTooltipHover> */}
 
           {subTask.length > 0 && (
             <ul className="ml-[30px] flex flex-col gap-[8px] list-disc text-[20px] font-[500] text-[#333333]">
@@ -118,7 +226,6 @@ export default function ActionItem({
                         {sub.title}
                       </span>
 
-                      {/* +X subTask (only on last visible item) */}
                       {isLastVisible && (
                         <span className="flex items-center gap-[6px] text-[16px] font-[700] text-[#333] whitespace-nowrap">
                           <span className="text-[#999]"></span>

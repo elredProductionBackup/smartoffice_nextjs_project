@@ -43,7 +43,7 @@ export default function ActionableTabs({
 
   return (
     <div className="action-tabs flex items-center gap-[10px] relative text-[#666666]">
-       {tabs.map((tab) => (
+       {tabs.map((tab) => ( 
         <button
           key={tab.value}
           onClick={() => handleTabChange(tab.value)}

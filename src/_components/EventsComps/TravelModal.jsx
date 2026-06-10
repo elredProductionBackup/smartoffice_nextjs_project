@@ -11,7 +11,8 @@ const TravelModal = ({ form, setForm }) => {
   const { type } = useSelector((s) => s.eventsUi.eventFormModal);
 
   const [draft, setDraft] = useState(form.travelInfo);
-  const [errors, setErrors] = useState(form.travelInfo);
+  const [errors, setErrors] = useState({});
+
 
 const update = (key, value) => {
   setDraft((prev) => ({ ...prev, [key]: value }));
@@ -304,7 +305,7 @@ useEffect(() => {
 
             {draft.reminders?.map((r, index) => (
               <div
-                key={r.id}
+                key={index}
                 className={`relative w-[100%] ${
                   index !== draft.reminders.length - 1
                     ? "border-b border-[#EAEAEA] pb-[15px] mb-[15px]"

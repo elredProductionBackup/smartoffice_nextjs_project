@@ -12,6 +12,7 @@ const initialState = {
   eventDetailsMap: {},
   eventDetailsFetched: {},
   eventDetailsError: {},
+  eventDetailsFormLoader: {},
 
   page: 1,
   limit: 10,
@@ -48,7 +49,6 @@ const initialState = {
   eventChecklistLoading: false,
   eventChecklistTotal: 0,
 
-  // Central track for all event task counts by eventId
   eventTaskSummaries: {},
 
   activeTab: "",
@@ -335,17 +335,24 @@ const eventSlice = createSlice({
   const { eventId } = action.meta.arg;
   state.membersLoading[eventId] = false;
 })
+      .addCase(fetchEventDetails.pending , (state,action) => {
+          const { eventId } = action.meta.arg;
+          state.eventDetailsFormLoader[eventId] = true;
+      })
       .addCase(fetchEventDetails.fulfilled, (state, action) => {
         const { eventId, data, skip } = action.payload;
 
+        state.eventDetailsFormLoader[eventId] = false;
         if (skip) return;
 
         state.eventDetailsMap[eventId] = data;
         state.eventDetailsFetched[eventId] = true;
+
       })
       .addCase(fetchEventDetails.rejected, (state, action) => {
         const eventId = action.meta.arg.eventId;
         state.eventDetailsError[eventId] = action.payload;
+        state.eventDetailsFormLoader[eventId] = false;
       })
       .addCase(closeEventThunk.fulfilled, (state, action) => {
       })
@@ -548,6 +555,7 @@ const eventSlice = createSlice({
           state.eventChecklistLoading = false;
           state.eventChecklist = action.payload.list;
           state.eventChecklistTotal = action.payload.total;
+          updateSummaryInGroupedEvents(state);
         })
         .addCase(fetchEventChecklist.rejected, (state) => {
           state.eventChecklistLoading = false;
@@ -568,26 +576,31 @@ const eventSlice = createSlice({
           if (index !== -1) {
             state.eventChecklist[index] = { ...item, isOptimistic: false };
           }
+          updateSummaryInGroupedEvents(state);
         })
         .addCase(createEventActionable.rejected, (state, action) => {
           const tempId = action.payload?.tempId;
           state.eventChecklist = state.eventChecklist.filter((t) => t.actionableId !== tempId);
           state.eventChecklistTotal -= 1;
+          updateSummaryInGroupedEvents(state);
         })
         .addCase(toggleEventActionable.fulfilled, (state, action) => {
           const { actionableId, isCompleted } = action.payload;
           const item = state.eventChecklist.find((t) => t.actionableId === actionableId);
           if (item) item.isCompleted = isCompleted;
+          updateSummaryInGroupedEvents(state);
         })
         .addCase(removeEventActionable.fulfilled, (state, action) => {
           const { actionableId } = action.payload;
           state.eventChecklist = state.eventChecklist.filter((t) => t.actionableId !== actionableId);
           state.eventChecklistTotal -= 1;
+          updateSummaryInGroupedEvents(state);
         })
         .addCase(updateEventActionable.fulfilled, (state, action) => {
           const { actionableId, ...updates } = action.payload;
           const item = state.eventChecklist.find((t) => t.actionableId === actionableId);
           if (item) Object.assign(item, updates);
+          updateSummaryInGroupedEvents(state);
         })
         // Subtasks
         .addCase(createEventSubTask.fulfilled, (state, action) => {

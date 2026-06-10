@@ -22,6 +22,10 @@ import DeleteMediaConfirm from "@/_components/EventsComps/DeleteMediaConfirm";
 import { useRef } from "react";
 import { useCallback } from "react";
 import useInfiniteScrollObserver from "@/hooks/useInfiniteScroll";
+import { isValidImage } from "@/utils/functions";
+import EventsMenu from "@/_components/EventsComps/EventsMenu";
+import EventActionConfirmModal from "@/_components/EventsComps/EventActionConfirmModal";
+import { HiEllipsisVertical } from "react-icons/hi2";
 
 export default function EventDetailsClient() {
   // ================= ROUTER / PARAMS =================
@@ -36,6 +40,18 @@ export default function EventDetailsClient() {
   // ================= LOCAL STATE =================
   const [closing, setClosing] = useState(false);
   const [registrationEnabled, setRegistrationEnabled] = useState(true);
+  const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setShowMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // ================= REFS =================
   const containerRef = useRef();
@@ -113,21 +129,21 @@ export default function EventDetailsClient() {
   });
 
   // ================= DATA FETCH =================
-useEffect(() => {
-  if (!eventId) return;
+  useEffect(() => {
+    if (!eventId) return;
 
-  if (activeTab === "memberMedia") {
-    dispatch(fetchMembersMedia({ eventId, page: 1, limit: 20 }));
-  }
+    if (activeTab === "memberMedia") {
+      dispatch(fetchMembersMedia({ eventId, page: 1, limit: 20 }));
+    }
 
-  if (activeTab === "documents") {
-    dispatch(fetchDocuments({ eventId, page: 1, limit: 20 }));
-  }
-}, [activeTab, eventId]);
+    if (activeTab === "documents") {
+      dispatch(fetchDocuments({ eventId, page: 1, limit: 20 }));
+    }
+  }, [activeTab, eventId]);
 
   useEffect(() => {
     if (eventId) {
-      dispatch(fetchEventDetails({ eventId }));
+      dispatch(fetchEventDetails({ eventId, noSkip:true }));
     }
   }, [eventId]);
 
@@ -171,8 +187,19 @@ useEffect(() => {
 
       <div className="bg-white rounded-2xl pt-6 flex justify-between gap-[105px] w-full relative z-[15]">
         <div className="flex-1 flex gap-[40px]">
-          <div className="w-[250px] min-h-[320px] relative rounded-[20px] overflow-hidden">
-            <Image src={event?.eventImage} alt="event" fill className="object-cover" />
+          <div className="w-[250px] min-h-[320px] relative rounded-[20px] overflow-hidden flex justify-center items-center">
+            <Image
+              src={
+                isValidImage(event?.eventImage)
+                  ? event.eventImage
+                  : "/logo/no-image.svg"
+              }
+              alt={event?.eventName || "event"}
+              fill
+              className={isValidImage(event?.eventImage)
+                ? "object-cover"
+                : "object-contain max-h-[60%] grid place-items-center"}
+            />
           </div>
 
           <div className="flex-1 flex flex-col justify-between gap-[20px]">
@@ -218,47 +245,64 @@ useEffect(() => {
           </div>
         </div>
 
-        <div className="flex flex-col items-start justify-between">
-          <button
-            className={`flex gap-[8px] whitespace-nowrap items-center bg-[#E40000] text-white font-medium px-[16px] py-[8px] rounded-[60px]
-              ${isPast ? "cursor-not-allowed opacity-60" : "cursor-pointer"}
-            `}
-            onClick={() => {
-              if (isPast) return;
-              dispatch(
-                openEventsModal({
-                  type: "CONFIRM_CLOSE_EVENT",
-                  payload: { eventId },
-                })
-              );
-            }}
-            disabled={closing || isPast}
-          >
-            <span className="akar-icons--cross regular"></span>
-            Close event
-          </button>
-          {event?.additionalNotes &&
-            <div className="relative inline-block group">
-              {/* Trigger */}
-              <div className="text-[#147BFF] font-bold underline pt-[12px] cursor-pointer">
-                Additional note
+        <div className="flex flex-col items-end justify-between pb-4">
+          <div className="relative" ref={menuRef}>
+            <button
+              onClick={() => setShowMenu(!showMenu)}
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
+            >
+              <HiEllipsisVertical className="text-3xl text-[#333]" />
+            </button>
+
+            {showMenu && (
+              <EventsMenu
+                isPast={isPast}
+                onEdit={() => {
+                  setShowMenu(false);
+                  router.push(`/dashboard/events/create?id=${eventId}`);
+                }}
+                onCancel={() => {
+                  setShowMenu(false);
+                  dispatch(
+                    openEventsModal({
+                      type: "CONFIRM_CANCEL_EVENT",
+                      payload: { eventId },
+                    })
+                  );
+                }}
+                onComplete={() => {
+                  setShowMenu(false);
+                  dispatch(
+                    openEventsModal({
+                      type: "CONFIRM_COMPLETE_EVENT",
+                      payload: { eventId },
+                    })
+                  );
+                }}
+              />
+            )}
+          </div>
+
+          <div className="flex flex-col items-end gap-4">
+            {event?.additionalNotes && (
+              <div className="relative inline-block group">
+                <div className="text-[#147BFF] font-bold underline cursor-pointer text-right">
+                  Additional note
+                </div>
+                <div className="absolute right-0 top-full w-[380px] p-[24px] rounded-[20px] shadow-[0px_4px_4px_2px_#A2A0A040] opacity-0 invisible group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 translate-y-2 transition-all duration-200 z-10 bg-[#F2F7FF] flex flex-col gap-[8px]">
+                  <h4 className="font-bold text-[20px] ">Additional note</h4>
+                  <p className="text-[16px] text-[#333333]">
+                    {event?.additionalNotes}
+                  </p>
+                </div>
               </div>
+            )}
 
-              {/* Hover Content */}
-              <div className="absolute right-0 top-full w-[380px] p-[24px] rounded-[20px] shadow-[0px_4px_4px_2px_#A2A0A040] opacity-0 invisible group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 translate-y-2 transition-all duration-200 z-10 bg-[#F2F7FF] flex flex-col gap-[8px]">
-                <h4 className="font-bold text-[20px] ">Additional note</h4>
-                <p className="text-[16px] text-[#333333]">
-                  {event?.additionalNotes}
-                </p>
-              </div>
-            </div>
-          }
-
-
-          <RegistrationToggle
-            value={registrationEnabled}
-            onChange={() => setRegistrationEnabled(!registrationEnabled)}
-          />
+            <RegistrationToggle
+              value={registrationEnabled}
+              onChange={() => setRegistrationEnabled(!registrationEnabled)}
+            />
+          </div>
         </div>
       </div>
 
@@ -268,7 +312,7 @@ useEffect(() => {
 
       <>
         {activeTab === "attendees" &&
-          <div className="min-h-[calc(100dvh-180px)] bg-[#F2F7FF] rounded-[20px] overflow-y-auto">
+          <div className="min-h-[calc(100dvh-180px)] bg-[#F2F7FF] rounded-[20px]">
             <Attendees eventId={eventId} />
           </div>
         }
@@ -310,30 +354,40 @@ useEffect(() => {
           <div className="min-h-[calc(100dvh-180px)] bg-[#f2f7ff] rounded-[20px] overflow-y-auto mb-10 p-4">
             <LogisticsContent /></div>}
         {activeTab === "checklist" &&
-         <div className="min-h-[calc(100dvh-180px)] bg-[#f2f7ff] rounded-[20px] overflow-y-auto mb-10 p-4" >
-         <ChecklistContent eventId={eventId}/></div>}
-          {activeTab === "eventcosting" &&
-         <div className="min-h-[calc(100dvh-180px)] overflow-y-auto mb-10 p-4" >
-         <Eventcosting/></div>}
+          <div className="min-h-[calc(100dvh-180px)] bg-[#f2f7ff] rounded-[20px] overflow-y-auto mb-10 p-4" >
+            <ChecklistContent eventId={eventId} /></div>}
+        {activeTab === "eventcosting" &&
+          <div className="min-h-[calc(100dvh-180px)] w-full overflow-y-auto p-4">
+            <Eventcosting
+              eventName={event?.eventName || '-'}
+              portfolio={event?.portfolioName || event?.portfolio || '-'}
+            />
+          </div>}
       </>
 
-      {currentModal?.type === "CONFIRM_CLOSE_EVENT" && eventId && (
-        <div className="fixed inset-0 z-20 flex items-center justify-center bg-black/40" onClick={() => dispatch(closeAllEventsModals())}>
-          <div className="w-[480px] rounded-[28px] bg-white pt-[53px] pb-[40px] shadow-xl flex flex-col items-center gap-[45px]" onClick={(e) => e.stopPropagation()}>
-            <div className="text-[24px] font-[700] px-[68px] text-center">Are you sure you want to close
-              this event?</div>
-            <div className="flex gap-[80px]">
-              <button onClick={() => dispatch(closeAllEventsModals())}
-                className="rounded-full text-[20px] bg-[#999999] px-6 py-2 text-white w-[120px] cursor-pointer" >
-                Cancel
-              </button>
+      {currentModal?.type === "CONFIRM_CANCEL_EVENT" && (
+        <EventActionConfirmModal
+          title="Are you sure you want to cancel this event?"
+          confirmText="Cancel"
+          cancelText="No"
+          isLoading={closing}
+          onCancel={() => dispatch(closeAllEventsModals())}
+          onConfirm={handleCloseEvent}
+        />
+      )}
 
-              <button onClick={handleCloseEvent} className="rounded-full text-[20px] bg-gradient-to-r from-[#5597ED] to-[#00449C] w-[120px] px-[16px] py-[8px] text-white cursor-pointer flex items-center justify-center" >
-                {closing ? <div className="w-[20px] h-[20px] border-2 border-[white] border-t-transparent rounded-full animate-spin" /> : 'Close'}
-              </button>
-            </div>
-          </div>
-        </div>
+      {currentModal?.type === "CONFIRM_COMPLETE_EVENT" && (
+        <EventActionConfirmModal
+          title="Are you sure you want to complete this event?"
+          confirmText="Complete"
+          cancelText="No"
+          isLoading={closing} // Reusing closing state for now, or add a new one if needed
+          onCancel={() => dispatch(closeAllEventsModals())}
+          onConfirm={async () => {
+            // Add actual complete logic here if different from close
+            await handleCloseEvent(); 
+          }}
+        />
       )}
 
       {modalStack.map((modal, index) => {

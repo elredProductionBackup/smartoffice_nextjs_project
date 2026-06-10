@@ -8,12 +8,15 @@ const baseFieldClass =
   "flex-1 bg-[#F6F6F6] border-[1.4px] border-[#EAEAEA] rounded-lg outline-none h-[50px]";
 
 const EVENT_TYPES = [
-  "Press Conference",
-  "Leadership Meetup",
-  "Networking Meet",
-  "Startup Showcase",
-  "Innovation Summit",
-  "Award Ceremony",
+  "Learning",
+  "Forum",
+  "Family",
+  "Spouse Partner",
+  "Engagement",
+  "Governance",
+  "Membership",
+  "GLC",
+  "Administration",
 ];
 
 export function EventTypeDropdown({

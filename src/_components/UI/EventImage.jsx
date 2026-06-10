@@ -4,6 +4,8 @@ import { useEffect, useRef } from "react";
 import Image from "next/image";
 import { addToast } from "@/store/toastSlice";
 import { useDispatch } from "react-redux";
+import addIcon from "@/assets/logo/add.svg";
+import deleteIcon from "@/assets/logo/delete.svg";
 
 export const EventImage = ({ value, onChange }) => {
   const inputRef = useRef(null);
@@ -56,24 +58,29 @@ export const EventImage = ({ value, onChange }) => {
     };
   }, [value]);
 
-  const isValidPreview =
-  value?.file &&
-  ALLOWED_TYPES.includes(value.file.type) &&
-  value.file.size <= MAX_SIZE;
+const isValidPreview =
+  (value?.file &&
+    ALLOWED_TYPES.includes(value.file.type) &&
+    value.file.size <= MAX_SIZE) ||
+  (!value?.file && typeof value?.previewUrl === "string");
+
+        const imageSrc = value?.previewUrl;
+
 
   return (
     <div className="sticky top-0 flex flex-col items-center gap-[30px]">
       {/* Image Preview */}
       <div className="relative h-[600px] aspect-[3/4] overflow-hidden rounded-[20px] bg-gray-200">
-        {value?.previewUrl && isValidPreview ? (
-          <Image
-            src={value.previewUrl}
-            alt="event"
-            fill
-            sizes="450px"
-            className="object-cover border-[1.4px] border-[#EAEAEA] rounded-[20px]"
-          />
-        ) : (
+
+{imageSrc && isValidPreview ? (
+  <Image
+    src={imageSrc}
+    alt="event"
+    fill
+    sizes="450px"
+    className="object-cover border-[1.4px] border-[#EAEAEA] rounded-[20px]"
+  />
+) : (
          <div className="
             flex flex-col h-full w-full items-center justify-center
             rounded-[20px] border-[1.4px] border-[#EAEAEA]
@@ -90,28 +97,44 @@ export const EventImage = ({ value, onChange }) => {
       </div>
 
       {/* Controls */}
-      <div className="flex flex-col gap-[20px] items-center">
-        <button
-          type="button"
-          onClick={openGallery}
-          className="text-[18px] font-[500] cursor-pointer"
-        >
-          Change your event image
-        </button>
-
+      <div className="flex gap-[30px]">
+        {/* Add / Replace */}
         <div
           onClick={openGallery}
-          className="flex flex-col items-center gap-[8px] text-[18px] font-[600] cursor-pointer"
+          className="flex flex-col items-center gap-[12px] cursor-pointer w-[120px] "
         >
-          <span className="h-[40px] w-[40px] rounded-full bg-[#147BFF1A] grid place-items-center">
+          <div className="h-[40px] w-[40px] rounded-full bg-[#147BFF1A] grid place-items-center">
             <Image
-              src="/logo/gallery.svg"
-              alt="Gallery Logo"
-              height={22}
-              width={22}
+              src={addIcon}
+              alt="Add"
+              height={20}
+              width={20}
             />
+          </div>
+          <span className="text-[18px] font-[600] text-[#333333] text-center leading-[125%] font-nunito ">
+            Add / Replace<br />image
           </span>
-          Gallery
+        </div>
+
+        {/* Delete */}
+        <div
+          onClick={() => {
+            onChange({ file: null, previewUrl: null });
+            if (inputRef.current) inputRef.current.value = "";
+          }}
+          className="flex flex-col items-center gap-[12px] cursor-pointer w-[120px]"
+        >
+          <div className="h-[40px] w-[40px] rounded-full bg-[#FF00001A] grid place-items-center">
+            <Image
+              src={deleteIcon}
+              alt="Delete"
+              height={20}
+              width={20}
+            />
+          </div>
+          <span className="text-[18px] font-[600] text-[#333333] text-center leading-[125%] font-nunito ">
+            Delete<br />image
+          </span>
         </div>
       </div>
 
