@@ -142,8 +142,8 @@ export default function EventBudgetPopup({
                         min="0"
                         max="100"
                         value={item.value}
-                        onChange={(e) => handlePercentChange(item.key, e.target.value)}
-                        className="w-[48px] h-[28px] text-center border border-[#DDDDDD] rounded-[4px] bg-white text-[13px] font-medium text-[#333333] outline-none focus:border-[#2B7FFF]"
+                        readOnly
+                        className="w-[48px] h-[28px] text-center border border-[#DDDDDD] rounded-[4px] bg-[#F5F7FA] text-[13px] font-medium text-[#777777] outline-none cursor-default select-none"
                       />
                       <span className="text-[13px] font-medium text-[#777777]">
                         % of budget

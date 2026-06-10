@@ -24,7 +24,7 @@ function formatIndianCurrency(amount) {
   return `₹${amount.toLocaleString('en-IN')}`;
 }
 
-const EXPENSE_CATEGORIES = [
+const DEFAULT_EXPENSE_CATEGORIES = [
   'Venue Rental',
   'Food & Beverages',
   'Accommodation Charges',
@@ -35,6 +35,50 @@ const EXPENSE_CATEGORIES = [
   'Reimbursement of Event Expenditure (Misc)',
 ];
 
+const CATEGORY_COLORS = [
+  '#3b82f6', '#885df1', '#ec4899', '#f59e0b', '#14b8a6',
+  '#06b6d4', '#6366f1', '#84cc16', '#f97316', '#a855f7',
+  '#10b981', '#ef4444', '#0ea5e9', '#d946ef',
+];
+
+/** Read category names from the "learning" portfolio saved by BudgetChecklist */
+function getLearningCategoryNames() {
+  try {
+    const saved = localStorage.getItem('smartoffice_portfolio_budgets');
+    if (!saved) return DEFAULT_EXPENSE_CATEGORIES;
+    const portfolios = JSON.parse(saved);
+    const learning = portfolios.find((p) => p.id === 'learning');
+    if (!learning || !learning.categories || learning.categories.length === 0)
+      return DEFAULT_EXPENSE_CATEGORIES;
+    return learning.categories.map((c) => c.name);
+  } catch {
+    return DEFAULT_EXPENSE_CATEGORIES;
+  }
+}
+
+/**
+ * Read full category objects {key, name, value, color} from the learning
+ * portfolio so the EventBudgetPopup shows the same items with their percentages.
+ */
+function getLearningBudgetCategories() {
+  try {
+    const saved = localStorage.getItem('smartoffice_portfolio_budgets');
+    if (!saved) return DEFAULT_EVENT_BUDGET_CATEGORIES;
+    const portfolios = JSON.parse(saved);
+    const learning = portfolios.find((p) => p.id === 'learning');
+    if (!learning || !learning.categories || learning.categories.length === 0)
+      return DEFAULT_EVENT_BUDGET_CATEGORIES;
+    return learning.categories.map((cat, idx) => ({
+      key: cat.name.toLowerCase().replace(/\s+/g, '_') + '_' + idx,
+      name: cat.name,
+      value: cat.percentage,
+      color: CATEGORY_COLORS[idx % CATEGORY_COLORS.length],
+    }));
+  } catch {
+    return DEFAULT_EVENT_BUDGET_CATEGORIES;
+  }
+}
+
 // ─── Main Component ──────────────────────────────────────────────────────────
 const Eventcosting = ({ eventName = '-', portfolio = '-' }) => {
   const [isBudgetOpen, setIsBudgetOpen] = useState(false);
@@ -43,6 +87,19 @@ const Eventcosting = ({ eventName = '-', portfolio = '-' }) => {
   const [budgetDistribution, setBudgetDistribution] = useState(
     DEFAULT_EVENT_BUDGET_CATEGORIES
   );
+
+  // Sync budgetDistribution from BudgetChecklist's learning portfolio
+  useEffect(() => {
+    setBudgetDistribution(getLearningBudgetCategories());
+
+    const handleStorage = (e) => {
+      if (e.key === 'smartoffice_portfolio_budgets' || e.key === null) {
+        setBudgetDistribution(getLearningBudgetCategories());
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
 
   const addExpenseFromEventCosting = useExpenseRecordsStore(
     (state) => state.addExpenseFromEventCosting
@@ -125,6 +182,23 @@ const Eventcosting = ({ eventName = '-', portfolio = '-' }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
   const dropdownMenuRef = useRef(null);
+
+  // Dynamic expense categories sourced from BudgetChecklist (learning portfolio)
+  const [expenseCategories, setExpenseCategories] = useState(DEFAULT_EXPENSE_CATEGORIES);
+
+  useEffect(() => {
+    // Load on mount
+    setExpenseCategories(getLearningCategoryNames());
+
+    // Update whenever BudgetChecklist writes to localStorage
+    const handleStorage = (e) => {
+      if (e.key === 'smartoffice_portfolio_budgets' || e.key === null) {
+        setExpenseCategories(getLearningCategoryNames());
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
 
   useEffect(() => {
     const handler = (e) => {
@@ -305,7 +379,7 @@ const Eventcosting = ({ eventName = '-', portfolio = '-' }) => {
               >
                 Select Expense Category
               </button>
-              {EXPENSE_CATEGORIES.map((opt) => {
+              {expenseCategories.map((opt) => {
                 const isSelected = opt === selectedCategory;
                 return (
                   <button

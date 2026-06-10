@@ -41,6 +41,13 @@ export default function BudgetChecklist() {
   const savePortfolios = (updated) => {
     setPortfolios(updated);
     localStorage.setItem("smartoffice_portfolio_budgets", JSON.stringify(updated));
+    // Notify same-tab listeners (e.g. Eventcosting dropdown, EventBudgetPopup)
+    window.dispatchEvent(
+      new StorageEvent("storage", {
+        key: "smartoffice_portfolio_budgets",
+        newValue: JSON.stringify(updated),
+      })
+    );
   };
 
   const selectedPortfolio = portfolios.find((p) => p.id === selectedId) || portfolios[0];
