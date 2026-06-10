@@ -76,23 +76,13 @@ export function eventCostingToExpenseRecord({
   portfolio,
   date,
   totalAmount,
-  // paid,
-  // balance,
   remark,
   vendorName,
   billFileName,
   approvalStatus = "Pending",
 }) {
   const total = parseAmount(totalAmount);
-  const paidAmount = parseAmount(paid);
-  const balanceAmount =
-    balance !== "" && balance != null
-      ? parseAmount(balance)
-      : Math.max(0, total - paidAmount);
-
   const status = approvalStatus === "Approved" ? "Approved" : "Pending Approval";
-  const paymentStatus =
-    balanceAmount === 0 && paidAmount > 0 ? "Paid" : "Pending";
 
   return {
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
@@ -102,12 +92,10 @@ export function eventCostingToExpenseRecord({
     portfolio: portfolio || "-",
     date: formatExpenseDate(date),
     totalAmount: total,
-    // paid: paidAmount,
-    // balance: balanceAmount,
-    remark:remark,
+    remark: remark,
     vendor: vendorName?.trim() || "-",
     bill: billFileName || "-",
-    paymentStatus,
+    paymentStatus: "Pending",
     status,
     canSend: status === "Pending Approval",
     category,

@@ -17,8 +17,7 @@ const EventCostingCard = ({
 }) => {
   const [narrative, setNarrative] = useState(initialData?.narrative ?? initialData?.description ?? '');
   const [cost, setCost] = useState(initialData?.totalAmount ?? initialData?.cost ?? '');
-  const [advancePayment, setAdvancePayment] = useState(initialData?.paid ?? initialData?.advancePayment ?? '');
-  const [balancePayment, setBalancePayment] = useState(initialData?.balance ?? initialData?.balancePayment ?? '');
+
   const [vendorName, setVendorName] = useState(initialData?.vendorName ?? initialData?.vendor ?? '');
   const [billFileName, setBillFileName] = useState(initialData?.billFileName ?? initialData?.bill ?? '');
   const [selectedDate, setSelectedDate] = useState(
@@ -139,8 +138,6 @@ const EventCostingCard = ({
 
     const initialNarrative = initialData?.narrative ?? initialData?.description ?? '';
     const initialCost = String(initialData?.totalAmount ?? initialData?.cost ?? '');
-    const initialAdvance = String(initialData?.paid ?? initialData?.advancePayment ?? '');
-    const initialBalance = String(initialData?.balance ?? initialData?.balancePayment ?? '');
     const initialVendor = initialData?.vendorName ?? initialData?.vendor ?? '';
     const initialBill = initialData?.billFileName ?? initialData?.bill ?? '';
     const initialDateStr = initialData?.date ? new Date(initialData.date).toDateString() : '';
@@ -149,8 +146,6 @@ const EventCostingCard = ({
     const hasChanged =
       narrative !== initialNarrative ||
       String(cost) !== initialCost ||
-      String(advancePayment) !== initialAdvance ||
-      String(balancePayment) !== initialBalance ||
       vendorName !== initialVendor ||
       billFileName !== initialBill ||
       currentDateStr !== initialDateStr;
@@ -158,15 +153,13 @@ const EventCostingCard = ({
     if (hasChanged) {
       setIsSubmitted(false);
     }
-  }, [narrative, cost, advancePayment, balancePayment, vendorName, billFileName, selectedDate, initialData]);
+  }, [narrative, cost, vendorName, billFileName, selectedDate, initialData]);
 
   const uploadId = `upload-${title.replace(/\s+/g, '-').toLowerCase()}`;
 
   const resetForm = () => {
     setNarrative('');
     setCost('');
-    setAdvancePayment('');
-    setBalancePayment('');
     setVendorName('');
     setBillFileName('');
     setSelectedDate(null);
@@ -186,8 +179,6 @@ const EventCostingCard = ({
       portfolio,
       date: selectedDate,
       totalAmount: cost,
-      paid: advancePayment,
-      balance: balancePayment,
       vendorName,
       billFileName,
       approvalStatus,
@@ -332,8 +323,8 @@ const EventCostingCard = ({
         </div>
       </div>
 
-      {/* Row 2: Cost, Advance, Balance */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
+      {/* Row 2: Cost */}
+      <div className="mb-5">
         <div className="flex flex-col">
           <label className={EXPENSE_LABEL_CLASS}>Total</label>
           <input
@@ -341,26 +332,6 @@ const EventCostingCard = ({
             placeholder="Enter Value"
             value={cost}
             onChange={(e) => setCost(e.target.value)}
-            className={EXPENSE_INPUT_CLASS}
-          />
-        </div>
-        <div className="flex flex-col">
-          <label className={EXPENSE_LABEL_CLASS}>Paid</label>
-          <input
-            type="text"
-            placeholder="Enter Value"
-            value={advancePayment}
-            onChange={(e) => setAdvancePayment(e.target.value)}
-            className={EXPENSE_INPUT_CLASS}
-          />
-        </div>
-        <div className="flex flex-col">
-          <label className={EXPENSE_LABEL_CLASS}>Balance</label>
-          <input
-            type="text"
-            placeholder="Enter Value"
-            value={balancePayment}
-            onChange={(e) => setBalancePayment(e.target.value)}
             className={EXPENSE_INPUT_CLASS}
           />
         </div>
