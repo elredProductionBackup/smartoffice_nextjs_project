@@ -309,9 +309,12 @@ const EventCostingCard = ({
                         setShowCalendar(false);
                       }}
                       className={`h-8 w-8 rounded-full flex items-center justify-center text-[13px] transition-colors cursor-pointer border-0 outline-none
-                        ${!dayObj.isCurrentMonth ? 'text-gray-300 hover:bg-[#F9FAFB]' : 'text-[#111827] hover:bg-[#F2F7FF] hover:text-[#2B7FFF] bg-transparent'}
-                        ${isSelected ? 'bg-[#2B7FFF] text-white hover:bg-[#2B7FFF] hover:text-white font-semibold' : ''}
-                      `}
+                        ${isSelected
+                          ? 'bg-[#2B7FFF] text-white hover:bg-[#2B7FFF] hover:text-white font-semibold'
+                          : !dayObj.isCurrentMonth
+                          ? 'text-gray-300 bg-transparent hover:bg-[#F9FAFB]'
+                          : 'text-[#111827] bg-transparent hover:bg-[#F2F7FF] hover:text-[#2B7FFF]'
+                        }`}
                     >
                       {dayObj.date.getDate()}
                     </button>
