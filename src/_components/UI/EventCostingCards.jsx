@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useRef, useEffect } from 'react';
-import { FiX, FiUpload, FiBell, FiChevronDown, FiChevronLeft, FiChevronRight, FiCalendar, FiCheckCircle } from 'react-icons/fi';
+import { FiX, FiUpload, FiBell, FiChevronDown, FiChevronLeft, FiChevronRight, FiCalendar, FiCheckCircle, FiSend } from 'react-icons/fi';
 
 const EXPENSE_INPUT_CLASS =
   'h-[44px] w-full rounded-[8px] border border-[#DDDDDD] bg-[#E5E7EB] px-3 text-[14px] text-[#666666] outline-none focus:border-[#5597ED] font-nunito';
@@ -28,6 +28,7 @@ const EventCostingCard = ({
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [showReminderDropdown, setShowReminderDropdown] = useState(false);
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  const [reminderChannel, setReminderChannel] = useState(null); // null | 'whatsapp' | 'email' | 'both'
   const [isSubmitted, setIsSubmitted] = useState(initialData?.isSubmitted || false);
   
   const calendarRef = useRef(null);
@@ -426,28 +427,36 @@ const EventCostingCard = ({
               className="h-[40px] px-4 rounded-[10px] border border-[#2B7FFF] bg-white text-[#2B7FFF] text-[14px] font-medium cursor-pointer hover:bg-[#F2F7FF] transition-colors outline-none whitespace-nowrap flex items-center gap-2"
             >
               <FiBell className="w-4 h-4" />
-              <span>Send Reminder</span>
+              <span>
+                {reminderChannel === 'both'
+                  ? 'Send Reminder via WhatsApp and Email'
+                  : reminderChannel === 'whatsapp'
+                  ? 'Send Reminder via WhatsApp'
+                  : reminderChannel === 'email'
+                  ? 'Send Reminder via Email'
+                  : 'Send Reminder'}
+              </span>
               <FiChevronDown className={`w-4 h-4 transition-transform ${showReminderDropdown ? 'rotate-180' : ''}`} />
             </button>
             {showReminderDropdown && (
               <div ref={reminderDropdownRef} className="absolute right-0 mt-2 w-[180px] bg-white rounded-[12px] shadow-[0_4px_20px_rgba(0,0,0,0.08)] border border-[#E8ECEF] py-2 z-30 font-nunito">
                 <button
                   type="button"
-                  onClick={() => setShowReminderDropdown(false)}
+                  onClick={() => { setReminderChannel('whatsapp'); setShowReminderDropdown(false); }}
                   className="w-full text-left px-4 py-2 text-[14px] text-[#333333] hover:bg-[#F2F7FF] hover:text-[#2B7FFF] transition-colors border-0 cursor-pointer bg-transparent outline-none"
                 >
                   Via WhatsApp
                 </button>
                 <button
                   type="button"
-                  onClick={() => setShowReminderDropdown(false)}
+                  onClick={() => { setReminderChannel('email'); setShowReminderDropdown(false); }}
                   className="w-full text-left px-4 py-2 text-[14px] text-[#333333] hover:bg-[#F2F7FF] hover:text-[#2B7FFF] transition-colors border-0 cursor-pointer bg-transparent outline-none"
                 >
                   Via Email
                 </button>
                 <button
                   type="button"
-                  onClick={() => setShowReminderDropdown(false)}
+                  onClick={() => { setReminderChannel('both'); setShowReminderDropdown(false); }}
                   className="w-full text-left px-4 py-2 text-[14px] text-[#333333] hover:bg-[#F2F7FF] hover:text-[#2B7FFF] transition-colors border-0 cursor-pointer bg-transparent outline-none"
                 >
                   Both
@@ -455,6 +464,17 @@ const EventCostingCard = ({
               </div>
             )}
           </div>
+
+          {reminderChannel && (
+            <button
+              type="button"
+              className="h-[40px] w-[40px] rounded-md bg-[#2B7FFF] text-white flex items-center justify-center cursor-pointer hover:bg-[#1a6fe6] transition-colors border-0 outline-none shrink-0"
+              title="Send reminder"
+            >
+              <FiSend className="w-4 h-4" />
+            </button>
+          )}
+
           <button
             type="button"
             onClick={handleSendForApproval}
