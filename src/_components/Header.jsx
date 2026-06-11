@@ -59,7 +59,23 @@ const confirmLogout = () => {
       <div className="min-h-20 bg-[#F2F7FF] flex items-center justify-between px-[50px]">
         <Image src={'/logo/smart-networks.svg'} alt="logo" width={155} height={40} className="object-contain" />
 
-        <div className="flex gap-[30px]">
+        <div className="flex gap-[30px] items-center">
+          {/* Network Cluster Details */}
+          {user?.networkClusterDetails && (
+            <div className="flex items-center gap-[10px] bg-white border border-[#D5E2F6] px-[16px] py-[6px] rounded-full shadow-sm">
+              {user.networkClusterDetails.logo && (
+                <img
+                  src={user.networkClusterDetails.logo}
+                  alt={user.networkClusterDetails.name || "Network logo"}
+                  className="w-[28px] h-[28px] rounded-full object-cover"
+                />
+              )}
+              <span className="text-[16px] font-[500] text-[#333]">
+                {user.networkClusterDetails.name}
+              </span>
+            </div>
+          )}
+
           {/* Notification */}
           <div className="flex gap-[10px] items-center cursor-pointer">
             <Image src={bell} alt="bell" height={32} width={32}/>
