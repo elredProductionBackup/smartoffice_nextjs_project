@@ -76,6 +76,7 @@ function parseAmount(value) {
 }
 
 export function eventCostingToExpenseRecord({
+  description,
   narrative,
   category,
   eventName,
@@ -92,7 +93,7 @@ export function eventCostingToExpenseRecord({
 
   return {
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-    description: narrative?.trim() || category || "Event expense",
+    description: description?.trim() || narrative?.trim() || category || "Event expense",
     type: "Event Related",
     event: eventName || "-",
     portfolio: portfolio || "-",

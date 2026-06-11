@@ -15,8 +15,9 @@ const EventCostingCard = ({
   approvalStatus = 'Pending',
   initialData = null,
 }) => {
-  const [narrative, setNarrative] = useState(initialData?.narrative ?? initialData?.description ?? '');
-  const [cost, setCost] = useState(initialData?.totalAmount ?? initialData?.cost ?? '');
+  const [description, setDescription] = useState(initialData?.description ?? initialData?.narrative ?? '');
+  const [totalAmount, setTotalAmount] = useState(initialData?.totalAmount ?? initialData?.cost ?? '');
+  const [remark, setRemark] = useState(initialData?.remark ?? '');
 
   const [vendorName, setVendorName] = useState(initialData?.vendorName ?? initialData?.vendor ?? '');
   const [billFileName, setBillFileName] = useState(initialData?.billFileName ?? initialData?.bill ?? '');
@@ -136,16 +137,18 @@ const EventCostingCard = ({
       return;
     }
 
-    const initialNarrative = initialData?.narrative ?? initialData?.description ?? '';
-    const initialCost = String(initialData?.totalAmount ?? initialData?.cost ?? '');
+    const initialDescription = initialData?.description ?? initialData?.narrative ?? '';
+    const initialTotalAmount = String(initialData?.totalAmount ?? initialData?.cost ?? '');
+    const initialRemark = initialData?.remark ?? '';
     const initialVendor = initialData?.vendorName ?? initialData?.vendor ?? '';
     const initialBill = initialData?.billFileName ?? initialData?.bill ?? '';
     const initialDateStr = initialData?.date ? new Date(initialData.date).toDateString() : '';
     const currentDateStr = selectedDate ? selectedDate.toDateString() : '';
 
     const hasChanged =
-      narrative !== initialNarrative ||
-      String(cost) !== initialCost ||
+      description !== initialDescription ||
+      String(totalAmount) !== initialTotalAmount ||
+      remark !== initialRemark ||
       vendorName !== initialVendor ||
       billFileName !== initialBill ||
       currentDateStr !== initialDateStr;
@@ -153,13 +156,14 @@ const EventCostingCard = ({
     if (hasChanged) {
       setIsSubmitted(false);
     }
-  }, [narrative, cost, vendorName, billFileName, selectedDate, initialData]);
+  }, [description, totalAmount, remark, vendorName, billFileName, selectedDate, initialData]);
 
   const uploadId = `upload-${title.replace(/\s+/g, '-').toLowerCase()}`;
 
   const resetForm = () => {
-    setNarrative('');
-    setCost('');
+    setDescription('');
+    setTotalAmount('');
+    setRemark('');
     setVendorName('');
     setBillFileName('');
     setSelectedDate(null);
@@ -173,12 +177,13 @@ const EventCostingCard = ({
   const handleSendForApproval = () => {
     if (isSubmitted) return;
     onSendForApproval?.({
-      narrative,
+      description,
       category: title,
       eventName,
       portfolio,
       date: selectedDate,
-      totalAmount: cost,
+      totalAmount,
+      remark,
       vendorName,
       billFileName,
       approvalStatus,
@@ -207,15 +212,15 @@ const EventCostingCard = ({
         </button>
       </div>
 
-      {/* Row 1: Narrative + Upload */}
+      {/* Row 1: Description + Upload */}
       <div className="flex flex-col lg:flex-row gap-4 mb-4">
         <div className="flex flex-col flex-1 min-w-0">
-          <label className={EXPENSE_LABEL_CLASS}>Narrative</label>
+          <label className={EXPENSE_LABEL_CLASS}>Description</label>
           <input
             type="text"
-            placeholder="Enter narration"
-            value={narrative}
-            onChange={(e) => setNarrative(e.target.value)}
+            placeholder="Enter description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
             className={EXPENSE_INPUT_CLASS}
           />
         </div>
@@ -326,15 +331,25 @@ const EventCostingCard = ({
         </div>
       </div>
 
-      {/* Row 2: Cost */}
-      <div className="mb-5">
+      {/* Row 2: Total Amount + Remark */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
         <div className="flex flex-col">
-          <label className={EXPENSE_LABEL_CLASS}>Total</label>
+          <label className={EXPENSE_LABEL_CLASS}>Total Amount</label>
           <input
             type="text"
             placeholder="Enter Value"
-            value={cost}
-            onChange={(e) => setCost(e.target.value)}
+            value={totalAmount}
+            onChange={(e) => setTotalAmount(e.target.value)}
+            className={EXPENSE_INPUT_CLASS}
+          />
+        </div>
+        <div className="flex flex-col">
+          <label className={EXPENSE_LABEL_CLASS}>Remark</label>
+          <input
+            type="text"
+            placeholder="Enter Remark"
+            value={remark}
+            onChange={(e) => setRemark(e.target.value)}
             className={EXPENSE_INPUT_CLASS}
           />
         </div>

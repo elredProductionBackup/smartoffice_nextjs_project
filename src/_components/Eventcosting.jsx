@@ -134,7 +134,7 @@ const Eventcosting = ({ eventName = '-', portfolio = '-' }) => {
     });
 
     addFinanceItem({
-      description: expenseData.narrative?.trim() || expenseData.category,
+      description: expenseData.description?.trim() || expenseData.narrative?.trim() || expenseData.category,
       expenseType: 'Event Related',
       event: eventName,
       portfolio,
@@ -144,6 +144,7 @@ const Eventcosting = ({ eventName = '-', portfolio = '-' }) => {
       balance: expenseData.balance,
       vendorName: expenseData.vendorName,
       fileName: expenseData.billFileName,
+      remark: expenseData.remark,
     });
   };
 
