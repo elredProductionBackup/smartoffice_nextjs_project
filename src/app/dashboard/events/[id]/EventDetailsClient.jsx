@@ -204,17 +204,24 @@ export default function EventDetailsClient() {
 
           <div className="flex-1 flex flex-col justify-between gap-[20px]">
             <div className="flex flex-col gap-[20px] items-start">
-              <div className="text-[36px] font-semibold flex items-center gap-[20px]">
-                <span className="maki--arrow rotate-180 inline-block cursor-pointer"
-                  onClick={() => {
-                    // const isPast = moment(event?.startDateTime).isBefore(moment());
+              <div className="flex flex-col gap-1 items-start">
+                <div className="text-[36px] font-semibold flex items-center gap-[20px]">
+                  <span className="maki--arrow rotate-180 inline-block cursor-pointer"
+                    onClick={() => {
+                      // const isPast = moment(event?.startDateTime).isBefore(moment());
 
-                    if (isPast) {
-                      router.push("/dashboard/events?tab=past");
-                    } else {
-                      router.push("/dashboard/events");
-                    }
-                  }}></span> {event?.eventName}</div>
+                      if (isPast) {
+                        router.push("/dashboard/events?tab=past");
+                      } else {
+                        router.push("/dashboard/events");
+                      }
+                    }}></span> {event?.eventName}</div>
+                {event?.eventType && (
+                  <span className="text-[14px] font-semibold text-[#5597ED] bg-[#5597ED]/10 px-3 py-1 rounded-full ml-[44px] uppercase tracking-wider">
+                    {event.eventType}
+                  </span>
+                )}
+              </div>
               <p className="text-[18px] leading-[27px] w-[70%]">
                 {event?.eventDescription}
               </p>
