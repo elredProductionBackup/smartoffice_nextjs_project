@@ -95,7 +95,7 @@ export default function BudgetChecklist() {
   };
 
   return (
-    <div className="w-full min-h-screen p-6 md:p-10 font-nunito">
+    <div className="w-full h-auto p-6 md:p-4 font-nunito">
       {/* Back button */}
       <button
         onClick={() => router.push("/dashboard/events")}
@@ -124,10 +124,10 @@ export default function BudgetChecklist() {
             <div
               key={portfolio.id}
               onClick={() => setSelectedId(portfolio.id)}
-              className={`p-5 rounded-2xl bg-white border-2 transition-all duration-200 cursor-pointer ${
+              className={`p-5 rounded-2xl bg-white border-2 transition-all duration-200 cursor-pointer shadow-md ${
                 isSelected
-                  ? "border-[#2B7FFF] bg-[#2B7FFF]/[0.03]"
-                  : "border-slate-100 hover:border-slate-200 hover:shadow-sm"
+                  ? "border-[#2B7FFF] bg-[#2B7FFF]/[0.03] shadow-blue-100"
+                  : "border-slate-100 hover:border-slate-200 hover:shadow-lg"
               }`}
             >
               <h3 className="text-[15px] font-bold text-slate-800 mb-2">{portfolio.name}</h3>
@@ -146,7 +146,7 @@ export default function BudgetChecklist() {
       {selectedPortfolio && (
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 md:p-8">
           {/* Portfolio name */}
-          <h2 className="text-[17px] font-bold text-[#2B7FFF] mb-5">
+          <h2 className="text-[17px] font-bold text-[#2B7FFF] mb-5"> 
             {selectedPortfolio.name}
           </h2>
 
@@ -244,7 +244,7 @@ export default function BudgetChecklist() {
 
               <button
                 type="submit"
-                className="h-11 px-6 bg-[#2B7FFF] hover:bg-[#1A6EEF] text-white font-bold text-sm rounded-xl transition-all duration-200 shadow-sm flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap"
+                className="h-11 px-6 bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)] hover:opacity-90 text-white font-bold text-sm rounded-xl transition-all duration-200 shadow-sm flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap"
               >
                 <span className="text-base font-bold">+</span> Add
               </button>
