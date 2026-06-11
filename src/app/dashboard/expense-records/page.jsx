@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchEvents } from "@/store/events/eventsThunks";
 import { UPCOMING_EVENTS, PAST_EVENTS, DRAFT_EVENTS } from "@/assets/helpers/sampleEvents";
+import NewExpensesPopup from "@/_components/UI/NewExpensesPopup";
 
 const TABLE_COLUMNS =
   "minmax(160px,1.6fr) minmax(90px,1fr) minmax(140px,1.4fr) minmax(100px,1fr) minmax(100px,0.9fr) minmax(110px,1fr) minmax(90px,0.9fr) minmax(90px,0.9fr) minmax(130px,1.2fr) minmax(160px,1.3fr) minmax(110px,1fr) minmax(130px,1.1fr) minmax(120px,1fr) minmax(150px,1.2fr)";
@@ -115,6 +116,10 @@ export default function ExpenseRecordsPage() {
   const expenses = useExpenseRecordsStore((state) => state.expenses);
   const hydrateFromStorage = useExpenseRecordsStore((state) => state.hydrateFromStorage);
   const updatePaymentStatus = useExpenseRecordsStore((state) => state.updatePaymentStatus);
+  const updateExpense = useExpenseRecordsStore((state) => state.updateExpense);
+
+  const [selectedExpense, setSelectedExpense] = useState(null);
+  const [showPopup, setShowPopup] = useState(false);
 
   const router = useRouter();
   const dispatch = useDispatch();
@@ -152,10 +157,12 @@ export default function ExpenseRecordsPage() {
   }, [rawEvents]);
 
   const handleExpenseClick = (expense) => {
-    if (!expense?.event) return;
-    const eventId = eventMap[expense.event.toLowerCase().trim()];
-    if (eventId) {
+    const eventId = expense?.event && expense.event !== "-" ? eventMap[expense.event.toLowerCase().trim()] : null;
+    if (expense?.type === "Event Related" && expense?.category && eventId) {
       router.push(`/dashboard/events/${eventId}?tab=eventcosting&expenseId=${expense.id}`);
+    } else {
+      setSelectedExpense(expense);
+      setShowPopup(true);
     }
   };
 
@@ -284,17 +291,9 @@ export default function ExpenseRecordsPage() {
                 style={{ gridTemplateColumns: TABLE_COLUMNS }}
               >
                  <div
-                  className={`truncate font-medium ${
-                    expense.type === "Event Related" && eventMap[expense.event?.toLowerCase()?.trim()]
-                      ? "text-[#0B57D0] hover:underline cursor-pointer"
-                      : ""
-                  }`}
+                  className="truncate font-medium text-[#0B57D0] hover:underline cursor-pointer"
                   title={expense.description}
-                  onClick={() => {
-                    if (expense.type === "Event Related") {
-                      handleExpenseClick(expense);
-                    }
-                  }}
+                  onClick={() => handleExpenseClick(expense)}
                 >
                   {expense.description}
                 </div>
@@ -381,6 +380,22 @@ export default function ExpenseRecordsPage() {
           </div>
         </div>
       </div>
+      {showPopup && (
+        <NewExpensesPopup
+          initialData={selectedExpense}
+          onClose={() => {
+            setShowPopup(false);
+            setSelectedExpense(null);
+          }}
+          onSave={(updatedPayload) => {
+            if (updatedPayload.id) {
+              updateExpense(updatedPayload.id, updatedPayload);
+            }
+            setShowPopup(false);
+            setSelectedExpense(null);
+          }}
+        />
+      )}
     </div>
   );
 }

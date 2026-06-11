@@ -92,18 +92,18 @@ function CustomSelectDropdown({ value, onChange, options, placeholder }) {
   );
 }
 
-export default function NewExpensesPopup({ onClose, onSave }) {
-  const [description, setDescription] = useState('');
-  const [expenseType, setExpenseType] = useState('General'); // 'General' or 'Event Related'
-  const [event, setEvent] = useState('');
-  const [portfolio, setPortfolio] = useState('');
-  const [date, setDate] = useState('');
-  const [totalAmount, setTotalAmount] = useState('');
-  const [paid, setPaid] = useState('');
-  const [balance, setBalance] = useState('');
-  const [vendorName, setVendorName] = useState('');
-  const [fileName, setFileName] = useState('');
-  const [remark, setRemark] = useState('')
+export default function NewExpensesPopup({ onClose, onSave, initialData }) {
+  const [description, setDescription] = useState(initialData?.description ?? '');
+  const [expenseType, setExpenseType] = useState(initialData?.type ?? 'General'); // 'General' or 'Event Related'
+  const [event, setEvent] = useState(initialData?.event && initialData.event !== '-' ? initialData.event : '');
+  const [portfolio, setPortfolio] = useState(initialData?.portfolio && initialData.portfolio !== '-' ? initialData.portfolio : '');
+  const [date, setDate] = useState(initialData?.date ?? '');
+  const [totalAmount, setTotalAmount] = useState(initialData?.totalAmount ?? '');
+  const [paid, setPaid] = useState(initialData?.paid ?? '');
+  const [balance, setBalance] = useState(initialData?.balance ?? '');
+  const [vendorName, setVendorName] = useState(initialData?.vendor && initialData.vendor !== '-' ? initialData.vendor : '');
+  const [fileName, setFileName] = useState(initialData?.bill && initialData.bill !== '-' ? initialData.bill : '');
+  const [remark, setRemark] = useState(initialData?.remark ?? '');
 
   const fileInputRef = useRef(null);
 
@@ -142,7 +142,7 @@ export default function NewExpensesPopup({ onClose, onSave }) {
     e?.preventDefault?.();
     e?.stopPropagation?.();
 
-    const currentDate = new Date().toISOString().split("T")[0];
+    const currentDate = initialData?.date ?? new Date().toISOString().split("T")[0];
 
     const payload = {
       description,
@@ -151,12 +151,14 @@ export default function NewExpensesPopup({ onClose, onSave }) {
       portfolio,
       date: currentDate,
       totalAmount: parseFloat(totalAmount) || 0,
-      remark:remark,
-      // paid: parseFloat(paid) || 0,
-      // balance: parseFloat(balance) || 0,
+      remark: remark,
       vendorName,
       fileName,
     };
+
+    if (initialData?.id) {
+      payload.id = initialData.id;
+    }
 
     if (onSave) {
       onSave(payload);
@@ -187,7 +189,9 @@ export default function NewExpensesPopup({ onClose, onSave }) {
       >
         {/* Header */}
         <div className="flex items-center justify-between px-8 pt-6 pb-4 border-b border-[#F1F3F5] shrink-0">
-          <h2 className="text-[22px] font-bold text-[#1F1F1F]">Add New Expense</h2>
+          <h2 className="text-[22px] font-bold text-[#1F1F1F]">
+            {initialData ? 'Edit Expense' : 'Add New Expense'}
+          </h2>
           <button
             onClick={onClose}
             type="button"

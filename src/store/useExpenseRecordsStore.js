@@ -138,6 +138,7 @@ export function formExpenseToRecord(expense) {
     paymentStatus,
     status: "Pending Approval",
     canSend: true,
+    addedFromPopup: true,
   };
 }
 
@@ -185,6 +186,27 @@ export const useExpenseRecordsStore = create((set, get) => ({
     persistExpenses(expenses);
     set({ expenses, hydrated: true });
     return record;
+  },
+
+  updateExpense: (id, updatedFields) => {
+    const expenses = get().expenses.map((e) => {
+      if (String(e.id) === String(id)) {
+        return {
+          ...e,
+          description: updatedFields.description,
+          type: updatedFields.expenseType,
+          event: updatedFields.event || "-",
+          portfolio: updatedFields.portfolio || "-",
+          totalAmount: Number(updatedFields.totalAmount) || 0,
+          remark: updatedFields.remark,
+          vendor: updatedFields.vendorName || "-",
+          bill: updatedFields.fileName || "-",
+        };
+      }
+      return e;
+    });
+    persistExpenses(expenses);
+    set({ expenses });
   },
 
   updatePaymentStatus: (id, paymentStatus) => {
