@@ -28,6 +28,7 @@ const EventCostingCard = ({
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [showReminderDropdown, setShowReminderDropdown] = useState(false);
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  const [showReminderSuccessPopup, setShowReminderSuccessPopup] = useState(false);
   const [reminderChannel, setReminderChannel] = useState(null); // null | 'whatsapp' | 'email' | 'both'
   const [isSubmitted, setIsSubmitted] = useState(initialData?.isSubmitted || false);
   
@@ -457,6 +458,7 @@ const EventCostingCard = ({
           {reminderChannel && (
             <button
               type="button"
+              onClick={() => setShowReminderSuccessPopup(true)}
               className="h-[40px] w-[40px] rounded-md bg-[#2B7FFF] text-white flex items-center justify-center cursor-pointer hover:bg-[#1a6fe6] transition-colors border-0 outline-none shrink-0"
               title="Send reminder"
             >
@@ -501,6 +503,40 @@ const EventCostingCard = ({
               <button
                 type="button"
                 onClick={() => setShowSuccessPopup(false)}
+                className="w-full max-w-[200px] h-[44px] rounded-full bg-[#2B7FFF] text-white text-[15px] font-semibold cursor-pointer hover:bg-[#1a6fe6] transition-colors border-0 outline-none"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showReminderSuccessPopup && (
+        <div
+          className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/40 backdrop-blur-sm font-nunito p-4"
+          onClick={() => setShowReminderSuccessPopup(false)}
+        >
+          <div
+            className="bg-white rounded-[20px] w-full max-w-[420px] shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex flex-col items-center text-center px-6 py-8">
+              <div className="w-14 h-14 rounded-full bg-[#E6F4EA] flex items-center justify-center mb-4">
+                <FiCheckCircle className="w-7 h-7 text-[#0F9D58]" />
+              </div>
+              <h3 className="text-[20px] font-bold text-[#333333] mb-2">
+                Reminder Sent
+              </h3>
+              <p className="text-[14px] font-medium text-[#777777] leading-relaxed mb-6">
+                Your reminder has been successfully sent to the recipient via {
+                  reminderChannel === 'both' ? 'WhatsApp and Email' :
+                  reminderChannel === 'whatsapp' ? 'WhatsApp' : 'Email'
+                }.
+              </p>
+              <button
+                type="button"
+                onClick={() => setShowReminderSuccessPopup(false)}
                 className="w-full max-w-[200px] h-[44px] rounded-full bg-[#2B7FFF] text-white text-[15px] font-semibold cursor-pointer hover:bg-[#1a6fe6] transition-colors border-0 outline-none"
               >
                 OK
