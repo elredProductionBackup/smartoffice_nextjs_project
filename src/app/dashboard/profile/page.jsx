@@ -38,6 +38,12 @@ export default function ProfilePage() {
         </div>
       </div> */}
 
+      <div className="my-5">
+        <div className="flex items-center gap-[20px] mb-[20px]">
+          <h2 className="text-[32px] font-semibold">Dashboard</h2>
+        </div>
+      </div>
+
       <div className="dashboard-items  grid grid-cols-2 gap-4 flex-1 min-h-0 w-full overflow-y-auto">
         <DashboardActionableList
           data={items}
