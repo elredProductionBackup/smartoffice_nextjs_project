@@ -175,7 +175,7 @@ const userMenu = [
           </div>
 
           {/* Nested Page */}
-          <div className="flex-1 flex flex-col mx-5 overflow-y-auto py-5">{children}</div>
+          <div className="flex-1 flex flex-col mx-5 overflow-y-auto">{children}</div>
         </div>
       </div>
     </ProtectedRoute>

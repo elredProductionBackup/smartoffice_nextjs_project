@@ -22,7 +22,7 @@ import DeleteMediaConfirm from "@/_components/EventsComps/DeleteMediaConfirm";
 import { useRef } from "react";
 import { useCallback } from "react";
 import useInfiniteScrollObserver from "@/hooks/useInfiniteScroll";
-import { isValidImage } from "@/utils/functions";
+import { formatText, isValidImage } from "@/utils/functions";
 import EventsMenu from "@/_components/EventsComps/EventsMenu";
 import EventActionConfirmModal from "@/_components/EventsComps/EventActionConfirmModal";
 import { HiEllipsisVertical } from "react-icons/hi2";
@@ -213,11 +213,11 @@ export default function EventDetailsClient() {
                       if (isPast) {
                         router.push("/dashboard/events?tab=past");
                       } else {
-                        router.push("/dashboard/events");
+                        router.push("/dashboard/events?tab=upcomming");
                       }
                     }}></span> {event?.eventName}</div>
                 {event?.eventType && (
-                  <span className="text-[14px] font-semibold text-[#5597ED] bg-[#5597ED]/10 px-3 py-1 rounded-full ml-[44px] uppercase tracking-wider">
+                  <span className="text-[14px] font-bold text-[#5597ED] bg-[#5597ED]/10 px-3 py-[2px] rounded-full ml-[52px] tracking-[1px]">
                     {event.eventType}
                   </span>
                 )}
@@ -254,12 +254,14 @@ export default function EventDetailsClient() {
 
         <div className="flex flex-col items-end justify-between pb-4">
           <div className="relative" ref={menuRef}>
+            {!isPast &&
             <button
               onClick={() => setShowMenu(!showMenu)}
               className="p-2 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
             >
               <HiEllipsisVertical className="text-3xl text-[#333]" />
             </button>
+            }
 
             {showMenu && (
               <EventsMenu
@@ -296,10 +298,10 @@ export default function EventDetailsClient() {
                 <div className="text-[#147BFF] font-bold underline cursor-pointer text-right">
                   Additional note
                 </div>
-                <div className="absolute right-0 top-full w-[380px] p-[24px] rounded-[20px] shadow-[0px_4px_4px_2px_#A2A0A040] opacity-0 invisible group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 translate-y-2 transition-all duration-200 z-10 bg-[#F2F7FF] flex flex-col gap-[8px]">
+                <div className="absolute right-0 top-full w-[380px] p-[24px] rounded-[20px] shadow-[0px_4px_4px_2px_#A2A0A040] opacity-0 invisible group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 translate-y-2 transition-all duration-200 z-10 bg-[#F2F7FF] flex flex-col gap-[8px] max-h-[350px] overflow-scroll">
                   <h4 className="font-bold text-[20px] ">Additional note</h4>
                   <p className="text-[16px] text-[#333333]">
-                    {event?.additionalNotes}
+                    {formatText(event?.additionalNotes)}
                   </p>
                 </div>
               </div>

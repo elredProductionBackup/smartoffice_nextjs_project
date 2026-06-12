@@ -19,7 +19,7 @@ const EVENT_TABS = [
 
 export default function EventsPageClient() {
   const searchParams = useSearchParams();
-  const tab = searchParams.get("tab") || 'past';
+  const tab = searchParams.get("tab") || 'upcomming';
   const urlPage = Number(searchParams.get("page")) || 1;
   const dispatch = useDispatch();
 
@@ -53,7 +53,7 @@ export default function EventsPageClient() {
 
       <ActionableTabs
         tabs={EVENT_TABS}
-        defaultTab="past"
+        defaultTab="upcomming"
         events={true}
       />
 

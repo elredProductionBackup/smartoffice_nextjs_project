@@ -131,24 +131,44 @@ const mapEventToUI = (event) => {
 const groupEventsByMonth = (events = []) => {
   const grouped = {};
 
-  events.forEach((event) => {
+  // Sort events by start date
+  const sortedEvents = [...events].sort(
+    (a, b) => new Date(a.startDateTime) - new Date(b.startDateTime)
+  );
+
+  sortedEvents.forEach((event) => {
     if (!event?.startDateTime) return;
 
     const m = moment(event.startDateTime);
     if (!m.isValid()) return;
 
     const month = m.format("MMMM, YYYY");
+
     if (!grouped[month]) grouped[month] = [];
     grouped[month].push(mapEventToUI(event));
   });
 
-  return Object.keys(grouped).map((month) => ({
-    month,
-    items: grouped[month],
-  }));
+  const currentMonth = moment().startOf("month");
+
+  return Object.keys(grouped)
+    .sort((a, b) => {
+      const dateA = moment(a, "MMMM, YYYY");
+      const dateB = moment(b, "MMMM, YYYY");
+
+      const aUpcoming = dateA.isSameOrAfter(currentMonth);
+      const bUpcoming = dateB.isSameOrAfter(currentMonth);
+
+      // Upcoming/current months first
+      if (aUpcoming && !bUpcoming) return -1;
+      if (!aUpcoming && bUpcoming) return 1;
+
+      return dateA - dateB;
+    })
+    .map((month) => ({
+      month,
+      items: grouped[month],
+    }));
 };
-
-
 const eventSlice = createSlice({
   name: "events",
   initialState,
