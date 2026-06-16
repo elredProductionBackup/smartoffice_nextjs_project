@@ -1,6 +1,10 @@
 'use client';
 import React, { useState, useRef, useEffect } from 'react';
 import { FiX, FiUpload, FiBell, FiChevronDown, FiChevronLeft, FiChevronRight, FiCalendar, FiCheckCircle, FiSend } from 'react-icons/fi';
+import { useParams } from 'next/navigation';
+import { useSelector } from 'react-redux';
+import { addEditExpense } from '@/services/expense.service';
+import { useBudgetTypeStore } from '@/store/useBudgetTypeStore';
 
 const EXPENSE_INPUT_CLASS =
   'h-[44px] w-full rounded-[8px] border border-[#DDDDDD] bg-[#E5E7EB] px-3 text-[14px] text-[#666666] outline-none focus:border-[#5597ED] font-nunito';
@@ -15,12 +19,19 @@ const EventCostingCard = ({
   approvalStatus = 'Pending',
   initialData = null,
 }) => {
+  const params = useParams();
+  const eventId = params?.id || initialData?.eventId || '';
+
+  const { budgetTypes, fetchBudgetTypes } = useBudgetTypeStore();
+
+  const eventObj = useSelector((state) => state.events?.eventDetailsMap?.[eventId] || null);
+
   const [description, setDescription] = useState(initialData?.description ?? initialData?.narrative ?? '');
   const [totalAmount, setTotalAmount] = useState(initialData?.totalAmount ?? initialData?.cost ?? '');
   const [remark, setRemark] = useState(initialData?.remark ?? '');
-
   const [vendorName, setVendorName] = useState(initialData?.vendorName ?? initialData?.vendor ?? '');
   const [billFileName, setBillFileName] = useState(initialData?.billFileName ?? initialData?.bill ?? '');
+  const [selectedFile, setSelectedFile] = useState(null);
   const [selectedDate, setSelectedDate] = useState(
     initialData?.date ? new Date(initialData.date) : null
   );
@@ -38,6 +49,10 @@ const EventCostingCard = ({
   const reminderDropdownRef = useRef(null);
   const fileInputRef = useRef(null);
   const isFirstRender = useRef(true);
+
+  useEffect(() => {
+    fetchBudgetTypes();
+  }, [fetchBudgetTypes]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -167,6 +182,7 @@ const EventCostingCard = ({
     setRemark('');
     setVendorName('');
     setBillFileName('');
+    setSelectedFile(null);
     setSelectedDate(null);
     setShowCalendar(false);
     setShowReminderDropdown(false);
@@ -175,27 +191,118 @@ const EventCostingCard = ({
     setIsSubmitted(false);
   };
 
-  const handleSendForApproval = () => {
+  const handleSendForApproval = async () => {
     if (isSubmitted) return;
-    onSendForApproval?.({
-      description,
-      category: title,
-      eventName,
-      portfolio,
-      date: selectedDate,
-      totalAmount,
-      remark,
-      vendorName,
-      billFileName,
-      approvalStatus,
-    });
-    setIsSubmitted(true);
-    setShowSuccessPopup(true);
+
+    // Payload Validations as requested
+    if (!description || description.trim().length < 2) {
+      alert("Description must be at least 2 characters.");
+      return;
+    }
+
+    // Step 1: Resolve the budget type name to match (matching by eventType, budgetType or portfolio)
+    const nameToMatch = 
+      eventObj?.eventType ||
+      (typeof eventObj?.budgetType === 'string' ? eventObj.budgetType : '') ||
+      eventObj?.budgetType?.name ||
+      eventObj?.budgetType?.title ||
+      eventObj?.budgetType?.budgetType ||
+      (typeof eventObj?.portfolio === 'string' ? eventObj.portfolio : '') ||
+      eventObj?.portfolio?.name ||
+      eventObj?.portfolioName ||
+      portfolio ||
+      '';
+
+    let resolvedBudgetTypeId = '';
+
+    // Step 2: Query the budgetTypes list using the nameToMatch
+    if (nameToMatch && nameToMatch !== '-') {
+      const matched = budgetTypes.find(b => {
+        const bName = b.name ?? b.title ?? b.budgetType ?? b.label ?? '';
+        return bName.toLowerCase().trim() === nameToMatch.toLowerCase().trim() ||
+               bName.toLowerCase().includes(nameToMatch.toLowerCase().trim()) ||
+               nameToMatch.toLowerCase().trim().includes(bName.toLowerCase());
+      });
+      if (matched) {
+        resolvedBudgetTypeId = matched.budgetTypeId ?? matched._id ?? matched.id ?? '';
+      }
+    }
+
+    // Step 3: Fallbacks for direct IDs
+    if (!resolvedBudgetTypeId) {
+      resolvedBudgetTypeId = 
+        eventObj?.budgetTypeId || 
+        eventObj?.portfolioId || 
+        eventObj?.budgetType?._id || 
+        eventObj?.budgetType?.id || 
+        eventObj?.portfolio?._id || 
+        eventObj?.portfolio?.id || 
+        '';
+    }
+
+    if (!resolvedBudgetTypeId) {
+      alert(`Could not find a valid budget type matching the event type "${nameToMatch || 'N/A'}".`);
+      return;
+    }
+
+    const total = parseFloat(totalAmount);
+    if (isNaN(total) || total < 0) {
+      alert("Total amount must be a float value greater than or equal to 0.00.");
+      return;
+    }
+    if (remark && remark.trim().length < 2) {
+      alert("Remark must be at least 2 characters.");
+      return;
+    }
+    if (vendorName && vendorName.trim().length < 2) {
+      alert("Vendor name must be at least 2 characters.");
+      return;
+    }
+
+    try {
+      const apiPayload = {
+        description,
+        expenseType: 'Event Related',
+        eventId,
+        budgetTypeId: resolvedBudgetTypeId,
+        totalAmount: total,
+        remark,
+        vendorName,
+        expenseId: initialData?.id || '',
+        file: selectedFile || undefined,
+      };
+
+      await addEditExpense(apiPayload);
+
+      // Store/UI local callbacks
+      onSendForApproval?.({
+        description,
+        category: title,
+        eventName,
+        portfolio,
+        date: selectedDate,
+        totalAmount: total,
+        remark,
+        vendorName,
+        billFileName: billFileName || (selectedFile ? selectedFile.name : ''),
+        approvalStatus,
+        budgetTypeId: resolvedBudgetTypeId,
+      });
+
+      setIsSubmitted(true);
+      setShowSuccessPopup(true);
+    } catch (err) {
+      console.error('Failed to submit event costing expense:', err);
+      alert(err?.response?.data?.message || 'Failed to submit expense for approval. Please try again.');
+    }
   };
 
   const handleBillUpload = (e) => {
     const file = e.target.files?.[0];
-    if (file) setBillFileName(file.name);
+    if (file) {
+      setBillFileName(file.name);
+      setSelectedFile(file);
+    }
   };
 
   return (
@@ -231,7 +338,7 @@ const EventCostingCard = ({
             htmlFor={uploadId}
             className={`${EXPENSE_INPUT_CLASS} flex items-center justify-center gap-2 cursor-pointer hover:bg-[#dfe3e8] transition-colors`}
           >
-            <span className="text-[14px] font-medium text-[#666666]">
+            <span className="text-[14px] font-medium text-[#666666] truncate max-w-[190px]">
               {billFileName || 'Upload file'}
             </span>
             <FiUpload className="w-[18px] h-[18px] text-[#666666]" />

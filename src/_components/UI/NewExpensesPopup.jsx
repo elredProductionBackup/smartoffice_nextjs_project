@@ -1,10 +1,13 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { FiX, FiUpload, FiChevronDown, FiLoader } from 'react-icons/fi';
+import { useDispatch, useSelector } from 'react-redux';
 import CustomDatePicker from './CustomDatePicker';
 import { addEditExpense } from '@/services/expense.service';
 import { useBudgetTypeStore } from '@/store/useBudgetTypeStore';
+import { fetchEvents } from '@/store/events/eventsThunks';
+import { UPCOMING_EVENTS, PAST_EVENTS, DRAFT_EVENTS } from '@/assets/helpers/sampleEvents';
 
 const EVENTS = [
   'Figma Config',
@@ -13,7 +16,6 @@ const EVENTS = [
   'Design Systems Workshop',
   'Product Thinking Bootcamp',
 ];
-
 
 /* ── Reusable Custom Select Dropdown (matches IncomeTypeDropdown style) ── */
 function CustomSelectDropdown({ value, onChange, options, placeholder, loading = false, disabled = false }) {
@@ -74,14 +76,13 @@ function CustomSelectDropdown({ value, onChange, options, placeholder, loading =
               {placeholder}
             </button>
           )}
-          {options.map((opt, index) => {
+          {options.map((opt) => {
             const label = typeof opt === 'object' ? opt.label : opt;
             const val   = typeof opt === 'object' ? opt.value : opt;
             const isSelected = val === value;
-            const uniqueKey = typeof opt === 'object' ? (opt.value !== undefined && opt.value !== null && opt.value !== '' ? opt.value : index) : (opt !== undefined && opt !== null && opt !== '' ? opt : index);
             return (
               <button
-                key={uniqueKey}
+                key={val}
                 type="button"
                 onMouseDown={() => { onChange(val); setOpen(false); }}
                 className={[
@@ -101,6 +102,9 @@ function CustomSelectDropdown({ value, onChange, options, placeholder, loading =
 }
 
 export default function NewExpensesPopup({ onClose, onSave, initialData }) {
+  const dispatch = useDispatch();
+  const rawEvents = useSelector((state) => state.events.rawEvents);
+
   const [description, setDescription] = useState(initialData?.description ?? '');
   const [expenseType, setExpenseType] = useState(initialData?.type ?? 'General'); // 'General' or 'Event Related'
   const [event, setEvent] = useState(initialData?.event && initialData.event !== '-' ? initialData.event : '');
@@ -130,6 +134,38 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
   useEffect(() => {
     fetchBudgetTypes();
   }, [fetchBudgetTypes]);
+
+  // Fetch Events from Redux for mapping Event names to Event IDs
+  useEffect(() => {
+    dispatch(fetchEvents({ page: 1, limit: 100 }));
+  }, [dispatch]);
+
+  // Event ID lookup map
+  const eventMap = useMemo(() => {
+    const map = {};
+    
+    // 1. Static mock events
+    [UPCOMING_EVENTS, PAST_EVENTS, DRAFT_EVENTS].forEach((list) => {
+      list.forEach((group) => {
+        group.items?.forEach((item) => {
+          if (item.name) {
+            map[item.name.toLowerCase().trim()] = item.id;
+          }
+        });
+      });
+    });
+
+    // 2. Dynamic events from API
+    if (Array.isArray(rawEvents)) {
+      rawEvents.forEach((evt) => {
+        if (evt.eventName) {
+          map[evt.eventName.toLowerCase().trim()] = evt.eventId;
+        }
+      });
+    }
+
+    return map;
+  }, [rawEvents]);
 
   // Sync budgetTypeId if initialData has portfolio name but no budgetTypeId
   useEffect(() => {
@@ -215,15 +251,58 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
 
     const currentDate = initialData?.date ?? new Date().toISOString().split("T")[0];
 
+    // Enforce validations as requested
+    if (!description || description.trim().length < 2) {
+      alert("Description must be at least 2 characters.");
+      return;
+    }
+
+    const isEventType = expenseType === 'Event Related';
+    const typeValue = isEventType ? 'event' : 'general';
+
+    let selectedEventId = '';
+    if (isEventType) {
+      if (!event) {
+        alert("Please select an Event for event-related expenses.");
+        return;
+      }
+      selectedEventId = eventMap[event.toLowerCase().trim()] || '';
+      if (!selectedEventId) {
+        alert("Please select a valid Event.");
+        return;
+      }
+    }
+
+    if (!budgetTypeId) {
+      alert("Please select a valid Budget Type (Portfolio).");
+      return;
+    }
+
+    const total = parseFloat(totalAmount);
+    if (isNaN(total) || total < 0) {
+      alert("Total amount must be a float value greater than or equal to 0.00.");
+      return;
+    }
+
+    if (remark && remark.trim().length < 2) {
+      alert("Remark must be at least 2 characters if provided.");
+      return;
+    }
+
+    if (vendorName && vendorName.trim().length < 2) {
+      alert("Vendor name must be at least 2 characters if provided.");
+      return;
+    }
+
     const apiPayload = {
       description,
-      expenseType,
-      eventId: '',           
-      portfolioId: '',       
+      expenseType: typeValue, // Backend schema accepts 'general' / 'event'
+      eventId: selectedEventId,
+      portfolioId: budgetTypeId,
       event,
       portfolio,
       budgetTypeId,
-      totalAmount: parseFloat(totalAmount) || 0,
+      totalAmount: total,
       remark,
       vendorName,
       expenseId: initialData?.id || '',
@@ -234,6 +313,8 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
       await addEditExpense(apiPayload);
     } catch (err) {
       console.error('addEditExpense failed:', err);
+      alert(err?.response?.data?.message || "Failed to save expense. Please try again.");
+      return;
     }
 
     const localPayload = {
@@ -243,7 +324,7 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
       portfolio,
       budgetTypeId,
       date: currentDate,
-      totalAmount: parseFloat(totalAmount) || 0,
+      totalAmount: total,
       remark,
       vendorName,
       fileName,
@@ -355,15 +436,17 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
           </div>
 
           {/* Event (Optional) */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[14px] font-bold text-[#333]">Event (Optional)</label>
-            <CustomSelectDropdown
-              value={event}
-              onChange={setEvent}
-              options={EVENTS}
-              placeholder="Select Event"
-            />
-          </div>
+          {expenseType === 'Event Related' && (
+            <div className="flex flex-col gap-1.5 animate-fadeIn">
+              <label className="text-[14px] font-bold text-[#333]">Event</label>
+              <CustomSelectDropdown
+                value={event}
+                onChange={setEvent}
+                options={EVENTS}
+                placeholder="Select Event"
+              />
+            </div>
+          )}
 
           {/* Portfolio */}
           <div className="flex flex-col gap-1.5">

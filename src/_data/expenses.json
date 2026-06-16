@@ -1,0 +1,52 @@
+[
+  {
+    "id": "1781614474835-uynghib",
+    "description": "food for guest",
+    "type": "Event Related",
+    "event": "Hyderabad Event",
+    "portfolio": "-",
+    "date": "2026-06-18",
+    "totalAmount": 25000,
+    "remark": "remark is necessary",
+    "vendor": "caterers",
+    "bill": "-",
+    "paymentStatus": "Pending",
+    "status": "Pending Approval",
+    "canSend": true,
+    "category": "food"
+  },
+  {
+    "id": "1781614167032-tqtkez5",
+    "description": "food for guest",
+    "type": "Event Related",
+    "event": "Hyderabad Event",
+    "portfolio": "-",
+    "date": "2026-06-18",
+    "totalAmount": 20000,
+    "remark": "remark is necessary",
+    "vendor": "caterers",
+    "bill": "-",
+    "paymentStatus": "Pending",
+    "status": "Pending Approval",
+    "canSend": true,
+    "category": "food"
+  },
+  {
+    "id": "1781613949891-xg8fk1e",
+    "description": "purchase 1",
+    "type": "General",
+    "event": "-",
+    "portfolio": "Administration",
+    "date": "2026-06-16",
+    "totalAmount": 2000,
+    "paid": 0,
+    "balance": 2000,
+    "remark": "Behance update",
+    "vendor": "Rockefeller bank",
+    "bill": "-",
+    "paymentStatus": "Pending",
+    "status": "Pending Approval",
+    "canSend": true,
+    "addedFromPopup": true
+  }
+]

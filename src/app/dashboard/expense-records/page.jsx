@@ -6,9 +6,10 @@ import {
   FiSend,
   FiDownload,
   FiDollarSign,
+  FiLoader,
+  FiChevronDown,
 } from "react-icons/fi";
 import { useExpenseRecordsStore } from "@/store/useExpenseRecordsStore";
-import { FiChevronDown } from "react-icons/fi";
 import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchEvents } from "@/store/events/eventsThunks";
@@ -19,7 +20,7 @@ const TABLE_COLUMNS =
   "minmax(160px,1.6fr) minmax(90px,1fr) minmax(140px,1.4fr) minmax(100px,1fr) minmax(100px,0.9fr) minmax(110px,1fr) minmax(90px,0.9fr) minmax(90px,0.9fr) minmax(130px,1.2fr) minmax(160px,1.3fr) minmax(110px,1fr) minmax(130px,1.1fr) minmax(120px,1fr) minmax(150px,1.2fr)";
 
 function formatCurrency(amount) {
-  return `₹${amount.toLocaleString("en-IN")}`;
+  return `₹${(Number(amount) || 0).toLocaleString("en-IN")}`;
 }
 
 const PAYMENT_STATUS_OPTIONS = ["Paid", "Pending", "Overdue"];
@@ -93,9 +94,7 @@ function PaymentStatusDropdown({ expenseId, currentStatus, onUpdate }) {
                 setOpen(false);
               }}
               className={`w-full text-left px-4 py-2 text-[13px] font-medium transition-colors border-0 cursor-pointer bg-transparent outline-none hover:bg-[#F2F7FF] ${
-                opt === currentStatus
-                  ? "text-[#2B7FFF] font-semibold"
-                  : "text-[#333333]"
+                opt === currentStatus ? "text-[#2B7FFF] font-semibold" : "text-[#333333]"
               }`}
             >
               {opt}
@@ -112,8 +111,70 @@ function getStatusBadgeVariant(status) {
   return "pendingApproval";
 }
 
+/* ─── Sleek Filter Dropdown ─────────────────────────────────────────────── */
+function FilterDropdown({ label, value, onChange, options }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const selected = options.find((o) => String(o.value) === String(value));
+  const displayLabel = selected ? selected.label : options[0]?.label;
+
+  return (
+    <div ref={ref} className="relative font-nunito">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center gap-2 px-4 h-[38px] bg-[#F8FAFC] hover:bg-[#F1F5F9] border border-[#E2E8F0] rounded-xl text-[13px] transition-all cursor-pointer outline-none whitespace-nowrap"
+      >
+        <span className="text-[#777777] font-medium">{label}:</span>
+        <span className="text-[#2B7FFF] font-bold">{displayLabel}</span>
+        <FiChevronDown
+          className={`w-3.5 h-3.5 text-slate-500 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+      {open && (
+        <div
+          className="absolute top-[calc(100%+6px)] left-0 min-w-[200px] bg-white rounded-xl border border-[#E2E8F0] p-1.5 z-40 overflow-y-auto max-h-[240px]"
+          style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.10)" }}
+        >
+          {options.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => {
+                onChange(opt.value);
+                setOpen(false);
+              }}
+              className={`w-full text-left px-3.5 py-2 rounded-lg text-[13px] font-semibold transition-all cursor-pointer border-0 bg-transparent outline-none hover:bg-[#F2F7FF] ${
+                String(opt.value) === String(value)
+                  ? "text-[#2B7FFF] bg-[#F2F7FF]"
+                  : "text-[#333333]"
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── Main Page ──────────────────────────────────────────────────────────── */
 export default function ExpenseRecordsPage() {
   const expenses = useExpenseRecordsStore((state) => state.expenses);
+  const totalCount = useExpenseRecordsStore((state) => state.totalCount);
+  const stats = useExpenseRecordsStore((state) => state.stats);
+  const loading = useExpenseRecordsStore((state) => state.loading);
+  const fetchExpenses = useExpenseRecordsStore((state) => state.fetchExpenses);
   const hydrateFromStorage = useExpenseRecordsStore((state) => state.hydrateFromStorage);
   const updatePaymentStatus = useExpenseRecordsStore((state) => state.updatePaymentStatus);
   const updateExpense = useExpenseRecordsStore((state) => state.updateExpense);
@@ -121,60 +182,88 @@ export default function ExpenseRecordsPage() {
   const [selectedExpense, setSelectedExpense] = useState(null);
   const [showPopup, setShowPopup] = useState(false);
 
+  // Filter state
+  const [type, setType] = useState("all");         // "all" | "event" | "general"
+  const [approvedStatus, setApprovedStatus] = useState("");  // "" | "pending" | "approved"
+  const [eventId, setEventId] = useState("");
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 10;
+
   const router = useRouter();
   const dispatch = useDispatch();
   const rawEvents = useSelector((state) => state.events.rawEvents);
 
+  // Event name → id lookup
+  const eventMap = useMemo(() => {
+    const map = {};
+    [UPCOMING_EVENTS, PAST_EVENTS, DRAFT_EVENTS].forEach((list) => {
+      list.forEach((group) => {
+        group.items?.forEach((item) => {
+          if (item.name) map[item.name.toLowerCase().trim()] = item.id;
+        });
+      });
+    });
+    if (Array.isArray(rawEvents)) {
+      rawEvents.forEach((evt) => {
+        if (evt.eventName) map[evt.eventName.toLowerCase().trim()] = evt.eventId;
+      });
+    }
+    return map;
+  }, [rawEvents]);
+
+  // Collect all unique event names for the event filter dropdown
+  const eventOptions = useMemo(() => {
+    const names = new Set();
+    [UPCOMING_EVENTS, PAST_EVENTS, DRAFT_EVENTS].forEach((list) => {
+      list.forEach((group) => {
+        group.items?.forEach((item) => {
+          if (item.name) names.add(JSON.stringify({ label: item.name, value: item.id }));
+        });
+      });
+    });
+    if (Array.isArray(rawEvents)) {
+      rawEvents.forEach((evt) => {
+        if (evt.eventName) names.add(JSON.stringify({ label: evt.eventName, value: evt.eventId }));
+      });
+    }
+    return [
+      { label: "All Events", value: "" },
+      ...[...names].map((s) => JSON.parse(s)),
+    ];
+  }, [rawEvents]);
+
+  // Fetch from API whenever filter / page changes
+  useEffect(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    fetchExpenses({ start, offset: PAGE_SIZE, type, eventId, approvedStatus });
+  }, [fetchExpenses, type, eventId, approvedStatus, currentPage]);
+
+  // Initialise events list from Redux
   useEffect(() => {
     hydrateFromStorage();
     dispatch(fetchEvents({ page: 1, limit: 100 }));
   }, [hydrateFromStorage, dispatch]);
 
-  const eventMap = useMemo(() => {
-    const map = {};
-    
-    // 1. Static mock events from sampleEvents
-    [UPCOMING_EVENTS, PAST_EVENTS, DRAFT_EVENTS].forEach((list) => {
-      list.forEach((group) => {
-        group.items?.forEach((item) => {
-          if (item.name) {
-            map[item.name.toLowerCase().trim()] = item.id;
-          }
-        });
-      });
-    });
-
-    // 2. Dynamic events from Redux/API
-    if (Array.isArray(rawEvents)) {
-      rawEvents.forEach((evt) => {
-        if (evt.eventName) {
-          map[evt.eventName.toLowerCase().trim()] = evt.eventId;
-        }
-      });
-    }
-
-    return map;
-  }, [rawEvents]);
-
   const handleExpenseClick = (expense) => {
-    const eventId = expense?.event && expense.event !== "-" ? eventMap[expense.event.toLowerCase().trim()] : null;
-    if (expense?.type === "Event Related" && expense?.category && eventId) {
-      router.push(`/dashboard/events/${eventId}?tab=eventcosting&expenseId=${expense.id}`);
+    const resolvedId =
+      expense?.event && expense.event !== "-"
+        ? eventMap[expense.event.toLowerCase().trim()]
+        : null;
+    if (expense?.type === "Event Related" && expense?.category && resolvedId) {
+      router.push(`/dashboard/events/${resolvedId}?tab=eventcosting&expenseId=${expense.id}`);
     } else {
       setSelectedExpense(expense);
       setShowPopup(true);
     }
   };
 
-  const pendingCount = expenses.filter((e) => e.status === "Pending Approval").length;
-
   const summaryCards = useMemo(() => {
-    const totalAmount = expenses.reduce((sum, expense) => sum + expense.totalAmount, 0);
-
     return [
       {
         label: "Total Expenses",
-        value: String(expenses.length),
+        value: String(stats?.totalExpenses ?? 0),
         sublabel: "All time submissions",
         icon: FiFileText,
         iconBg: "bg-[#E8F0FE]",
@@ -182,7 +271,7 @@ export default function ExpenseRecordsPage() {
       },
       {
         label: "Pending Approval",
-        value: String(pendingCount),
+        value: String(stats?.pendingCount ?? 0),
         sublabel: "Awaiting review",
         icon: FiSend,
         iconBg: "bg-[#FFF4E5]",
@@ -190,14 +279,28 @@ export default function ExpenseRecordsPage() {
       },
       {
         label: "Total Amount",
-        value: formatCurrency(totalAmount),
-        sublabel: "Submitted this month",
+        value: formatCurrency(stats?.totalAmount ?? 0),
+        sublabel: "Submitted all time",
         icon: FiDollarSign,
         iconBg: "bg-[#E6F4EA]",
         iconColor: "text-[#0F9D58]",
       },
     ];
-  }, [expenses, pendingCount]);
+  }, [stats]);
+
+  const TYPE_OPTIONS = [
+    { label: "All Types", value: "all" },
+    { label: "Event Related", value: "event" },
+    { label: "General", value: "general" },
+  ];
+
+  const STATUS_OPTIONS = [
+    { label: "All Statuses", value: "" },
+    { label: "Pending Approval", value: "pending" },
+    { label: "Approved", value: "approved" },
+  ];
+
+  const filtersActive = type !== "all" || approvedStatus !== "" || eventId !== "";
 
   return (
     <div className="p-6 min-h-screen bg-white font-nunito">
@@ -231,9 +334,7 @@ export default function ExpenseRecordsPage() {
                   {card.sublabel}
                 </span>
               </div>
-              <div
-                className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${card.iconBg}`}
-              >
+              <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${card.iconBg}`}>
                 <Icon className={`w-5 h-5 ${card.iconColor}`} />
               </div>
             </div>
@@ -243,6 +344,7 @@ export default function ExpenseRecordsPage() {
 
       {/* All Expenses table */}
       <div className="rounded-[20px] bg-white overflow-hidden mt-12 p-6 md:p-8 shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
+        {/* Table top bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5">
           <h2 className="font-nunito font-bold text-[20px] text-[#333333]">
             All Expenses
@@ -252,16 +354,50 @@ export default function ExpenseRecordsPage() {
             className="inline-flex items-center justify-center gap-2 bg-[#2B7FFF] hover:bg-[#1a6fe6] text-white font-nunito font-semibold text-[14px] px-4 py-2.5 rounded-lg transition-colors cursor-pointer border-0 outline-none shrink-0"
           >
             <FiSend className="w-4 h-4" />
-            Send All for Approval ({pendingCount})
+            Send All for Approval ({stats?.pendingCount ?? 0})
           </button>
         </div>
 
-        {/* MODIFIED: Added styling hooks to the overflow-x-auto div 
-          to make the scrollbar minimal, sleek, and matching the UI.
-        */}
-        <div className="overflow-x-auto pb-3 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-[#F8FAFC] [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#CBD5E1] [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-[#94A3B8] transition-colors duration-200 [scrollbar-width:thin] [scrollbar-color:#CBD5E1_#F8FAFC]">
+        {/* Filter bar */}
+        <div className="flex flex-wrap items-center gap-3 pb-6 border-b border-[#F1F5F9] mb-6">
+          <FilterDropdown
+            label="Type"
+            value={type}
+            onChange={(v) => { setType(v); setCurrentPage(1); }}
+            options={TYPE_OPTIONS}
+          />
+          <FilterDropdown
+            label="Status"
+            value={approvedStatus}
+            onChange={(v) => { setApprovedStatus(v); setCurrentPage(1); }}
+            options={STATUS_OPTIONS}
+          />
+          <FilterDropdown
+            label="Event"
+            value={eventId}
+            onChange={(v) => { setEventId(v); setCurrentPage(1); }}
+            options={eventOptions}
+          />
+          {filtersActive && (
+            <button
+              type="button"
+              onClick={() => {
+                setType("all");
+                setApprovedStatus("");
+                setEventId("");
+                setCurrentPage(1);
+              }}
+              className="text-[13px] text-red-500 hover:text-red-700 font-bold bg-transparent border-0 cursor-pointer outline-none hover:underline"
+            >
+              Reset Filters
+            </button>
+          )}
+        </div>
+
+        {/* Scrollable table */}
+        <div className="overflow-x-auto pb-3 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-[#F8FAFC] [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#CBD5E1] [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-[#94A3B8] [scrollbar-width:thin] [scrollbar-color:#CBD5E1_#F8FAFC]">
           <div className="min-w-[1470px]">
-            {/* Table header */}
+            {/* Header row */}
             <div
               className="grid gap-3 py-5 border-b border-[#E8ECEF] font-nunito font-bold text-[14px] text-[#666666]"
               style={{ gridTemplateColumns: TABLE_COLUMNS }}
@@ -273,8 +409,6 @@ export default function ExpenseRecordsPage() {
               <div>Date</div>
               <div>Total Amount</div>
               <div>Remark</div>
-              {/* <div>Paid</div>
-              <div>Balance</div> */}
               <div>Vendor</div>
               <div>Bill</div>
               <div>Payment Status</div>
@@ -283,103 +417,141 @@ export default function ExpenseRecordsPage() {
               <div>Action</div>
             </div>
 
-            {/* Table rows */}
-            {expenses.map((expense) => (
-              <div
-                key={expense.id}
-                className="grid gap-3 py-6 border-b border-[#F1F5F9] last:border-b-0 items-center font-nunito text-[14px] text-[#333333]"
-                style={{ gridTemplateColumns: TABLE_COLUMNS }}
-              >
-                 <div
-                  className="truncate font-medium text-[#0B57D0] hover:underline cursor-pointer"
-                  title={expense.description}
-                  onClick={() => handleExpenseClick(expense)}
-                >
-                  {expense.description}
-                </div>
-                <div className="font-medium">{expense.type}</div>
-                <div
-                  className={`truncate ${
-                    expense.type === "Event Related" && eventMap[expense.event?.toLowerCase()?.trim()]
-                      ? "text-[#0B57D0] hover:underline cursor-pointer font-semibold"
-                      : ""
-                  }`}
-                  title={expense.event}
-                  onClick={() => {
-                    if (expense.type === "Event Related") {
-                      handleExpenseClick(expense);
-                    }
-                  }}
-                >
-                  {expense.event}
-                </div>
-                <div>{expense.portfolio}</div>
-                <div className="text-[#666666]">{expense.date}</div>
-                <div className="font-bold">{formatCurrency(expense.totalAmount)}</div>
-                <div className="font-bold line-clamp-1">{(expense.remark)}</div>
-                {/* <div>{formatCurrency(expense.paid)}</div>
-                <div>{formatCurrency(expense.balance)}</div> */}
-                <div className="truncate" title={expense.vendor}>
-                  {expense.vendor}
-                </div>
-                <div>
-                  {expense.bill && expense.bill !== "-" ? (
-                    <button
-                      type="button"
-                      className="inline-flex items-center gap-1.5 text-[#0B57D0] font-semibold text-[13px] bg-transparent border-0 p-0 cursor-pointer hover:underline max-w-full"
-                    >
-                      <FiFileText className="w-4 h-4 shrink-0" />
-                      <span className="truncate max-w-[100px]">{expense.bill}</span>
-                      <FiDownload className="w-3.5 h-3.5 shrink-0" />
-                    </button>
-                  ) : (
-                    <span className="text-[#94A3B8]">-</span>
-                  )}
-                </div>
-                <div>
-                  <PaymentStatusDropdown
-                    expenseId={expense.id}
-                    currentStatus={expense.paymentStatus}
-                    onUpdate={updatePaymentStatus}
-                  />
-                </div>
-                <div>
-                  <StatusBadge variant={getStatusBadgeVariant(expense.status)}>
-                    {expense.status}
-                  </StatusBadge>
-                </div>
-                <div className="flex flex-col gap-0.5">
-                  {expense.reminderCount > 0 ? (
-                    <>
-                      <span className="text-[13px] font-bold text-[#333333]">
-                        {expense.reminderCount} sent
-                      </span>
-                      <span className="text-[12px] font-medium text-[#94A3B8]">
-                        Last: {expense.lastReminderDate ?? "-"}
-                      </span>
-                    </>
-                  ) : (
-                    <span className="text-[13px] font-medium text-[#C0C8D4] italic">
-                      No reminders
-                    </span>
-                  )}
-                </div>
-                <div>
-                  {expense.canSend ? (
-                    <button
-                      type="button"
-                      className="inline-flex items-center gap-1.5 bg-[#2B7FFF] hover:bg-[#1a6fe6] text-white font-nunito font-semibold text-[12px] px-3 py-1.5 rounded-md transition-colors cursor-pointer border-0 outline-none whitespace-nowrap"
-                    >
-                      <FiSend className="w-3.5 h-3.5" />
-                      Send for approval
-                    </button>
-                  ) : null}
-                </div>
+            {/* Body */}
+            {loading ? (
+              <div className="flex items-center justify-center gap-3 py-20 text-[#666666]">
+                <FiLoader className="w-6 h-6 animate-spin text-[#2B7FFF]" />
+                <span className="text-[14px] font-semibold">Loading expenses...</span>
               </div>
-            ))}
+            ) : expenses.length === 0 ? (
+              <div className="text-center py-20 text-[#666666] font-semibold text-[15px]">
+                No expenses found for the selected filters.
+              </div>
+            ) : (
+              expenses.map((expense) => (
+                <div
+                  key={expense.id}
+                  className="grid gap-3 py-6 border-b border-[#F1F5F9] last:border-b-0 items-center font-nunito text-[14px] text-[#333333]"
+                  style={{ gridTemplateColumns: TABLE_COLUMNS }}
+                >
+                  <div
+                    className="truncate font-medium text-[#0B57D0] hover:underline cursor-pointer"
+                    title={expense.description}
+                    onClick={() => handleExpenseClick(expense)}
+                  >
+                    {expense.description}
+                  </div>
+                  <div className="font-medium">{expense.type}</div>
+                  <div
+                    className={`truncate ${
+                      expense.type === "Event Related" &&
+                      eventMap[expense.event?.toLowerCase()?.trim()]
+                        ? "text-[#0B57D0] hover:underline cursor-pointer font-semibold"
+                        : ""
+                    }`}
+                    title={expense.event}
+                    onClick={() => {
+                      if (expense.type === "Event Related") handleExpenseClick(expense);
+                    }}
+                  >
+                    {expense.event}
+                  </div>
+                  <div>{expense.portfolio}</div>
+                  <div className="text-[#666666]">{expense.date}</div>
+                  <div className="font-bold">{formatCurrency(expense.totalAmount)}</div>
+                  <div className="font-bold line-clamp-1">{expense.remark}</div>
+                  <div className="truncate" title={expense.vendor}>
+                    {expense.vendor}
+                  </div>
+                  <div>
+                    {expense.bill && expense.bill !== "-" ? (
+                      <button
+                        type="button"
+                        className="inline-flex items-center gap-1.5 text-[#0B57D0] font-semibold text-[13px] bg-transparent border-0 p-0 cursor-pointer hover:underline max-w-full"
+                      >
+                        <FiFileText className="w-4 h-4 shrink-0" />
+                        <span className="truncate max-w-[100px]">{expense.bill}</span>
+                        <FiDownload className="w-3.5 h-3.5 shrink-0" />
+                      </button>
+                    ) : (
+                      <span className="text-[#94A3B8]">-</span>
+                    )}
+                  </div>
+                  <div>
+                    <PaymentStatusDropdown
+                      expenseId={expense.id}
+                      currentStatus={expense.paymentStatus}
+                      onUpdate={updatePaymentStatus}
+                    />
+                  </div>
+                  <div>
+                    <StatusBadge variant={getStatusBadgeVariant(expense.status)}>
+                      {expense.status}
+                    </StatusBadge>
+                  </div>
+                  <div className="flex flex-col gap-0.5">
+                    {expense.reminderCount > 0 ? (
+                      <>
+                        <span className="text-[13px] font-bold text-[#333333]">
+                          {expense.reminderCount} sent
+                        </span>
+                        <span className="text-[12px] font-medium text-[#94A3B8]">
+                          Last: {expense.lastReminderDate ?? "-"}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-[13px] font-medium text-[#C0C8D4] italic">
+                        No reminders
+                      </span>
+                    )}
+                  </div>
+                  <div>
+                    {expense.canSend ? (
+                      <button
+                        type="button"
+                        className="inline-flex items-center gap-1.5 bg-[#2B7FFF] hover:bg-[#1a6fe6] text-white font-nunito font-semibold text-[12px] px-3 py-1.5 rounded-md transition-colors cursor-pointer border-0 outline-none whitespace-nowrap"
+                      >
+                        <FiSend className="w-3.5 h-3.5" />
+                        Send for approval
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
+
+        {/* Pagination */}
+        {!loading && totalCount > 0 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between border-t border-[#F1F5F9] pt-6 mt-6 gap-4 font-nunito">
+            <span className="text-[14px] text-[#777777] font-medium">
+              Showing{" "}
+              {Math.min(totalCount, (currentPage - 1) * PAGE_SIZE + 1)}–
+              {Math.min(totalCount, currentPage * PAGE_SIZE)} of {totalCount} records
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                className="px-4 py-2 border border-[#E2E8F0] rounded-xl text-[14px] font-semibold text-[#333333] bg-white hover:bg-slate-50 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Previous
+              </button>
+              <button
+                type="button"
+                disabled={currentPage * PAGE_SIZE >= totalCount}
+                onClick={() => setCurrentPage((p) => p + 1)}
+                className="px-4 py-2 border border-[#E2E8F0] rounded-xl text-[14px] font-semibold text-[#333333] bg-white hover:bg-slate-50 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
+
       {showPopup && (
         <NewExpensesPopup
           initialData={selectedExpense}

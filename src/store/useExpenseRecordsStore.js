@@ -164,6 +164,10 @@ function persistExpenses(expenses) {
 
 export const useExpenseRecordsStore = create((set, get) => ({
   expenses: initialExpenseRecords,
+  totalCount: 0,
+  loading: false,
+  error: null,
+  stats: { totalExpenses: 0, pendingCount: 0, totalAmount: 0 },
   hydrated: false,
 
   hydrateFromStorage: () => {
@@ -172,11 +176,63 @@ export const useExpenseRecordsStore = create((set, get) => ({
     set({ expenses, hydrated: true });
   },
 
+  /**
+   * Fetch expenses from the local Next.js API route:
+   *   GET /smartOffice/expense?start=&offset=&type=&eventId=&approvedStatus=
+   */
+  fetchExpenses: async (filters = {}) => {
+    set({ loading: true, error: null });
+    try {
+      const {
+        start = 0,
+        offset = 10,
+        type = "all",
+        eventId = "",
+        approvedStatus = "",
+      } = filters;
+
+      const queryParams = new URLSearchParams({
+        start: String(start),
+        offset: String(offset),
+        type: type || "all",
+        eventId: eventId || "",
+        approvedStatus: approvedStatus || "",
+      });
+
+      const response = await fetch(`/smartOffice/expense?${queryParams.toString()}`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch expenses: ${response.statusText}`);
+      }
+      const data = await response.json();
+      set({
+        expenses: data.expenses || [],
+        totalCount: data.totalCount || 0,
+        stats: data.stats || { totalExpenses: 0, pendingCount: 0, totalAmount: 0 },
+        loading: false,
+      });
+      return data;
+    } catch (err) {
+      console.error("fetchExpenses API Error:", err);
+      set({ error: err.message || "Failed to load expenses", loading: false });
+      // Fallback to localStorage if API fails
+      const expenses = readFromStorage();
+      set({ expenses, hydrated: true });
+    }
+  },
+
   addExpenseFromEventCosting: (payload) => {
     const record = eventCostingToExpenseRecord(payload);
     const expenses = [record, ...get().expenses];
     persistExpenses(expenses);
     set({ expenses, hydrated: true });
+
+    // Background sync to local API
+    fetch("/smartOffice/expense", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(record),
+    }).catch((err) => console.error("Failed to sync costing expense to server:", err));
+
     return record;
   },
 
@@ -185,35 +241,68 @@ export const useExpenseRecordsStore = create((set, get) => ({
     const expenses = [record, ...get().expenses];
     persistExpenses(expenses);
     set({ expenses, hydrated: true });
+
+    // Background sync to local API
+    fetch("/smartOffice/expense", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(record),
+    }).catch((err) => console.error("Failed to sync form expense to server:", err));
+
     return record;
   },
 
   updateExpense: (id, updatedFields) => {
+    let matchedExpense = null;
     const expenses = get().expenses.map((e) => {
       if (String(e.id) === String(id)) {
-        return {
+        matchedExpense = {
           ...e,
           description: updatedFields.description,
-          type: updatedFields.expenseType,
+          type: updatedFields.expenseType || updatedFields.type || e.type,
           event: updatedFields.event || "-",
           portfolio: updatedFields.portfolio || "-",
           totalAmount: Number(updatedFields.totalAmount) || 0,
           remark: updatedFields.remark,
-          vendor: updatedFields.vendorName || "-",
-          bill: updatedFields.fileName || "-",
+          vendor: updatedFields.vendorName || updatedFields.vendor || "-",
+          bill: updatedFields.fileName || updatedFields.bill || "-",
         };
+        return matchedExpense;
       }
       return e;
     });
     persistExpenses(expenses);
     set({ expenses });
+
+    // Background sync to local API
+    if (matchedExpense) {
+      fetch("/smartOffice/expense", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, ...matchedExpense }),
+      }).catch((err) => console.error("Failed to sync updated expense to server:", err));
+    }
   },
 
   updatePaymentStatus: (id, paymentStatus) => {
-    const expenses = get().expenses.map((e) =>
-      e.id === id ? { ...e, paymentStatus } : e
-    );
+    let matchedExpense = null;
+    const expenses = get().expenses.map((e) => {
+      if (e.id === id) {
+        matchedExpense = { ...e, paymentStatus };
+        return matchedExpense;
+      }
+      return e;
+    });
     persistExpenses(expenses);
     set({ expenses });
+
+    // Background sync to local API
+    if (matchedExpense) {
+      fetch("/smartOffice/expense", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, paymentStatus }),
+      }).catch((err) => console.error("Failed to sync payment status to server:", err));
+    }
   },
 }));
