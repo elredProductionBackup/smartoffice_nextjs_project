@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { FiX, FiUpload, FiChevronDown } from 'react-icons/fi';
+import { FiX, FiUpload, FiChevronDown, FiLoader } from 'react-icons/fi';
 import CustomDatePicker from './CustomDatePicker';
+import { addEditExpense } from '@/services/expense.service';
+import { useBudgetTypeStore } from '@/store/useBudgetTypeStore';
 
 const EVENTS = [
   'Figma Config',
@@ -12,15 +14,9 @@ const EVENTS = [
   'Product Thinking Bootcamp',
 ];
 
-const PORTFOLIOS = [
-  'Design Team Portfolio',
-  'Development Portfolio',
-  'Marketing Portfolio',
-  'Operations Portfolio',
-];
 
 /* ── Reusable Custom Select Dropdown (matches IncomeTypeDropdown style) ── */
-function CustomSelectDropdown({ value, onChange, options, placeholder }) {
+function CustomSelectDropdown({ value, onChange, options, placeholder, loading = false, disabled = false }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -33,25 +29,34 @@ function CustomSelectDropdown({ value, onChange, options, placeholder }) {
   }, []);
 
   const isPlaceholder = !value;
+  const selectedOption = options.find(opt => (typeof opt === 'object' ? opt.value === value : opt === value));
+  const displayLabel = selectedOption 
+    ? (typeof selectedOption === 'object' ? selectedOption.label : selectedOption)
+    : (value || placeholder);
 
   return (
     <div ref={ref} className="relative w-full">
       {/* Trigger button */}
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center justify-between px-4 py-3 border border-gray-300 rounded-[14px] bg-white text-[15px] cursor-pointer outline-none text-left focus:border-[#1A73E8] transition-colors"
+        onClick={() => !disabled && setOpen((o) => !o)}
+        disabled={disabled}
+        className="w-full flex items-center justify-between px-4 py-3 border border-gray-300 rounded-[14px] bg-white text-[15px] cursor-pointer outline-none text-left focus:border-[#1A73E8] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
         style={{ color: isPlaceholder ? '#94a3b8' : '#1e293b' }}
       >
-        <span>{value || placeholder}</span>
-        <FiChevronDown
-          className="ml-2 shrink-0 text-slate-500 transition-transform duration-200"
-          style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
-        />
+        <span>{loading ? 'Loading...' : displayLabel}</span>
+        {loading ? (
+          <FiLoader className="ml-2 shrink-0 text-slate-400 animate-spin" />
+        ) : (
+          <FiChevronDown
+            className="ml-2 shrink-0 text-slate-500 transition-transform duration-200"
+            style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
+          />
+        )}
       </button>
 
       {/* Dropdown panel */}
-      {open && (
+      {open && !loading && (
         <div
           className="absolute top-[calc(100%+6px)] left-0 w-full bg-white rounded-[14px] z-[9999] overflow-y-auto p-2"
           style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.13)', maxHeight: '280px' }}
@@ -69,20 +74,23 @@ function CustomSelectDropdown({ value, onChange, options, placeholder }) {
               {placeholder}
             </button>
           )}
-          {options.map((opt) => {
-            const isSelected = opt === value;
+          {options.map((opt, index) => {
+            const label = typeof opt === 'object' ? opt.label : opt;
+            const val   = typeof opt === 'object' ? opt.value : opt;
+            const isSelected = val === value;
+            const uniqueKey = typeof opt === 'object' ? (opt.value !== undefined && opt.value !== null && opt.value !== '' ? opt.value : index) : (opt !== undefined && opt !== null && opt !== '' ? opt : index);
             return (
               <button
-                key={opt}
+                key={uniqueKey}
                 type="button"
-                onMouseDown={() => { onChange(opt); setOpen(false); }}
+                onMouseDown={() => { onChange(val); setOpen(false); }}
                 className={[
                   'block w-full text-left px-4 py-2.5 cursor-pointer border-none rounded-lg transition-colors duration-150',
                   "font-['Nunito_Sans'] font-medium text-[16px] leading-[136%] tracking-[0%] text-[#333333]",
                   isSelected ? 'bg-indigo-50' : 'bg-transparent hover:bg-slate-50',
                 ].join(' ')}
               >
-                {opt}
+                {label}
               </button>
             );
           })}
@@ -104,8 +112,67 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
   const [vendorName, setVendorName] = useState(initialData?.vendor && initialData.vendor !== '-' ? initialData.vendor : '');
   const [fileName, setFileName] = useState(initialData?.bill && initialData.bill !== '-' ? initialData.bill : '');
   const [remark, setRemark] = useState(initialData?.remark ?? '');
+  const [selectedFile, setSelectedFile] = useState(null);
+
+  // Budget Type Store State
+  const {
+    budgetTypes: budgetTypesList,
+    loading: budgetTypeLoading,
+    error: budgetTypeError,
+    fetchBudgetTypes,
+  } = useBudgetTypeStore();
+
+  const [budgetTypeId, setBudgetTypeId] = useState(initialData?.budgetTypeId ?? '');
 
   const fileInputRef = useRef(null);
+
+  // Fetch Budget Types on Mount
+  useEffect(() => {
+    fetchBudgetTypes();
+  }, [fetchBudgetTypes]);
+
+  // Sync budgetTypeId if initialData has portfolio name but no budgetTypeId
+  useEffect(() => {
+    if (budgetTypesList.length > 0) {
+      if (!budgetTypeId && portfolio) {
+        // Find matching budget type by name
+        const matched = budgetTypesList.find(b => {
+          const name = b.name ?? b.title ?? b.budgetType ?? b.label ?? '';
+          return name.toLowerCase() === portfolio.toLowerCase() ||
+                 name.toLowerCase().includes(portfolio.toLowerCase()) ||
+                 portfolio.toLowerCase().includes(name.toLowerCase());
+        });
+        if (matched) {
+          setBudgetTypeId(matched.budgetTypeId ?? matched._id ?? matched.id ?? '');
+        }
+      } else if (budgetTypeId && !portfolio) {
+        // Sync portfolio name if we only have budgetTypeId
+        const matched = budgetTypesList.find(b => (b.budgetTypeId === budgetTypeId || b._id === budgetTypeId || b.id === budgetTypeId));
+        if (matched) {
+          const name = matched.name ?? matched.title ?? matched.budgetType ?? matched.label ?? '';
+          setPortfolio(name);
+        }
+      }
+    }
+  }, [budgetTypesList, budgetTypeId, portfolio]);
+
+  // Map budget types to dropdown options for Portfolio
+  const portfolioOptions = budgetTypesList.map((item) => ({
+    label: item.name ?? item.title ?? item.budgetType ?? item.label ?? 'Unknown Budget Type',
+    value: item.budgetTypeId ?? item._id ?? item.id ?? '',
+  }));
+
+  // Handle Portfolio selection changes, which sets both the budgetTypeId and the portfolio string
+  const handlePortfolioChange = (selectedId) => {
+    setBudgetTypeId(selectedId);
+    const matched = budgetTypesList.find(b => (b.budgetTypeId === selectedId || b._id === selectedId || b.id === selectedId));
+    if (matched) {
+      const name = matched.name ?? matched.title ?? matched.budgetType ?? matched.label ?? '';
+      setPortfolio(name);
+    } else {
+      setPortfolio('');
+    }
+  };
 
   const handleTotalAmountChange = (val) => {
     setTotalAmount(val);
@@ -123,7 +190,9 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
-      setFileName(e.target.files[0].name);
+      const file = e.target.files[0];
+      setFileName(file.name);
+      setSelectedFile(file);
     }
   };
 
@@ -134,34 +203,59 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
   const handleDrop = (e) => {
     e.preventDefault();
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      setFileName(e.dataTransfer.files[0].name);
+      const file = e.dataTransfer.files[0];
+      setFileName(file.name);
+      setSelectedFile(file);
     }
   };
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e?.preventDefault?.();
     e?.stopPropagation?.();
 
     const currentDate = initialData?.date ?? new Date().toISOString().split("T")[0];
 
-    const payload = {
+    const apiPayload = {
+      description,
+      expenseType,
+      eventId: '',           
+      portfolioId: '',       
+      event,
+      portfolio,
+      budgetTypeId,
+      totalAmount: parseFloat(totalAmount) || 0,
+      remark,
+      vendorName,
+      expenseId: initialData?.id || '',
+      file: selectedFile ?? undefined,
+    };
+
+    try {
+      await addEditExpense(apiPayload);
+    } catch (err) {
+      console.error('addEditExpense failed:', err);
+    }
+
+    const localPayload = {
       description,
       expenseType,
       event,
       portfolio,
+      budgetTypeId,
       date: currentDate,
       totalAmount: parseFloat(totalAmount) || 0,
-      remark: remark,
+      remark,
       vendorName,
       fileName,
+      file: selectedFile,
     };
 
     if (initialData?.id) {
-      payload.id = initialData.id;
+      localPayload.id = initialData.id;
     }
 
     if (onSave) {
-      onSave(payload);
+      onSave(localPayload);
     } else if (onClose) {
       onClose();
     }
@@ -201,7 +295,7 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
           </button>
         </div>
 
-        {/* Scrollable Form Container - scrollbar hidden */}
+        {/* Scrollable Form Container */}
         <div className="flex-1 overflow-y-auto px-8 py-6 flex flex-col gap-5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           
           {/* Expense Description */}
@@ -274,21 +368,21 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
           {/* Portfolio */}
           <div className="flex flex-col gap-1.5">
             <label className="text-[14px] font-bold text-[#333]">Portfolio</label>
-            <CustomSelectDropdown
-              value={portfolio}
-              onChange={setPortfolio}
-              options={PORTFOLIOS}
-              placeholder="Select Portfolio"
-            />
+            {budgetTypeError ? (
+              <p className="text-[13px] text-red-500 font-semibold">{budgetTypeError}</p>
+            ) : (
+              <CustomSelectDropdown
+                value={budgetTypeId}
+                onChange={handlePortfolioChange}
+                options={portfolioOptions}
+                placeholder="Select Portfolio"
+                loading={budgetTypeLoading}
+                disabled={budgetTypeLoading}
+              />
+            )}
           </div>
 
-          {/* Expense Date */}
-          {/* <div className="flex flex-col gap-1.5">
-            <label className="text-[14px] font-bold text-[#333]">Expense Date</label>
-            <CustomDatePicker value={date} onChange={setDate} />
-          </div> */}
-
-          {/* Total Amount, Paid, Balance */}
+          {/* Total Amount */}
           <div className="grid grid-cols-1 gap-3">
             <div className="flex flex-col gap-1.5">
               <label className="text-[14px] font-bold text-[#333]">Total Amount</label>
@@ -301,34 +395,12 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
                 className="w-full border border-gray-300 rounded-[14px] px-4 py-3 text-[15px] text-slate-800 bg-white outline-none focus:border-[#1A73E8] transition-colors"
               />
             </div>
-            {/* <div className="flex flex-col gap-1.5">
-              <label className="text-[14px] font-bold text-[#333]">Paid</label>
-              <input
-                type="number"
-                step="0.01"
-                placeholder="0.00"
-                value={paid}
-                onChange={(e) => handlePaidChange(e.target.value)}
-                className="w-full border border-gray-300 rounded-[14px] px-4 py-3 text-[15px] text-slate-800 bg-white outline-none focus:border-[#1A73E8] transition-colors"
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[14px] font-bold text-[#333]">Balance</label>
-              <input
-                type="text"
-                readOnly
-                placeholder="0.00"
-                value={balance}
-                className="w-full border border-gray-200 rounded-[14px] px-4 py-3 text-[15px] text-slate-500 bg-gray-50 outline-none cursor-not-allowed"
-              />
-            </div> */}
           </div>
 
           {/* Remark Field */}
           <div className="flex flex-col gap-1.5">
             <label className="text-[14px] font-bold text-[#333]">Remark</label>
             <textarea
-              type="text"
               placeholder="Add comments or notes"
               value={remark}
               onChange={(e) => setRemark(e.target.value)}

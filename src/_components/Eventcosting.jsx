@@ -41,34 +41,40 @@ const CATEGORY_COLORS = [
   '#10b981', '#ef4444', '#0ea5e9', '#d946ef',
 ];
 
-/** Read category names from the "learning" portfolio saved by BudgetChecklist */
-function getLearningCategoryNames() {
+/** Read category names from the matching portfolio saved by BudgetChecklist */
+function getLearningCategoryNames(portfolioName = 'Learning') {
   try {
     const saved = localStorage.getItem('smartoffice_portfolio_budgets');
     if (!saved) return DEFAULT_EXPENSE_CATEGORIES;
     const portfolios = JSON.parse(saved);
-    const learning = portfolios.find((p) => p.id === 'learning');
-    if (!learning || !learning.categories || learning.categories.length === 0)
+    const matched = portfolios.find((p) => 
+      p.name?.toLowerCase() === portfolioName.toLowerCase() || 
+      p.id?.toLowerCase() === portfolioName.toLowerCase()
+    );
+    if (!matched || !matched.categories || matched.categories.length === 0)
       return DEFAULT_EXPENSE_CATEGORIES;
-    return learning.categories.map((c) => c.name);
+    return matched.categories.map((c) => c.name);
   } catch {
     return DEFAULT_EXPENSE_CATEGORIES;
   }
 }
 
 /**
- * Read full category objects {key, name, value, color} from the learning
+ * Read full category objects {key, name, value, color} from the matching
  * portfolio so the EventBudgetPopup shows the same items with their percentages.
  */
-function getLearningBudgetCategories() {
+function getLearningBudgetCategories(portfolioName = 'Learning') {
   try {
     const saved = localStorage.getItem('smartoffice_portfolio_budgets');
     if (!saved) return DEFAULT_EVENT_BUDGET_CATEGORIES;
     const portfolios = JSON.parse(saved);
-    const learning = portfolios.find((p) => p.id === 'learning');
-    if (!learning || !learning.categories || learning.categories.length === 0)
+    const matched = portfolios.find((p) => 
+      p.name?.toLowerCase() === portfolioName.toLowerCase() || 
+      p.id?.toLowerCase() === portfolioName.toLowerCase()
+    );
+    if (!matched || !matched.categories || matched.categories.length === 0)
       return DEFAULT_EVENT_BUDGET_CATEGORIES;
-    return learning.categories.map((cat, idx) => ({
+    return matched.categories.map((cat, idx) => ({
       key: cat.name.toLowerCase().replace(/\s+/g, '_') + '_' + idx,
       name: cat.name,
       value: cat.percentage,

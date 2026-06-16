@@ -2,41 +2,62 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-
-const INITIAL_PORTFOLIOS = [
-  { id: "learning", name: "Learning", categories: [] },
-  { id: "forum", name: "Forum", categories: [] },
-  { id: "family", name: "Family", categories: [] },
-  { id: "spouse_partner", name: "Spouse partner", categories: [] },
-  { id: "engagement", name: "Engagement", categories: [] },
-  { id: "governance", name: "Governance", categories: [] },
-  { id: "membership", name: "Membership", categories: [] },
-  { id: "glc", name: "GLC", categories: [] },
-  { id: "administration", name: "Administration", categories: [] },
-];
+import { useBudgetTypeStore } from "@/store/useBudgetTypeStore";
 
 export default function BudgetChecklist() {
   const router = useRouter();
   const [portfolios, setPortfolios] = useState([]);
-  const [selectedId, setSelectedId] = useState("learning");
+  const [selectedId, setSelectedId] = useState("");
 
   // Category Form State
   const [newCatName, setNewCatName] = useState("");
   const [newCatPercent, setNewCatPercent] = useState("0");
 
+  const {
+    budgetTypes: budgetTypesList,
+    loading: budgetTypeLoading,
+    fetchBudgetTypes,
+  } = useBudgetTypeStore();
+
   useEffect(() => {
-    const saved = localStorage.getItem("smartoffice_portfolio_budgets");
-    if (saved) {
-      try {
-        setPortfolios(JSON.parse(saved));
-      } catch (e) {
-        console.error(e);
-        setPortfolios(INITIAL_PORTFOLIOS);
+    fetchBudgetTypes();
+  }, [fetchBudgetTypes]);
+
+  useEffect(() => {
+    if (budgetTypesList.length > 0) {
+      let savedList = [];
+      const saved = localStorage.getItem("smartoffice_portfolio_budgets");
+      if (saved) {
+        try {
+          savedList = JSON.parse(saved);
+        } catch (e) {
+          console.error("Failed to parse saved portfolios:", e);
+        }
       }
-    } else {
-      setPortfolios(INITIAL_PORTFOLIOS);
+
+      const mergedPortfolios = budgetTypesList.map((item) => {
+        const id = item.budgetTypeId ?? item._id ?? item.id ?? '';
+        const name = item.name ?? item.title ?? item.budgetType ?? item.label ?? 'Unknown Budget Type';
+        
+        const savedItem = savedList.find(s => s.id === id) || 
+                          savedList.find(s => s.name?.toLowerCase() === name.toLowerCase());
+
+        return {
+          id,
+          name,
+          categories: savedItem?.categories ?? []
+        };
+      });
+
+      setPortfolios(mergedPortfolios);
+
+      if (mergedPortfolios.length > 0) {
+        if (!selectedId || !mergedPortfolios.some(p => p.id === selectedId)) {
+          setSelectedId(mergedPortfolios[0].id);
+        }
+      }
     }
-  }, []);
+  }, [budgetTypesList]);
 
   const savePortfolios = (updated) => {
     setPortfolios(updated);
