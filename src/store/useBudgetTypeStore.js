@@ -15,8 +15,8 @@ export const useBudgetTypeStore = create((set, get) => ({
 
     set({ loading: true, error: null });
     try {
-      // Fetch with start=1 and offset=10 as requested
-      const response = await getBudgetType(1, 10);
+      // Fetch with start=1 and offset=100 to ensure we load all budget types
+      const response = await getBudgetType(1, 100);
 
       // Extract array from response wrapper
       const rawList =

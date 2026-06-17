@@ -4,6 +4,8 @@ import PointDropdown from "./PointDropdown";
 import { fetchMasterConfig } from "@/store/events/eventsThunks";
 import { useDispatch, useSelector } from "react-redux";
 
+import { useBudgetTypeStore } from "@/store/useBudgetTypeStore";
+
 const baseFieldClass =
   "flex-1 bg-[#F6F6F6] border-[1.4px] border-[#EAEAEA] rounded-lg outline-none h-[50px]";
 
@@ -30,6 +32,31 @@ export function EventTypeDropdown({
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef(null);
   const pointsMaster = useSelector((state) => state.events.pointsMaster) || [];
+
+  const { budgetTypes, fetchBudgetTypes } = useBudgetTypeStore();
+
+  useEffect(() => {
+    fetchBudgetTypes(true);
+  }, [fetchBudgetTypes]);
+
+  console.log("EventTypeDropdown - budgetTypes in store:", budgetTypes);
+  console.log("EventTypeDropdown - value prop received:", value);
+
+  const selectedBudgetType = budgetTypes.find(
+    (b) =>
+      b.budgetTypeId === value?.type ||
+      b._id === value?.type ||
+      b.id === value?.type
+  );
+  const displayText = selectedBudgetType
+    ? (selectedBudgetType.budgetType || selectedBudgetType.name || selectedBudgetType.title || selectedBudgetType.label)
+    : value?.type;
+
+  console.log("EventTypeDropdown - resolved selected label:", displayText);
+
+  const optionsToRender = budgetTypes.length > 0
+    ? budgetTypes
+    : EVENT_TYPES.map((name) => ({ budgetType: name, budgetTypeId: name }));
 
     useEffect(() => {
       dispatch(fetchMasterConfig());
@@ -72,7 +99,7 @@ export function EventTypeDropdown({
               value?.type ? "text-[#333333] font-[600]" : "text-[#999999]"
             }`}
           >
-            {value?.type || "Select event type"}
+            {displayText || "Select event type"}
           </span>
 
           <IoChevronDown
@@ -82,21 +109,26 @@ export function EventTypeDropdown({
 
         {open && (
           <div className="absolute top-[calc(100%+6px)] z-20 p-[10px] w-[calc(100%-140px)] bg-white rounded-[20px] shadow-lg border border-[#F2F6FC] flex flex-col gap-[2px]">
-            {EVENT_TYPES.map((item) => (
-              <button
-                key={item}
-                type="button"
-                onClick={() => {
-                  onChange("type", item);
-                  setOpen(false);
-                }}
-                className={`w-full rounded-[10px] text-left px-[12px] py-[8px] cursor-pointer ${
-                  value?.type === item ? "bg-[#F2F6FC]" : ""
-                }`}
-              >
-                {item}
-              </button>
-            ))}
+            {optionsToRender.map((item) => {
+              const itemName = item.budgetType || item.name || item.title || item.label || "";
+              const itemId = item.budgetTypeId || item._id || item.id || "";
+              const isSelected = value?.type === itemId || value?.type === itemName;
+              return (
+                <button
+                  key={itemId || itemName}
+                  type="button"
+                  onClick={() => {
+                    onChange("type", itemId || itemName);
+                    setOpen(false);
+                  }}
+                  className={`w-full rounded-[10px] text-left px-[12px] py-[8px] cursor-pointer ${
+                    isSelected ? "bg-[#F2F6FC]" : ""
+                  }`}
+                >
+                  {itemName}
+                </button>
+              );
+            })}
           </div>
         )}
 

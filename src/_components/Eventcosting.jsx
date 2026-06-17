@@ -16,6 +16,7 @@ import EventCostingCard from './UI/EventCostingCards';
 import { createBudgetPieChartTooltip } from './UI/BudgetPieChartTooltip';
 import { useExpenseRecordsStore } from '@/store/useExpenseRecordsStore';
 import { useFinanceStore } from '@/store/useFinanceStore';
+import { deleteExpense } from '@/services/expense.service';
 
 const DEFAULT_PORTFOLIO_BUDGET = 1200000;
 const EVENT_BUDGET_UTILIZED = 200000;
@@ -152,6 +153,24 @@ const Eventcosting = ({ eventName = '-', portfolio = '-' }) => {
       fileName: expenseData.billFileName,
       remark: expenseData.remark,
     });
+
+    // Patch the matching section's initialData with the real backend budgetExpenseId
+    // so that if the user deletes immediately after submitting, the correct ID is used
+    if (expenseData.budgetExpenseId) {
+      setExpenseSections((prev) =>
+        prev.map((section) =>
+          section.title === expenseData.category
+            ? {
+                ...section,
+                initialData: {
+                  ...(section.initialData || {}),
+                  budgetExpenseId: expenseData.budgetExpenseId,
+                },
+              }
+            : section
+        )
+      );
+    }
   };
 
   const [expenseSections, setExpenseSections] = useState([]);
@@ -239,7 +258,28 @@ const Eventcosting = ({ eventName = '-', portfolio = '-' }) => {
     setSelectedCategory('');
   };
 
-  const removeExpenseSection = (id) => {
+  const removeExpenseSection = async (id, budgetExpenseId) => {
+    // Only call the delete API if we have a budgetExpenseId
+    if (budgetExpenseId) {
+      try {
+        await deleteExpense(budgetExpenseId);
+      } catch (err) {
+        const message = err?.response?.data?.message || '';
+        const isInvalidId = message.toLowerCase().includes('invalid') ||
+                            err?.response?.status === 400 ||
+                            err?.response?.status === 404;
+
+        if (isInvalidId) {
+          // Expense doesn't exist on backend (e.g. local-only record) — remove from UI anyway
+          console.warn('Expense not found on backend, removing locally:', budgetExpenseId);
+        } else {
+          // Real server/network error — keep card in UI and alert
+          console.error('Failed to delete expense:', err);
+          alert(err?.response?.data?.message || 'Failed to delete expense. Please try again.');
+          return;
+        }
+      }
+    }
     setExpenseSections((prev) => prev.filter((section) => section.id !== id));
   };
 
@@ -427,7 +467,7 @@ const Eventcosting = ({ eventName = '-', portfolio = '-' }) => {
             title={section.title}
             eventName={eventName}
             portfolio={portfolio}
-            onRemove={() => removeExpenseSection(section.id)}
+            onRemove={(budgetExpenseId) => removeExpenseSection(section.id, budgetExpenseId)}
             onSendForApproval={handleSendExpenseForApproval}
             initialData={section.initialData}
           />

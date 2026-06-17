@@ -142,3 +142,34 @@ export async function PATCH(req) {
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
+
+/**
+ * DELETE /smartOffice/expense
+ * Body: { budgetExpenseId: string }
+ * Removes the expense with the matching ID from the JSON file.
+ */
+export async function DELETE(req) {
+  try {
+    const body = await req.json();
+    const budgetExpenseId = body?.budgetExpenseId;
+
+    if (!budgetExpenseId) {
+      return NextResponse.json({ error: "budgetExpenseId is required" }, { status: 400 });
+    }
+
+    const expenses = readExpenses();
+    const index = expenses.findIndex((e) => String(e.id) === String(budgetExpenseId));
+
+    if (index === -1) {
+      return NextResponse.json({ error: "Expense not found" }, { status: 404 });
+    }
+
+    expenses.splice(index, 1);
+    writeExpenses(expenses);
+
+    return NextResponse.json({ success: true, deletedId: budgetExpenseId }, { status: 200 });
+  } catch (err) {
+    console.error("DELETE /smartOffice/expense failed:", err);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}

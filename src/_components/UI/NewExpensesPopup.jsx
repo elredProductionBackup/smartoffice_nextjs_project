@@ -173,7 +173,7 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
       if (!budgetTypeId && portfolio) {
         // Find matching budget type by name
         const matched = budgetTypesList.find(b => {
-          const name = b.name ?? b.title ?? b.budgetType ?? b.label ?? '';
+          const name = b.budgetType ?? b.name ?? b.title ?? b.label ?? '';
           return name.toLowerCase() === portfolio.toLowerCase() ||
                  name.toLowerCase().includes(portfolio.toLowerCase()) ||
                  portfolio.toLowerCase().includes(name.toLowerCase());
@@ -185,7 +185,7 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
         // Sync portfolio name if we only have budgetTypeId
         const matched = budgetTypesList.find(b => (b.budgetTypeId === budgetTypeId || b._id === budgetTypeId || b.id === budgetTypeId));
         if (matched) {
-          const name = matched.name ?? matched.title ?? matched.budgetType ?? matched.label ?? '';
+          const name = matched.budgetType ?? matched.name ?? matched.title ?? matched.label ?? '';
           setPortfolio(name);
         }
       }

@@ -20,6 +20,15 @@ const EventCostingCard = ({
   initialData = null,
 }) => {
   const params = useParams();
+
+  // Tracks the real backend ID returned by addEditExpense — used for deleteExpense
+  const [savedBudgetExpenseId, setSavedBudgetExpenseId] = useState(
+    initialData?.budgetExpenseId ||
+    initialData?.id ||
+    initialData?.expenseId ||
+    ''
+  );
+
   const eventId = params?.id || initialData?.eventId || '';
 
   const { budgetTypes, fetchBudgetTypes } = useBudgetTypeStore();
@@ -218,10 +227,17 @@ const EventCostingCard = ({
     // Step 2: Query the budgetTypes list using the nameToMatch
     if (nameToMatch && nameToMatch !== '-') {
       const matched = budgetTypes.find(b => {
-        const bName = b.name ?? b.title ?? b.budgetType ?? b.label ?? '';
-        return bName.toLowerCase().trim() === nameToMatch.toLowerCase().trim() ||
-               bName.toLowerCase().includes(nameToMatch.toLowerCase().trim()) ||
-               nameToMatch.toLowerCase().trim().includes(bName.toLowerCase());
+        const bName = b.budgetType ?? b.name ?? b.title ?? b.label ?? '';
+        const bId = b.budgetTypeId ?? b._id ?? b.id ?? '';
+        
+        const target = nameToMatch.toLowerCase().trim();
+        const normalizedBId = String(bId).toLowerCase().trim();
+        const normalizedBName = String(bName).toLowerCase().trim();
+
+        return normalizedBId === target ||
+               normalizedBName === target ||
+               normalizedBName.includes(target) ||
+               target.includes(normalizedBName);
       });
       if (matched) {
         resolvedBudgetTypeId = matched.budgetTypeId ?? matched._id ?? matched.id ?? '';
@@ -268,13 +284,24 @@ const EventCostingCard = ({
         totalAmount: total,
         remark,
         vendorName,
-        expenseId: initialData?.id || '',
+        expenseId: savedBudgetExpenseId || '',  // Use the real backend ID if available
         file: selectedFile || undefined,
       };
 
-      await addEditExpense(apiPayload);
+      const apiResponse = await addEditExpense(apiPayload);
 
-      // Store/UI local callbacks
+      // Capture the real budgetExpenseId from the backend response
+      const returnedId =
+        apiResponse?.result?.budgetExpenseId ||
+        apiResponse?.result?.id ||
+        apiResponse?.budgetExpenseId ||
+        apiResponse?.id ||
+        '';
+      if (returnedId) {
+        setSavedBudgetExpenseId(returnedId);
+      }
+
+      // Store/UI local callbacks — include budgetExpenseId so parent can persist it
       onSendForApproval?.({
         description,
         category: title,
@@ -287,6 +314,7 @@ const EventCostingCard = ({
         billFileName: billFileName || (selectedFile ? selectedFile.name : ''),
         approvalStatus,
         budgetTypeId: resolvedBudgetTypeId,
+        budgetExpenseId: returnedId || savedBudgetExpenseId || '',  // pass up for persistence
       });
 
       setIsSubmitted(true);
@@ -312,7 +340,7 @@ const EventCostingCard = ({
         <h2 className="text-[20px] font-bold text-[#1e3a8a] leading-tight">{title}</h2>
         <button
           type="button"
-          onClick={onRemove}
+          onClick={() => onRemove(savedBudgetExpenseId)}
           className="opacity-0 group-hover:opacity-100 transition-opacity duration-150 text-[#EF4444] hover:text-[#DC2626] bg-transparent border-0 p-1 cursor-pointer outline-none shrink-0"
           aria-label={`Remove ${title}`}
         >

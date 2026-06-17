@@ -1,4 +1,4 @@
-﻿import api from "@/services/axios";
+import api from "@/services/axios";
 
 /**
  * Fetch budget types with pagination
@@ -104,6 +104,40 @@ export const addEditExpense = async (payload) => {
     return res.data;
   } catch (error) {
     console.error("addEditExpense API Error:", error?.response || error);
+    throw error;
+  }
+};
+
+/**
+ * Delete a budget expense
+ *
+ * DELETE /smartOffice/deleteExpense
+ * Body: { budgetExpenseId: string }
+ *
+ * @param {string} budgetExpenseId - The ID of the expense to delete
+ * @returns {Promise<Object>}
+ */
+export const deleteExpense = async (budgetExpenseId) => {
+  try {
+    const res = await api.delete("/smartOffice/deleteExpense", {
+      data: { budgetExpenseId },
+    });
+
+    const data = res.data;
+
+    // Axios validateStatus allows all status codes — check success flag manually
+    if (data?.success === false) {
+      const err = new Error(data?.message || "Delete failed");
+      err.response = {
+        status: res.status,
+        data,
+      };
+      throw err;
+    }
+
+    return data;
+  } catch (error) {
+    console.error("deleteExpense API Error:", error?.response || error);
     throw error;
   }
 };
