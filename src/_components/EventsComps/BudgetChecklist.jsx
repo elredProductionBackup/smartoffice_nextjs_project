@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useBudgetTypeStore } from "@/store/useBudgetTypeStore";
+import { addBudgetCategory } from "@/services/expense.service";
 
 export default function BudgetChecklist() {
   const router = useRouter();
@@ -73,9 +74,13 @@ export default function BudgetChecklist() {
 
   const selectedPortfolio = portfolios.find((p) => p.id === selectedId) || portfolios[0];
 
-  const handleAddCategory = (e) => {
+  const handleAddCategory = async (e) => {
     e.preventDefault();
-    if (!newCatName.trim()) return;
+    const catName = newCatName.trim();
+    if (catName.length < 2) {
+      alert("Category name must be at least 2 characters long.");
+      return;
+    }
 
     const percentVal = Number(newCatPercent) || 0;
     const currentAllocated =
@@ -86,18 +91,32 @@ export default function BudgetChecklist() {
       return;
     }
 
-    const updatedCategories = [
-      ...(selectedPortfolio?.categories || []),
-      { name: newCatName.trim(), percentage: percentVal },
-    ];
+    try {
+      await addBudgetCategory({
+        budgetTypeId: selectedId,
+        budgetCategory: catName,
+        percentage: percentVal,
+      });
 
-    const updatedPortfolios = portfolios.map((p) =>
-      p.id === selectedId ? { ...p, categories: updatedCategories } : p
-    );
+      // Force refreshing the store budgetTypes cached data so the list is updated from the database
+      await fetchBudgetTypes(true);
 
-    savePortfolios(updatedPortfolios);
-    setNewCatName("");
-    setNewCatPercent("0");
+      const updatedCategories = [
+        ...(selectedPortfolio?.categories || []),
+        { name: catName, percentage: percentVal },
+      ];
+
+      const updatedPortfolios = portfolios.map((p) =>
+        p.id === selectedId ? { ...p, categories: updatedCategories } : p
+      );
+
+      savePortfolios(updatedPortfolios);
+      setNewCatName("");
+      setNewCatPercent("0");
+    } catch (error) {
+      console.error("Error adding budget category:", error);
+      alert(error?.response?.data?.message || "Failed to add budget category on the server.");
+    }
   };
 
   const handleDeleteCategory = (catIndex) => {

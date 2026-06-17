@@ -17,6 +17,7 @@ import { createBudgetPieChartTooltip } from './UI/BudgetPieChartTooltip';
 import { useExpenseRecordsStore } from '@/store/useExpenseRecordsStore';
 import { useFinanceStore } from '@/store/useFinanceStore';
 import { deleteExpense } from '@/services/expense.service';
+import { useBudgetTypeStore } from '@/store/useBudgetTypeStore';
 
 const DEFAULT_PORTFOLIO_BUDGET = 1200000;
 const EVENT_BUDGET_UTILIZED = 200000;
@@ -43,7 +44,21 @@ const CATEGORY_COLORS = [
 ];
 
 /** Read category names from the matching portfolio saved by BudgetChecklist */
-function getLearningCategoryNames(portfolioName = 'Learning') {
+function getLearningCategoryNames(portfolioName = 'Learning', budgetTypesList = []) {
+  // 1. Try resolving from the backend budgetTypes list
+  const matchedType = budgetTypesList.find((b) => {
+    const bId = String(b.budgetTypeId || b._id || b.id || '').toLowerCase().trim();
+    const bName = String(b.budgetType || b.name || b.title || b.label || '').toLowerCase().trim();
+    const target = String(portfolioName).toLowerCase().trim();
+    return bId === target || bName === target;
+  });
+
+  const apiCategories = matchedType?.categories ?? matchedType?.budgetCategory ?? [];
+  if (apiCategories && apiCategories.length > 0) {
+    return apiCategories.map((c) => c.budgetCategory ?? c.name ?? '');
+  }
+
+  // 2. Fallback to localStorage
   try {
     const saved = localStorage.getItem('smartoffice_portfolio_budgets');
     if (!saved) return DEFAULT_EXPENSE_CATEGORIES;
@@ -64,7 +79,26 @@ function getLearningCategoryNames(portfolioName = 'Learning') {
  * Read full category objects {key, name, value, color} from the matching
  * portfolio so the EventBudgetPopup shows the same items with their percentages.
  */
-function getLearningBudgetCategories(portfolioName = 'Learning') {
+function getLearningBudgetCategories(portfolioName = 'Learning', budgetTypesList = []) {
+  // 1. Try resolving from the backend budgetTypes list
+  const matchedType = budgetTypesList.find((b) => {
+    const bId = String(b.budgetTypeId || b._id || b.id || '').toLowerCase().trim();
+    const bName = String(b.budgetType || b.name || b.title || b.label || '').toLowerCase().trim();
+    const target = String(portfolioName).toLowerCase().trim();
+    return bId === target || bName === target;
+  });
+
+  const apiCategories = matchedType?.categories ?? matchedType?.budgetCategory ?? [];
+  if (apiCategories && apiCategories.length > 0) {
+    return apiCategories.map((cat, idx) => ({
+      key: (cat.budgetCategory ?? cat.name ?? '').toLowerCase().replace(/\s+/g, '_') + '_' + idx,
+      name: cat.budgetCategory ?? cat.name ?? '',
+      value: Number(cat.percentage) || 0,
+      color: CATEGORY_COLORS[idx % CATEGORY_COLORS.length],
+    }));
+  }
+
+  // 2. Fallback to localStorage
   try {
     const saved = localStorage.getItem('smartoffice_portfolio_budgets');
     if (!saved) return DEFAULT_EVENT_BUDGET_CATEGORIES;
@@ -95,18 +129,24 @@ const Eventcosting = ({ eventName = '-', portfolio = '-' }) => {
     DEFAULT_EVENT_BUDGET_CATEGORIES
   );
 
+  const { budgetTypes, fetchBudgetTypes } = useBudgetTypeStore();
+
+  useEffect(() => {
+    fetchBudgetTypes();
+  }, [fetchBudgetTypes]);
+
   // Sync budgetDistribution from BudgetChecklist's learning portfolio
   useEffect(() => {
-    setBudgetDistribution(getLearningBudgetCategories());
+    setBudgetDistribution(getLearningBudgetCategories(portfolio, budgetTypes));
 
     const handleStorage = (e) => {
       if (e.key === 'smartoffice_portfolio_budgets' || e.key === null) {
-        setBudgetDistribution(getLearningBudgetCategories());
+        setBudgetDistribution(getLearningBudgetCategories(portfolio, budgetTypes));
       }
     };
     window.addEventListener('storage', handleStorage);
     return () => window.removeEventListener('storage', handleStorage);
-  }, []);
+  }, [portfolio, budgetTypes]);
 
   const addExpenseFromEventCosting = useExpenseRecordsStore(
     (state) => state.addExpenseFromEventCosting
@@ -214,17 +254,17 @@ const Eventcosting = ({ eventName = '-', portfolio = '-' }) => {
 
   useEffect(() => {
     // Load on mount
-    setExpenseCategories(getLearningCategoryNames());
+    setExpenseCategories(getLearningCategoryNames(portfolio, budgetTypes));
 
     // Update whenever BudgetChecklist writes to localStorage
     const handleStorage = (e) => {
       if (e.key === 'smartoffice_portfolio_budgets' || e.key === null) {
-        setExpenseCategories(getLearningCategoryNames());
+        setExpenseCategories(getLearningCategoryNames(portfolio, budgetTypes));
       }
     };
     window.addEventListener('storage', handleStorage);
     return () => window.removeEventListener('storage', handleStorage);
-  }, []);
+  }, [portfolio, budgetTypes]);
 
   useEffect(() => {
     const handler = (e) => {

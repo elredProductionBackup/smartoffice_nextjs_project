@@ -71,8 +71,6 @@ export const addEditExpense = async (payload) => {
     // eventId: only send when type is "event"
     formData.append("eventId", isEventType ? payload.eventId || payload.event || "" : "");
 
-    formData.append("portfolioId", payload.portfolioId || payload.portfolio || "");
-
     // Budget Type ID
     if (payload.budgetTypeId) {
       formData.append("budgetTypeId", payload.budgetTypeId);
@@ -141,3 +139,26 @@ export const deleteExpense = async (budgetExpenseId) => {
     throw error;
   }
 };
+
+/**
+ * Add a new budget category
+ *
+ * POST /smartOffice/addBudgetCategory
+ * Body: { budgetTypeId: string, budgetCategory: string, percentage: number }
+ *
+ * @param {Object} payload
+ * @param {string} payload.budgetTypeId
+ * @param {string} payload.budgetCategory
+ * @param {number} payload.percentage
+ * @returns {Promise<Object>}
+ */
+export const addBudgetCategory = async (payload) => {
+  try {
+    const res = await api.post("/smartOffice/addBudgetCategory", payload);
+    return res.data;
+  } catch (error) {
+    console.error("addBudgetCategory API Error:", error?.response || error);
+    throw error;
+  }
+};
+
