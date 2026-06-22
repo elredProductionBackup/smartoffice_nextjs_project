@@ -432,10 +432,11 @@ const BudgetChecklist = () => {
                 dispatch(setSelectedBudgetType(item))
               }
               className={`
-                cursor-pointer rounded-2xl border p-5 transition-all
+                cursor-pointer rounded-2xl border p-5 transition-all duration-300
+                hover:shadow-lg hover:-translate-y-1
                 ${active
-                  ? "border-blue-600 bg-blue-50 shadow"
-                  : "border-gray-200 bg-white"
+                  ? "border-blue-600 bg-blue-50 shadow-md"
+                  : "border-gray-200 bg-white shadow-sm hover:shadow-md"
                 }
               `}
             >
@@ -463,14 +464,14 @@ const BudgetChecklist = () => {
                 </span>
               </div>
 
-              <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+              {/* <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-blue-600"
                   style={{
                     width: `${item.totalPercentage}%`,
                   }}
                 />
-              </div>
+              </div> */}
             </div>
           );
         })}
