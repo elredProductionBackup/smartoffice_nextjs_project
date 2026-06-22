@@ -158,7 +158,7 @@ export default function EventBudgetPopup({
         )}
 
         {/* Footer */}
-        <div className="flex items-center justify-between gap-4 px-6 py-5 border-t border-[#E8ECEF] shrink-0">
+        {/* <div className="flex items-center justify-between gap-4 px-6 py-5 border-t border-[#E8ECEF] shrink-0">
           <button
             type="button"
             onClick={onClose}
@@ -173,7 +173,7 @@ export default function EventBudgetPopup({
           >
             {mode === 'edit' ? 'Save & Send for Approval' : 'Save Distribution'}
           </button>
-        </div>
+        </div> */}
       </div>
     </div>
   );
