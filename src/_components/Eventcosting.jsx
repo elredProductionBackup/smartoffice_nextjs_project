@@ -536,55 +536,255 @@
 
 // export default Eventcosting;
 
-import React from 'react'
-import BudgetBreakup from './UI/Budgetbreakup'
-import ExpenseItems from './UI/Expenseitems'
+// import React from 'react'
+// import BudgetBreakup from './UI/Budgetbreakup'
+// import ExpenseItems from './UI/Expenseitems'
 
-const Eventcosting = () => {
+// const Eventcosting = () => {
+//   return (
+//     <>
+//       {/* Budget overview bar */}
+//       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+//         <div>
+//           <p className="text-xs text-gray-500 mb-1">Budget</p>
+//           <p className="text-2xl font-semibold text-gray-900">₹20,00,000</p>
+//         </div>
+//         <div className="flex-1 min-w-[200px] bg-blue-50 rounded-xl px-5 py-3">
+//           <div className="flex items-center justify-between mb-1">
+//             <span className="text-sm text-gray-700">Event Budget Utilized</span>
+//             <span className={`text-lg font-semibold ${false ? "text-red-600" : "text-blue-600"}`}>
+//               {2000000 > 0 ? ((1000000 / 2000000) * 100).toFixed(1) : "0.0"}%
+//             </span>
+//           </div>
+//           <div className="w-full bg-gray-200 rounded-full h-1.5 mb-1">
+//             <div
+//               className={`h-1.5 rounded-full transition-all ${false ? "bg-red-500" : "bg-blue-600"}`}
+//               style={{ width: `${Math.min((1000000 / 2000000) * 100, 100)}%` }}
+//             />
+//           </div>
+//           <p className="text-xs text-gray-500">₹{1000000} of ₹{2000000}</p>
+//         </div>
+//         <div className="flex gap-2.5 flex-shrink-0">
+//           <button
+//             onClick={() => console.log(true)}
+//             className="flex items-center gap-2 px-4 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors text-sm"
+//           >
+//             {/* <Edit2 className="w-3.5 h-3.5" /> */}
+//             Edit Budget
+//           </button>
+//           <button
+//             onClick={() => console.log(true)}
+//             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+//           >
+//             Budget Distribution
+//             {/* <ChevronDown className="w-3.5 h-3.5" /> */}
+//           </button>
+//         </div>
+//       </div>
+//       <BudgetBreakup/>
+//       <ExpenseItems/>
+//     </>
+//   )
+// }
+
+// export default Eventcosting
+
+import React, { useState } from "react";
+import { FiArrowRight, FiX } from "react-icons/fi";
+import { EventCostingProvider, fmt, useEventCosting } from "./Eventcostingcontext";
+import { PieChartPanel } from "./UI/Piechartpanel";
+import BudgetBreakup from "./UI/Budgetbreakup";
+import ExpenseItems from "./UI/Expenseitems";
+
+// Shared modal shell
+function Modal({ title, onClose, children, widthCls = "max-w-md" }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+      <div className={`w-full ${widthCls} bg-white rounded-2xl shadow-xl overflow-hidden`}>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+          <h3 className="text-base font-semibold text-gray-900">{title}</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+            <FiX className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="px-6 py-5">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+function EditBudgetModal({ onClose }) {
+  const { overallBudget, setOverallBudget } = useEventCosting();
+  const [value, setValue] = useState(overallBudget);
+
+  const save = () => {
+    setOverallBudget(Number(value) || 0);
+    onClose();
+  };
+
+  return (
+    <Modal title="Edit budget" onClose={onClose}>
+      <label className="block text-xs text-gray-600 mb-1.5">Total event budget</label>
+      <div className="flex items-center gap-2 mb-5">
+        <span className="text-gray-400 text-sm">₹</span>
+        <input
+          type="number"
+          min="0"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          className="flex-1 px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          autoFocus
+        />
+      </div>
+      <div className="flex justify-end gap-2">
+        <button onClick={onClose} className="px-4 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50 transition-colors">
+          Cancel
+        </button>
+        <button onClick={save} className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors">
+          Save budget
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
+const SECTION_COLORS = ["bg-blue-500", "bg-teal-500", "bg-amber-500", "bg-purple-500", "bg-pink-500"];
+
+function BudgetDistributionModal({ onClose }) {
+  const { sections, latestVersion, sectionPlanTotals, overallBudget } = useEventCosting();
+  const totals = sectionPlanTotals(latestVersion.id);
+  const grandTotal = Object.values(totals).reduce((s, n) => s + n, 0) || 1;
+
+  return (
+    <Modal title={`Budget distribution — ${latestVersion.label}`} onClose={onClose} widthCls="max-w-lg">
+      <p className="text-xs text-gray-500 mb-4">
+        How the planned budget (₹{fmt(grandTotal)} of ₹{fmt(overallBudget)}) is distributed across categories.
+      </p>
+
+      {/* stacked bar */}
+      <div className="w-full h-3 rounded-full overflow-hidden flex mb-5">
+        {sections.map((sec, i) => {
+          const pct = (totals[sec.id] / grandTotal) * 100;
+          if (pct <= 0) return null;
+          return <div key={sec.id} className={SECTION_COLORS[i % SECTION_COLORS.length]} style={{ width: `${pct}%` }} />;
+        })}
+      </div>
+
+      <div className="space-y-3">
+        {sections.map((sec, i) => {
+          const amount = totals[sec.id] || 0;
+          const pct = (amount / grandTotal) * 100;
+          return (
+            <div key={sec.id} className="flex items-center gap-3">
+              <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${SECTION_COLORS[i % SECTION_COLORS.length]}`} />
+              <span className="text-sm text-gray-700 flex-1">{sec.name}</span>
+              <span className="text-sm text-gray-500 w-12 text-right">{pct.toFixed(0)}%</span>
+              <span className="text-sm font-medium text-gray-900 w-24 text-right">₹{fmt(amount)}</span>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="flex justify-end mt-5">
+        <button onClick={onClose} className="px-4 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50 transition-colors">
+          Close
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
+function EventCostingInner() {
+  const { overallBudget, totalApprovedSpend, latestVersion, categoryPlanTotals, categoryActualTotals } = useEventCosting();
+  const [activeModal, setActiveModal] = useState(null); // null | "edit" | "distribution"
+
+  const pct = overallBudget > 0 ? (totalApprovedSpend / overallBudget) * 100 : 0;
+  const isOver = totalApprovedSpend > overallBudget && overallBudget > 0;
+
+  const plannedByCategory = categoryPlanTotals(latestVersion.id);
+  const plannedGrandTotal = Object.values(plannedByCategory).reduce((s, n) => s + n, 0);
+
+  const budgetDistributionData = Object.entries(plannedByCategory).map(([name, value]) => ({
+    name,
+    value,
+    percentage: plannedGrandTotal > 0 ? ((value / plannedGrandTotal) * 100).toFixed(0) : "0",
+  }));
+
+  const actualSpendData = Object.entries(categoryActualTotals).map(([name, value]) => ({ name, value }));
+
   return (
     <>
       {/* Budget overview bar */}
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <div>
           <p className="text-xs text-gray-500 mb-1">Budget</p>
-          <p className="text-2xl font-semibold text-gray-900">₹20,00,000</p>
+          <p className="text-2xl font-semibold text-gray-900">₹{fmt(overallBudget)}</p>
         </div>
         <div className="flex-1 min-w-[200px] bg-blue-50 rounded-xl px-5 py-3">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-sm text-gray-700">Event Budget Utilized</span>
-            <span className={`text-lg font-semibold ${false ? "text-red-600" : "text-blue-600"}`}>
-              {2000000 > 0 ? ((1000000 / 2000000) * 100).toFixed(1) : "0.0"}%
+            <span className="text-sm text-gray-700">Event Budget Utilized (Approved)</span>
+            <span className={`text-lg font-semibold ${isOver ? "text-red-600" : "text-blue-600"}`}>
+              {pct.toFixed(1)}%
             </span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-1.5 mb-1">
             <div
-              className={`h-1.5 rounded-full transition-all ${false ? "bg-red-500" : "bg-blue-600"}`}
-              style={{ width: `${Math.min((1000000 / 2000000) * 100, 100)}%` }}
+              className={`h-1.5 rounded-full transition-all ${isOver ? "bg-red-500" : "bg-blue-600"}`}
+              style={{ width: `${Math.min(pct, 100)}%` }}
             />
           </div>
-          <p className="text-xs text-gray-500">₹{1000000} of ₹{2000000}</p>
+          <p className="text-xs text-gray-500">
+            ₹{fmt(totalApprovedSpend)} of ₹{fmt(overallBudget)}
+          </p>
         </div>
         <div className="flex gap-2.5 flex-shrink-0">
           <button
-            onClick={() => console.log(true)}
+            onClick={() => setActiveModal("edit")}
             className="flex items-center gap-2 px-4 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors text-sm"
           >
-            {/* <Edit2 className="w-3.5 h-3.5" /> */}
             Edit Budget
+            <FiArrowRight className="w-3.5 h-3.5" />
           </button>
           <button
-            onClick={() => console.log(true)}
+            onClick={() => setActiveModal("distribution")}
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
           >
             Budget Distribution
-            {/* <ChevronDown className="w-3.5 h-3.5" /> */}
+            <FiArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
-      <BudgetBreakup/>
-      <ExpenseItems/>
+
+      {/* Two pie charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-8">
+        <PieChartPanel
+          title="Budget Distribution"
+          subtitle={`Total: ₹${fmt(plannedGrandTotal)} (${latestVersion.label})`}
+          data={budgetDistributionData}
+        />
+        <PieChartPanel
+          title="Actual Amount Spent"
+          subtitle={`Total: ₹${fmt(totalApprovedSpend)}`}
+          emptyLabel="No actuals entered yet"
+          data={actualSpendData}
+        />
+      </div>
+
+      <BudgetBreakup />
+      <ExpenseItems />
+
+      {activeModal === "edit" && <EditBudgetModal onClose={() => setActiveModal(null)} />}
+      {activeModal === "distribution" && <BudgetDistributionModal onClose={() => setActiveModal(null)} />}
     </>
-  )
+  );
 }
 
-export default Eventcosting
+const Eventcosting = () => {
+  return (
+    <EventCostingProvider>
+      <EventCostingInner />
+    </EventCostingProvider>
+  );
+};
+
+export default Eventcosting;
