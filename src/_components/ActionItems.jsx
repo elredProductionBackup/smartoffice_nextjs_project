@@ -1,241 +1,364 @@
-  "use client";
+"use client";
 
-  import { useState } from "react";
-  import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useDispatch, useSelector } from "react-redux";
+import moment from "moment";
+import { CONSTANTS } from "@/utils/data";
+import ActionHeader from "./ActionHeader";
+import TodayItems from "./TodayItems";
+import PastItems from "./PastItems";
+import AllItems from "./AllItems";
+import EmptyState from "./EmptyState";
+import ActionableDetailsModal from "./ActionableDetailsModal";
+import { createActionable, createAttachment, createSubTask, fetchActionables, removeActionable, removeAttachment, removeSubTask, toggleActionable, updateActionable, updateAttachment, updateSubTask, upsertSubTask } from "@/store/actionable/actionableThunks";
+import { addSubTaskOptimistic, removeSubTaskOptimistic, setActiveTab, setPage, updateSubTaskOptimistic } from "@/store/actionable/actionableSlice";
+import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
+import ActionableShimmer from "./Shimmer/ActionableShimmer";
+import { closeModal } from "@/store/actionable/actionableUiSlice";
+import DatepickerModal from "./DatepickerModal";
+import DeleteConfirm from "./ConfirmationPopups/DeleteConfirm";
+import Pagination from "./UI/Pagination";
+const TABS_ITEMS = ["Past", "Today", "All"];
 
-  import ActionHeader from "./ActionHeader";
-  import TodayItems from "./TodayItems";
-  import PastItems from "./PastItems";
-  import EmptyState from "./EmptyState";
-  import AllItems from "./AllItems";
-  import moment from "moment";
-  import { actionableData } from "@/assets/helpers/sampleActionable";
-  import ActionableDetailsModal from "./ActionableDetailsModal";
+export default function ActionItems() {
 
-  const TABS_ITEMS = ["Past", "Today", "All"];
+  const { modal } = useSelector((state) => state.actionableUi);
 
-  export default function ActionItems() {
-    const router = useRouter();
-    const searchParams = useSearchParams();
-    const activeItem = searchParams.get("item") || "today";
-    
-    const [adding, setAdding] = useState(false);
-    const [searchOpen, setSearchOpen] = useState(false);
-    const [searchValue, setSearchValue] = useState("");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const dispatch = useDispatch();
 
-    const [selectedTaskId, setSelectedTaskId] = useState(null);
+  const activeItem = searchParams.get("item") ?? "today";
+  const pageParam = Number(searchParams.get("page") ?? 1);
 
-    const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
 
-    const todayISO = moment().format("YYYY-MM-DD");
+  const debounceTimerRef = useRef(null);
+  const isFirstRender = useRef(true); 
+  const [debouncedSearch, setDebouncedSearch] = useState("");
 
-    const [items, setItems] = useState(actionableData || []);
-    
 
-const openTaskModal = (task) => {
-  setSelectedTaskId(task.id);
-  setIsTaskModalOpen(true);
+  /** REDUX STATE */
+  const {
+    items = [],
+    loading,
+    page = pageParam,
+    limit = 10,
+    total,
+    activeTab,
+  } = useSelector((state) => state.actionable);
+
+  useEffect(() => {
+    dispatch(setActiveTab(activeItem));
+    dispatch(setPage(pageParam));
+  }, [activeItem, pageParam, dispatch]);
+
+  /**  Fetch actionables */
+  useEffect(() => {
+    dispatch(
+      fetchActionables({
+        page: pageParam,
+        limit,
+        search: debouncedSearch,
+        dueSearchKey: activeItem,
+      })
+    );
+  }, [dispatch, page, limit, activeTab, debouncedSearch]);
+
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+
+  const changePage = (newPage) => {
+    if (newPage < 1 || newPage > totalPages) return;
+
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("page", newPage);
+    router.push(`?${params.toString()}`);
+  };
+
+  const selectedTask = items.find(
+    (i) =>
+      i.actionableId === modal.taskId || i._id === modal.taskId
+  );
+
+  /** TAB CHANGE */
+  const handleTabChange = (tab) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("item", tab.toLowerCase());
+    params.set("page", 1);
+    router.push(`?${params.toString()}`);
+  };
+
+  const handleAdd = (text) => {
+    if (!text.trim()) {
+      setAdding(false);
+      return;
+    }
+
+    const networkClusterCode = localStorage.getItem("networkClusterCode");
+    const tempId = `temp-${Date.now()}`;
+
+    dispatch(
+      createActionable({
+        tempId,
+        actionableId: tempId,
+        networkClusterCode,
+        title: text,
+        isCompleted: false,
+        category: "all",
+        notes: "",
+        linkedEvent: [],
+        // dueDateTimeStamp: moment.utc().toISOString(),
+        dueDateTimeStamp: "",
+      })
+    );
+
+
+    setAdding(false);
+  };
+
+
+  const handleDelete = (actionableId) => {
+    const networkClusterCode = localStorage.getItem("networkClusterCode");
+    dispatch(removeActionable({ actionableId: actionableId, networkClusterCode }));
+  };
+
+  const toggleItem = (item) => {
+    dispatch(
+      toggleActionable({
+        actionableId: item.actionableId,
+        isCompleted: !item.isCompleted,
+      })
+    );
+  };
+
+  const addSubtask = (actionableId, title) => {
+    if (!title.trim()) return;
+
+    const tempId = `temp-sub-${Date.now()}`;
+
+    dispatch(
+      createSubTask({
+        tempId,
+        actionableId,
+        title,
+      })
+    );
+  };
+
+  const toggleSubtask = (actionableId, subTask) => {
+    dispatch(
+      updateSubTask({
+        _id: subTask._id,
+        actionableId,
+        isCompleted: !subTask.isCompleted,
+        title: subTask.title,
+      })
+    );
+  };
+
+  const onUpdateSubtask = (actionableId, subTaskId, title) => {
+    dispatch(
+      updateSubTask({
+        _id: subTaskId,
+        actionableId,
+        title,
+      })
+    );
+  };
+
+  // Delete Subtask
+  const onDeleteSubtask = (actionableId, subTaskId) => {
+    dispatch(
+      removeSubTask({
+        actionableId,
+        subTaskId,
+      })
+    );
+  };
+
+  const addAttachment = (actionableId, url) => {
+  if (!url.trim()) return;
+
+  const tempId = `temp-attachment-${Date.now()}`;
+
+  dispatch(
+    createAttachment({
+      tempId,
+      actionableId,
+      url,
+    })
+  );
 };
 
-    const closeTaskModal = () => {
-      setSelectedTaskId(null);
-      setIsTaskModalOpen(false);
-    };
+const onUpdateAttachment = (
+  actionableId,
+  attachmentId,
+  url
+) => {
+  dispatch(
+    updateAttachment({
+      _id: attachmentId,
+      actionableId,
+      url,
+    })
+  );
+};
 
-    const selectedTask = items.find((i) => i.id === selectedTaskId);
+// Delete Attachment
+const onDeleteAttachment = (
+  actionableId,
+  attachmentId
+) => {
+  dispatch(
+    removeAttachment({
+      actionableId,
+      attachmentId,
+    })
+  );
+};
 
-
-  const addSubtask = (taskId, text) => {
-    setItems((prev) =>
-      prev.map((item) =>
-        item.id === taskId
-          ? {
-              ...item,
-              subtasks: [
-                {
-                  id: Date.now().toString(),
-                  text,
-                  completed: false,
-                },
-                ...(item.subtasks || []), // 👈 TOP
-              ],
-            }
-          : item
-      )
-    );
-  };
-
-  const toggleSubtask = (taskId, subtaskId) => {
-    setItems((prev) =>
-      prev.map((item) =>
-        item.id === taskId
-          ? {
-              ...item,
-              subtasks: item.subtasks.map((s) =>
-                s.id === subtaskId
-                  ? { ...s, completed: !s.completed }
-                  : s
-              ),
-            }
-          : item
-      )
+  const onSaveActionable = (actionableId, updates) => {
+    dispatch(
+      updateActionable({
+        actionableId,
+        ...updates,
+      })
     );
   };
 
 
-    /** TAB CHANGE */
-    const handleTabChange = (tab) => {
-      const params = new URLSearchParams(searchParams.toString());
-      params.set("item", tab.toLowerCase());
-      router.push(`?${params.toString()}`);
-    };
-
-    /** ADD ITEM */
-    const handleAdd = (text) => {
-      if (!text.trim()) return setAdding(false);
-
-      setItems((prev) => [
-        {
-          id: Date.now(),
-          text,
-          date: moment().format("YYYY-MM-DD"), // today
-          completed: false,
-          addedBy: "Meezan",
-          time: "10:30 PM",
-          completedAt: null,
-          notes: "",
-          collaborators: [],
-          comments: [],
-        },
-        ...prev,
-      ]);
-
-      setAdding(false);
-    };
-
-    /** TOGGLE CHECK */
-    const toggleItem = (id) => {
-      setItems((prev) =>
-        prev.map((item) =>
-          item.id === id
-            ? {
-                ...item,
-                completed: !item.completed,
-                completedAt: !item.completed ? new Date() : null,
-              }
-            : item
-        )
-      );
-    };
-
-    /** FILTERS */
-    const todayItems = items.filter(
-      (i) =>
-        !i.completed &&
-        moment(i.date).isSame(todayISO, "day") &&
-        i.text.toLowerCase().includes(searchValue.toLowerCase())
-    );
 
 
-    const pastItems = items.filter(
-      (i) =>
-        i.completed &&
-        i.text.toLowerCase().includes(searchValue.toLowerCase())
-    );
+  useEffect(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
 
-    const filteredAllItems = items.filter(
-      (i) =>
-        !i.completed &&
-        i.text.toLowerCase().includes(searchValue.toLowerCase())
-    );
+    debounceTimerRef.current = setTimeout(() => {
+      setDebouncedSearch(searchValue);
+    }, 300);
+
+    return () => clearTimeout(debounceTimerRef.current);
+  }, [searchValue]);
+
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+
+    const currentSearch = searchParams.get("search") || "";
+    if (currentSearch === debouncedSearch) return;
+
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("page", "1");
+
+    if (debouncedSearch.trim()) {
+      params.set("search", debouncedSearch);
+    } else {
+      params.delete("search");
+    }
+
+    router.replace(`?${params.toString()}`, { scroll: false });
+  }, [debouncedSearch]);
+
+  // For changing page params when redirect to any empty page
+  // useEffect(() => {
+  //   if (!loading && page > 1 && total > 0 && items.length === 0) {
+  //     const params = new URLSearchParams(searchParams.toString());
+  //     params.set("page", page - 1);
+  //     router.replace(`?${params.toString()}`);
+  //   }
+  // }, [items, page, loading, total]);
 
 
-    const onUpdateSubtask = (taskId, subtaskId, text) => {
-      setItems((prev) =>
-        prev.map((t) =>
-          t.id === taskId
-            ? {
-                ...t,
-                subtasks: t.subtasks.map((s) =>
-                  s.id === subtaskId ? { ...s, text } : s
-                ),
-              }
-            : t
-        )
-      );
-    };
+  return (
+    <div className="flex-1 flex flex-col  min-h-0 bg-[#F2F7FF] pt-[30px] mt-[20px] rounded-[20px] overflow-hidden">
+      {loading && !debouncedSearch ?
+        <><ActionableShimmer /></> :
+        <>
+          <ActionHeader
+            activeItem={activeItem}
+            tabs={TABS_ITEMS}
+            searchOpen={searchOpen}
+            searchValue={searchValue}
+            onSearchOpen={() => setSearchOpen(true)}
+            onSearchClose={() => {
+              setSearchOpen(false);
+              setSearchValue("");
+            }}
+            onSearchChange={setSearchValue}
+            onAdd={() => setAdding(true)}
+            onTabChange={handleTabChange}
+            disableWhileAdd={adding}
+          />
 
-    const onDeleteSubtask = (taskId, subtaskId) => {
-      setItems((prev) =>
-        prev.map((t) =>
-          t.id === taskId
-            ? {
-                ...t,
-                subtasks: t.subtasks.filter((s) => s.id !== subtaskId),
-              }
-            : t
-        )
-      );
-    };
-
-
-
-    return (
-      <div className="flex-1 flex flex-col gap-[20px] min-h-0 bg-[#F5F9FF] px-[30px] pt-[30px] mt-[20px] rounded-[20px]">
-        <ActionHeader
-          activeItem={activeItem} tabs={TABS_ITEMS}  
-          searchOpen={searchOpen} searchValue={searchValue} onSearchOpen={() => setSearchOpen(true)} 
-          onSearchClose={() => {
-            setSearchOpen(false);
-            setSearchValue("");
-          }}
-          onSearchChange={setSearchValue}
-          onAdd={() => setAdding(true)}
-          onTabChange={handleTabChange} />
-        <div className="flex flex-1 w-full overflow-y-auto">
-          {activeItem === "today" && (
-            <TodayItems
-              items={todayItems} 
-              adding={adding}
-              onAdd={handleAdd}
-              onToggle={toggleItem}
-              onCancelAdding={() => setAdding(false)} 
-              onOpen={openTaskModal} 
-            />
-          )}
-
-          {activeItem === "past" &&
-            (pastItems.length ? (
-              <PastItems
-                items={pastItems}
+          <div className="flex flex-1 w-full overflow-y-auto pt-[20px] px-[30px]">
+            {activeItem === "today" && (
+              <TodayItems
+                items={items.filter(item => !item.category || item.category === "all")}
+                adding={adding}
+                onAdd={handleAdd}
+                handleDelete={handleDelete}
                 onToggle={toggleItem}
+                onCancelAdding={() => setAdding(false)}
               />
-            ) : (
-              <EmptyState />
-            ))}
+            )}
+
+            {activeItem === "past" &&
+              (items.length ? (
+                <PastItems items={items.filter(item => !item.category || item.category === "all")} onToggle={toggleItem}/>
+              ) : (
+                <EmptyState searchValue={debouncedSearch}/>
+              ))}
 
             {activeItem === "all" &&
-            (filteredAllItems.length ? (
-              <AllItems
-                items={filteredAllItems}
-                onToggle={toggleItem}
-              />
-            ) : (
-              <EmptyState />
-            ))}
+              (items.length ? (
+                <AllItems
+                  items={items.filter(item => !item.category || item.category === "all")}
+                  onToggle={toggleItem}
+                  handleDelete={handleDelete}
+                />
+              ) : (
+                <EmptyState searchValue={debouncedSearch}/>
+              ))}
+          </div>
+          {total > 10 && items.length>0 && (
+            <Pagination
+              total={total}
+              currentPage={page}
+              perPage={CONSTANTS.ITEMS_PER_PAGE}
+              rounded
+            />
 
-        </div>
+          )}
+        </>
+      }
 
-        {isTaskModalOpen && selectedTask && (
-          <ActionableDetailsModal
-            task={selectedTask}
-            onClose={closeTaskModal}
-            onAddSubtask={addSubtask}
-            onToggleSubtask={toggleSubtask}
-            onUpdateSubtask={onUpdateSubtask}
-            onDeleteSubtask={onDeleteSubtask}
-          />
-        )}
-      </div>
-    );
-  }
+      {modal.type === "DETAILS" && selectedTask && (
+        <ActionableDetailsModal
+          task={selectedTask}
+          onClose={() => dispatch(closeModal())}
+          onAddSubtask={addSubtask}
+          onToggleSubtask={toggleSubtask}
+          onUpdateSubtask={onUpdateSubtask}
+          onDeleteSubtask={onDeleteSubtask}
+          onAddAttachment={addAttachment}
+          onUpdateAttachment={onUpdateAttachment}
+          onDeleteAttachment={onDeleteAttachment}
+          onSave={onSaveActionable}
+        />
+      )}
+      {modal.type === "MOVE" && selectedTask && (
+        <DatepickerModal selectedTask={selectedTask} />
+      )}
+      {modal.type === "DELETE" && selectedTask && (
+        <DeleteConfirm selectedTask={selectedTask} handleDelete={()=>handleDelete(selectedTask?.actionableId)} />
+      )}
+
+    </div>
+  );
+}

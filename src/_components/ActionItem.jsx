@@ -1,13 +1,82 @@
+import { openModal } from "@/store/actionable/actionableUiSlice";
 import moment from "moment";
+import Image from "next/image";
 import { useRef, useEffect, useState } from "react";
 import { BsCheck, BsThreeDotsVertical } from "react-icons/bs";
+import { useDispatch, useSelector } from "react-redux";
+// import TitleTooltipHover from "./UI/TitleTooltipHover";
 
-export default function ActionItem({ text, subtasks = [], addedBy, time, createdAt, link, avatars = [], date, completed = false, onCheck, today = false, onOpen }) {
+export default function ActionItem({
+  item,
+  onCheck,
+  past=false,
+  handleDelete,
+  today = false
+})  {
+    const {
+    actionableId,
+    title,
+    isCompleted,
+    subTask = [],
+    createdBy,
+    dueDate,
+    dueTime,
+    collaborators = [],
+  } = item;
+    const dispatch = useDispatch();
+    const titleRef = useRef(null);
+const [isOverflowing, setIsOverflowing] = useState(false);
+useEffect(() => {
+  const el = titleRef.current;
+  if (!el) return;
+
+  const checkLines = () => {
+    const style = window.getComputedStyle(el);
+    const lineHeight = parseFloat(style.lineHeight);
+
+    const lines = Math.round(el.scrollHeight / lineHeight);
+
+    setIsOverflowing(lines > 2);
+  };
+
+  checkLines();
+
+  const observer = new ResizeObserver(checkLines);
+  observer.observe(el);
+
+  return () => observer.disconnect();
+}, [title]);
+
+  const openTaskModal = (actionableId) => {
+    dispatch(
+      openModal({
+        type: "DETAILS",
+        taskId: actionableId,
+      })
+    );
+  };
+  const openMoveModal = (actionableId) => {
+    dispatch(
+      openModal({
+        type: "MOVE",
+        taskId: actionableId,
+      })
+    );
+  };
+  const openDeleteModal = (actionableId) => {
+    dispatch(
+      openModal({
+        type: "DELETE",
+        taskId: actionableId,
+      })
+    );
+  };
+
   const [openMenu, setOpenMenu] = useState(false);
   const menuRef = useRef(null);
 
-  const visibleAvatars = avatars.slice(0, 3);
-  const remainingCount = avatars.length - 3;
+  const visibleAvatars = collaborators.slice(0, 3);
+  const remainingCount = collaborators.length - 3;
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -20,55 +89,147 @@ export default function ActionItem({ text, subtasks = [], addedBy, time, created
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+    const deletingId = useSelector(
+      (state) => state.actionable.deletingId
+    );
+
+    const isDeleting = deletingId === item.actionableId;
+
+    const { user } = useSelector((state) => state.auth);
+    const isAdmin = user?.userType?.toLowerCase() === "admin";
+
+    const canEditOrDelete = isAdmin;
+    const [expanded, setExpanded] = useState(false);
+    const [showReadMore, setShowReadMore] = useState(false);
+
+const textRef = useRef(null);
+
+useEffect(() => {
+  const element = textRef.current;
+
+  if (element) {
+    setShowReadMore(
+      element.scrollHeight > element.clientHeight
+    );
+  }
+}, [title, expanded]);
+const formatText = (text = "") => {
+  if (!text) return null;
+
+  const lines = text
+    .replace(/\\n/g, "\n")
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+
+  return lines.map((line, i) => {
+    const isBullet =
+      line.startsWith("●") ||
+      line.startsWith("-") ||
+      line.startsWith("*");
+
+    const isNumbered = /^\d+\./.test(line);
+
+    if (isBullet) {
+      return (
+        <li
+          key={i}
+          className="list-disc ml-[30px]  text-left"
+        >
+          {line.replace(/^[●*\-]\s?/, "")}
+        </li>
+      );
+    }
+
+    if (isNumbered) {
+      return (
+        <li
+          key={i}
+          className="list-decimal ml-[30px]  text-left"
+        >
+          {line.replace(/^\d+\.\s?/, "")}
+        </li>
+      );
+    }
+
+    return (
+      <p
+        key={i}
+        className="mb-1 text-left"
+      >
+        {line}
+      </p>
+    );
+  });
+};
   return (
-    <div className="flex items-start justify-between gap-[20px] border-b border-[#D4DFF1] pb-[20px] last:border-b-0 relative cursor-pointer" onClick={onOpen}>
+    <div className="flex items-start justify-between gap-[20px] border-b border-[#D4DFF1] pb-[20px] last:border-b-0 relative cursor-pointer" onClick={()=>{ if (item.isOptimistic) return; openTaskModal(actionableId)}}>
 
       {/* LEFT */}
-      <div className="flex w-[55%] items-start gap-[14px] pr-[40px]">
+      <div className={`flex w-[55%] items-start ${canEditOrDelete || isCompleted? 'gap-[14px]':''} pr-[40px]`}>
         {/* Checkbox */}
-        <div className="h-[30px] flex items-center">
-          <div
-             onClick={(e) => {
-                e.stopPropagation();
-                onCheck();
-              }}
-            className={`h-[18px] w-[18px] rounded-[4px] border-[2px] flex items-center justify-center cursor-pointer transition-colors
-              ${
-                completed
-                  ? "bg-[#E72D38] border-[#E72D38]"
-                  : "border-[#666666] bg-transparent"
-              }
-            `}
-          >
-            {completed && <BsCheck size={18} color="#fff" />}
-          </div>
+        <div className="h-[30px] flex items-center" >
+        {item.isOptimistic ?<span className="loader"></span>:
+        canEditOrDelete || isCompleted?
+          <div onClick={(e) => {
+              e.stopPropagation();
+              if (!canEditOrDelete) return;
+              if (item.isOptimistic) return; 
+              onCheck();
+            }}
+            className={`h-[18px] w-[18px] rounded-[4px] border-[2px] flex items-center justify-center ${canEditOrDelete?`cursor-pointer`:`pointer-events-none cursor-not-allowed`} transition-colors
+              ${ isCompleted
+                  ? `${isCompleted && !canEditOrDelete?'bg-[#999999] border-[#999999]':'bg-[#E72D38] border-[#E72D38]'}`
+                  : "border-[#666666] bg-transparent"}`} >
+            {isCompleted && <BsCheck size={18} color="#fff" />}
+          </div>:<></>}
         </div>
 
         {/* Text */}
         <div
-          className={`flex flex-col text-[20px] font-medium mt-[5px] gap-[6px] text-[#333333] `}  >
-          <div className={`line-clamp-1 leading-[22px] ${
-                completed ? "line-through" : ""
-              }`}>{text}</div>
+          className={`flex flex-col text-[20px] font-medium mt-[5px] gap-[6px] text-[#333333] `} >
+          <div>
+            <div
+              ref={textRef}
+              className={`leading-[22px] ${
+                isCompleted ? "line-through" : ""
+              } ${expanded ? "" : "line-clamp-2"}`}
+            >
+              <ul className="space-y-1">
+                {formatText(title)}
+              </ul>
+            </div>
 
-          {subtasks.length > 0 && (
+            {showReadMore && (
+              <div
+                className="text-[16px] block text-[#0B57D0] font-[700] cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setExpanded((prev) => !prev);
+                }}
+              >
+                {expanded ? "Read less" : "Read more"}
+              </div>
+            )}
+          </div>
+        {/* </TitleTooltipHover> */}
+
+          {subTask.length > 0 && (
             <ul className="ml-[30px] flex flex-col gap-[8px] list-disc text-[20px] font-[500] text-[#333333]">
-              {subtasks.slice(0, 2).map((sub, index) => {
-                const isLastVisible = index === 1 && subtasks.length > 2;
-
+              {subTask.slice(0, 2).map((sub, index) => {
+                const isLastVisible = index === 1 && subTask.length > 2;
                 return (
-                  <li key={sub.id} className={`leading-[20px] ${completed ? "line-through" : ""}`}>
+                  <li key={`preview-${sub._id}`} className={`leading-[20px] ${sub?.isCompleted ? "line-through" : ""}`}>
                     <div className="flex items-center gap-[60px]">
                       {/* TEXT */}
                       <span className={`line-clamp-1 ${!isLastVisible && 'flex-1'}`}>
-                        {sub.text}
+                        {sub.title}
                       </span>
 
-                      {/* +X SUBTASKS (only on last visible item) */}
                       {isLastVisible && (
                         <span className="flex items-center gap-[6px] text-[16px] font-[700] text-[#333] whitespace-nowrap">
                           <span className="text-[#999]"></span>
-                          +{subtasks.length - 2} subtask{subtasks.length - 2 > 1 ? "s" : ""}
+                          +{subTask.length - 2} subtask{subTask.length - 2 > 1 ? "s" : ""}
                         </span>
                       )}
                     </div>
@@ -78,29 +239,35 @@ export default function ActionItem({ text, subtasks = [], addedBy, time, created
             </ul>
           )}
 
-         {addedBy && time && (
+          {item.isOptimistic &&  <div className="h-[12px] w-[200px] rounded-full bg-[#E1E8F6]" />}
+
+         {!item.isOptimistic && createdBy && dueTime && (
             <div className="text-[16px] font-[600] text-[#666666]">
-              {addedBy} | {time.toLowerCase()} IST
+              <span className="capitalize">{createdBy?.name}</span> | {dueTime.toLowerCase()} IST
             </div>
           )}
         </div>
       </div>
 
       {/* RIGHT — Date + Avatars */}
-      {(date || avatars.length > 0) && (
+      {(dueDate || collaborators.length > 0) && (
         <div className="flex items-center gap-[60px] flex-1">
-          {date && (
+          {dueDate && (
             <div className="text-[16px] font-[600] text-[#333333] whitespace-nowrap">
-             {!today && moment(date).format("DD MMM YYYY")}
+             {!today && moment(dueDate).format("DD MMM YYYY")}
             </div>
           )}
 
-          {avatars.length > 0 && (
+          {collaborators.length > 0 && (
             <div className="flex items-center gap-[8px]">
-              {visibleAvatars.map((_, i) => (
-                <div
-                  key={i}
+              {visibleAvatars.map((collaborators,index) => (
+                <Image
+                  key={index}
                   className="h-[32px] w-[32px] rounded-full bg-[#E5E7EB] border border-[#CCCCCC]"
+                  src={collaborators.dp || collaborators.dpURL}
+                  alt="Collaborators Image"
+                  height={32}
+                  width={32}
                 />
               ))}
 
@@ -114,17 +281,32 @@ export default function ActionItem({ text, subtasks = [], addedBy, time, created
         </div>
       )}
 
+      {past && canEditOrDelete && <button
+              className="flex items-center justify-end gap-[6px] w-[180px] px-[14px] text-[18px] font-[500] text-[#666666] cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation();
+                openDeleteModal(actionableId)
+                // handleDelete();
+              }}
+            >
+              <span className="fluent--delete-16-regular"></span>
+            </button>}
+
       {/* Menu — ENABLED for both Today & Past */}
-      {!completed &&
+      {!isCompleted && canEditOrDelete &&
       <div className="relative" ref={menuRef}>
-        <BsThreeDotsVertical
-          size={22}
-          className="text-gray-500 cursor-pointer"
+        <div className="h-[24px] w-[24px] rounded-[8px] hover:bg-[#D3E3FD] grid place-items-center">
+          <BsThreeDotsVertical
+          size={20}
+          className={`text-gray-500  ${item.isOptimistic ? 'opacity-50':'cursor-pointer'}`}
             onClick={(e) => {
-            e.stopPropagation(); // 🚫 prevent opening modal
+              
+            e.stopPropagation(); 
+             if (item.isOptimistic) return; 
             setOpenMenu((prev) => !prev)
           }}
         />
+        </div>
 
         {openMenu && (
           <div
@@ -134,24 +316,26 @@ export default function ActionItem({ text, subtasks = [], addedBy, time, created
               padding: "20px",
             }}
           >
-            <button
-              className="flex items-center gap-[6px] w-[180px] px-[14px] py-[10px] text-[18px] font-[500] text-[#333]"
-              onClick={() => {
-                setOpenMenu(false);
-                console.log("Move item");
-              }}
+              <button
+                className="flex items-center gap-[6px] w-[180px] px-[14px] py-[10px] text-[18px] font-[500] text-[#333] cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setOpenMenu(false);
+                  openMoveModal(actionableId);
+                }}
             >
               <span className="tabler--calendar-star"></span> Move item
             </button>
 
             <button
-              className="flex items-center gap-[6px] w-[180px] px-[14px] py-[10px] text-[18px] font-[500] text-[#333]"
-              onClick={() => {
-                setOpenMenu(false);
-                console.log("Delete item");
+              className="flex items-center gap-[6px] w-[180px] px-[14px] py-[10px] text-[18px] font-[500] text-[#333] cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation();
+                openDeleteModal(actionableId)
+                // handleDelete();
               }}
             >
-              <span className="fluent--delete-16-regular"></span> Delete item
+              <span className="fluent--delete-16-regular"></span> {isDeleting ? "Deleting..." : "Delete"} item
             </button>
           </div>
         )}

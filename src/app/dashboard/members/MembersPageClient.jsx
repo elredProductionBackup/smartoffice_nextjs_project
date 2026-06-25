@@ -11,7 +11,8 @@ export default function MembersPageClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [search, setSearch] = useState("");
-  const tab = searchParams.get("tab") || "members";
+  const [searchBy, setSearchBy] = useState("Name");
+  const tab = searchParams.get("tab") || "member";
   const page = Number(searchParams.get("page")) || 1;
   // const search = searchParams.get("search") || "";
 
@@ -35,17 +36,18 @@ export default function MembersPageClient() {
     tab,
     page,
     search,
+    searchBy,
     limit: 10,
   });
 
-  // console.log(data,'data.....')
   return (
-    <div className="h-[calc(100vh-120px)] flex flex-col">
+    <div className="h-[calc(100vh-120px)] my-5 flex flex-col">
       <SectionHeader
         title="Members"
         tabs={[
-          { key: "members", label: "Members" },
+          { key: "member", label: "Members" },
           { key: "board", label: "Board" },
+          { key: "nonBoard", label: "Non-Boarded" },
         ]}
         activeTab={tab}
         onTabChange={(key) =>
@@ -53,6 +55,8 @@ export default function MembersPageClient() {
         }
         search={search}
         onSearch={setSearch}
+        searchBy={searchBy}
+        setSearchBy={setSearchBy}
       />
       <div className="flex-1 flex flex-col min-h-0">
         <MembersTable
@@ -62,6 +66,8 @@ export default function MembersPageClient() {
           loading={loading}
           onPageChange={(p) => updateParams({ page: p })}
           onRowClick={openMember}
+          search = {search}
+          tab={tab}
         />
       </div>
         {selectedMember && (

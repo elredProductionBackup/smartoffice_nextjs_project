@@ -22,12 +22,15 @@
 
 "use client";
 
+const isValidEmail = (email) =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
 const ButtonComp = ({ title, email }) => {
-  const isEnabled = email.length > 0;
+  const isEnabled = isValidEmail(email);
 
   return (
     <button
-      type="submit" // 🔑 ENTER key works automatically
+      type="submit" 
       disabled={!isEnabled}
       className={`h-15 rounded-full w-full flex items-center justify-center text-xl font-medium text-white transition ${
         isEnabled

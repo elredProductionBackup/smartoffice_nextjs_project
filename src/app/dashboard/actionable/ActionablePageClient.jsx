@@ -6,21 +6,25 @@ import { useSearchParams } from "next/navigation";
 import ActionableHeader from "@/_components/ActionableHeader";
 import ActionableTabs from "@/_components/ActionableTabs";
 import ActionItems from "@/_components/ActionItems";
+import { useSelector } from "react-redux";
 
+const ACTION_TABS = [
+  { label: "All", value: "all" },
+];
 
 export default function ActionablePageClient() {
-  const searchParams = useSearchParams();
-  const currentTab = searchParams.get("tab") || "members";
+    const { total } = useSelector((state) => state.actionable);
 
   return (
-   <div className="h-[calc(100vh-120px)] flex flex-col">
+   <div className="h-[calc(100vh-120px)] my-5 flex flex-col">
       <ActionableHeader
         title="Actionable"
-        taskCount={24}
+        taskCount={total}
         refresh
       />
 
-      <ActionableTabs />
+      <ActionableTabs tabs={ACTION_TABS}
+          defaultTab="all"/>
 
       <ActionItems />
     </div>

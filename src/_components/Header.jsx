@@ -2,14 +2,23 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import logo from "@/assets/logo/logo.svg";
+// import logo from "@/assets/logo/logo.svg";
 import bell from "@/assets/logo/bell.svg";
+import { useRouter } from "next/navigation";
+import { useDispatch, useSelector } from "react-redux";
+import { logout } from "@/store/auth/authSlice";
 
 const Header = () => {
   const [open, setOpen] = useState(false);
+  const dispatch = useDispatch();
+
+  const { user } = useSelector((state) => state.auth);
+
+  const firstName = user?.firstname ?? "Me";
+
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const meRef = useRef(null);
-
+  const router = useRouter();
   // close dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -26,22 +35,51 @@ const Header = () => {
     setShowLogoutConfirm(true);
   };
 
-  const confirmLogout = () => {
-    setShowLogoutConfirm(false);
-    console.log("Logged out");
-    // 👉 call logout API / clear token / router.push("/login")
-  };
+const confirmLogout = () => {
+  setShowLogoutConfirm(false);
+
+  if (typeof window === "undefined") return;
+
+  const networkClusterCode = localStorage.getItem("networkClusterCode");
+
+  dispatch(logout());
+
+  setTimeout(() => {
+    if (networkClusterCode) {
+      router.replace(`/?networkClusterCode=${networkClusterCode}`);
+    } else {
+      router.replace("/");
+    }
+  }, 0);
+};
+
 
   return (
     <>
       <div className="min-h-20 bg-[#F2F7FF] flex items-center justify-between px-[50px]">
-        <Image src={logo} alt="logo" width={96} height={40} />
+        <Image src={'/logo/smart-networks.svg'} alt="logo" width={155} height={40} className="object-contain" />
 
-        <div className="flex gap-10">
+        <div className="flex gap-[30px] items-center">
+          {/* Network Cluster Details */}
+          {user?.networkClusterDetails && (
+            <div className="flex items-center gap-[10px] bg-white border border-[#D5E2F6] px-[16px] py-[6px] rounded-full shadow-sm">
+              {user.networkClusterDetails.logo && (
+                <img
+                  src={user.networkClusterDetails.logo}
+                  alt={user.networkClusterDetails.name || "Network logo"}
+                  className="w-[28px] h-[28px] rounded-full object-cover"
+                />
+              )}
+              <span className="text-[16px] font-[500] text-[#333]">
+                {user.networkClusterDetails.name}
+              </span>
+            </div>
+          )}
+
           {/* Notification */}
           <div className="flex gap-[10px] items-center cursor-pointer">
-            <Image src={bell} alt="bell" />
-            <div className="text-xl font-medium">Notification</div>
+            <Image src={bell} alt="bell" height={32} width={32}/>
+            {/* <div className="text-xl font-medium">Notification</div> */}
           </div>
 
           {/* Me dropdown */}
@@ -53,11 +91,11 @@ const Header = () => {
               <Image
                 src="/logo/user-icon.svg"
                 alt="user"
-                width={40}
-                height={40}
+                width={32}
+                height={32}
                 className="rounded-full"
               />
-              <div>Me</div>
+              {/* <div>Me</div> */}
             </div>
 
             {open && (
@@ -73,11 +111,11 @@ const Header = () => {
                 <div className="w-[250px] bg-white rounded-[20px] p-[20px]
                   shadow-[0px_4px_4px_0px_#99999940]">
                   <div className="flex flex-col gap-[10px]">
-                    <button className="flex gap-[6px] py-[8px] pl-[12px] text-[20px] text-[#333] rounded-lg cursor-pointer">
+                    <button className="flex gap-[6px] py-[8px] pl-[12px] text-[20px] text-[#333] rounded-lg cursor-pointer capitalize">
                       <span className="h-[30px] w-[30px] rounded-full bg-[#CCCCCC] flex items-center justify-center">
                         <Image src="/logo/user-icon.svg" alt="" width={30} height={30} />
                       </span>
-                      Your profile
+                      {firstName}
                     </button>
 
                     <button
