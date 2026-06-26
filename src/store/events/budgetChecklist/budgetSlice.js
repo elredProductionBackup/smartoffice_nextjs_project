@@ -35,17 +35,10 @@ const budgetSlice = createSlice({
         state.loadingTypes = true;
       })
 
-      .addCase(fetchBudgetTypes.fulfilled, (state, action) => {
-        state.loadingTypes = false;
-
-        state.budgetTypes = action.payload;
-
-        if (!state.selectedBudgetType && action.payload.length) {
-          state.selectedBudgetType =
-            action.payload[0];
-        }
-      })
-
+.addCase(fetchBudgetTypes.fulfilled, (state, action) => {
+  state.loadingTypes = false;
+  state.budgetTypes = action.payload;
+})
       .addCase(fetchBudgetCategories.pending, (state) => {
         state.loadingCategories = true;
       })

@@ -1,5 +1,23 @@
 [
   {
+    "id": "1782385942324-ofz2d7b",
+    "description": "Test",
+    "type": "General",
+    "event": "-",
+    "portfolio": "Learning",
+    "date": "2026-06-25",
+    "totalAmount": 120,
+    "paid": 0,
+    "balance": 120,
+    "remark": "test",
+    "vendor": "test name",
+    "bill": "-",
+    "paymentStatus": "Pending",
+    "status": "Pending Approval",
+    "canSend": true,
+    "addedFromPopup": true
+  },
+  {
     "id": "1781679799755-cryohhd",
     "budgetExpenseId": "",
     "description": "decoration",

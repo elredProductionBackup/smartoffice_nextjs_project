@@ -258,7 +258,7 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
     }
 
     const isEventType = expenseType === 'Event Related';
-    const typeValue = isEventType ? 'event' : 'general';
+    const typeValue = 'general';
 
     let selectedEventId = '';
     if (isEventType) {
@@ -392,7 +392,7 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
           </div>
 
           {/* Expense Type */}
-          <div className="flex flex-col gap-1.5">
+          {/* <div className="flex flex-col gap-1.5">
             <label className="text-[14px] font-bold text-[#333]">Expense Type</label>
             <div className="flex items-center gap-6 mt-1">
               <label className="flex items-center gap-2.5 cursor-pointer text-[15px] font-semibold text-[#333]">
@@ -412,9 +412,9 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
                   )}
                 </span>
                 General
-              </label>
+              </label> */}
 
-              <label className="flex items-center gap-2.5 cursor-pointer text-[15px] font-semibold text-[#333]">
+              {/* <label className="flex items-center gap-2.5 cursor-pointer text-[15px] font-semibold text-[#333]">
                 <input
                   type="radio"
                   name="expenseType"
@@ -431,9 +431,9 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
                   )}
                 </span>
                 Event Related
-              </label>
-            </div>
-          </div>
+              </label> */}
+            {/* </div> */}
+          {/* </div> */}
 
           {/* Event (Optional) */}
           {expenseType === 'Event Related' && (
