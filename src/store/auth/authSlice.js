@@ -40,7 +40,7 @@ const authSlice = createSlice({
 
       localStorage.setItem("networkData", JSON.stringify(user));
       localStorage.setItem("token", user.token);
-      localStorage.setItem("networkClusterCode", user.networkClusterCode);
+      localStorage.setItem("networkClusterCode", user.networkClusterDetails?.networkClusterCode);
     },
 
     logout(state) {

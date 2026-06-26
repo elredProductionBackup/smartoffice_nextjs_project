@@ -3,8 +3,17 @@ import api from "@/services/axios";
 export const submitEvent = async (payload) => {
   try {
     const formData = new FormData();
+    const networkClusterCode =
+      typeof window !== "undefined" ? localStorage.getItem("networkClusterCode") : "";
 
-    Object.entries(payload).forEach(([k, v]) => {
+    const fullPayload = {
+      ...payload,
+      ...(networkClusterCode && { networkClusterCode }),
+    };
+
+    console.log("Submitting event payload:", fullPayload);
+
+    Object.entries(fullPayload).forEach(([k, v]) => {
       if (v instanceof File) formData.append(k, v);
       else if (Array.isArray(v) || typeof v === "object")
         formData.append(k, JSON.stringify(v));
