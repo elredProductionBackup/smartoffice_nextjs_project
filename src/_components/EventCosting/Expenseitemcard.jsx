@@ -7,6 +7,11 @@ export function ExpenseItemCard({ expense, onRemove, onFieldChange, onSubItemCha
   const [approvalStatus, setApprovalStatus] = useState(
     expense.approvalStatus
   );
+  const reminderLabel = {
+  whatsapp: "WhatsApp",
+  email: "Email",
+  both: "WhatsApp & Email",
+};
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
@@ -164,35 +169,32 @@ export function ExpenseItemCard({ expense, onRemove, onFieldChange, onSubItemCha
         <option value="">Send Reminder</option>
         <option value="whatsapp">WhatsApp</option>
         <option value="email">Email</option>
+        <option value="both">Both</option>
       </select>
 
       <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500" />
     </div>
 
     {/* CTA after selection */}
-    {reminderType && (
-      <button className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm">
-        Send via{" "}
-        {reminderType === "whatsapp"
-          ? "WhatsApp"
-          : "Email"}
+{reminderType && (
+  <button className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm">
+    Send via {reminderLabel[reminderType]}
 
-        <svg
-          className="w-4 h-4"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={2}
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M9 5l7 7-7 7"
-          />
-        </svg>
-      </button>
-    )}
-
+    <svg
+      className="w-4 h-4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M9 5l7 7-7 7"
+      />
+    </svg>
+  </button>
+)}
     <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
       Send for approval
     </button>

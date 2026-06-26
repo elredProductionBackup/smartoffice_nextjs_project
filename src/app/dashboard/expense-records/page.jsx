@@ -8,6 +8,10 @@ import {
   FiDollarSign,
   FiLoader,
   FiChevronDown,
+  FiMoreHorizontal,
+  FiMessageCircle ,
+  FiMail ,
+
 } from "react-icons/fi";
 import { useExpenseRecordsStore } from "@/store/useExpenseRecordsStore";
 import { useRouter } from "next/navigation";
@@ -178,6 +182,10 @@ export default function ExpenseRecordsPage() {
   const hydrateFromStorage = useExpenseRecordsStore((state) => state.hydrateFromStorage);
   const updatePaymentStatus = useExpenseRecordsStore((state) => state.updatePaymentStatus);
   const updateExpense = useExpenseRecordsStore((state) => state.updateExpense);
+  const [reminderModal, setReminderModal] = useState(null);
+// reminderModal: { expenseId, channel: 'whatsapp' | 'email' | 'both' } | null
+
+const [openEllipsis, setOpenEllipsis] = useState(null);
 
   const [selectedExpense, setSelectedExpense] = useState(null);
   const [showPopup, setShowPopup] = useState(false);
@@ -258,6 +266,10 @@ export default function ExpenseRecordsPage() {
       setShowPopup(true);
     }
   };
+  const handleSendReminder = (expenseId, channel) => {
+  // your API call here
+  console.log(`Sending reminder for ${expenseId} via ${channel}`);
+};
 
   const summaryCards = useMemo(() => {
     return [
@@ -349,34 +361,22 @@ export default function ExpenseRecordsPage() {
           <h2 className="font-nunito font-bold text-[20px] text-[#333333]">
             All Expenses
           </h2>
-          <button
+          {/* <button
             type="button"
             className="inline-flex items-center justify-center gap-2 bg-[#2B7FFF] hover:bg-[#1a6fe6] text-white font-nunito font-semibold text-[14px] px-4 py-2.5 rounded-lg transition-colors cursor-pointer border-0 outline-none shrink-0"
           >
             <FiSend className="w-4 h-4" />
             Send All for Approval ({stats?.pendingCount ?? 0})
-          </button>
+          </button> */}
         </div>
 
         {/* Filter bar */}
         <div className="flex flex-wrap items-center gap-3 pb-6 border-b border-[#F1F5F9] mb-6">
           <FilterDropdown
-            label="Type"
-            value={type}
-            onChange={(v) => { setType(v); setCurrentPage(1); }}
-            options={TYPE_OPTIONS}
-          />
-          <FilterDropdown
             label="Status"
             value={approvedStatus}
             onChange={(v) => { setApprovedStatus(v); setCurrentPage(1); }}
             options={STATUS_OPTIONS}
-          />
-          <FilterDropdown
-            label="Event"
-            value={eventId}
-            onChange={(v) => { setEventId(v); setCurrentPage(1); }}
-            options={eventOptions}
           />
           {filtersActive && (
             <button
@@ -403,18 +403,19 @@ export default function ExpenseRecordsPage() {
               style={{ gridTemplateColumns: TABLE_COLUMNS }}
             >
               <div>Description</div>
-              <div>Type</div>
-              <div>Event</div>
+              {/* <div>Type</div>
+              <div>Event</div> */}
               <div>Portfolio</div>
               <div>Date</div>
               <div>Total Amount</div>
               <div>Remark</div>
               <div>Vendor</div>
               <div>Bill</div>
+              <div>Reminder</div>
               <div>Payment Status</div>
               <div>Status</div>
-              <div>Reminder Sent</div>
-              <div>Action</div>
+              <div>Approval</div>
+              <div></div>
             </div>
 
             {/* Body */}
@@ -441,7 +442,7 @@ export default function ExpenseRecordsPage() {
                   >
                     {expense.description}
                   </div>
-                  <div className="font-medium">{expense.type}</div>
+                  {/* <div className="font-medium">{expense.type}</div>
                   <div
                     className={`truncate ${
                       expense.type === "Event Related" &&
@@ -455,7 +456,7 @@ export default function ExpenseRecordsPage() {
                     }}
                   >
                     {expense.event}
-                  </div>
+                  </div> */}
                   <div>{expense.portfolio}</div>
                   <div className="text-[#666666]">{expense.date}</div>
                   <div className="font-bold">{formatCurrency(expense.totalAmount)}</div>
@@ -477,6 +478,10 @@ export default function ExpenseRecordsPage() {
                       <span className="text-[#94A3B8]">-</span>
                     )}
                   </div>
+                  <div className="flex flex-col gap-0.5 font-bold text-[16px]">
+                    2 sent
+                    <span className="text-[12px] text-[#666666]">Last: 2026-06-08</span>
+                  </div>
                   <div>
                     <PaymentStatusDropdown
                       expenseId={expense.id}
@@ -489,22 +494,6 @@ export default function ExpenseRecordsPage() {
                       {expense.status}
                     </StatusBadge>
                   </div>
-                  <div className="flex flex-col gap-0.5">
-                    {expense.reminderCount > 0 ? (
-                      <>
-                        <span className="text-[13px] font-bold text-[#333333]">
-                          {expense.reminderCount} sent
-                        </span>
-                        <span className="text-[12px] font-medium text-[#94A3B8]">
-                          Last: {expense.lastReminderDate ?? "-"}
-                        </span>
-                      </>
-                    ) : (
-                      <span className="text-[13px] font-medium text-[#C0C8D4] italic">
-                        No reminders
-                      </span>
-                    )}
-                  </div>
                   <div>
                     {expense.canSend ? (
                       <button
@@ -512,10 +501,48 @@ export default function ExpenseRecordsPage() {
                         className="inline-flex items-center gap-1.5 bg-[#2B7FFF] hover:bg-[#1a6fe6] text-white font-nunito font-semibold text-[12px] px-3 py-1.5 rounded-md transition-colors cursor-pointer border-0 outline-none whitespace-nowrap"
                       >
                         <FiSend className="w-3.5 h-3.5" />
-                        Send for approval
+                        Send
                       </button>
                     ) : null}
                   </div>
+
+{/* Ellipsis menu column — add after Reminder or as last column */}
+<div className="relative">
+  <button
+    type="button"
+    className="w-8 h-7 flex items-center justify-center rounded-md border border-[#E2E8F0] text-[#94A3B8] hover:bg-[#F8FAFC] hover:text-[#333333] transition-colors"
+    onClick={() => setOpenEllipsis(openEllipsis === expense.id ? null : expense.id)}
+    aria-label="More send options"
+  >
+    <FiMoreHorizontal className="w-4 h-4 rotate-[90deg]" />
+  </button>
+
+  {openEllipsis === expense.id && (
+    <>
+      <div className="fixed inset-0 z-10" onClick={() => setOpenEllipsis(null)} />
+      <div className="absolute right-0 top-9 z-20 w-56 bg-white rounded-xl border border-[#E2E8F0] shadow-lg overflow-hidden">
+        {[
+          { channel: 'whatsapp', label: 'Send via WhatsApp', icon: <FiMessageCircle className="w-4 h-4" /> },
+          { channel: 'email',    label: 'Send via Email',    icon: <FiMail className="w-4 h-4" /> },
+          { channel: 'both',     label: 'Send via Email and WhatsApp', icon: <FiSend className="w-4 h-4" /> },
+        ].map(({ channel, label, icon }) => (
+          <button
+            key={channel}
+            type="button"
+            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-[#333333] hover:bg-[#F8FAFC] border-b border-[#F1F5F9] last:border-b-0"
+            onClick={() => {
+              setOpenEllipsis(null);
+              setReminderModal({ expenseId: expense.id, expense, channel });
+            }}
+          >
+            {icon}
+            {label}
+          </button>
+        ))}
+      </div>
+    </>
+  )}
+</div>
                 </div>
               ))
             )}
@@ -551,6 +578,79 @@ export default function ExpenseRecordsPage() {
           </div>
         )}
       </div>
+
+      {reminderModal && (
+  <div
+    className="fixed inset-0 z-50 bg-black/35 flex items-center justify-center"
+    onClick={() => setReminderModal(null)}
+  >
+    <div
+      className="bg-white rounded-2xl border border-[#E2E8F0] w-[400px] overflow-hidden shadow-xl"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="p-5">
+        {/* Icon */}
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3.5 ${
+          reminderModal.channel === 'whatsapp' ? 'bg-green-50' :
+          reminderModal.channel === 'email'    ? 'bg-blue-50' : 'bg-purple-50'
+        }`}>
+          {reminderModal.channel === 'whatsapp' && <FiMessageCircle className="w-5 h-5 text-green-600" />}
+          {reminderModal.channel === 'email'    && <FiMail className="w-5 h-5 text-blue-600" />}
+          {reminderModal.channel === 'both'     && <FiSend className="w-5 h-5 text-purple-600" />}
+        </div>
+
+        <p className="font-semibold text-[15px] text-[#0F172A] mb-1.5">
+          {reminderModal.channel === 'whatsapp' && 'Send reminder via WhatsApp?'}
+          {reminderModal.channel === 'email'    && 'Send reminder via Email?'}
+          {reminderModal.channel === 'both'     && 'Send via Email and WhatsApp?'}
+        </p>
+        <p className="text-[13px] text-[#64748B] leading-relaxed">
+          This will send a payment reminder to the vendor for{' '}
+          <span className="font-semibold text-[#333333]">{reminderModal.expense.description}</span>.
+          Confirm to proceed.
+        </p>
+
+        {/* Channel pill */}
+        <div className="mt-3.5 flex items-center gap-2 px-3 py-2.5 bg-[#F8FAFC] rounded-lg border border-[#E2E8F0]">
+          {reminderModal.channel === 'whatsapp' && <FiMessageCircle className="w-4 h-4 text-green-600" />}
+          {reminderModal.channel === 'email'    && <FiMail className="w-4 h-4 text-blue-600" />}
+          {reminderModal.channel === 'both'     && <FiSend className="w-4 h-4 text-purple-600" />}
+          <span className="text-[13px] font-medium text-[#334155]">
+            {reminderModal.channel === 'whatsapp' && 'WhatsApp reminder'}
+            {reminderModal.channel === 'email'    && 'Email reminder'}
+            {reminderModal.channel === 'both'     && 'Email + WhatsApp reminder'}
+          </span>
+        </div>
+      </div>
+
+      <div className="flex gap-2.5 px-5 pb-5">
+        <button
+          type="button"
+          className="flex-1 py-2 border border-[#CBD5E1] rounded-lg text-[13px] text-[#64748B] font-medium hover:bg-[#F8FAFC] transition-colors"
+          onClick={() => setReminderModal(null)}
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          className={`flex-[2] py-2 rounded-lg text-[13px] font-semibold text-white transition-colors ${
+            reminderModal.channel === 'whatsapp' ? 'bg-[#25D366] hover:bg-[#1ebe5e]' :
+            reminderModal.channel === 'email'    ? 'bg-[#2B7FFF] hover:bg-[#1a6fe6]' :
+                                                   'bg-[#7c3aed] hover:bg-[#6d28d9]'
+          }`}
+          onClick={() => {
+            handleSendReminder(reminderModal.expenseId, reminderModal.channel);
+            setReminderModal(null);
+          }}
+        >
+          {reminderModal.channel === 'whatsapp' && 'Send via WhatsApp'}
+          {reminderModal.channel === 'email'    && 'Send via Email'}
+          {reminderModal.channel === 'both'     && 'Send to both'}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
       {showPopup && (
         <NewExpensesPopup
