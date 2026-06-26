@@ -416,10 +416,9 @@ export default function EventDetailsClient() {
           title="Are you sure you want to complete this event?"
           confirmText="Complete"
           cancelText="No"
-          isLoading={closing} // Reusing closing state for now, or add a new one if needed
+          isLoading={closing} 
           onCancel={() => dispatch(closeAllEventsModals())}
           onConfirm={async () => {
-            // Add actual complete logic here if different from close
             await handleCloseEvent(); 
           }}
         />

@@ -307,13 +307,16 @@ import {
   setSelectedBudgetType,
 } from "@/store/events/budgetChecklist/budgetSlice";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 const BudgetChecklist = () => {
   const dispatch = useDispatch();
-  const router = useRouter();
+const router = useRouter();
+const searchParams = useSearchParams();
+
+const selectedBudgetTypeId = searchParams.get("budgetTypeId");
 
   const [categoryName, setCategoryName] = useState("");
   const [percentage, setPercentage] = useState("");
@@ -329,7 +332,55 @@ const BudgetChecklist = () => {
   useEffect(() => {
     dispatch(fetchBudgetTypes());
   }, []);
+useEffect(() => {
+  if (!budgetTypes?.length) return;
 
+  // URL has budgetTypeId
+  if (selectedBudgetTypeId) {
+    const selected = budgetTypes.find(
+      item => item.budgetTypeId === selectedBudgetTypeId
+    );
+
+    if (
+      selected &&
+      selected?.budgetTypeId !==
+        selectedBudgetType?.budgetTypeId
+    ) {
+      dispatch(setSelectedBudgetType(selected));
+    }
+  } else {
+    // Default first item
+    dispatch(setSelectedBudgetType(budgetTypes[0]));
+  }
+}, [
+  budgetTypes,
+  selectedBudgetTypeId,
+  dispatch,
+]);
+useEffect(() => {
+  if (!selectedBudgetType?.budgetTypeId) return;
+
+  const current =
+    searchParams.get("budgetTypeId");
+
+  if (
+    current !== selectedBudgetType.budgetTypeId
+  ) {
+    const params = new URLSearchParams(
+      searchParams.toString()
+    );
+
+    params.set(
+      "budgetTypeId",
+      selectedBudgetType.budgetTypeId
+    );
+
+    router.replace(
+      `?${params.toString()}`,
+      { scroll: false }
+    );
+  }
+}, [selectedBudgetType]);
   useEffect(() => {
     if (selectedBudgetType?.budgetTypeId) {
       dispatch(
@@ -339,7 +390,6 @@ const BudgetChecklist = () => {
       );
     }
   }, [selectedBudgetType]);
-
   const handleDelete = (categoryId) => {
     dispatch(
       removeBudgetCategory({

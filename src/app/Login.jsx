@@ -1,6 +1,5 @@
 "use client";
 
-// import logo from "@/public/logo/smart-networks.svg";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import LoginComponent from "@/_components/LoginComponent";
