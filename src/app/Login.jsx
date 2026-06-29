@@ -50,6 +50,7 @@ const Login = () => {
     }
   };
 
+  console.log('main: pretest')
   return (
     <GuestRoute>
       <div className="h-screen flex items-center justify-center">
