@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { FiTrendingUp, FiTrendingDown } from 'react-icons/fi';
 import { MdCurrencyRupee } from 'react-icons/md';
+import { useRouter } from 'next/navigation';
 import IncomePopup from './IncomePopup';
 
 const cardsData = [
@@ -28,6 +29,7 @@ const cardsData = [
     title: "Budget",
     amount: "₹ 100,000",
     subtext: "Allocated Budget 2026",
+    clickable: true,
   },
   {
     id: 3,
@@ -83,6 +85,12 @@ const SingleVisionCard = ({
 
 const VisionCards = () => {
   const [showIncomePopup, setShowIncomePopup] = useState(false);
+  const router = useRouter();
+
+  const handleCardClick = (title) => {
+    if (title === 'Income') setShowIncomePopup(true);
+    if (title === 'Budget') router.push('/dashboard/finance-budget');
+  };
 
   return (
     <>
@@ -91,7 +99,7 @@ const VisionCards = () => {
           <SingleVisionCard
             key={card.id}
             {...card}
-            onClick={card.clickable ? () => setShowIncomePopup(true) : undefined}
+            onClick={card.clickable ? () => handleCardClick(card.title) : undefined}
           />
         ))}
       </div>
