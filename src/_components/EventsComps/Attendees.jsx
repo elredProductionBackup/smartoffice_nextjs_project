@@ -28,7 +28,7 @@ const Attendees = ({ eventId }) => {
   const membersList = membersMap[eventId] || [];
   const isMembersLoading = membersLoading[eventId];
   const isMembersFetched = membersFetched[eventId];
-  console.log(membersList ?? 'not here')
+  // console.log(membersList ?? 'not here')
 
   // const [selectedRow, setSelectedRow] = useState(null);
 

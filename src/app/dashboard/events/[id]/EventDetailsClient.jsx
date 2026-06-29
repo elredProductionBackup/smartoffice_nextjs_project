@@ -392,7 +392,7 @@ export default function EventDetailsClient() {
           <div className="min-h-[calc(100dvh-180px)] bg-[#f2f7ff] rounded-[20px] overflow-y-auto mb-10 p-4" >
             <ChecklistContent eventId={eventId} /></div>}
         {activeTab === "eventcosting" &&
-          <div className="min-h-[calc(100dvh-180px)] w-full overflow-y-auto p-4">
+          <div className="w-full max-w-[1600px] px-[12px]">
             <Eventcosting
               eventName={event?.eventName || '-'}
               portfolio={event?.portfolioName || event?.portfolio || '-'}
@@ -416,10 +416,9 @@ export default function EventDetailsClient() {
           title="Are you sure you want to complete this event?"
           confirmText="Complete"
           cancelText="No"
-          isLoading={closing} // Reusing closing state for now, or add a new one if needed
+          isLoading={closing} 
           onCancel={() => dispatch(closeAllEventsModals())}
           onConfirm={async () => {
-            // Add actual complete logic here if different from close
             await handleCloseEvent(); 
           }}
         />

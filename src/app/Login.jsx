@@ -1,6 +1,5 @@
 "use client";
 
-// import logo from "@/public/logo/smart-networks.svg";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import LoginComponent from "@/_components/LoginComponent";
@@ -51,6 +50,7 @@ const Login = () => {
     }
   };
 
+  console.log('main: pretest')
   return (
     <GuestRoute>
       <div className="h-screen flex items-center justify-center">

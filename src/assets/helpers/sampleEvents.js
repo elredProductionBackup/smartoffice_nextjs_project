@@ -1,7 +1,7 @@
 export const EVENTS_DETAILS = [
   { id: "attendees", label: "Attendees", value: "attendees" },
   { id: "checklist", label: "Event Checklist", value: "checklist" },
-  { id: "logistics", label: "Logistics", value: "logistics" },
+  // { id: "logistics", label: "Logistics", value: "logistics" },
   { id: "memberMedia", label: "Member Media", value: "memberMedia" },
   { id: "documents", label: "My Document", value: "documents" },
   { id: "eventcosting", label: "Event costing", value: "eventcosting" },
