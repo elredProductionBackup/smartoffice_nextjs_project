@@ -93,7 +93,7 @@ export const mapDraftToForm = (event) => {
     description: event.eventDescription || "",
 
     eventType: {
-      type: event.eventType || "",
+      type: event.eventType?.budgetTypeId || "",
       points: event.point || 0,
     },
 

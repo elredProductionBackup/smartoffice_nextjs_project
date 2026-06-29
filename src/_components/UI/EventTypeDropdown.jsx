@@ -39,20 +39,9 @@ export function EventTypeDropdown({
     fetchBudgetTypes(true);
   }, [fetchBudgetTypes]);
 
-  console.log("EventTypeDropdown - budgetTypes in store:", budgetTypes);
-  console.log("EventTypeDropdown - value prop received:", value);
-
-  const selectedBudgetType = budgetTypes.find(
-    (b) =>
-      b.budgetTypeId === value?.type ||
-      b._id === value?.type ||
-      b.id === value?.type
-  );
-  const displayText = selectedBudgetType
-    ? (selectedBudgetType.budgetType || selectedBudgetType.name || selectedBudgetType.title || selectedBudgetType.label)
-    : value?.type;
-
-  console.log("EventTypeDropdown - resolved selected label:", displayText);
+  const typeId = value?.type?.budgetTypeId ?? value?.type;
+  const selectedBudgetType = budgetTypes.find((b) => b.budgetTypeId === typeId);
+  const displayText = selectedBudgetType?.budgetType || value?.type?.budgetType || value?.type;
 
   const optionsToRender = budgetTypes.length > 0
     ? budgetTypes
