@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { formatText } from "@/utils/functions";
 
 export default function TitleTooltipHover({ title, children }) {
   const [visible, setVisible] = useState(false);
@@ -30,7 +31,7 @@ export default function TitleTooltipHover({ title, children }) {
             shadow-[0px_4px_4px_0px_#99999940]
           "
         >
-          {title}
+          {formatText(title)}
 
          <div
                         className="absolute w-[16px] h-[8px] bg-[#e5e5e5] left-8 top-[-8px]"

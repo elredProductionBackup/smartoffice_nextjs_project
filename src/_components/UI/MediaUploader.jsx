@@ -134,7 +134,7 @@ export default function MediaUploader({
               );
             }
 
-            const src = item.fileURL || item.previewURL;
+            const src = item.fileType ==="pdf" ? item.previewURL : item.fileURL;
             if (!src) return null;
 
             return (

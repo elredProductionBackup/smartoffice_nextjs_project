@@ -11,7 +11,7 @@ import PastItems from "./PastItems";
 import AllItems from "./AllItems";
 import EmptyState from "./EmptyState";
 import ActionableDetailsModal from "./ActionableDetailsModal";
-import { createActionable, createSubTask, fetchActionables, removeActionable, removeSubTask, toggleActionable, updateActionable, updateSubTask, upsertSubTask } from "@/store/actionable/actionableThunks";
+import { createActionable, createAttachment, createSubTask, fetchActionables, removeActionable, removeAttachment, removeSubTask, toggleActionable, updateActionable, updateAttachment, updateSubTask, upsertSubTask } from "@/store/actionable/actionableThunks";
 import { addSubTaskOptimistic, removeSubTaskOptimistic, setActiveTab, setPage, updateSubTaskOptimistic } from "@/store/actionable/actionableSlice";
 import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
 import ActionableShimmer from "./Shimmer/ActionableShimmer";
@@ -179,6 +179,47 @@ export default function ActionItems() {
     );
   };
 
+  const addAttachment = (actionableId, url) => {
+  if (!url.trim()) return;
+
+  const tempId = `temp-attachment-${Date.now()}`;
+
+  dispatch(
+    createAttachment({
+      tempId,
+      actionableId,
+      url,
+    })
+  );
+};
+
+const onUpdateAttachment = (
+  actionableId,
+  attachmentId,
+  url
+) => {
+  dispatch(
+    updateAttachment({
+      _id: attachmentId,
+      actionableId,
+      url,
+    })
+  );
+};
+
+// Delete Attachment
+const onDeleteAttachment = (
+  actionableId,
+  attachmentId
+) => {
+  dispatch(
+    removeAttachment({
+      actionableId,
+      attachmentId,
+    })
+  );
+};
+
   const onSaveActionable = (actionableId, updates) => {
     dispatch(
       updateActionable({
@@ -305,6 +346,9 @@ export default function ActionItems() {
           onToggleSubtask={toggleSubtask}
           onUpdateSubtask={onUpdateSubtask}
           onDeleteSubtask={onDeleteSubtask}
+          onAddAttachment={addAttachment}
+          onUpdateAttachment={onUpdateAttachment}
+          onDeleteAttachment={onDeleteAttachment}
           onSave={onSaveActionable}
         />
       )}

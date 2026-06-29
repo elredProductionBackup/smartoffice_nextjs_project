@@ -97,7 +97,7 @@ const isValidPreview =
       </div>
 
       {/* Controls */}
-      <div className="flex gap-[60px]">
+      <div className="flex gap-[30px]">
         {/* Add / Replace */}
         <div
           onClick={openGallery}

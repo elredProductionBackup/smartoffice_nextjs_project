@@ -3,7 +3,7 @@ import { create } from "zustand";
 export const useDatepicker = create((set) => ({
   isOpen: false,
 
-  viewDate: new Date(),      
+  viewDate: new Date(),
   selectedDate: null,
 
   hoveredDate: null,

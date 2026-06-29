@@ -10,13 +10,15 @@ import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { createComment, fetchComments, removeComment } from "@/store/actionable/actionableThunks";
 import Image from "next/image";
+import AttachmentSection from "./ActionableDetailModal/AttachmentSection";
 
 export default function ActionableDetailsModal({
   task, onClose, onSave, onAddSubtask,
   onToggleSubtask, onUpdateSubtask,
   onDeleteSubtask, onAddComment,
   onDeleteComment, hideLinkEvent,
-  canEdit
+  canEdit, onAddAttachment, onUpdateAttachment,
+  onDeleteAttachment
 }) {
   if (!task) return null;
 
@@ -186,6 +188,14 @@ useEffect(() => {
           }
           canEditOrDelete={canEditOrDelete}
           />
+        <AttachmentSection
+          task={actionable}
+          onAddSubtask={onAddAttachment}
+          onToggleSubtask={onToggleSubtask}
+          onUpdateSubtask={onUpdateAttachment}
+          onDeleteSubtask={onDeleteAttachment}
+          canEditOrDelete={canEditOrDelete}
+        />
         <NotesSection
           value={draft.notes}
           onChange={(notes) =>

@@ -81,6 +81,7 @@ import memberLogo from "@/assets/logo/tdesign_member.svg";
 // import archiveLogo from "@/assets/logo/ion_archive-outline.svg";
 import eventsLogo from "@/assets/logo/events.svg";
 import actionableLogo from "@/assets/logo/actionable.svg";
+import expenseLogo from "@/assets/logo/expense-records.svg";
 import Image from "next/image";
 import Header from "@/_components/Header";
 import useGlobalLoader from "@/store/useGlobalLoader";
@@ -108,6 +109,11 @@ export default function DashboardLayout({ children }) {
   { name: "Events", path: "/dashboard/events", logo: eventsLogo },
   { name: "Actionable", path: "/dashboard/actionable", logo: actionableLogo },
   {
+    name: "Expense Records",
+    path: "/dashboard/expense-records",
+    logo: expenseLogo,
+  },
+  {
     name: "Members",
     path: "/dashboard/members?tab=member",
     logo: memberLogo,
@@ -117,6 +123,11 @@ export default function DashboardLayout({ children }) {
 const userMenu = [
   { name: "Dashboard", path: "/dashboard/profile", logo: dashboardLogo },
   { name: "Actionable", path: "/dashboard/actionable", logo: actionableLogo },
+  {
+    name: "Expense Records",
+    path: "/dashboard/expense-records",
+    logo: expenseLogo,
+  },
 ];
 
 
@@ -127,16 +138,16 @@ const userMenu = [
     // { name: "Archive", path: "/dashboard/archive", logo: archiveLogo },
     // { name: "Alliances", path: "/dashboard/alliances", logo: alliancesLogo },
 
-  console.log('deployyed')
+  // console.log('deployyed')
   return (
     <ProtectedRoute>
-      <div className="h-screen flex flex-col">
+      <div className="h-screen flex flex-col overflow-hidden">
         {/* Navbar */}
         <Header />
 
         {/* Main */}
-        <div className="flex flex-1 max-h-[calc(100vh - 80px)]">
-          <div className="p-5">
+        <div className="flex flex-1 overflow-hidden" style={{ maxHeight: "calc(100vh - 80px)" }}>
+          <div className="p-5 flex-shrink-0">
             <div className="w-21 bg-[#F2F7FF] h-full p-5 rounded-2xl">
               <ul className="space-y-10">
                 {menu.map((item) => {
