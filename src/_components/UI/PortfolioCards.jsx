@@ -1,7 +1,9 @@
 "use client";
-import React from 'react';
+import React, { useEffect } from 'react';
 import Link from 'next/link';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchBudgetTypes } from '@/store/events/budgetChecklist/budgetThunks';
 
 const portfolioData = [
   { id: 1, title: 'Learning', budget: 8500, expense: 7200, color: '#3a7cf5' },
@@ -24,8 +26,8 @@ const PortfolioCard = ({ title, budget, expense, color }) => {
   ];
 
   return (
-    <Link href="/dashboard/Learning_portfolio" className="border border-gray-100 h-[340px] w-[230px] rounded-[10px] p-5 shadow-[0px_0px_6px_0px_#00000012] bg-white flex flex-col items-center shrink-0 cursor-pointer hover:shadow-md transition-shadow duration-200 no-underline">
-      <h3 className="text-[#333333] font-bold mb-4 text-[20px] leading-[136%]">{title}</h3>
+    <Link href="/dashboard/Learning_portfolio" className="border border-gray-100 h-[380px] w-[230px] rounded-[10px] p-5 shadow-[0px_0px_6px_0px_#00000012] bg-white flex flex-col items-center shrink-0 cursor-pointer hover:shadow-md transition-shadow duration-200 no-underline">
+      <h3 className="text-[#333333] font-bold text-[20px] leading-[136%] text-center w-full flex  justify-center mb-4 min-h-[58px]">{title}</h3>
 
       <div className="w-[153px] h-[153px] mb-4 relative flex items-center justify-center">
         <ResponsiveContainer width="100%" height="100%">
@@ -66,17 +68,29 @@ const PortfolioCard = ({ title, budget, expense, color }) => {
 };
 
 const PortfolioCards = () => {
+  const dispatch = useDispatch();
+  const { budgetTypes } = useSelector((state) => state.budget);
+
+  useEffect(() => {
+    dispatch(fetchBudgetTypes());
+  }, [dispatch]);
+
+  const cards = portfolioData.map((item, i) => ({
+    ...item,
+    title: budgetTypes[i]?.budgetType ?? item.title,
+  }));
+
   return (
     <div className="mt-8">
       <h2 className="text-[24px] leading-[136%] font-bold text-[#333333] mb-4 font-nunito">Portfolio Overview</h2>
-      <div 
+      <div
         className="flex flex-row overflow-x-auto gap-5 pb-4 scrollbar-none"
         style={{
-          msOverflowStyle: 'none',  /* IE and Edge */
-          scrollbarWidth: 'none',   /* Firefox */
+          msOverflowStyle: 'none',
+          scrollbarWidth: 'none',
         }}
       >
-        {portfolioData.map((item) => (
+        {cards.map((item) => (
           <PortfolioCard key={item.id} {...item} />
         ))}
       </div>
