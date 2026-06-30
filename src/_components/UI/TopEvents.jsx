@@ -152,7 +152,7 @@ const TopEvents = () => {
       <h2 className="text-[24px] leading-[136%] font-bold text-[#333333] mb-4 font-nunito">Top Upcoming Events</h2>
 
       {featuredEvents.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="flex flex-wrap gap-6">
           {featuredEvents.map((event) => (
             <EventCard key={event.id} {...event} onClick={handleCardClick} onDelete={handleDelete} />
           ))}
