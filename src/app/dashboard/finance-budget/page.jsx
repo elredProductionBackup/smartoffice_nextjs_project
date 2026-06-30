@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
 import { FiArrowLeft, FiPlus, FiChevronRight } from 'react-icons/fi';
 import { fetchBudgetTypes } from '@/store/events/budgetChecklist/budgetThunks';
+import { getEventsList } from '@/services/events.service';
 
 const CATEGORY_STYLES = {
   'Learning':             { text: '#2563eb', bg: '#eff6ff', border: '#dbeafe' },
@@ -26,15 +27,39 @@ const HEADER_STATS = [
   { label: 'Total Remaining',amount: '₹12,00,817'   },
 ];
 
+const formatDate = (iso) => {
+  if (!iso) return '-';
+  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+};
+
 const FinanceBudgetPage = () => {
   const router   = useRouter();
   const dispatch = useDispatch();
   const { budgetTypes, loadingTypes } = useSelector((state) => state.budget);
-  const [expanded, setExpanded] = useState(null);
+  const [expanded, setExpanded]       = useState(null);
+  const [eventsByType, setEventsByType] = useState({});
 
   useEffect(() => {
     dispatch(fetchBudgetTypes());
   }, [dispatch]);
+
+  useEffect(() => {
+    const networkClusterCode = localStorage.getItem('networkClusterCode');
+    getEventsList({ networkClusterCode, start: 1, offset: 500, filterBy: 'all' })
+      .then((res) => {
+        const events = res.data?.result || [];
+        const grouped = {};
+        events.forEach((event) => {
+          const typeId = event.eventType?.budgetTypeId;
+          if (typeId) {
+            if (!grouped[typeId]) grouped[typeId] = [];
+            grouped[typeId].push(event);
+          }
+        });
+        setEventsByType(grouped);
+      })
+      .catch(() => {});
+  }, []);
 
   const toggle = (id) => setExpanded((prev) => (prev === id ? null : id));
 
@@ -46,7 +71,6 @@ const FinanceBudgetPage = () => {
         className="rounded-[20px] px-7 py-6 mb-6"
         style={{ background: 'linear-gradient(135deg, #3b63e8, #2445cc)' }}
       >
-        {/* Top row */}
         <div className="flex items-center justify-between mb-8">
           <button
             onClick={() => router.back()}
@@ -65,7 +89,6 @@ const FinanceBudgetPage = () => {
           </button>
         </div>
 
-        {/* Bottom row */}
         <div className="flex items-end justify-between">
           <h1 className="text-white text-[34px] font-bold m-0 leading-none">
             Budget Management
@@ -92,8 +115,9 @@ const FinanceBudgetPage = () => {
       ) : (
         <div className="flex flex-col gap-3">
           {budgetTypes.map((item) => {
-            const s      = CATEGORY_STYLES[item.budgetType] || DEFAULT_STYLE;
-            const isOpen = expanded === item.budgetTypeId;
+            const s        = CATEGORY_STYLES[item.budgetType] || DEFAULT_STYLE;
+            const isOpen   = expanded === item.budgetTypeId;
+            const typeEvents = eventsByType[item.budgetTypeId] || [];
 
             return (
               <div
@@ -101,64 +125,103 @@ const FinanceBudgetPage = () => {
                 className="rounded-[16px] overflow-hidden"
                 style={{ background: s.bg, border: `1px solid ${s.border}` }}
               >
-                {/* Row */}
+                {/* Header row */}
                 <div
                   className="flex items-center px-6 py-5 cursor-pointer"
                   onClick={() => toggle(item.budgetTypeId)}
                 >
-                  {/* Arrow */}
                   <FiChevronRight
                     className="shrink-0 mr-4 text-[18px] transition-transform duration-200"
-                    style={{
-                      color: s.text,
-                      transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)',
-                    }}
+                    style={{ color: s.text, transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}
                   />
 
-                  {/* Name + subtitle */}
                   <div className="flex-1 min-w-0">
                     <div className="text-[18px] font-semibold" style={{ color: s.text }}>
                       {item.budgetType}
                     </div>
                     <div className="text-[13px] text-slate-400 mt-0.5">
-                      {item.categoriesCount ?? 0} events
+                      {typeEvents.length} events
                     </div>
                   </div>
 
-                  {/* Financial columns */}
                   <div className="flex gap-14 items-center">
                     <div className="text-right">
                       <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-1">
                         Assigned Budget
                       </div>
-                      <div className="text-[20px] font-bold" style={{ color: s.text }}>
-                        ₹0
-                      </div>
+                      <div className="text-[20px] font-bold" style={{ color: s.text }}>₹0</div>
                     </div>
-
                     <div className="text-right">
                       <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-1">
                         Used
                       </div>
-                      <div className="text-[20px] font-bold text-[#6366f1]">
-                        ₹0
-                      </div>
+                      <div className="text-[20px] font-bold text-[#6366f1]">₹0</div>
                     </div>
-
                     <div className="text-right">
                       <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-1">
                         Remaining
                       </div>
-                      <div className="text-[20px] font-bold text-[#059669]">
-                        ₹0
-                      </div>
+                      <div className="text-[20px] font-bold text-[#059669]">₹0</div>
                     </div>
                   </div>
                 </div>
 
-                {/* Expanded content — empty until further defined */}
+                {/* Expanded events table */}
                 {isOpen && (
-                  <div className="border-t px-6 py-4" style={{ borderColor: s.border }} />
+                  <div className="border-t bg-white" style={{ borderColor: s.border }}>
+                    {/* Table header */}
+                    <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr] gap-4 px-6 py-3 border-b border-slate-100">
+                      {['Event Name', 'Date', 'Assigned Budget', 'Used Budget', 'Remaining', 'Status'].map((col) => (
+                        <div key={col} className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">
+                          {col}
+                        </div>
+                      ))}
+                    </div>
+
+                    {typeEvents.length === 0 ? (
+                      <div className="text-center py-8 text-slate-400 text-[13px]">
+                        No events in this category
+                      </div>
+                    ) : (
+                      <>
+                        {typeEvents.map((event) => (
+                          <div
+                            key={event.eventId}
+                            className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr] gap-4 px-6 py-4 border-b border-slate-100 items-center"
+                          >
+                            <div>
+                              <div className="text-[14px] font-semibold text-slate-800">{event.eventName}</div>
+                              {event.eventLocation && (
+                                <div className="text-[12px] text-slate-400 mt-0.5">{event.eventLocation}</div>
+                              )}
+                            </div>
+                            <div className="text-[14px] text-slate-600">{formatDate(event.startDateTime)}</div>
+                            <div className="text-[14px] font-semibold" style={{ color: s.text }}>₹0</div>
+                            <div className="text-[14px] font-semibold text-[#6366f1]">₹0</div>
+                            <div className="text-[14px] font-semibold text-[#059669]">₹0</div>
+                            <div>
+                              <span className={`text-[12px] font-medium px-3 py-1 rounded-full border ${
+                                event.isDraft
+                                  ? 'text-amber-600 bg-amber-50 border-amber-200'
+                                  : 'text-green-600 bg-green-50 border-green-200'
+                              }`}>
+                                {event.isDraft ? 'Draft' : 'On Track'}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+
+                        {/* Portfolio Total */}
+                        <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr] gap-4 px-6 py-4 items-center">
+                          <div className="text-[14px] font-bold text-slate-700 col-span-2">Portfolio Total</div>
+                          <div className="text-[14px] font-bold" style={{ color: s.text }}>₹0</div>
+                          <div className="text-[14px] font-bold text-[#6366f1]">₹0</div>
+                          <div className="text-[14px] font-bold text-[#059669]">₹0</div>
+                          <div />
+                        </div>
+                      </>
+                    )}
+                  </div>
                 )}
               </div>
             );
