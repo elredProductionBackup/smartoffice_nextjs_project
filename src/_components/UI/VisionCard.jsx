@@ -18,6 +18,7 @@ const cardsData = [
     amount: "₹ 150,000",
     subtext: "Yearly Income 2026",
     clickable: true,
+    hoverColor: '#22c55e55',
   },
   {
     id: 2,
@@ -30,6 +31,7 @@ const cardsData = [
     amount: "₹ 100,000",
     subtext: "Allocated Budget 2026",
     clickable: true,
+    hoverColor: '#1662dd55',
   },
   {
     id: 3,
@@ -55,14 +57,22 @@ const SingleVisionCard = ({
   subtext,
   onClick,
   clickable,
+  hoverColor,
 }) => {
+  const [hovered, setHovered] = useState(false);
+
   return (
     <div
       onClick={onClick}
+      onMouseEnter={() => clickable && setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={
+        hovered && hoverColor
+          ? { boxShadow: `0 0 0 2.5px ${hoverColor}, 0px 4px 16px 0px #0000001A`, transform: 'scale(1.02)' }
+          : {}
+      }
       className={`${bgClass} border ${borderClass} rounded-[20px] p-6 shadow-[0px_1px_3px_0px_#0000001A,0px_0px_4px_-1px_#8B878733] transition-all duration-200 ${
-        clickable
-          ? 'cursor-pointer hover:shadow-[0_0_0_2.5px_#22c55e55,0px_4px_16px_0px_#0000001A] hover:scale-[1.02]'
-          : ''
+        clickable ? 'cursor-pointer' : ''
       }`}
     >
       <div className="flex items-center gap-3 mb-4">
@@ -73,9 +83,7 @@ const SingleVisionCard = ({
         </div>
         <span className="text-[#4b5563] font-medium text-lg">{title}</span>
       </div>
-      <div
-        className={`text-[32px] font-bold ${textColorClass} mb-1 leading-none`}
-      >
+      <div className={`text-[32px] font-bold ${textColorClass} mb-1 leading-none`}>
         {amount}
       </div>
       <div className="text-[#777777] text-[14px]">{subtext}</div>
