@@ -7,15 +7,12 @@ import { useSelector } from 'react-redux';
 export default function AddBudgetFinance({ onClose }) {
   const { budgetTypes } = useSelector((state) => state.budget);
 
-  const today = new Date().toISOString().split('T')[0];
-
   const [form, setForm] = useState({
     portfolio: '',
     totalBudget: '',
-    date: today,
   });
 
-  const isValid = form.portfolio && form.totalBudget && form.date;
+  const isValid = form.portfolio && form.totalBudget;
 
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -62,7 +59,7 @@ export default function AddBudgetFinance({ onClose }) {
         </div>
 
         {/* Total Budget */}
-        <div className="mb-5">
+        <div className="mb-8">
           <label className="block text-[14px] font-semibold text-[#333] mb-2">
             Total Budget <span className="text-red-500">*</span>
           </label>
@@ -77,19 +74,6 @@ export default function AddBudgetFinance({ onClose }) {
               className="flex-1 outline-none text-[14px] text-[#333] bg-transparent"
             />
           </div>
-        </div>
-
-        {/* Date */}
-        <div className="mb-8">
-          <label className="block text-[14px] font-semibold text-[#333] mb-2">
-            Date <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="date"
-            value={form.date}
-            onChange={(e) => handleChange('date', e.target.value)}
-            className="w-full border border-[#2563eb] rounded-[8px] px-4 h-[50px] text-[14px] text-[#333] outline-none focus:border-[#2563eb] transition-colors"
-          />
         </div>
 
         {/* Actions */}
