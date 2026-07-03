@@ -6,6 +6,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { FiArrowLeft, FiPlus, FiChevronRight } from 'react-icons/fi';
 import { fetchBudgetTypes } from '@/store/events/budgetChecklist/budgetThunks';
 import { getEventsList } from '@/services/events.service';
+import AddBudgetFinance from '@/_components/UI/AddBudgetFinance';
 
 const CATEGORY_STYLES = {
   'Learning':             { text: '#2563eb', bg: '#eff6ff', border: '#dbeafe' },
@@ -36,8 +37,9 @@ const FinanceBudgetPage = () => {
   const router   = useRouter();
   const dispatch = useDispatch();
   const { budgetTypes, loadingTypes } = useSelector((state) => state.budget);
-  const [expanded, setExpanded]       = useState(null);
-  const [eventsByType, setEventsByType] = useState({});
+  const [expanded, setExpanded]         = useState(null);
+  const [eventsByType, setEventsByType]   = useState({});
+  const [showAddBudget, setShowAddBudget] = useState(false);
 
   useEffect(() => {
     dispatch(fetchBudgetTypes());
@@ -65,6 +67,7 @@ const FinanceBudgetPage = () => {
 
   return (
     <div className="p-6">
+      {showAddBudget && <AddBudgetFinance onClose={() => setShowAddBudget(false)} />}
 
       {/* ── Header Banner ── */}
       <div
@@ -82,6 +85,7 @@ const FinanceBudgetPage = () => {
           </button>
 
           <button
+            onClick={() => setShowAddBudget(true)}
             className="flex items-center gap-2 bg-white text-[#2445cc] text-[15px] font-semibold px-5 py-2.5 rounded-full cursor-pointer border-none hover:opacity-90 transition-opacity"
           >
             <FiPlus />
