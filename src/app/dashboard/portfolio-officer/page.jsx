@@ -16,7 +16,7 @@ const PortfolioOfficerPage = () => {
     <div className="p-6">
 
       {/* ── Top Banner ── */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex justify-between mb-6">
 
         {/* Left: name + role */}
         <div>
