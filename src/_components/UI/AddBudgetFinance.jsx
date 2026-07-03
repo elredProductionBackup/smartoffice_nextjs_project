@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { FiX, FiChevronDown, FiCheck } from 'react-icons/fi';
 import { useSelector } from 'react-redux';
 
-export default function AddBudgetFinance({ onClose }) {
+export default function AddBudgetFinance({ onClose, onAdd }) {
   const { budgetTypes } = useSelector((state) => state.budget);
 
   const [form, setForm] = useState({ portfolio: '', totalBudget: '' });
@@ -27,7 +27,7 @@ export default function AddBudgetFinance({ onClose }) {
 
   const handleSubmit = () => {
     if (!isValid) return;
-    // TODO: wire up to API
+    onAdd(form.portfolio, Number(form.totalBudget));
     onClose();
   };
 
@@ -108,6 +108,7 @@ export default function AddBudgetFinance({ onClose }) {
               placeholder="0.00"
               value={form.totalBudget}
               onChange={(e) => setForm((p) => ({ ...p, totalBudget: e.target.value }))}
+              onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
               className="flex-1 outline-none text-[14px] text-[#111] bg-transparent placeholder:text-[#9ca3af]"
             />
           </div>

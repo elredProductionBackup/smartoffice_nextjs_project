@@ -39,7 +39,22 @@ const FinanceBudgetPage = () => {
   const { budgetTypes, loadingTypes } = useSelector((state) => state.budget);
   const [expanded, setExpanded]         = useState(null);
   const [eventsByType, setEventsByType]   = useState({});
-  const [showAddBudget, setShowAddBudget] = useState(false);
+  const [showAddBudget, setShowAddBudget]   = useState(false);
+  const [assignedBudgets, setAssignedBudgets] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('smartoffice_assigned_budgets') || '{}');
+    } catch {
+      return {};
+    }
+  });
+
+  const handleAddBudget = (portfolioId, amount) => {
+    setAssignedBudgets((prev) => {
+      const updated = { ...prev, [portfolioId]: (prev[portfolioId] || 0) + amount };
+      localStorage.setItem('smartoffice_assigned_budgets', JSON.stringify(updated));
+      return updated;
+    });
+  };
 
   useEffect(() => {
     dispatch(fetchBudgetTypes());
@@ -67,7 +82,7 @@ const FinanceBudgetPage = () => {
 
   return (
     <div className="p-6">
-      {showAddBudget && <AddBudgetFinance onClose={() => setShowAddBudget(false)} />}
+      {showAddBudget && <AddBudgetFinance onClose={() => setShowAddBudget(false)} onAdd={handleAddBudget} />}
 
       {/* ── Header Banner ── */}
       <div
@@ -153,7 +168,11 @@ const FinanceBudgetPage = () => {
                       <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-1">
                         Assigned Budget
                       </div>
-                      <div className="text-[20px] font-bold" style={{ color: s.text }}>₹0</div>
+                      <div className="text-[20px] font-bold" style={{ color: s.text }}>
+                        {assignedBudgets[item.budgetTypeId]
+                          ? `₹${assignedBudgets[item.budgetTypeId].toLocaleString('en-IN')}`
+                          : '₹0'}
+                      </div>
                     </div>
                     <div className="text-right">
                       <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-1">
