@@ -1,7 +1,9 @@
 'use client';
 
+import Link from 'next/link';
 import { MdCurrencyRupee } from 'react-icons/md';
-import { FiArrowRight, FiCalendar, FiTrendingUp } from 'react-icons/fi';
+import { FiArrowRight, FiCalendar, FiTrendingUp, FiSend } from 'react-icons/fi';
+import { HiOutlineLightBulb } from 'react-icons/hi';
 
 const UPCOMING_EVENTS = [
   { id: 1, name: 'Leadership Training Workshop', date: 'June 15, 2026',   budget: '₹12,00,000', status: 'Planned' },
@@ -13,10 +15,33 @@ const PortfolioOfficerPage = () => {
   return (
     <div className="p-6">
 
-      {/* ── Vision Board ── */}
-      <div className="mb-6">
-        <h1 className="text-[30px] font-bold text-[#1a1a2e] leading-tight">Vision Board</h1>
-        <p className="text-[15px] text-[#888] mt-1">Overview of learning initiatives for the year</p>
+      {/* ── Top Banner ── */}
+      <div className="flex items-center justify-between mb-6">
+
+        {/* Left: name + role */}
+        <div>
+          <h1 className="text-[32px] font-bold text-[#1a1a2e] leading-tight">Rahul Sharma</h1>
+          <p className="text-[15px] text-[#888] mt-1">Learning Portfolio Officer · FY 2026</p>
+        </div>
+
+        {/* Right: Vision Board card */}
+        <div
+          className="rounded-[18px] px-7 py-5 w-[340px] flex flex-col gap-3"
+          style={{ background: 'linear-gradient(135deg, #3b63e8, #2445cc)' }}
+        >
+          <div className="flex items-center gap-2">
+            <HiOutlineLightBulb className="text-white text-[20px]" />
+            <span className="text-white text-[16px] font-bold">Vision Board</span>
+          </div>
+          <p className="text-white/80 text-[13px] leading-[1.6]">
+            Have a learning initiative in mind? Submit an event request to your admin for review and approval.
+          </p>
+          <button className="flex items-center justify-center gap-2 bg-white text-[#2445cc] text-[14px] font-semibold px-5 py-2.5 rounded-full cursor-pointer border-none hover:opacity-90 transition-opacity w-full">
+            <FiSend className="text-[14px]" />
+            Request an Event
+          </button>
+        </div>
+
       </div>
 
       {/* ── Stat Cards ── */}
@@ -59,10 +84,10 @@ const PortfolioOfficerPage = () => {
         {/* Section header */}
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-[24px] font-bold text-[#1a1a2e]">Upcoming Events</h2>
-          <button className="flex items-center gap-2 bg-[#2563eb] text-white text-[14px] font-semibold px-5 py-2.5 rounded-full cursor-pointer hover:bg-[#1d4ed8] transition-colors border-none">
+          <Link href="/dashboard/portfolio-officer/events" className="flex items-center gap-2 bg-[#2563eb] text-white text-[14px] font-semibold px-5 py-2.5 rounded-full cursor-pointer hover:bg-[#1d4ed8] transition-colors no-underline">
             View All Events
             <FiArrowRight className="text-[15px]" />
-          </button>
+          </Link>
         </div>
 
         {/* Event rows */}
