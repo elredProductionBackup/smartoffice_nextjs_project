@@ -95,6 +95,17 @@ const VisionCards = () => {
   const [showIncomePopup, setShowIncomePopup] = useState(false);
   const router = useRouter();
 
+  const totalAssigned = (() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem('smartoffice_assigned_budgets') || '{}');
+      return Object.values(stored).reduce((sum, v) => sum + v, 0);
+    } catch { return 0; }
+  })();
+
+  const totalAssignedFormatted = totalAssigned
+    ? `₹ ${totalAssigned.toLocaleString('en-IN')}`
+    : '₹ 0';
+
   const handleCardClick = (title) => {
     if (title === 'Income') setShowIncomePopup(true);
     if (title === 'Budget') router.push('/dashboard/finance-budget');
@@ -107,6 +118,7 @@ const VisionCards = () => {
           <SingleVisionCard
             key={card.id}
             {...card}
+            amount={card.title === 'Budget' ? totalAssignedFormatted : card.amount}
             onClick={card.clickable ? () => handleCardClick(card.title) : undefined}
           />
         ))}

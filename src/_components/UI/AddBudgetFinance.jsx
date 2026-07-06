@@ -32,8 +32,8 @@ export default function AddBudgetFinance({ onClose, onAdd }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-[16px] w-full max-w-[600px] mx-4 p-8 shadow-xl">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40" onClick={onClose}>
+      <div className="bg-white rounded-[16px] w-full max-w-[600px] mx-4 p-8 shadow-xl" onClick={(e) => e.stopPropagation()}>
 
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
