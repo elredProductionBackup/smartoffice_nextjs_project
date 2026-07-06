@@ -24,7 +24,7 @@ const PortfolioEventsPage = () => {
     <div className="p-6">
 
       {/* ── Top Banner ── */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex justify-between mb-6">
         <div>
           <h1 className="text-[32px] font-bold text-[#1a1a2e] leading-tight">Rahul Sharma</h1>
           <p className="text-[15px] text-[#888] mt-1">Learning Portfolio Officer · FY 2026</p>
