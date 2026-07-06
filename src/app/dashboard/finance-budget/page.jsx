@@ -23,9 +23,8 @@ const CATEGORY_STYLES = {
 const DEFAULT_STYLE = { text: '#374151', bg: '#f9fafb', border: '#f3f4f6' };
 
 const HEADER_STATS = [
-  { label: 'Total Assigned', amount: '₹1,67,75,000' },
-  { label: 'Total Used',     amount: '₹1,55,74,183' },
-  { label: 'Total Remaining',amount: '₹12,00,817'   },
+  { label: 'Total Used',      amount: '₹0.00' },
+  { label: 'Total Remaining', amount: '₹0.00' },
 ];
 
 const formatDate = (iso) => {
@@ -55,6 +54,11 @@ const FinanceBudgetPage = () => {
       return updated;
     });
   };
+
+  const totalAssigned = Object.values(assignedBudgets).reduce((sum, v) => sum + v, 0);
+  const totalAssignedFormatted = totalAssigned
+    ? `₹${totalAssigned.toLocaleString('en-IN')}`
+    : '₹0';
 
   useEffect(() => {
     dispatch(fetchBudgetTypes());
@@ -114,6 +118,15 @@ const FinanceBudgetPage = () => {
           </h1>
 
           <div className="flex gap-3">
+            {/* Dynamic Total Assigned */}
+            <div
+              className="rounded-[14px] px-7 py-4 text-center min-w-[160px]"
+              style={{ background: 'rgba(255,255,255,0.15)' }}
+            >
+              <div className="text-white/75 text-[13px] font-medium mb-1.5">Total Assigned</div>
+              <div className="text-white text-[22px] font-bold leading-none">{totalAssignedFormatted}</div>
+            </div>
+            {/* Static stats */}
             {HEADER_STATS.map((stat) => (
               <div
                 key={stat.label}

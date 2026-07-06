@@ -68,7 +68,7 @@ export default function AddBudgetFinance({ onClose, onAdd }) {
 
             {/* Dropdown list */}
             {dropdownOpen && (
-              <div className="absolute z-50 w-full mt-1 bg-white border border-[#e5e7eb] rounded-[10px] shadow-lg py-1 max-h-[240px] overflow-y-auto">
+              <div className="absolute z-50 w-full mt-1 bg-white border border-[#e5e7eb] rounded-[10px] shadow-lg py-1.5 px-1.5 max-h-[240px] overflow-y-auto">
                 {budgetTypes.map((bt) => {
                   const isSelected = form.portfolio === bt.budgetTypeId;
                   return (
@@ -79,7 +79,7 @@ export default function AddBudgetFinance({ onClose, onAdd }) {
                         setForm((p) => ({ ...p, portfolio: bt.budgetTypeId }));
                         setDropdownOpen(false);
                       }}
-                      className={`w-full flex items-center justify-between px-4 py-2.5 text-[14px] text-left transition-colors cursor-pointer ${
+                      className={`w-full flex items-center justify-between px-3 py-2.5 text-[14px] text-left transition-colors cursor-pointer rounded-[7px] ${
                         isSelected
                           ? 'bg-[#eff6ff] text-[#2563eb] font-medium'
                           : 'text-[#111] hover:bg-[#f9fafb]'
