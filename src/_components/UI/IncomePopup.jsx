@@ -1,28 +1,11 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
-import { FiTrendingUp, FiX, FiPlus, FiChevronDown } from 'react-icons/fi';
+import React, { useState, useEffect } from 'react';
+import { FiX } from 'react-icons/fi';
 import CustomDatePicker from './CustomDatePicker';
 
-const INCOME_TYPES = [
-  'Initiation fee',
-  'Yearly Subscription',
-  'Corpus Fund',
-  'Portfolio Income',
-  'Event Participation',
-  'Subsidies',
-  'Other',
-];
-
-// Dynamic runtime colors — cannot be expressed as Tailwind classes
 const TAG_COLORS = {
-  'Initiation fee': { bg: '#e8f0fe', text: '#1a56db', border: '#c3d3fc' },
-  'Yearly Subscription': { bg: '#ecfdf5', text: '#059669', border: '#a7f3d0' },
-  'Corpus Fund': { bg: '#fef3c7', text: '#b45309', border: '#fde68a' },
-  'Portfolio Income': { bg: '#fce7f3', text: '#be185d', border: '#fbcfe8' },
-  'Sponsorship': { bg: '#ede9fe', text: '#7c3aed', border: '#ddd6fe' },
-  'Event Revenue': { bg: '#fff7ed', text: '#c2410c', border: '#fed7aa' },
-  'Other': { bg: '#f1f5f9', text: '#475569', border: '#cbd5e1' },
+  default: { bg: '#e8f0fe', text: '#1a56db', border: '#c3d3fc' },
 };
 
 const formatRupees = (value) => {
@@ -49,79 +32,32 @@ const fromInputDate = (str) => {
   return `${dd}-${mm}-${yyyy}`;
 };
 
-const INITIAL_SOURCES = [
-  { id: 1, type: 'Initiation fee', date: '15-01-2026', description: 'New member joining fee', amount: 50000 },
-  { id: 2, type: 'Yearly Subscription', date: '01-01-2026', description: 'Annual membership subscriptions', amount: 75000 },
-];
 
-const EMPTY_FORM = { type: 'Initiation fee', amount: '', date: today(), description: '' };
-
-/* ── Custom Income-Type Dropdown ── */
-function IncomeTypeDropdown({ value, onChange }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-
-  useEffect(() => {
-    const handler = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
-
-  return (
-    <div ref={ref} className="relative w-full">
-      {/* Trigger button */}
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center justify-between px-3 py-2 border border-gray-300 rounded-lg bg-white text-[0.84rem] text-slate-800 cursor-pointer outline-none text-left"
-      >
-        {value}
-        <FiChevronDown
-          className="ml-2 shrink-0 text-slate-500 transition-transform duration-200"
-          style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
-        />
-      </button>
-
-      {/* Dropdown panel — matches the reference image */}
-      {open && (
-        <div className="absolute top-[calc(100%+6px)] left-0 w-[336px] h-[298px] bg-white rounded-[14px] z-9999 overflow-y-auto p-2"
-          style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.13)' }}
-        >
-          {INCOME_TYPES.map((t, i) => {
-            const isSelected = t === value;
-            return (
-              <button
-                key={t}
-                type="button"
-                onMouseDown={() => { onChange(t); setOpen(false); }}
-                className={[
-                  'block w-full text-left px-4 py-2.5 cursor-pointer border-none rounded-lg transition-colors duration-150',
-                  "font-['Nunito_Sans'] font-medium text-[16px] leading-[136%] tracking-[0%] text-[#333333]",
-                  isSelected ? 'bg-indigo-50' : 'bg-transparent hover:bg-slate-50',
-                ].join(' ')}
-              >
-                {t}
-              </button>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
+const EMPTY_FORM = { type: '', amount: '', date: today(), description: '' };
 
 export default function IncomePopup({ onClose }) {
-  const [sources, setSources] = useState(INITIAL_SOURCES);
+  const [sources, setSources] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('smartoffice_income_sources') || '[]');
+    } catch { return []; }
+  });
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
-  const [nextId, setNextId] = useState(3);
+  const [nextId, setNextId] = useState(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem('smartoffice_income_sources') || '[]');
+      return stored.length ? Math.max(...stored.map((s) => s.id)) + 1 : 1;
+    } catch { return 1; }
+  });
+
+  useEffect(() => {
+    localStorage.setItem('smartoffice_income_sources', JSON.stringify(sources));
+  }, [sources]);
 
   const totalIncome = sources.reduce((acc, s) => acc + Number(s.amount), 0);
 
   const handleAddSource = () => {
-    if (!form.amount || isNaN(Number(form.amount))) return;
+    if (!form.type || !form.amount || isNaN(Number(form.amount))) return;
     setSources((prev) => [...prev, { ...form, id: nextId, amount: Number(form.amount) }]);
     setNextId((n) => n + 1);
     setForm(EMPTY_FORM);
@@ -219,9 +155,14 @@ export default function IncomePopup({ onClose }) {
                   <label className="block text-[14px] font-bold text-[#333333] mb-1">
                     Income Type
                   </label>
-                  <IncomeTypeDropdown
+                  <input
+                    name="type"
+                    type="text"
+                    placeholder="e.g. Initiation fee"
                     value={form.type}
-                    onChange={(t) => setForm((prev) => ({ ...prev, type: t }))}
+                    onChange={handleFormChange}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAddSource()}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-[0.84rem] text-slate-800 bg-white outline-none"
                   />
                 </div>
                 <div>
@@ -235,6 +176,7 @@ export default function IncomePopup({ onClose }) {
                     placeholder="0"
                     value={form.amount}
                     onChange={handleFormChange}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAddSource()}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-[0.84rem] text-slate-800 bg-white outline-none"
                   />
                 </div>
@@ -253,14 +195,15 @@ export default function IncomePopup({ onClose }) {
                 </div>
                 <div>
                   <label className="block text-[14px] font-bold text-[#333333] mb-1">
-                    Description
+                    Remarks
                   </label>
                   <input
                     name="description"
                     type="text"
-                    placeholder="Brief description"
+                    placeholder="Brief remarks"
                     value={form.description}
                     onChange={handleFormChange}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAddSource()}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-[0.84rem] text-slate-800 bg-white outline-none"
                   />
                 </div>
@@ -292,7 +235,7 @@ export default function IncomePopup({ onClose }) {
               </div>
               <div className="flex flex-col gap-2.5">
                 {sources.map((src) => {
-                  const tag = TAG_COLORS[src.type] || TAG_COLORS['Other'];
+                  const tag = TAG_COLORS.default;
                   return (
                     <div
                       key={src.id}

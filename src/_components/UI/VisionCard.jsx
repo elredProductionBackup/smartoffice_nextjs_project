@@ -41,7 +41,7 @@ const cardsData = [
     textColorClass: "text-[#8a1bdc]",
     icon: <FiTrendingDown className="text-2xl" />,
     title: "Expense",
-    amount: "₹ 27,700",
+    amount: "₹ 0.00",
     subtext: "Total Expenses 2026",
   },
 ];
@@ -106,6 +106,17 @@ const VisionCards = () => {
     ? `₹ ${totalAssigned.toLocaleString('en-IN')}`
     : '₹ 0';
 
+  const totalIncome = (() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem('smartoffice_income_sources') || '[]');
+      return stored.reduce((sum, s) => sum + Number(s.amount), 0);
+    } catch { return 0; }
+  })();
+
+  const totalIncomeFormatted = totalIncome
+    ? `₹ ${totalIncome.toLocaleString('en-IN')}`
+    : '₹ 0';
+
   const handleCardClick = (title) => {
     if (title === 'Income') setShowIncomePopup(true);
     if (title === 'Budget') router.push('/dashboard/finance-budget');
@@ -118,7 +129,7 @@ const VisionCards = () => {
           <SingleVisionCard
             key={card.id}
             {...card}
-            amount={card.title === 'Budget' ? totalAssignedFormatted : card.amount}
+            amount={card.title === 'Budget' ? totalAssignedFormatted : card.title === 'Income' ? totalIncomeFormatted : card.amount}
             onClick={card.clickable ? () => handleCardClick(card.title) : undefined}
           />
         ))}
