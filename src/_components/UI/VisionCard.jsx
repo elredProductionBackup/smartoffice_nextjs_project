@@ -41,7 +41,7 @@ const cardsData = [
     textColorClass: "text-[#8a1bdc]",
     icon: <FiTrendingDown className="text-2xl" />,
     title: "Expense",
-    amount: "₹ 27,700",
+    amount: "₹ 0.00",
     subtext: "Total Expenses 2026",
   },
 ];
