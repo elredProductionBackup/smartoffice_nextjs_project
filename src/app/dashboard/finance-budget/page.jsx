@@ -32,6 +32,13 @@ const formatDate = (iso) => {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 };
 
+const GENERAL_EXPENSES = [
+  { id: 1, description: 'Office Supplies',    date: '3 Apr 2026',  amount: '₹8,500',  bill: 'INV-1042', vendor: 'Staples India', remark: 'Stationery for Q1'       },
+  { id: 2, description: 'Courier & Postage',  date: '11 Apr 2026', amount: '₹2,300',  bill: 'INV-1058', vendor: 'BlueDart',      remark: 'Documents dispatch'       },
+  { id: 3, description: 'Printing & Signage', date: '2 May 2026',  amount: '₹14,750', bill: 'INV-1091', vendor: 'PrintZone',     remark: 'Banners for annual meet'  },
+  { id: 4, description: 'Staff Refreshments', date: '18 May 2026', amount: '₹6,200',  bill: 'INV-1104', vendor: 'Café Blend',    remark: 'Monthly team lunch'       },
+];
+
 const FinanceBudgetPage = () => {
   const router   = useRouter();
   const dispatch = useDispatch();
@@ -202,10 +209,16 @@ const FinanceBudgetPage = () => {
                   </div>
                 </div>
 
-                {/* Expanded events table */}
+                {/* Expanded section */}
                 {isOpen && (
                   <div className="border-t bg-white" style={{ borderColor: s.border }}>
-                    {/* Table header */}
+
+                    {/* ── EVENT RELATED ── */}
+                    <div className="px-6 pt-4 pb-1">
+                      <div className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Event Related</div>
+                    </div>
+
+                    {/* Event table header */}
                     <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr] gap-4 px-6 py-3 border-b border-slate-100">
                       {['Event Name', 'Date', 'Assigned Budget', 'Used Budget', 'Remaining', 'Status'].map((col) => (
                         <div key={col} className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">
@@ -215,7 +228,7 @@ const FinanceBudgetPage = () => {
                     </div>
 
                     {typeEvents.length === 0 ? (
-                      <div className="text-center py-8 text-slate-400 text-[13px]">
+                      <div className="text-center py-6 text-slate-400 text-[13px]">
                         No events in this category
                       </div>
                     ) : (
@@ -248,7 +261,7 @@ const FinanceBudgetPage = () => {
                         ))}
 
                         {/* Portfolio Total */}
-                        <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr] gap-4 px-6 py-4 items-center">
+                        <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr] gap-4 px-6 py-4 border-b border-slate-200 items-center bg-slate-50">
                           <div className="text-[14px] font-bold text-slate-700 col-span-2">Portfolio Total</div>
                           <div className="text-[14px] font-bold" style={{ color: s.text }}>₹0</div>
                           <div className="text-[14px] font-bold text-[#6366f1]">₹0</div>
@@ -257,6 +270,44 @@ const FinanceBudgetPage = () => {
                         </div>
                       </>
                     )}
+
+                    {/* ── GENERAL ── */}
+                    <div className="px-6 pt-5 pb-1 text-center">
+                      <div className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">General</div>
+                    </div>
+
+                    {/* General table header */}
+                    <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1.5fr_1.5fr] gap-4 px-6 py-3 border-b border-slate-100">
+                      {['Description', 'Date', 'Amount (₹)', 'Bill', 'Vendor', 'Remark'].map((col) => (
+                        <div key={col} className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">
+                          {col}
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* General rows */}
+                    {GENERAL_EXPENSES.map((row) => (
+                      <div
+                        key={row.id}
+                        className="grid grid-cols-[2fr_1fr_1fr_1fr_1.5fr_1.5fr] gap-4 px-6 py-4 border-b border-slate-100 items-center"
+                      >
+                        <div className="text-[14px] font-medium text-slate-800">{row.description}</div>
+                        <div className="text-[14px] text-slate-600">{row.date}</div>
+                        <div className="text-[14px] font-semibold" style={{ color: s.text }}>{row.amount}</div>
+                        <div className="text-[13px] text-slate-500">{row.bill}</div>
+                        <div className="text-[13px] text-slate-600">{row.vendor}</div>
+                        <div className="text-[13px] text-slate-400 italic">{row.remark}</div>
+                      </div>
+                    ))}
+
+                    {/* General Total */}
+                    <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1.5fr_1.5fr] gap-4 px-6 py-4 items-center bg-slate-50">
+                      <div className="text-[14px] font-bold text-slate-700">Total</div>
+                      <div />
+                      <div className="text-[14px] font-bold" style={{ color: s.text }}>₹31,750</div>
+                      <div /><div /><div />
+                    </div>
+
                   </div>
                 )}
               </div>
