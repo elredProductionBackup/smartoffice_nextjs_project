@@ -88,6 +88,7 @@ import useGlobalLoader from "@/store/useGlobalLoader";
 import { useEffect } from "react";
 import ProtectedRoute from "@/_components/ProtectedRoute";
 import { useSelector } from "react-redux";
+import { FiDollarSign } from "react-icons/fi";
 
 export default function DashboardLayout({ children }) {
   const pathname = usePathname();
@@ -131,7 +132,16 @@ const userMenu = [
 ];
 
 
-  const menu = isAdmin ? adminMenu : userMenu;
+  const isPortfolioOfficer = pathname.startsWith("/dashboard/portfolio-officer");
+
+  const portfolioOfficerMenu = [
+    { name: "Portfolio Officer", path: "/dashboard/portfolio-officer", logo: dashboardLogo, exact: true },
+    { name: "Yearly Budget",     path: "/dashboard/portfolio-officer/yearly-budget", icon: <FiDollarSign className="text-[22px]" /> },
+    { name: "Events",            path: "/dashboard/events",      logo: eventsLogo },
+    { name: "Actionable",        path: "/dashboard/actionable",  logo: actionableLogo },
+  ];
+
+  const menu = isPortfolioOfficer ? portfolioOfficerMenu : (isAdmin ? adminMenu : userMenu);
 
     // { name: "Vendors", path: "/dashboard/vendors?tab=hotels", logo: vendorsLogo },
     // { name: "Resources", path: "/dashboard/resources", logo: resourcesLogo },
@@ -152,8 +162,9 @@ const userMenu = [
               <ul className="space-y-10">
                 {menu.map((item) => {
                     const basePath = removeAllParams(item.path);
-                    const active =
-                      pathname === basePath || pathname.startsWith(`${basePath}/`);
+                    const active = item.exact
+                      ? pathname === basePath
+                      : pathname === basePath || pathname.startsWith(`${basePath}/`);
                   return (
                     <li key={item.path}>
                       <Link
@@ -165,7 +176,9 @@ const userMenu = [
                             : "hover:bg-blue-100"
                         }`}
                       >
-                        <Image src={item.logo} alt={item.name} />
+                        {item.icon
+                          ? item.icon
+                          : <Image src={item.logo} alt={item.name} />}
                       </Link>
                     </li>
                   );
