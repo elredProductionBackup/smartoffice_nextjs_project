@@ -211,7 +211,7 @@ const FinanceBudgetPage = () => {
 
                 {/* Expanded section */}
                 {isOpen && (
-                  <div className="border-t bg-white" style={{ borderColor: s.border }}>
+                  <div className="border-t bg-white pb-5" style={{ borderColor: s.border }}>
 
                     {/* ── EVENT RELATED ── */}
                     <div className="px-6 pt-4 pb-1">
@@ -272,40 +272,47 @@ const FinanceBudgetPage = () => {
                     )}
 
                     {/* ── GENERAL ── */}
-                    <div className="px-6 pt-5 pb-1 text-center">
+                    <div className="flex items-center gap-4 px-6 pt-5 pb-1">
+                      <div className="flex-1 border-t border-slate-200" />
                       <div className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">General</div>
+                      <div className="flex-1 border-t border-slate-200" />
                     </div>
 
-                    {/* General table header */}
-                    <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1.5fr_1.5fr] gap-4 px-6 py-3 border-b border-slate-100">
-                      {['Description', 'Date', 'Amount (₹)', 'Bill', 'Vendor', 'Remark'].map((col) => (
-                        <div key={col} className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">
-                          {col}
+                    {/* General table — rounded bordered card */}
+                    <div className="mx-6 border border-slate-200 rounded-[12px] overflow-hidden">
+
+                      {/* Header */}
+                      <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1.5fr_1.5fr] gap-4 px-5 py-3 bg-slate-50 border-b border-slate-200">
+                        {['Description', 'Date', 'Amount (₹)', 'Bill', 'Vendor', 'Remark'].map((col) => (
+                          <div key={col} className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
+                            {col}
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Rows */}
+                      {GENERAL_EXPENSES.map((row) => (
+                        <div
+                          key={row.id}
+                          className="grid grid-cols-[2fr_1fr_1fr_1fr_1.5fr_1.5fr] gap-4 px-5 py-4 border-b border-slate-100 items-center"
+                        >
+                          <div className="text-[13px] font-medium text-slate-800">{row.description}</div>
+                          <div className="text-[13px] text-slate-600">{row.date}</div>
+                          <div className="text-[13px] font-semibold" style={{ color: s.text }}>{row.amount}</div>
+                          <div className="text-[12px] text-slate-400">{row.bill}</div>
+                          <div className="text-[13px] text-slate-600">{row.vendor}</div>
+                          <div className="text-[12px] text-slate-400">{row.remark}</div>
                         </div>
                       ))}
-                    </div>
 
-                    {/* General rows */}
-                    {GENERAL_EXPENSES.map((row) => (
-                      <div
-                        key={row.id}
-                        className="grid grid-cols-[2fr_1fr_1fr_1fr_1.5fr_1.5fr] gap-4 px-6 py-4 border-b border-slate-100 items-center"
-                      >
-                        <div className="text-[14px] font-medium text-slate-800">{row.description}</div>
-                        <div className="text-[14px] text-slate-600">{row.date}</div>
-                        <div className="text-[14px] font-semibold" style={{ color: s.text }}>{row.amount}</div>
-                        <div className="text-[13px] text-slate-500">{row.bill}</div>
-                        <div className="text-[13px] text-slate-600">{row.vendor}</div>
-                        <div className="text-[13px] text-slate-400 italic">{row.remark}</div>
+                      {/* Total */}
+                      <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1.5fr_1.5fr] gap-4 px-5 py-3 bg-slate-50 items-center">
+                        <div className="text-[13px] font-bold text-slate-700 uppercase tracking-wide">Total</div>
+                        <div />
+                        <div className="text-[13px] font-bold" style={{ color: s.text }}>₹31,750</div>
+                        <div /><div /><div />
                       </div>
-                    ))}
 
-                    {/* General Total */}
-                    <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1.5fr_1.5fr] gap-4 px-6 py-4 items-center bg-slate-50">
-                      <div className="text-[14px] font-bold text-slate-700">Total</div>
-                      <div />
-                      <div className="text-[14px] font-bold" style={{ color: s.text }}>₹31,750</div>
-                      <div /><div /><div />
                     </div>
 
                   </div>
