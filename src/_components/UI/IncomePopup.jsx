@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { FiX } from 'react-icons/fi';
 import CustomDatePicker from './CustomDatePicker';
+import { addIncome, deleteIncome, getIncome } from '@/services/income.service';
 
 const TAG_COLORS = {
   default: { bg: '#e8f0fe', text: '#1a56db', border: '#c3d3fc' },
@@ -32,36 +33,109 @@ const fromInputDate = (str) => {
   return `${dd}-${mm}-${yyyy}`;
 };
 
+const epochToDisplayDate = (ms) => {
+  if (!ms) return '';
+  const d = new Date(ms);
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  return `${dd}-${mm}-${d.getFullYear()}`;
+};
+
 
 const EMPTY_FORM = { type: '', amount: '', date: today(), description: '' };
 
+const mapIncomeRecord = (record) => ({
+  id: record.incomeId,
+  type: record.incomeType,
+  amount: Number(record.incomeAmount),
+  date: epochToDisplayDate(record.incomeDate),
+  description: record.incomeRemarks || '',
+  createdAt: record.createdAt || 0,
+});
+
 export default function IncomePopup({ onClose }) {
-  const [sources, setSources] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem('smartoffice_income_sources') || '[]');
-    } catch { return []; }
-  });
+  // Income sources now live entirely on the backend (addIncome/deleteIncome/
+  // getIncome) — no localStorage mock data, so there's nothing to fall out of
+  // sync with real incomeIds.
+  const [sources, setSources] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
-  const [nextId, setNextId] = useState(() => {
-    try {
-      const stored = JSON.parse(localStorage.getItem('smartoffice_income_sources') || '[]');
-      return stored.length ? Math.max(...stored.map((s) => s.id)) + 1 : 1;
-    } catch { return 1; }
-  });
+  const [submitting, setSubmitting] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {
-    localStorage.setItem('smartoffice_income_sources', JSON.stringify(sources));
-  }, [sources]);
+    try {
+      localStorage.removeItem('smartoffice_income_sources');
+    } catch {}
+
+    (async () => {
+      setLoading(true);
+      try {
+        const result = await getIncome();
+        console.log('getIncome result:', result);
+        const list = result?.result || [];
+        setSources(list.map(mapIncomeRecord));
+      } catch (error) {
+        console.error('Failed to fetch incomes:', error);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
 
   const totalIncome = sources.reduce((acc, s) => acc + Number(s.amount), 0);
 
-  const handleAddSource = () => {
+  const handleAddSource = async () => {
     if (!form.type || !form.amount || isNaN(Number(form.amount))) return;
-    setSources((prev) => [...prev, { ...form, id: nextId, amount: Number(form.amount) }]);
-    setNextId((n) => n + 1);
-    setForm(EMPTY_FORM);
-    setShowForm(false);
+
+    setSubmitting(true);
+    try {
+      const [dd, mm, yyyy] = form.date.split('-');
+      const incomeDate = new Date(`${yyyy}-${mm}-${dd}`).getTime();
+
+      const result = await addIncome({
+        incomeType: form.type,
+        incomeAmount: Number(form.amount),
+        incomeDate,
+        incomeRemarks: form.description || '',
+      });
+      console.log('addIncome result:', result);
+
+      // `result.result` may contain more than the just-created record (e.g. the
+      // full income list), so pick the most recently created one rather than
+      // assuming index [0] is the new entry.
+      const list = result?.result || [];
+      const created = list.reduce(
+        (latest, item) => (!latest || (item.createdAt || 0) > (latest.createdAt || 0) ? item : latest),
+        null,
+      );
+      if (!created?.incomeId) {
+        throw new Error('addIncome did not return a saved record');
+      }
+
+      setSources((prev) => [...prev, mapIncomeRecord(created)]);
+
+      setForm(EMPTY_FORM);
+      setShowForm(false);
+    } catch (error) {
+      console.error('Failed to add income:', error);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDeleteSource = async (incomeId) => {
+    setDeletingId(incomeId);
+    try {
+      const result = await deleteIncome(incomeId);
+      console.log('deleteIncome result:', result);
+      setSources((prev) => prev.filter((s) => s.id !== incomeId));
+    } catch (error) {
+      console.error('Failed to delete income:', error);
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   const handleFormChange = (e) => {
@@ -213,13 +287,15 @@ export default function IncomePopup({ onClose }) {
               <div className="flex gap-2.5">
                 <button
                   onClick={handleAddSource}
-                  className="bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)] text-white border-none rounded-full w-40 h-[35px] tracking-[-2%] font-medium text-[16px] leading-[100%] cursor-pointer"
+                  disabled={submitting}
+                  className="bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)] text-white border-none rounded-full w-40 h-[35px] tracking-[-2%] font-medium text-[16px] leading-[100%] cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  Add Source
+                  {submitting ? 'Adding…' : 'Add Source'}
                 </button>
                 <button
                   onClick={() => { setShowForm(false); setForm(EMPTY_FORM); }}
-                  className="text-white bg-[#999999] rounded-full w-40 h-[35px] leading-[100%] tracking-[-2%] font-medium text-[16px] cursor-pointer"
+                  disabled={submitting}
+                  className="text-white bg-[#999999] rounded-full w-40 h-[35px] leading-[100%] tracking-[-2%] font-medium text-[16px] cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   Cancel
                 </button>
@@ -228,7 +304,13 @@ export default function IncomePopup({ onClose }) {
           )}
 
           {/* ── Income Sources List ── */}
-          {sources.length > 0 && (
+          {loading && (
+            <div className="text-center text-slate-400 text-[0.9rem] py-6">
+              Loading income sources…
+            </div>
+          )}
+
+          {!loading && sources.length > 0 && (
             <div>
               <div className="text-[20px] leading-[136%] font-bold text-[#333333] mb-2.5">
                 Income Sources
@@ -270,8 +352,9 @@ export default function IncomePopup({ onClose }) {
                         </div>
                         <button
                           type="button"
-                          onClick={() => setSources((prev) => prev.filter((s) => s.id !== src.id))}
-                          className="opacity-0 group-hover:opacity-100 w-6 h-6 rounded-md flex items-center justify-center bg-red-50 hover:bg-red-100 text-red-500 cursor-pointer border-none transition-all duration-150"
+                          onClick={() => handleDeleteSource(src.id)}
+                          disabled={deletingId === src.id}
+                          className="opacity-0 group-hover:opacity-100 w-6 h-6 rounded-md flex items-center justify-center bg-red-50 hover:bg-red-100 text-red-500 cursor-pointer border-none transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed"
                         >
                           <FiX className="w-3.5 h-3.5" />
                         </button>
