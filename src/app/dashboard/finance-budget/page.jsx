@@ -54,9 +54,12 @@ const FinanceBudgetPage = () => {
     }
   });
 
+  // addEditBudget is an upsert keyed by budgetTypeId (no separate budget-record
+  // id in its payload), so a repeat submission for the same portfolio replaces
+  // its amount on the backend rather than adding to it — mirror that here.
   const handleAddBudget = (portfolioId, amount) => {
     setAssignedBudgets((prev) => {
-      const updated = { ...prev, [portfolioId]: (prev[portfolioId] || 0) + amount };
+      const updated = { ...prev, [portfolioId]: amount };
       localStorage.setItem('smartoffice_assigned_budgets', JSON.stringify(updated));
       return updated;
     });

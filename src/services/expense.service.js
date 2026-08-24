@@ -141,6 +141,27 @@ export const deleteExpense = async (budgetExpenseId) => {
 };
 
 /**
+ * Add or edit a SmartNetwork Budget (assign a total budget amount to a portfolio)
+ *
+ * PATCH /smartOffice/addEditBudget
+ * Body: { budgetTypeId: string, budgetAmount: number }
+ *
+ * @param {Object} payload
+ * @param {string} payload.budgetTypeId - Budget Type / Portfolio ID
+ * @param {number} payload.budgetAmount - Total budget amount
+ * @returns {Promise<Object>}
+ */
+export const addEditBudget = async (payload) => {
+  try {
+    const res = await api.patch("/smartOffice/addEditBudget", payload);
+    return res.data;
+  } catch (error) {
+    console.error("addEditBudget API Error:", error?.response || error);
+    throw error;
+  }
+};
+
+/**
  * Add a new budget category
  *
  * POST /smartOffice/addBudgetCategory
