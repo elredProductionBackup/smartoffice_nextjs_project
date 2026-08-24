@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { FiX } from 'react-icons/fi';
 import CustomDatePicker from './CustomDatePicker';
-import { addIncome, deleteIncome, getIncome } from '@/services/income.service';
+import { addIncome, deleteIncome } from '@/services/income.service';
 
 const TAG_COLORS = {
   default: { bg: '#e8f0fe', text: '#1a56db', border: '#c3d3fc' },
@@ -54,11 +54,11 @@ const mapIncomeRecord = (record) => ({
 });
 
 export default function IncomePopup({ onClose }) {
-  // Income sources now live entirely on the backend (addIncome/deleteIncome/
-  // getIncome) — no localStorage mock data, so there's nothing to fall out of
-  // sync with real incomeIds.
+  // Income sources live on the backend (addIncome/deleteIncome) — no
+  // localStorage mock data, so there's nothing to fall out of sync with real
+  // incomeIds. getIncome isn't wired up here yet (backend route isn't live),
+  // so the list only reflects entries added in the current session.
   const [sources, setSources] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
@@ -68,20 +68,6 @@ export default function IncomePopup({ onClose }) {
     try {
       localStorage.removeItem('smartoffice_income_sources');
     } catch {}
-
-    (async () => {
-      setLoading(true);
-      try {
-        const result = await getIncome();
-        console.log('getIncome result:', result);
-        const list = result?.result || [];
-        setSources(list.map(mapIncomeRecord));
-      } catch (error) {
-        console.error('Failed to fetch incomes:', error);
-      } finally {
-        setLoading(false);
-      }
-    })();
   }, []);
 
   const totalIncome = sources.reduce((acc, s) => acc + Number(s.amount), 0);
@@ -304,13 +290,7 @@ export default function IncomePopup({ onClose }) {
           )}
 
           {/* ── Income Sources List ── */}
-          {loading && (
-            <div className="text-center text-slate-400 text-[0.9rem] py-6">
-              Loading income sources…
-            </div>
-          )}
-
-          {!loading && sources.length > 0 && (
+          {sources.length > 0 && (
             <div>
               <div className="text-[20px] leading-[136%] font-bold text-[#333333] mb-2.5">
                 Income Sources
