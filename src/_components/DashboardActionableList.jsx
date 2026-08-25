@@ -101,7 +101,7 @@ export default function DashboardActionableList({ data = [], loading = false, })
                           item.collaborators.slice(0, 3).map((_, index) => (
                             <Image
                               key={index}
-                              src={_?.dpURL}
+                              src={_?.dpURL || "/logo/user-icon.svg"}
                               alt="Collaborator Avatar"
                               height={24}
                               width={24}
