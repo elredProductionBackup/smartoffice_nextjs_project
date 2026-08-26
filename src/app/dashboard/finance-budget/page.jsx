@@ -6,6 +6,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { FiArrowLeft, FiPlus, FiChevronRight } from 'react-icons/fi';
 import { fetchBudgetTypes } from '@/store/events/budgetChecklist/budgetThunks';
 import { getEventsList } from '@/services/events.service';
+import { getBudgetReportCategory } from '@/services/finance.service';
 import AddBudgetFinance from '@/_components/UI/AddBudgetFinance';
 
 const CATEGORY_STYLES = {
@@ -22,10 +23,7 @@ const CATEGORY_STYLES = {
 
 const DEFAULT_STYLE = { text: '#374151', bg: '#f9fafb', border: '#f3f4f6' };
 
-const HEADER_STATS = [
-  { label: 'Total Used',      amount: '₹0.00' },
-  { label: 'Total Remaining', amount: '₹0.00' },
-];
+const formatRupees = (value) => `₹${(Number(value) || 0).toLocaleString('en-IN')}`;
 
 const formatDate = (iso) => {
   if (!iso) return '-';
@@ -46,32 +44,38 @@ const FinanceBudgetPage = () => {
   const [expanded, setExpanded]         = useState(null);
   const [eventsByType, setEventsByType]   = useState({});
   const [showAddBudget, setShowAddBudget]   = useState(false);
-  const [assignedBudgets, setAssignedBudgets] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem('smartoffice_assigned_budgets') || '{}');
-    } catch {
-      return {};
-    }
-  });
+  const [reportByType, setReportByType] = useState({});
+
+  const fetchReport = () => {
+    getBudgetReportCategory(1, 100)
+      .then((response) => {
+        const rows = Array.isArray(response?.result) ? response.result : [];
+        const byType = {};
+        rows.forEach((row) => {
+          byType[row.budgetTypeId] = row;
+        });
+        setReportByType(byType);
+      })
+      .catch((error) => {
+        console.error('Failed to fetch budget report by category:', error);
+      });
+  };
 
   // addEditBudget is an upsert keyed by budgetTypeId (no separate budget-record
   // id in its payload), so a repeat submission for the same portfolio replaces
-  // its amount on the backend rather than adding to it — mirror that here.
-  const handleAddBudget = (portfolioId, amount) => {
-    setAssignedBudgets((prev) => {
-      const updated = { ...prev, [portfolioId]: amount };
-      localStorage.setItem('smartoffice_assigned_budgets', JSON.stringify(updated));
-      return updated;
-    });
+  // its amount on the backend rather than adding to it. Re-fetch the report
+  // afterward instead of tracking the new amount locally.
+  const handleAddBudget = () => {
+    fetchReport();
   };
 
-  const totalAssigned = Object.values(assignedBudgets).reduce((sum, v) => sum + v, 0);
-  const totalAssignedFormatted = totalAssigned
-    ? `₹${totalAssigned.toLocaleString('en-IN')}`
-    : '₹0';
+  const totalAssigned = Object.values(reportByType).reduce((sum, r) => sum + (Number(r.budgetAmount) || 0), 0);
+  const totalUsed = Object.values(reportByType).reduce((sum, r) => sum + (Number(r.totalExpense) || 0), 0);
+  const totalRemaining = totalAssigned - totalUsed;
 
   useEffect(() => {
     dispatch(fetchBudgetTypes());
+    fetchReport();
   }, [dispatch]);
 
   useEffect(() => {
@@ -134,19 +138,22 @@ const FinanceBudgetPage = () => {
               style={{ background: 'rgba(255,255,255,0.15)' }}
             >
               <div className="text-white/75 text-[13px] font-medium mb-1.5">Total Assigned</div>
-              <div className="text-white text-[22px] font-bold leading-none">{totalAssignedFormatted}</div>
+              <div className="text-white text-[22px] font-bold leading-none">{formatRupees(totalAssigned)}</div>
             </div>
-            {/* Static stats */}
-            {HEADER_STATS.map((stat) => (
-              <div
-                key={stat.label}
-                className="rounded-[14px] px-7 py-4 text-center min-w-[160px]"
-                style={{ background: 'rgba(255,255,255,0.15)' }}
-              >
-                <div className="text-white/75 text-[13px] font-medium mb-1.5">{stat.label}</div>
-                <div className="text-white text-[22px] font-bold leading-none">{stat.amount}</div>
-              </div>
-            ))}
+            <div
+              className="rounded-[14px] px-7 py-4 text-center min-w-[160px]"
+              style={{ background: 'rgba(255,255,255,0.15)' }}
+            >
+              <div className="text-white/75 text-[13px] font-medium mb-1.5">Total Used</div>
+              <div className="text-white text-[22px] font-bold leading-none">{formatRupees(totalUsed)}</div>
+            </div>
+            <div
+              className="rounded-[14px] px-7 py-4 text-center min-w-[160px]"
+              style={{ background: 'rgba(255,255,255,0.15)' }}
+            >
+              <div className="text-white/75 text-[13px] font-medium mb-1.5">Total Remaining</div>
+              <div className="text-white text-[22px] font-bold leading-none">{formatRupees(totalRemaining)}</div>
+            </div>
           </div>
         </div>
       </div>
@@ -160,6 +167,10 @@ const FinanceBudgetPage = () => {
             const s        = CATEGORY_STYLES[item.budgetType] || DEFAULT_STYLE;
             const isOpen   = expanded === item.budgetTypeId;
             const typeEvents = eventsByType[item.budgetTypeId] || [];
+            const report   = reportByType[item.budgetTypeId];
+            const assigned = Number(report?.budgetAmount) || 0;
+            const used     = Number(report?.totalExpense) || 0;
+            const remaining = assigned - used;
 
             return (
               <div
@@ -192,22 +203,20 @@ const FinanceBudgetPage = () => {
                         Assigned Budget
                       </div>
                       <div className="text-[20px] font-bold" style={{ color: s.text }}>
-                        {assignedBudgets[item.budgetTypeId]
-                          ? `₹${assignedBudgets[item.budgetTypeId].toLocaleString('en-IN')}`
-                          : '₹0'}
+                        {formatRupees(assigned)}
                       </div>
                     </div>
                     <div className="text-right">
                       <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-1">
                         Used
                       </div>
-                      <div className="text-[20px] font-bold text-[#6366f1]">₹0</div>
+                      <div className="text-[20px] font-bold text-[#6366f1]">{formatRupees(used)}</div>
                     </div>
                     <div className="text-right">
                       <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-1">
                         Remaining
                       </div>
-                      <div className="text-[20px] font-bold text-[#059669]">₹0</div>
+                      <div className="text-[20px] font-bold text-[#059669]">{formatRupees(remaining)}</div>
                     </div>
                   </div>
                 </div>
