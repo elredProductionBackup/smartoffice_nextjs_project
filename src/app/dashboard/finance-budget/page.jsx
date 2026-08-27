@@ -5,8 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
 import { FiArrowLeft, FiPlus, FiChevronRight } from 'react-icons/fi';
 import { fetchBudgetTypes } from '@/store/events/budgetChecklist/budgetThunks';
-import { getEventsList } from '@/services/events.service';
-import { getBudgetReportCategory } from '@/services/finance.service';
+import { getBudgetReportCategory, getBudgetEventReportCategory } from '@/services/finance.service';
 import AddBudgetFinance from '@/_components/UI/AddBudgetFinance';
 
 const CATEGORY_STYLES = {
@@ -42,9 +41,10 @@ const FinanceBudgetPage = () => {
   const dispatch = useDispatch();
   const { budgetTypes, loadingTypes } = useSelector((state) => state.budget);
   const [expanded, setExpanded]         = useState(null);
-  const [eventsByType, setEventsByType]   = useState({});
   const [showAddBudget, setShowAddBudget]   = useState(false);
   const [reportByType, setReportByType] = useState({});
+  const [eventReportByType, setEventReportByType] = useState({});
+  const [loadingEventReport, setLoadingEventReport] = useState({});
 
   const fetchReport = () => {
     getBudgetReportCategory(1, 100)
@@ -73,30 +73,55 @@ const FinanceBudgetPage = () => {
   const totalUsed = Object.values(reportByType).reduce((sum, r) => sum + (Number(r.totalExpense) || 0), 0);
   const totalRemaining = totalAssigned - totalUsed;
 
+  const fetchEventReport = (id) => {
+    if (eventReportByType[id] || loadingEventReport[id]) return;
+
+    setLoadingEventReport((prev) => ({ ...prev, [id]: true }));
+    getBudgetEventReportCategory(id)
+      .then((response) => {
+        const rows = Array.isArray(response?.result) ? response.result : [];
+
+        // Backend response can repeat the same event (its attendee-count
+        // lookup isn't always grouped back down to one row per event) —
+        // dedupe by eventId so both the table and the Portfolio Total sum
+        // don't double-count it.
+        const seen = new Set();
+        const dedupedRows = rows.filter((row) => {
+          if (seen.has(row.eventId)) return false;
+          seen.add(row.eventId);
+          return true;
+        });
+
+        setEventReportByType((prev) => ({ ...prev, [id]: dedupedRows }));
+      })
+      .catch((error) => {
+        console.error('Failed to fetch budget event report for', id, error);
+        setEventReportByType((prev) => ({ ...prev, [id]: [] }));
+      })
+      .finally(() => {
+        setLoadingEventReport((prev) => ({ ...prev, [id]: false }));
+      });
+  };
+
   useEffect(() => {
     dispatch(fetchBudgetTypes());
     fetchReport();
   }, [dispatch]);
 
+  // Eagerly fetch every portfolio's event report on load so the collapsed
+  // "N events" badge always matches what the expanded table would show,
+  // instead of relying on a separate (and inconsistent) events source.
   useEffect(() => {
-    const networkClusterCode = localStorage.getItem('networkClusterCode');
-    getEventsList({ networkClusterCode, start: 1, offset: 500, filterBy: 'all' })
-      .then((res) => {
-        const events = res.data?.result || [];
-        const grouped = {};
-        events.forEach((event) => {
-          const typeId = event.eventType?.budgetTypeId;
-          if (typeId) {
-            if (!grouped[typeId]) grouped[typeId] = [];
-            grouped[typeId].push(event);
-          }
-        });
-        setEventsByType(grouped);
-      })
-      .catch(() => {});
-  }, []);
+    budgetTypes.forEach((item) => {
+      fetchEventReport(item.budgetTypeId);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [budgetTypes]);
 
-  const toggle = (id) => setExpanded((prev) => (prev === id ? null : id));
+  const toggle = (id) => {
+    setExpanded((prev) => (prev === id ? null : id));
+    fetchEventReport(id);
+  };
 
   return (
     <div className="p-6">
@@ -166,11 +191,16 @@ const FinanceBudgetPage = () => {
           {budgetTypes.map((item) => {
             const s        = CATEGORY_STYLES[item.budgetType] || DEFAULT_STYLE;
             const isOpen   = expanded === item.budgetTypeId;
-            const typeEvents = eventsByType[item.budgetTypeId] || [];
             const report   = reportByType[item.budgetTypeId];
             const assigned = Number(report?.budgetAmount) || 0;
             const used     = Number(report?.totalExpense) || 0;
             const remaining = assigned - used;
+
+            const eventRows = eventReportByType[item.budgetTypeId] || [];
+            const isLoadingEventReport = loadingEventReport[item.budgetTypeId];
+            const portfolioTotalBudget  = eventRows.reduce((sum, r) => sum + (Number(r.eventBudget) || 0), 0);
+            const portfolioTotalUsed    = eventRows.reduce((sum, r) => sum + (Number(r.eventExpenseAmount) || 0), 0);
+            const portfolioTotalRemaining = portfolioTotalBudget - portfolioTotalUsed;
 
             return (
               <div
@@ -193,7 +223,7 @@ const FinanceBudgetPage = () => {
                       {item.budgetType}
                     </div>
                     <div className="text-[13px] text-slate-400 mt-0.5">
-                      {typeEvents.length} events
+                      {isLoadingEventReport ? 'Loading…' : `${eventRows.length} events`}
                     </div>
                   </div>
 
@@ -239,45 +269,56 @@ const FinanceBudgetPage = () => {
                       ))}
                     </div>
 
-                    {typeEvents.length === 0 ? (
+                    {isLoadingEventReport ? (
+                      <div className="text-center py-6 text-slate-400 text-[13px]">
+                        Loading events...
+                      </div>
+                    ) : eventRows.length === 0 ? (
                       <div className="text-center py-6 text-slate-400 text-[13px]">
                         No events in this category
                       </div>
                     ) : (
                       <>
-                        {typeEvents.map((event) => (
-                          <div
-                            key={event.eventId}
-                            className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr] gap-4 px-6 py-4 border-b border-slate-100 items-center"
-                          >
-                            <div>
-                              <div className="text-[14px] font-semibold text-slate-800">{event.eventName}</div>
-                              {event.eventLocation && (
-                                <div className="text-[12px] text-slate-400 mt-0.5">{event.eventLocation}</div>
-                              )}
+                        {eventRows.map((event) => {
+                          const eventAssigned = Number(event.eventBudget) || 0;
+                          const eventUsed     = Number(event.eventExpenseAmount) || 0;
+                          const eventRemaining = eventAssigned - eventUsed;
+                          const overBudget = eventUsed > eventAssigned;
+
+                          return (
+                            <div
+                              key={event.eventId}
+                              className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr] gap-4 px-6 py-4 border-b border-slate-100 items-center"
+                            >
+                              <div>
+                                <div className="text-[14px] font-semibold text-slate-800">{event.eventName}</div>
+                                {event.eventLocation?.location && (
+                                  <div className="text-[12px] text-slate-400 mt-0.5">{event.eventLocation.location}</div>
+                                )}
+                              </div>
+                              <div className="text-[14px] text-slate-600">{formatDate(event.startDateTime)}</div>
+                              <div className="text-[14px] font-semibold" style={{ color: s.text }}>{formatRupees(eventAssigned)}</div>
+                              <div className="text-[14px] font-semibold text-[#6366f1]">{formatRupees(eventUsed)}</div>
+                              <div className="text-[14px] font-semibold text-[#059669]">{formatRupees(eventRemaining)}</div>
+                              <div>
+                                <span className={`text-[12px] font-medium px-3 py-1 rounded-full border ${
+                                  overBudget
+                                    ? 'text-red-600 bg-red-50 border-red-200'
+                                    : 'text-green-600 bg-green-50 border-green-200'
+                                }`}>
+                                  {overBudget ? 'Over Budget' : 'On Track'}
+                                </span>
+                              </div>
                             </div>
-                            <div className="text-[14px] text-slate-600">{formatDate(event.startDateTime)}</div>
-                            <div className="text-[14px] font-semibold" style={{ color: s.text }}>₹0</div>
-                            <div className="text-[14px] font-semibold text-[#6366f1]">₹0</div>
-                            <div className="text-[14px] font-semibold text-[#059669]">₹0</div>
-                            <div>
-                              <span className={`text-[12px] font-medium px-3 py-1 rounded-full border ${
-                                event.isDraft
-                                  ? 'text-amber-600 bg-amber-50 border-amber-200'
-                                  : 'text-green-600 bg-green-50 border-green-200'
-                              }`}>
-                                {event.isDraft ? 'Draft' : 'On Track'}
-                              </span>
-                            </div>
-                          </div>
-                        ))}
+                          );
+                        })}
 
                         {/* Portfolio Total */}
                         <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr] gap-4 px-6 py-4 border-b border-slate-200 items-center bg-slate-50">
                           <div className="text-[14px] font-bold text-slate-700 col-span-2">Portfolio Total</div>
-                          <div className="text-[14px] font-bold" style={{ color: s.text }}>₹0</div>
-                          <div className="text-[14px] font-bold text-[#6366f1]">₹0</div>
-                          <div className="text-[14px] font-bold text-[#059669]">₹0</div>
+                          <div className="text-[14px] font-bold" style={{ color: s.text }}>{formatRupees(portfolioTotalBudget)}</div>
+                          <div className="text-[14px] font-bold text-[#6366f1]">{formatRupees(portfolioTotalUsed)}</div>
+                          <div className="text-[14px] font-bold text-[#059669]">{formatRupees(portfolioTotalRemaining)}</div>
                           <div />
                         </div>
                       </>
