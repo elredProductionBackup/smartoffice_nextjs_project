@@ -99,17 +99,18 @@ const VisionCards = () => {
   const [report, setReport] = useState(null);
   const router = useRouter();
 
+  const fetchReport = async () => {
+    try {
+      const result = await getFinanceDashboardReport();
+      const data = Array.isArray(result?.result) ? result.result[0] : result?.result;
+      setReport(data || null);
+    } catch (error) {
+      console.error('Failed to fetch finance dashboard report:', error);
+    }
+  };
+
   useEffect(() => {
-    (async () => {
-      try {
-        const result = await getFinanceDashboardReport();
-        console.log('getFinanceDashboardReport result:', result);
-        const data = Array.isArray(result?.result) ? result.result[0] : result?.result;
-        setReport(data || null);
-      } catch (error) {
-        console.error('Failed to fetch finance dashboard report:', error);
-      }
-    })();
+    fetchReport();
   }, []);
 
   const amountFor = (title) => {
@@ -139,7 +140,7 @@ const VisionCards = () => {
       </div>
 
       {showIncomePopup && (
-        <IncomePopup onClose={() => setShowIncomePopup(false)} />
+        <IncomePopup onClose={() => setShowIncomePopup(false)} onIncomeChange={fetchReport} />
       )}
     </>
   );

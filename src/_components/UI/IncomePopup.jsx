@@ -53,7 +53,7 @@ const mapIncomeRecord = (record) => ({
   createdAt: record.createdAt || 0,
 });
 
-export default function IncomePopup({ onClose }) {
+export default function IncomePopup({ onClose, onIncomeChange }) {
   // Income sources live entirely on the backend (getIncome/addIncome/
   // deleteIncome) — no localStorage mock data, so there's nothing to fall
   // out of sync with real incomeIds.
@@ -115,6 +115,7 @@ export default function IncomePopup({ onClose }) {
       }
 
       setSources((prev) => [...prev, mapIncomeRecord(created)]);
+      onIncomeChange?.();
 
       setForm(EMPTY_FORM);
       setShowForm(false);
@@ -131,6 +132,7 @@ export default function IncomePopup({ onClose }) {
       const result = await deleteIncome(incomeId);
       console.log('deleteIncome result:', result);
       setSources((prev) => prev.filter((s) => s.id !== incomeId));
+      onIncomeChange?.();
     } catch (error) {
       console.error('Failed to delete income:', error);
     } finally {
