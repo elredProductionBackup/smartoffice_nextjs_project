@@ -3,12 +3,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { FiX, FiChevronDown, FiCheck } from 'react-icons/fi';
 import { useSelector } from 'react-redux';
+import { addEditBudget } from '@/services/expense.service';
 
 export default function AddBudgetFinance({ onClose, onAdd }) {
   const { budgetTypes } = useSelector((state) => state.budget);
 
   const [form, setForm] = useState({ portfolio: '', totalBudget: '' });
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const dropdownRef = useRef(null);
 
   const isValid = form.portfolio && form.totalBudget;
@@ -25,10 +27,35 @@ export default function AddBudgetFinance({ onClose, onAdd }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!isValid) return;
-    onAdd(form.portfolio, Number(form.totalBudget));
-    onClose();
+
+    setSubmitting(true);
+    try {
+      const result = await addEditBudget({
+        budgetTypeId: form.portfolio,
+        budgetAmount: Number(form.totalBudget),
+      });
+      console.log('addEditBudget result:', result);
+
+      // `result.result` may contain more than just this portfolio's record
+      // (addIncome taught us not to trust array position) — match by
+      // budgetTypeId and fall back to the most recently updated entry.
+      const list = result?.result || [];
+      const saved =
+        list.find((item) => item.budgetTypeId === form.portfolio) ||
+        list.reduce(
+          (latest, item) => (!latest || (item.updatedAt || 0) > (latest.updatedAt || 0) ? item : latest),
+          null,
+        );
+
+      onAdd(form.portfolio, Number(saved?.budgetAmount ?? form.totalBudget));
+      onClose();
+    } catch (error) {
+      console.error('Failed to add budget:', error);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -118,18 +145,19 @@ export default function AddBudgetFinance({ onClose, onAdd }) {
         <div className="flex gap-3">
           <button
             onClick={handleSubmit}
-            disabled={!isValid}
+            disabled={!isValid || submitting}
             className={`flex-1 h-[50px] rounded-[8px] text-[15px] font-semibold transition-colors ${
-              isValid
+              isValid && !submitting
                 ? 'bg-[#2563eb] text-white hover:bg-[#1d4ed8] cursor-pointer'
                 : 'bg-[#e5e7eb] text-[#9ca3af] cursor-not-allowed'
             }`}
           >
-            Add Budget
+            {submitting ? 'Adding…' : 'Add Budget'}
           </button>
           <button
             onClick={onClose}
-            className="px-8 h-[50px] rounded-[8px] border border-[#d1d5db] text-[15px] font-semibold text-[#333] hover:bg-[#f9fafb] cursor-pointer transition-colors"
+            disabled={submitting}
+            className="px-8 h-[50px] rounded-[8px] border border-[#d1d5db] text-[15px] font-semibold text-[#333] hover:bg-[#f9fafb] cursor-pointer transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
           >
             Cancel
           </button>

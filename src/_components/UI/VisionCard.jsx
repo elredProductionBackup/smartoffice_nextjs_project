@@ -1,10 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { FiTrendingUp, FiTrendingDown } from 'react-icons/fi';
 import { MdCurrencyRupee } from 'react-icons/md';
 import { useRouter } from 'next/navigation';
 import IncomePopup from './IncomePopup';
+import { getFinanceDashboardReport } from '@/services/finance.service';
+
+const formatRupees = (value) => `₹ ${Number(value || 0).toLocaleString('en-IN')}`;
 
 const cardsData = [
   {
@@ -93,29 +96,30 @@ const SingleVisionCard = ({
 
 const VisionCards = () => {
   const [showIncomePopup, setShowIncomePopup] = useState(false);
+  const [report, setReport] = useState(null);
   const router = useRouter();
 
-  const totalAssigned = (() => {
+  const fetchReport = async () => {
     try {
-      const stored = JSON.parse(localStorage.getItem('smartoffice_assigned_budgets') || '{}');
-      return Object.values(stored).reduce((sum, v) => sum + v, 0);
-    } catch { return 0; }
-  })();
+      const result = await getFinanceDashboardReport();
+      const data = Array.isArray(result?.result) ? result.result[0] : result?.result;
+      setReport(data || null);
+    } catch (error) {
+      console.error('Failed to fetch finance dashboard report:', error);
+    }
+  };
 
-  const totalAssignedFormatted = totalAssigned
-    ? `₹ ${totalAssigned.toLocaleString('en-IN')}`
-    : '₹ 0';
+  useEffect(() => {
+    fetchReport();
+  }, []);
 
-  const totalIncome = (() => {
-    try {
-      const stored = JSON.parse(localStorage.getItem('smartoffice_income_sources') || '[]');
-      return stored.reduce((sum, s) => sum + Number(s.amount), 0);
-    } catch { return 0; }
-  })();
-
-  const totalIncomeFormatted = totalIncome
-    ? `₹ ${totalIncome.toLocaleString('en-IN')}`
-    : '₹ 0';
+  const amountFor = (title) => {
+    if (!report) return cardsData.find((c) => c.title === title)?.amount;
+    if (title === 'Income') return formatRupees(report.networkIncomeAmount);
+    if (title === 'Budget') return formatRupees(report.networkBudgetAmount);
+    if (title === 'Expense') return formatRupees(report.networkTotalExpenseAmount);
+    return undefined;
+  };
 
   const handleCardClick = (title) => {
     if (title === 'Income') setShowIncomePopup(true);
@@ -129,14 +133,14 @@ const VisionCards = () => {
           <SingleVisionCard
             key={card.id}
             {...card}
-            amount={card.title === 'Budget' ? totalAssignedFormatted : card.title === 'Income' ? totalIncomeFormatted : card.amount}
+            amount={amountFor(card.title)}
             onClick={card.clickable ? () => handleCardClick(card.title) : undefined}
           />
         ))}
       </div>
 
       {showIncomePopup && (
-        <IncomePopup onClose={() => setShowIncomePopup(false)} />
+        <IncomePopup onClose={() => setShowIncomePopup(false)} onIncomeChange={fetchReport} />
       )}
     </>
   );

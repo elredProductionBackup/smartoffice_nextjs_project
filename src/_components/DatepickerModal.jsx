@@ -44,37 +44,33 @@ export default function DatepickerModal({ selectedTask }) {
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
       onClick={() => dispatch(closeModal())}
     >
-            
       <div
         className="w-[480px] rounded-[28px] bg-white p-[30px] shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-                {/* Header */}
-                
+        {/* Header */}
         <div className="flex items-center justify-between mb-5">
-                    <h2 className="text-2xl font-bold">Move</h2>
-                    
+          <h2 className="text-2xl font-bold">Move</h2>
+
           <button
             onClick={() => dispatch(closeModal())}
             className="text-3xl text-gray-400 cursor-pointer"
           >
-                        ×           
+            ×
           </button>
-                  
         </div>
-                
+
         <Calendar value={selectedDate} onChange={(d) => setSelectedDate(d)} />
-                {/* Footer */}
-                
+
+        {/* Footer */}
         <div className="mt-8 flex justify-between">
-                    
           <button
             onClick={() => dispatch(closeModal())}
-            className="rounded-full text-[20px] bg-[#999999] px-6 py-2 text-white w-[120px] cursor-pointer"
+            className="rounded-full text-[20px] bg-[#999999] px-6 py-2 text-white min-w-[120px] flex items-center justify-center whitespace-nowrap shrink-0 cursor-pointer"
           >
-                        Cancel           
+            Cancel
           </button>
-                    
+
           <button
             onClick={() => {
               if (!selectedDate) return;
@@ -95,15 +91,12 @@ export default function DatepickerModal({ selectedTask }) {
 
               dispatch(closeModal());
             }}
-            className="rounded-full text-[20px] bg-gradient-to-r from-[#5597ED] to-[#00449C] w-[120px] px-[16px] py-[8px] text-white cursor-pointer"
+            className="rounded-full text-[20px] bg-gradient-to-r from-[#5597ED] to-[#00449C] min-w-[120px] flex items-center justify-center whitespace-nowrap shrink-0 px-[16px] py-[8px] text-white cursor-pointer"
           >
-                        Move           
+            Move
           </button>
-                  
         </div>
-              
       </div>
-          
     </div>
   );
 }

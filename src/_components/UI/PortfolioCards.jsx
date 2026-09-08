@@ -1,28 +1,19 @@
 "use client";
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchBudgetTypes } from '@/store/events/budgetChecklist/budgetThunks';
+import { getBudgetReportCategory } from '@/services/finance.service';
 
-const portfolioData = [
-  { id: 1, title: 'Learning', budget: 8500, expense: 7200, color: '#3a7cf5' },
-  { id: 2, title: 'Forum', budget: 12000, expense: 11500, color: '#885df1' },
-  { id: 3, title: 'Family', budget: 5000, expense: 4800, color: '#ec4899' },
-  { id: 4, title: 'Spouse Partner', budget: 3500, expense: 3200, color: '#11b981' },
-  { id: 5, title: 'Engagement', budget: 12000, expense: 11500, color: '#f59e0b' },
-  { id: 6, title: 'Governance', budget: 12000, expense: 11500, color: '#5cbbf6' },
-  { id: 7, title: 'Membership', budget: 12000, expense: 11500, color: '#f6a65c' },
-  { id: 8, title: 'GLC', budget: 12000, expense: 11500, color: '#f65c5f' },
-  { id: 9, title: 'Administration', budget: 12000, expense: 11500, color: '#f65cf1' },
-];
+const CARD_COLORS = ['#3a7cf5', '#885df1', '#ec4899', '#11b981', '#f59e0b', '#5cbbf6', '#f6a65c', '#f65c5f', '#f65cf1'];
 
 const PortfolioCard = ({ title, budget, expense, color }) => {
-  const percentage = ((expense / budget) * 100).toFixed(1);
+  const percentage = budget > 0 ? ((expense / budget) * 100).toFixed(1) : '0.0';
 
   const data = [
     { name: 'Expense', value: expense },
-    { name: 'Remaining', value: budget - expense },
+    { name: 'Remaining', value: Math.max(budget - expense, 0) },
   ];
 
   return (
@@ -70,15 +61,38 @@ const PortfolioCard = ({ title, budget, expense, color }) => {
 const PortfolioCards = () => {
   const dispatch = useDispatch();
   const { budgetTypes } = useSelector((state) => state.budget);
+  const [reportByType, setReportByType] = useState({});
 
   useEffect(() => {
     dispatch(fetchBudgetTypes());
   }, [dispatch]);
 
-  const cards = portfolioData.map((item, i) => ({
-    ...item,
-    title: budgetTypes[i]?.budgetType ?? item.title,
-  }));
+  useEffect(() => {
+    (async () => {
+      try {
+        const response = await getBudgetReportCategory(1, 100);
+        const rows = Array.isArray(response?.result) ? response.result : [];
+        const byType = {};
+        rows.forEach((row) => {
+          byType[row.budgetTypeId] = row;
+        });
+        setReportByType(byType);
+      } catch (error) {
+        console.error('Failed to fetch budget report by category:', error);
+      }
+    })();
+  }, []);
+
+  const cards = budgetTypes.map((type, i) => {
+    const report = reportByType[type.budgetTypeId];
+    return {
+      id: type.budgetTypeId,
+      title: type.budgetType,
+      budget: Number(report?.budgetAmount) || 0,
+      expense: Number(report?.overallExpense ?? report?.totalExpense) || 0,
+      color: CARD_COLORS[i % CARD_COLORS.length],
+    };
+  });
 
   return (
     <div className="mt-8">
