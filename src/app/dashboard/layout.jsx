@@ -88,7 +88,7 @@ import useGlobalLoader from "@/store/useGlobalLoader";
 import { useEffect } from "react";
 import ProtectedRoute from "@/_components/ProtectedRoute";
 import { useSelector } from "react-redux";
-import { FiDollarSign } from "react-icons/fi";
+import { FiDollarSign, FiMessageCircle } from "react-icons/fi";
 
 export default function DashboardLayout({ children }) {
   const pathname = usePathname();
@@ -183,6 +183,19 @@ const userMenu = [
                     </li>
                   );
                 })}
+                <li>
+                  <Link
+                    href="/dashboard/send-bulk"
+                    className={`h-11 w-11 flex items-center justify-center rounded-md transition
+                    ${
+                      pathname.startsWith("/dashboard/send-bulk")
+                        ? "bg-[#D3E3FD] font-medium"
+                        : "hover:bg-blue-100"
+                    }`}
+                  >
+                    <FiMessageCircle className="text-[22px]" />
+                  </Link>
+                </li>
               </ul>
             </div>
           </div>
