@@ -1038,6 +1038,7 @@ export default function SendBulkPageClient() {
       {confirmModalOpen && (
         <ConfirmSendModal
           contacts={contacts}
+          templateId={templateId}
           onClose={() => setConfirmModalOpen(false)}
           onConfirm={handleConfirmSend}
         />

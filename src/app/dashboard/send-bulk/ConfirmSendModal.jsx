@@ -46,7 +46,7 @@ function AttendeeSelect({ contacts, selectedNames, onChange }) {
       : selectedNames.join(", ");
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref}>
       <button
         type="button"
         onClick={() => setOpen((p) => !p)}
@@ -65,7 +65,7 @@ function AttendeeSelect({ contacts, selectedNames, onChange }) {
       </button>
 
       {open && (
-        <div className="absolute z-30 w-full mt-1 bg-white border border-[#e5e7eb] rounded-[10px] shadow-lg py-1.5 px-1.5 max-h-[240px] overflow-y-auto">
+        <div className="mt-1 bg-white border border-[#e5e7eb] rounded-[10px] shadow-sm py-1.5 px-1.5 max-h-[220px] overflow-y-auto">
           {contacts.length === 0 ? (
             <div className="px-3 py-3 text-[13px] text-[#9ca3af] text-center">No contacts yet.</div>
           ) : (
@@ -103,7 +103,9 @@ function AttendeeSelect({ contacts, selectedNames, onChange }) {
   );
 }
 
-export default function ConfirmSendModal({ contacts, onClose, onConfirm }) {
+export default function ConfirmSendModal({ contacts, templateId, onClose, onConfirm }) {
+  const nameOnly = templateId === "prive_media";
+
   const [attendeeNames, setAttendeeNames] = useState([]);
   const [values, setValues] = useState({
     workshopName: "",
@@ -116,7 +118,7 @@ export default function ConfirmSendModal({ contacts, onClose, onConfirm }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [sendStatus, setSendStatus] = useState("idle"); // idle | sending | success
 
-  const canSubmit = attendeeNames.length > 0 && FIELDS.every((f) => values[f.key].trim());
+  const canSubmit = attendeeNames.length > 0 && (nameOnly || FIELDS.every((f) => values[f.key].trim()));
 
   const setField = (key, val) => setValues((prev) => ({ ...prev, [key]: val }));
 
@@ -167,7 +169,7 @@ export default function ConfirmSendModal({ contacts, onClose, onConfirm }) {
               <AttendeeSelect contacts={contacts} selectedNames={attendeeNames} onChange={setAttendeeNames} />
             </div>
 
-            {FIELDS.map((f) => (
+            {!nameOnly && FIELDS.map((f) => (
               <div key={f.key} className={f.type === "text" ? "col-span-2" : ""}>
                 <label className="block text-[13px] font-semibold text-[#333] mb-1.5">{f.label}</label>
                 {f.type === "date" ? (
