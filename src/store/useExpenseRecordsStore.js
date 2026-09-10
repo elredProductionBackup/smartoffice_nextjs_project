@@ -1,74 +1,20 @@
 import { create } from "zustand";
-
-export const EXPENSE_RECORDS_STORAGE_KEY = "smartoffice_expense_records_v2";
-
-export const initialExpenseRecords = [
-  {
-    id: 1,
-    description: "Office supplies purchase",
-    type: "General",
-    event: "-",
-    portfolio: "Operations",
-    date: "2026-05-20",
-    totalAmount: 1500,
-    remark:"Monthly office supplies replenishment.",
-    paid: 1500,
-    balance: 0,
-    vendor: "Office Depot Inc.",
-    bill: "invoice_may_2026.pdf",
-    paymentStatus: "Paid",
-    status: "Pending Approval",
-    canSend: true,
-    reminderCount: 2,
-    lastReminderDate: "2026-06-08",
-  },
-  {
-    id: 2,
-    description: "Venue rental for conference",
-    type: "Event Related",
-    event: "Annual Conference 2026",
-    portfolio: "Marketing",
-    date: "2026-05-22",
-    totalAmount: 75000,
-    paid: 50000,
-    balance: 25000,
-    remark: "Procurement of office materials for administrative use.",
-    vendor: "Grand Ballroom Hotel",
-    bill: "venue_booking_receipt.pdf",
-    paymentStatus: "Pending",
-    status: "Pending Approval",
-    canSend: true,
-    reminderCount: 1,
-    lastReminderDate: "2026-06-05",
-  },
-  {
-    id: 3,
-    description: "Catering services for speaker event",
-    type: "Event Related",
-    event: "How to Become a TEDx Speaker!",
-    portfolio: "Marketing",
-    date: "2026-05-23",
-    totalAmount: 15000,
-    paid: 15000,
-    balance: 0,
-    remark: "Procurement of office materials for administrative use.",
-    vendor: "Delicious Catering Co.",
-    bill: "catering_invoice_may.pdf",
-    paymentStatus: "Paid",
-    status: "Approved",
-    canSend: false,
-    reminderCount: 3,
-    lastReminderDate: "2026-06-09",
-  },
-];
+import api from "@/services/axios";
+import moment from "moment";
 
 function formatExpenseDate(date) {
   if (!date) return "-";
-  if (typeof date === "string") return date;
-  const parsed = new Date(date);
-  if (Number.isNaN(parsed.getTime())) return "-";
-  return parsed.toISOString().split("T")[0];
+  const parsed = moment(date);
+  return parsed.isValid() ? parsed.format("YYYY-MM-DD") : "-";
 }
+
+// function formatExpenseDate(date) {
+//   if (!date) return "-";
+//   if (typeof date === "string") return date;
+//   const parsed = new Date(date);
+//   if (Number.isNaN(parsed.getTime())) return "-";
+//   return parsed.toISOString().split("T")[0];
+// }
 
 function parseAmount(value) {
   const num = Number(String(value).replace(/,/g, ""));
@@ -87,20 +33,20 @@ export function eventCostingToExpenseRecord({
   vendorName,
   billFileName,
   approvalStatus = "Pending",
-  budgetExpenseId = "",   // ← real backend ID returned by addEditExpense
+  budgetExpenseId = "",
 }) {
   const total = parseAmount(totalAmount);
   const status = approvalStatus === "Approved" ? "Approved" : "Pending Approval";
 
   return {
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-    budgetExpenseId,                         // ← persisted so delete works after reload
+    budgetExpenseId,
     description: description?.trim() || narrative?.trim() || category || "Event expense",
     type: "Event Related",
     event: eventName || "-",
     portfolio: portfolio || "-",
     date: formatExpenseDate(date),
-    totalAmount: total,
+    totalAmount: total, 
     remark: remark,
     vendor: vendorName?.trim() || "-",
     bill: billFileName || "-",
@@ -134,7 +80,7 @@ export function formExpenseToRecord(expense) {
     totalAmount: total,
     paid: paidAmount,
     balance: balanceAmount,
-    remark:expense.remark,
+    remark: expense.remark,
     vendor: expense.vendorName?.trim() || "-",
     bill: expense.fileName || "-",
     paymentStatus,
@@ -144,112 +90,127 @@ export function formExpenseToRecord(expense) {
   };
 }
 
-function readFromStorage() {
-  if (typeof window === "undefined") return initialExpenseRecords;
-  try {
-    const stored = localStorage.getItem(EXPENSE_RECORDS_STORAGE_KEY);
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    }
-  } catch {
-    // ignore corrupt storage
-  }
-  return initialExpenseRecords;
-}
-
-function persistExpenses(expenses) {
-  if (typeof window !== "undefined") {
-    localStorage.setItem(EXPENSE_RECORDS_STORAGE_KEY, JSON.stringify(expenses));
-  }
+// Map a raw API expense record into the shape the table expects.
+// Adjust the right-hand field names to match your actual API response.
+function apiExpenseToRecord(item) {
+  return {
+    id: item.expenseId,
+    description: item.desc || "-",
+    type: item.type || '-',
+    event: item.eventName || item.event || "-",
+    portfolio: item.budgetTypeDetails?.budgetType || "-",
+    date: formatExpenseDate(item.date || item.createdAt),
+    totalAmount: item.total || '-',
+    remark: item.remark || "-",
+    vendor: item.vendorName || item.vendor || "-",
+    bill: item.billFileName || item.bill || "-",
+    paymentStatus: item.paymentStatus || "Pending",
+    status: item.approvalStatus || item.status || "Pending Approval",
+    canSend: (item.approvalStatus || item.status) !== "Approved",
+    reminderCount: item.reminderCount ?? 0,
+    lastReminderDate: item.lastReminderDate || "",
+  };
 }
 
 export const useExpenseRecordsStore = create((set, get) => ({
-  expenses: initialExpenseRecords,
+  expenses: [],
   totalCount: 0,
+  totalExpense: 0,    // ← add
+  totalAmount: 0,     // ← add
+  pendingCount: 0,
   loading: false,
   error: null,
   stats: { totalExpenses: 0, pendingCount: 0, totalAmount: 0 },
   hydrated: false,
 
+  // No-op kept for backward compatibility with components that still call it.
   hydrateFromStorage: () => {
     if (get().hydrated) return;
-    const expenses = readFromStorage();
-    set({ expenses, hydrated: true });
+    set({ hydrated: true });
   },
 
   /**
-   * Fetch expenses from the local Next.js API route:
-   *   GET /smartOffice/expense?start=&offset=&type=&eventId=&approvedStatus=
+   * Fetch expenses using the shared axios client (same pattern as members).
    */
   fetchExpenses: async (filters = {}) => {
     set({ loading: true, error: null });
     try {
       const {
-        start = 0,
-        offset = 10,
+        page = 1,
+        limit = 10,
         type = "all",
         eventId = "",
         approvedStatus = "",
       } = filters;
 
-      const queryParams = new URLSearchParams({
-        start: String(start),
-        offset: String(offset),
-        type: type || "all",
-        eventId: eventId || "",
-        approvedStatus: approvedStatus || "",
+      // Same start/offset math as the members hook
+      const start = (page - 1) * limit + 1;
+      const offset = page * limit;
+      const networkClusterCode = localStorage.getItem("networkClusterCode");
+
+      const response = await api.get("/smartOffice/expense", {
+        params: {
+          networkClusterCode,
+          start,
+          offset,
+          type: type || "all",
+          eventId: eventId || "",
+          approvedStatus: approvedStatus || "",
+        },
       });
 
-      const response = await fetch(`/smartOffice/expense?${queryParams.toString()}`);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch expenses: ${response.statusText}`);
+      if (response.status === 200 && response.data?.success) {
+        const result = response.data.result || [];
+        set({
+          expenses: result.map(apiExpenseToRecord),
+          totalCount: response.data.totalExpense || 0,
+          totalExpense:response.data.totalExpense || 0,
+          totalAmount:response.data.totalAmount || 0,
+          pendingCount:response.data.pendingCount || 0,
+          loading: false,
+          hydrated: true,
+        });
+        return response.data;
       }
-      const data = await response.json();
+
+      // Success flag false → treat as empty
       set({
-        expenses: data.expenses || [],
-        totalCount: data.totalCount || 0,
-        stats: data.stats || { totalExpenses: 0, pendingCount: 0, totalAmount: 0 },
+        expenses: [],
+        totalCount: 0,
+        stats: { totalExpenses: 0, pendingCount: 0, totalAmount: 0 },
         loading: false,
+        hydrated: true,
       });
-      return data;
     } catch (err) {
       console.error("fetchExpenses API Error:", err);
-      set({ error: err.message || "Failed to load expenses", loading: false });
-      // Fallback to localStorage if API fails
-      const expenses = readFromStorage();
-      set({ expenses, hydrated: true });
+      set({
+        error: err.message || "Failed to load expenses",
+        expenses: [],
+        totalCount: 0,
+        loading: false,
+        hydrated: true,
+      });
     }
   },
 
   addExpenseFromEventCosting: (payload) => {
     const record = eventCostingToExpenseRecord(payload);
-    const expenses = [record, ...get().expenses];
-    persistExpenses(expenses);
-    set({ expenses, hydrated: true });
+    set({ expenses: [record, ...get().expenses], hydrated: true });
 
-    // Background sync to local API
-    fetch("/smartOffice/expense", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(record),
-    }).catch((err) => console.error("Failed to sync costing expense to server:", err));
+    api
+      .post("/smartOffice/expense", record)
+      .catch((err) => console.error("Failed to sync costing expense to server:", err));
 
     return record;
   },
 
   addExpenseFromForm: (expense) => {
     const record = formExpenseToRecord(expense);
-    const expenses = [record, ...get().expenses];
-    persistExpenses(expenses);
-    set({ expenses, hydrated: true });
+    set({ expenses: [record, ...get().expenses], hydrated: true });
 
-    // Background sync to local API
-    fetch("/smartOffice/expense", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(record),
-    }).catch((err) => console.error("Failed to sync form expense to server:", err));
+    api
+      .post("/smartOffice/expense", record)
+      .catch((err) => console.error("Failed to sync form expense to server:", err));
 
     return record;
   },
@@ -273,16 +234,12 @@ export const useExpenseRecordsStore = create((set, get) => ({
       }
       return e;
     });
-    persistExpenses(expenses);
     set({ expenses });
 
-    // Background sync to local API
     if (matchedExpense) {
-      fetch("/smartOffice/expense", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, ...matchedExpense }),
-      }).catch((err) => console.error("Failed to sync updated expense to server:", err));
+      api
+        .patch("/smartOffice/expense", { id, ...matchedExpense })
+        .catch((err) => console.error("Failed to sync updated expense to server:", err));
     }
   },
 
@@ -295,16 +252,12 @@ export const useExpenseRecordsStore = create((set, get) => ({
       }
       return e;
     });
-    persistExpenses(expenses);
     set({ expenses });
 
-    // Background sync to local API
     if (matchedExpense) {
-      fetch("/smartOffice/expense", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, paymentStatus }),
-      }).catch((err) => console.error("Failed to sync payment status to server:", err));
+      api
+        .patch("/smartOffice/expense", { id, paymentStatus })
+        .catch((err) => console.error("Failed to sync payment status to server:", err));
     }
   },
 }));

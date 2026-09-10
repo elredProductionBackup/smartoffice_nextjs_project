@@ -12,26 +12,30 @@ export default function DashboardFinanceList() {
   const listRef = useRef(null);
 
   const financeItems = useFinanceStore((state) => state.items);
-  const hydrateFromStorage = useFinanceStore((state) => state.hydrateFromStorage);
+  const loading = useFinanceStore((state) => state.loading);
+  const fetchFinanceItems = useFinanceStore((state) => state.fetchFinanceItems);
   const addExpenseFromForm = useFinanceStore((state) => state.addExpenseFromForm);
   const addExpenseRecord = useExpenseRecordsStore((state) => state.addExpenseFromForm);
 
-  useEffect(() => {
-    hydrateFromStorage();
-  }, [hydrateFromStorage]);
+useEffect(() => {
+    fetchFinanceItems({ page: 1, limit: 5 });
+  }, [fetchFinanceItems]);
 
-  const handleSaveExpense = (expense) => {
+const handleSaveExpense = (expense) => {
+    // optimistic prepend, then refetch to sync with server
     addExpenseFromForm(expense);
     addExpenseRecord(expense);
     setShowNewExpense(false);
+    fetchFinanceItems({ page: 1, limit: 5 });
     requestAnimationFrame(() => {
       listRef.current?.scrollTo({ top: 0, behavior: "smooth" });
     });
   };
-
   const handleClosePopup = () => {
     setShowNewExpense(false);
   };
+
+  const isEmpty = !financeItems || financeItems.length === 0;
 
   return (
     <div className="flex flex-col rounded-2xl bg-[#F2F7FF] px-6 py-6 min-h-[500px] max-h-[500px] mb-[20px]">
@@ -51,72 +55,104 @@ export default function DashboardFinanceList() {
         ref={listRef}
         className="flex-1 flex flex-col gap-3 overflow-y-auto min-h-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
       >
-        {financeItems.map((item) => (
-          <div
-            key={item.id}
-            className="bg-white rounded-2xl p-4 flex flex-col gap-2.5 border border-[#E8ECEF] shadow-[0_1px_3px_rgba(0,0,0,0.02)]"
-          >
-            {/* Status & Time */}
-            <div className="flex justify-between items-center">
-              <span
-                className={`px-2 py-0.5 text-[12px] font-semibold rounded-[6px] ${
-                  item.statusType === "approval"
-                    ? "bg-[#E8F0FE] text-[#1A73E8]"
-                    : "bg-[#F3E8FF] text-[#681DA8]"
-                }`}
-              >
-                {item.status}
-              </span>
-              <span
-                className={`px-2 py-0.5 text-[12px] font-semibold rounded-[6px] ${
-                  item.timeType === "warning"
-                    ? "bg-[#FFEFE2] text-[#A64F05]"
-                    : "bg-[#FCE8E6] text-[#C5221F]"
-                }`}
-              >
-                {item.time}
-              </span>
-            </div>
-
-            {/* Title & Description */}
-            <div className="flex flex-col gap-0.5">
-              <h4 className="text-[16px] font-bold text-[#1F1F1F] leading-snug">
-                {item.title}
-              </h4>
-              <p className="text-[13px] text-[#5F6368] leading-normal font-medium">
-                {item.description}
-              </p>
-            </div>
-
-            {/* User Avatar & Name */}
-            <div className="flex items-center gap-2 mt-0.5">
-              <div
-                className={`w-[28px] h-[28px] rounded-full flex items-center justify-center text-white text-[11px] font-bold ${item.user.avatarColor}`}
-              >
-                {item.user.initials}
-              </div>
-              <span className="text-[13px] font-semibold text-[#5F6368]">
-                {item.user.name}
-              </span>
-            </div>
+        {loading && isEmpty ? (
+          /* Loading State */
+          <div className="flex-1 flex flex-col items-center justify-center text-center px-4 py-8">
+            <p className="text-[13px] text-[#5F6368] font-medium">
+              Loading finance items…
+            </p>
           </div>
-        ))}
+        ) : isEmpty ? (
+          /* Empty State */
+          <div className="flex-1 flex flex-col items-center justify-center text-center px-4 py-8">
+            <div className="w-[52px] h-[52px] rounded-full bg-[#E8F0FE] flex items-center justify-center mb-4">
+              <FiUpload className="w-[22px] h-[22px] text-[#1A73E8]" />
+            </div>
+            <h4 className="text-[16px] font-bold text-[#1F1F1F] mb-1">
+              No finance items yet
+            </h4>
+            <p className="text-[13px] text-[#5F6368] font-medium mb-4 max-w-[240px]">
+              You don&apos;t have any pending approvals or payments right now. Add an expense to get started.
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowNewExpense(true)}
+              className="flex items-center gap-2 bg-[#1A73E8] text-white font-semibold text-[13px] py-2.5 px-5 rounded-full cursor-pointer hover:bg-[#1557B0] transition-colors"
+            >
+              <FiUpload className="w-[16px] h-[16px]" />
+              Add an expense
+            </button>
+          </div>
+        ) : (
+          financeItems.slice(0, 5).map((item) => (
+            <div
+              key={item.id}
+              className="bg-white rounded-2xl p-4 flex flex-col gap-2.5 border border-[#E8ECEF] shadow-[0_1px_3px_rgba(0,0,0,0.02)]"
+            >
+              {/* Status & Time */}
+              <div className="flex justify-between items-center">
+                <span
+                  className={`px-2 py-0.5 text-[12px] font-semibold rounded-[6px] ${
+                    item.statusType === "approval"
+                      ? "bg-[#E8F0FE] text-[#1A73E8]"
+                      : "bg-[#F3E8FF] text-[#681DA8]"
+                  }`}
+                >
+                  {item.status}
+                </span>
+                <span
+                  className={`px-2 py-0.5 text-[12px] font-semibold rounded-[6px] ${
+                    item.timeType === "warning"
+                      ? "bg-[#FFEFE2] text-[#A64F05]"
+                      : "bg-[#FCE8E6] text-[#C5221F]"
+                  }`}
+                >
+                  {item.time}
+                </span>
+              </div>
+
+              {/* Title & Description */}
+              <div className="flex flex-col gap-0.5">
+                <h4 className="text-[16px] font-bold text-[#1F1F1F] leading-snug">
+                  {item.title}
+                </h4>
+                {/* <p className="text-[13px] text-[#5F6368] leading-normal font-medium">
+                  {item.description}
+                </p> */}
+              </div>
+
+              {/* User Avatar & Name */}
+              <div className="flex items-center gap-2 mt-0.5">
+                <div
+                  className={`w-[28px] h-[28px] rounded-full flex items-center justify-center text-white text-[11px] font-bold ${item.user.avatarColor}`}
+                >
+                  {item.user.initials}
+                </div>
+                <span className="text-[13px] font-semibold text-[#5F6368]">
+                  {item.user.name}
+                </span>
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
-      {/* Horizontal Ray (Divider) */}
-      <hr className="border-t border-[#D4DFF1] my-4 shrink-0" />
-
-      {/* Upload Button */}
-      <div className="shrink-0">
-        <button
-          type="button"
-          onClick={() => setShowNewExpense(true)}
-          className="w-full flex items-center justify-center gap-2 bg-[#1A73E8] text-white font-bold py-3.5 px-6 rounded-[14px] cursor-pointer hover:bg-[#1557B0] transition-colors"
-        >
-          <FiUpload className="w-[18px] h-[18px]" />
-          Upload an expense
-        </button>
-      </div>
+      {/* Divider + Upload Button — only when the list has items */}
+      {!isEmpty && (
+        <>
+          <hr className="border-t border-[#D4DFF1] my-4 shrink-0" />
+          <div className="shrink-0">
+            <button
+              type="button"
+              onClick={() => setShowNewExpense(true)}
+              className="w-full flex items-center justify-center gap-2 bg-[#1A73E8] text-white font-bold py-3.5 px-6 rounded-[14px] cursor-pointer hover:bg-[#1557B0] transition-colors"
+            >
+              <FiUpload className="w-[18px] h-[18px]" />
+              Upload an expense
+            </button>
+          </div>
+        </>
+      )}
 
       {/* NewExpensesPopup Modal */}
       {showNewExpense && (

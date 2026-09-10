@@ -1,71 +1,21 @@
 import { create } from "zustand";
-
-export const FINANCE_ITEMS_STORAGE_KEY = "smartoffice_finance_items";
-
-export const initialFinanceItems = [
-  {
-    id: 1,
-    status: "Approval pending",
-    statusType: "approval",
-    title: "Invoice Approval Request",
-    description: "Stationary bill for office supplies and materials",
-    time: "3d ago",
-    timeType: "warning",
-    user: {
-      initials: "RK",
-      name: "Rajesh Kumar",
-      avatarColor: "bg-[#1A73E8]",
-    },
-  },
-  {
-    id: 2,
-    status: "Approval pending",
-    statusType: "approval",
-    title: "Invoice Approval Request",
-    description: "Travel expenses for Annual Conference 2026",
-    time: "1d ago",
-    timeType: "warning",
-    user: {
-      initials: "PS",
-      name: "Priya Sharma",
-      avatarColor: "bg-[#1A73E8]",
-    },
-  },
-  {
-    id: 3,
-    status: "Payment pending",
-    statusType: "payment",
-    title: "Vendor Payment Required",
-    description: "Office supplies and equipment",
-    time: "5d ago",
-    timeType: "danger",
-    user: {
-      initials: "OD",
-      name: "Office Depot Inc.",
-      avatarColor: "bg-[#0F9D58]",
-    },
-  },
-  {
-    id: 4,
-    status: "Payment pending",
-    statusType: "payment",
-    title: "Reimbursement Pending",
-    description: "Client meeting expenses at hotel",
-    time: "2d ago",
-    timeType: "danger",
-    user: {
-      initials: "RH",
-      name: "The Ritz Hotel",
-      avatarColor: "bg-[#0F9D58]",
-    },
-  },
-];
+import api from "@/services/axios";
 
 function getInitials(name) {
   if (!name?.trim()) return "??";
   const parts = name.trim().split(/\s+/);
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+function timeAgo(dateStr) {
+  if (!dateStr) return "Just now";
+  const then = new Date(dateStr);
+  if (Number.isNaN(then.getTime())) return dateStr;
+  const days = Math.floor((Date.now() - then.getTime()) / 86400000);
+  if (days <= 0) return "Today";
+  if (days === 1) return "1d ago";
+  return `${days}d ago`;
 }
 
 export function expenseToFinanceItem(expense) {
@@ -90,41 +40,77 @@ export function expenseToFinanceItem(expense) {
   };
 }
 
-function readFromStorage() {
-  if (typeof window === "undefined") return initialFinanceItems;
-  try {
-    const stored = localStorage.getItem(FINANCE_ITEMS_STORAGE_KEY);
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    }
-  } catch {
-    // ignore corrupt storage
-  }
-  return initialFinanceItems;
-}
+// Map a raw API expense record into a finance-list item.
+function apiExpenseToFinanceItem(item) {
+  const isApproved = item.approvedStatus === "approved";
+  const vendorName = (item.vendorName || "").trim() || "Unknown vendor";
+  const rawDate = item.createdAt || null;
 
-function persistItems(items) {
-  if (typeof window !== "undefined") {
-    localStorage.setItem(FINANCE_ITEMS_STORAGE_KEY, JSON.stringify(items));
-  }
+  return {
+    id: item.expenseId,
+    rawDate,
+    status: isApproved ? "Approved" : "Approval pending",
+    statusType: isApproved ? "payment" : "approval",
+    title: item.desc?.trim(),
+    description: item.desc?.trim() || "-",
+    time: timeAgo(rawDate),
+    timeType: isApproved ? "danger" : "warning",
+    user: {
+      initials: getInitials(vendorName),
+      name: vendorName,
+      avatarColor: isApproved ? "bg-[#0F9D58]" : "bg-[#1A73E8]",
+    },
+  };
 }
 
 export const useFinanceStore = create((set, get) => ({
-  items: initialFinanceItems,
+  items: [],
+  loading: false,
+  error: null,
   hydrated: false,
 
-  hydrateFromStorage: () => {
-    if (get().hydrated) return;
-    const items = readFromStorage();
-    set({ items, hydrated: true });
+  fetchFinanceItems: async (filters = {}) => {
+    set({ loading: true, error: null });
+    try {
+      const { page = 1, limit = 10 } = filters;
+      const start = (page - 1) * limit + 1;
+      const offset = page * limit;
+      const networkClusterCode = localStorage.getItem("networkClusterCode");
+
+      const response = await api.get("/smartOffice/expense", {
+        params: {
+          networkClusterCode,
+          start,
+          offset,
+          type: "all",
+        },
+      });
+
+      if (response.status === 200 && response.data?.success) {
+        const result = response.data.result || [];
+        set({
+          items: result.map(apiExpenseToFinanceItem),
+          loading: false,
+          hydrated: true,
+        });
+        return response.data;
+      }
+
+      set({ items: [], loading: false, hydrated: true });
+    } catch (err) {
+      console.error("fetchFinanceItems API Error:", err);
+      set({
+        error: err.message || "Failed to load finance items",
+        items: [],
+        loading: false,
+        hydrated: true,
+      });
+    }
   },
 
   addExpenseFromForm: (expense) => {
     const newItem = expenseToFinanceItem(expense);
-    const items = [newItem, ...get().items];
-    persistItems(items);
-    set({ items, hydrated: true });
+    set({ items: [newItem, ...get().items], hydrated: true });
     return newItem;
   },
 }));

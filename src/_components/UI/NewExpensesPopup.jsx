@@ -1,23 +1,12 @@
 'use client';
 
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { FiX, FiUpload, FiChevronDown, FiLoader } from 'react-icons/fi';
-import { useDispatch, useSelector } from 'react-redux';
 import CustomDatePicker from './CustomDatePicker';
 import { addEditExpense } from '@/services/expense.service';
 import { useBudgetTypeStore } from '@/store/useBudgetTypeStore';
-import { fetchEvents } from '@/store/events/eventsThunks';
-import { UPCOMING_EVENTS, PAST_EVENTS, DRAFT_EVENTS } from '@/assets/helpers/sampleEvents';
 
-const EVENTS = [
-  'Figma Config',
-  'Webflow Advanced Workshop',
-  'UX Research & Testing Summit',
-  'Design Systems Workshop',
-  'Product Thinking Bootcamp',
-];
-
-/* ── Reusable Custom Select Dropdown (matches IncomeTypeDropdown style) ── */
+/* ── Reusable Custom Select Dropdown ── */
 function CustomSelectDropdown({ value, onChange, options, placeholder, loading = false, disabled = false }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
@@ -32,13 +21,12 @@ function CustomSelectDropdown({ value, onChange, options, placeholder, loading =
 
   const isPlaceholder = !value;
   const selectedOption = options.find(opt => (typeof opt === 'object' ? opt.value === value : opt === value));
-  const displayLabel = selectedOption 
+  const displayLabel = selectedOption
     ? (typeof selectedOption === 'object' ? selectedOption.label : selectedOption)
     : (value || placeholder);
 
   return (
     <div ref={ref} className="relative w-full">
-      {/* Trigger button */}
       <button
         type="button"
         onClick={() => !disabled && setOpen((o) => !o)}
@@ -57,7 +45,6 @@ function CustomSelectDropdown({ value, onChange, options, placeholder, loading =
         )}
       </button>
 
-      {/* Dropdown panel */}
       {open && !loading && (
         <div
           className="absolute top-[calc(100%+6px)] left-0 w-full bg-white rounded-[14px] z-[9999] overflow-y-auto p-2"
@@ -78,7 +65,7 @@ function CustomSelectDropdown({ value, onChange, options, placeholder, loading =
           )}
           {options.map((opt) => {
             const label = typeof opt === 'object' ? opt.label : opt;
-            const val   = typeof opt === 'object' ? opt.value : opt;
+            const val = typeof opt === 'object' ? opt.value : opt;
             const isSelected = val === value;
             return (
               <button
@@ -102,12 +89,7 @@ function CustomSelectDropdown({ value, onChange, options, placeholder, loading =
 }
 
 export default function NewExpensesPopup({ onClose, onSave, initialData }) {
-  const dispatch = useDispatch();
-  const rawEvents = useSelector((state) => state.events.rawEvents);
-
   const [description, setDescription] = useState(initialData?.description ?? '');
-  const [expenseType, setExpenseType] = useState(initialData?.type ?? 'General'); // 'General' or 'Event Related'
-  const [event, setEvent] = useState(initialData?.event && initialData.event !== '-' ? initialData.event : '');
   const [portfolio, setPortfolio] = useState(initialData?.portfolio && initialData.portfolio !== '-' ? initialData.portfolio : '');
   const [date, setDate] = useState(initialData?.date ?? '');
   const [totalAmount, setTotalAmount] = useState(initialData?.totalAmount ?? '');
@@ -117,6 +99,7 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
   const [fileName, setFileName] = useState(initialData?.bill && initialData.bill !== '-' ? initialData.bill : '');
   const [remark, setRemark] = useState(initialData?.remark ?? '');
   const [selectedFile, setSelectedFile] = useState(null);
+  const [saving, setSaving] = useState(false);
 
   // Budget Type Store State
   const {
@@ -135,43 +118,10 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
     fetchBudgetTypes();
   }, [fetchBudgetTypes]);
 
-  // Fetch Events from Redux for mapping Event names to Event IDs
-  useEffect(() => {
-    dispatch(fetchEvents({ page: 1, limit: 100 }));
-  }, [dispatch]);
-
-  // Event ID lookup map
-  const eventMap = useMemo(() => {
-    const map = {};
-    
-    // 1. Static mock events
-    [UPCOMING_EVENTS, PAST_EVENTS, DRAFT_EVENTS].forEach((list) => {
-      list.forEach((group) => {
-        group.items?.forEach((item) => {
-          if (item.name) {
-            map[item.name.toLowerCase().trim()] = item.id;
-          }
-        });
-      });
-    });
-
-    // 2. Dynamic events from API
-    if (Array.isArray(rawEvents)) {
-      rawEvents.forEach((evt) => {
-        if (evt.eventName) {
-          map[evt.eventName.toLowerCase().trim()] = evt.eventId;
-        }
-      });
-    }
-
-    return map;
-  }, [rawEvents]);
-
   // Sync budgetTypeId if initialData has portfolio name but no budgetTypeId
   useEffect(() => {
     if (budgetTypesList.length > 0) {
       if (!budgetTypeId && portfolio) {
-        // Find matching budget type by name
         const matched = budgetTypesList.find(b => {
           const name = b.budgetType ?? b.name ?? b.title ?? b.label ?? '';
           return name.toLowerCase() === portfolio.toLowerCase() ||
@@ -182,7 +132,6 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
           setBudgetTypeId(matched.budgetTypeId ?? matched._id ?? matched.id ?? '');
         }
       } else if (budgetTypeId && !portfolio) {
-        // Sync portfolio name if we only have budgetTypeId
         const matched = budgetTypesList.find(b => (b.budgetTypeId === budgetTypeId || b._id === budgetTypeId || b.id === budgetTypeId));
         if (matched) {
           const name = matched.budgetType ?? matched.name ?? matched.title ?? matched.label ?? '';
@@ -198,7 +147,6 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
     value: item.budgetTypeId ?? item._id ?? item.id ?? '',
   }));
 
-  // Handle Portfolio selection changes, which sets both the budgetTypeId and the portfolio string
   const handlePortfolioChange = (selectedId) => {
     setBudgetTypeId(selectedId);
     const matched = budgetTypesList.find(b => (b.budgetTypeId === selectedId || b._id === selectedId || b.id === selectedId));
@@ -249,28 +197,14 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
     e?.preventDefault?.();
     e?.stopPropagation?.();
 
+    if (saving) return; // guard against double-submit
+
     const currentDate = initialData?.date ?? new Date().toISOString().split("T")[0];
 
-    // Enforce validations as requested
+    // Validations
     if (!description || description.trim().length < 2) {
       alert("Description must be at least 2 characters.");
       return;
-    }
-
-    const isEventType = expenseType === 'Event Related';
-    const typeValue = 'general';
-
-    let selectedEventId = '';
-    if (isEventType) {
-      if (!event) {
-        alert("Please select an Event for event-related expenses.");
-        return;
-      }
-      selectedEventId = eventMap[event.toLowerCase().trim()] || '';
-      if (!selectedEventId) {
-        alert("Please select a valid Event.");
-        return;
-      }
     }
 
     if (!budgetTypeId) {
@@ -296,10 +230,9 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
 
     const apiPayload = {
       description,
-      expenseType: typeValue, // Backend schema accepts 'general' / 'event'
-      eventId: selectedEventId,
+      expenseType: 'general', // Backend schema accepts 'general' / 'event'
+      eventId: '',
       portfolioId: budgetTypeId,
-      event,
       portfolio,
       budgetTypeId,
       totalAmount: total,
@@ -309,18 +242,19 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
       file: selectedFile ?? undefined,
     };
 
+    setSaving(true);
     try {
       await addEditExpense(apiPayload);
     } catch (err) {
       console.error('addEditExpense failed:', err);
       alert(err?.response?.data?.message || "Failed to save expense. Please try again.");
+      setSaving(false);
       return;
     }
 
     const localPayload = {
       description,
-      expenseType,
-      event,
+      expenseType: 'General',
       portfolio,
       budgetTypeId,
       date: currentDate,
@@ -335,6 +269,8 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
       localPayload.id = initialData.id;
     }
 
+    setSaving(false);
+
     if (onSave) {
       onSave(localPayload);
     } else if (onClose) {
@@ -347,7 +283,7 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
       {/* Backdrop */}
       <div
         className="fixed inset-0 z-[9998] backdrop-blur-sm bg-slate-900/40"
-        onClick={onClose}
+        onClick={saving ? undefined : onClose}
       />
 
       {/* Modal Dialog */}
@@ -370,7 +306,8 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
           <button
             onClick={onClose}
             type="button"
-            className="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-50 hover:bg-gray-100 text-gray-500 cursor-pointer border-none transition-colors"
+            disabled={saving}
+            className="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-50 hover:bg-gray-100 text-gray-500 cursor-pointer border-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <FiX className="w-5 h-5" />
           </button>
@@ -378,7 +315,7 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
 
         {/* Scrollable Form Container */}
         <div className="flex-1 overflow-y-auto px-8 py-6 flex flex-col gap-5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-          
+
           {/* Expense Description */}
           <div className="flex flex-col gap-1.5">
             <label className="text-[14px] font-bold text-[#333]">Expense Description</label>
@@ -390,63 +327,6 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
               className="w-full border border-gray-300 rounded-[14px] px-4 py-3 text-[15px] text-slate-800 bg-white outline-none focus:border-[#1A73E8] transition-colors"
             />
           </div>
-
-          {/* Expense Type */}
-          {/* <div className="flex flex-col gap-1.5">
-            <label className="text-[14px] font-bold text-[#333]">Expense Type</label>
-            <div className="flex items-center gap-6 mt-1">
-              <label className="flex items-center gap-2.5 cursor-pointer text-[15px] font-semibold text-[#333]">
-                <input
-                  type="radio"
-                  name="expenseType"
-                  value="General"
-                  checked={expenseType === 'General'}
-                  onChange={() => setExpenseType('General')}
-                  className="hidden"
-                />
-                <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                  expenseType === 'General' ? 'border-[#0F9D58]' : 'border-gray-400'
-                }`}>
-                  {expenseType === 'General' && (
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#0F9D58]" />
-                  )}
-                </span>
-                General
-              </label> */}
-
-              {/* <label className="flex items-center gap-2.5 cursor-pointer text-[15px] font-semibold text-[#333]">
-                <input
-                  type="radio"
-                  name="expenseType"
-                  value="Event Related"
-                  checked={expenseType === 'Event Related'}
-                  onChange={() => setExpenseType('Event Related')}
-                  className="hidden"
-                />
-                <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                  expenseType === 'Event Related' ? 'border-[#0F9D58]' : 'border-gray-400'
-                }`}>
-                  {expenseType === 'Event Related' && (
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#0F9D58]" />
-                  )}
-                </span>
-                Event Related
-              </label> */}
-            {/* </div> */}
-          {/* </div> */}
-
-          {/* Event (Optional) */}
-          {expenseType === 'Event Related' && (
-            <div className="flex flex-col gap-1.5 animate-fadeIn">
-              <label className="text-[14px] font-bold text-[#333]">Event</label>
-              <CustomSelectDropdown
-                value={event}
-                onChange={setEvent}
-                options={EVENTS}
-                placeholder="Select Event"
-              />
-            </div>
-          )}
 
           {/* Portfolio */}
           <div className="flex flex-col gap-1.5">
@@ -530,14 +410,17 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
             <button
               type="button"
               onClick={handleSave}
-              className="flex-1 bg-[#1A73E8] hover:bg-[#1557B0] text-white py-3.5 px-6 rounded-[14px] font-bold text-center text-[16px] border-none cursor-pointer transition-colors"
+              disabled={saving}
+              className="flex-1 flex items-center justify-center gap-2 bg-[#1A73E8] hover:bg-[#1557B0] text-white py-3.5 px-6 rounded-[14px] font-bold text-center text-[16px] border-none cursor-pointer transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              Save Expense
+              {saving && <FiLoader className="w-4 h-4 animate-spin" />}
+              {saving ? 'Saving...' : 'Save Expense'}
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="w-[100px] bg-white border border-[#E2E8F0] hover:bg-gray-50 text-[#333] py-3.5 px-4 rounded-[14px] font-semibold text-center text-[16px] cursor-pointer transition-colors"
+              disabled={saving}
+              className="w-[100px] bg-white border border-[#E2E8F0] hover:bg-gray-50 text-[#333] py-3.5 px-4 rounded-[14px] font-semibold text-center text-[16px] cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancel
             </button>
