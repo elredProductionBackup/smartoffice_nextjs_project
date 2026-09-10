@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { FiX, FiChevronDown } from "react-icons/fi";
+import { FiX, FiChevronDown, FiHelpCircle, FiCheckCircle } from "react-icons/fi";
 import CustomCheckbox from "@/_components/UI/CustomCheckbox";
 import CustomDatePicker from "@/_components/UI/CustomDatePicker";
+import CustomTimePicker from "@/_components/UI/CustomTimePicker";
 
 const FIELDS = [
   { key: "workshopName", label: "Workshop name", type: "text", placeholder: "North Cluster Review" },
@@ -112,20 +113,35 @@ export default function ConfirmSendModal({ contacts, onClose, onConfirm }) {
     venue: "",
   });
 
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [sendStatus, setSendStatus] = useState("idle"); // idle | sending | success
+
   const canSubmit = attendeeNames.length > 0 && FIELDS.every((f) => values[f.key].trim());
 
   const setField = (key, val) => setValues((prev) => ({ ...prev, [key]: val }));
 
+  const buildPayload = () => ({
+    attendeeName: attendeeNames.join(", "),
+    workshopName: values.workshopName.trim(),
+    workshopDate: values.workshopDate.trim(),
+    sessionTime: values.sessionTime.trim(),
+    arrivalTime: values.arrivalTime.trim(),
+    venue: values.venue.trim(),
+  });
+
   const handleSubmit = () => {
     if (!canSubmit) return;
-    onConfirm({
-      attendeeName: attendeeNames.join(", "),
-      workshopName: values.workshopName.trim(),
-      workshopDate: values.workshopDate.trim(),
-      sessionTime: values.sessionTime.trim(),
-      arrivalTime: values.arrivalTime.trim(),
-      venue: values.venue.trim(),
-    });
+    setSendStatus("idle");
+    setConfirmOpen(true);
+  };
+
+  const handleFinalConfirm = () => {
+    setSendStatus("sending");
+    setTimeout(() => setSendStatus("success"), 600);
+  };
+
+  const handleDone = () => {
+    onConfirm(buildPayload());
   };
 
   return (
@@ -155,7 +171,9 @@ export default function ConfirmSendModal({ contacts, onClose, onConfirm }) {
               <div key={f.key} className={f.type === "text" ? "col-span-2" : ""}>
                 <label className="block text-[13px] font-semibold text-[#333] mb-1.5">{f.label}</label>
                 {f.type === "date" ? (
-                  <CustomDatePicker value={values[f.key]} onChange={(v) => setField(f.key, v)} />
+                  <CustomDatePicker compact value={values[f.key]} onChange={(v) => setField(f.key, v)} />
+                ) : f.type === "time" ? (
+                  <CustomTimePicker compact value={values[f.key]} onChange={(v) => setField(f.key, v)} />
                 ) : (
                   <input
                     type={f.type}
@@ -190,6 +208,74 @@ export default function ConfirmSendModal({ contacts, onClose, onConfirm }) {
           </button>
         </div>
       </div>
+
+      {confirmOpen && (
+        <div
+          className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/40"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (sendStatus === "idle") setConfirmOpen(false);
+          }}
+        >
+          <div
+            className="bg-white rounded-[16px] w-full max-w-[380px] mx-4 shadow-xl p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {sendStatus === "idle" && (
+              <>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <FiHelpCircle className="text-[18px] text-[#2563eb]" />
+                  <h3 className="text-[16px] font-bold text-[#1a1a2e]">Send these details?</h3>
+                </div>
+                <p className="text-[13px] text-[#666] mb-5">
+                  This will confirm attendance for{" "}
+                  <span className="font-semibold text-[#1a1a2e]">
+                    {attendeeNames.length} attendee{attendeeNames.length === 1 ? "" : "s"}
+                  </span>{" "}
+                  with the details you entered.
+                </p>
+                <div className="flex items-center justify-end gap-3">
+                  <button
+                    onClick={() => setConfirmOpen(false)}
+                    className="px-5 h-[38px] rounded-[8px] border border-[#d1d5db] text-[13px] font-semibold text-[#333] hover:bg-[#f9fafb] cursor-pointer transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleFinalConfirm}
+                    className="px-5 h-[38px] rounded-[8px] bg-[#2563eb] text-white text-[13px] font-semibold hover:bg-[#1d4ed8] cursor-pointer transition-colors"
+                  >
+                    Yes, confirm
+                  </button>
+                </div>
+              </>
+            )}
+
+            {sendStatus === "sending" && (
+              <div className="flex flex-col items-center py-3 gap-3">
+                <div className="w-8 h-8 border-[3px] border-[#2563eb] border-t-transparent rounded-full animate-spin" />
+                <p className="text-[13px] font-semibold text-[#333]">Confirming details…</p>
+              </div>
+            )}
+
+            {sendStatus === "success" && (
+              <div className="flex flex-col items-center py-3 gap-3">
+                <FiCheckCircle className="text-[36px] text-green-500" />
+                <p className="text-[15px] font-bold text-[#1a1a2e]">Details confirmed</p>
+                <p className="text-[13px] text-[#666] text-center">
+                  The message will be sent with these attendee details.
+                </p>
+                <button
+                  onClick={handleDone}
+                  className="mt-2 w-full px-6 h-[38px] rounded-[8px] bg-[#2563eb] text-white text-[13px] font-semibold hover:bg-[#1d4ed8] cursor-pointer transition-colors"
+                >
+                  Done
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

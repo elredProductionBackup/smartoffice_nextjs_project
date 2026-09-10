@@ -27,21 +27,16 @@ import { INITIAL_TEMPLATES, humanizeCode, slugify } from "./templatesData";
 
 const TEMPLATES = [
   {
-    id: "event_reminder",
-    label: "Event reminder",
+    id: "prive_workshop_registration_confirmation",
+    label: "Prive workshop registration confirmation",
     body:
       "Hi {name},\n\nA quick reminder about the {cluster} review meet at {site} on {date}. Please arrive ten minutes early and bring your site checklist.\n\nTeam Smart Networks",
   },
   {
-    id: "meeting_followup",
-    label: "Meeting follow-up",
+    id: "prive_media",
+    label: "Prive media",
     body:
       "Hi {name},\n\nThanks for joining the {cluster} sync today. Notes and action items from the meet at {site} will follow shortly.\n\nTeam Smart Networks",
-  },
-  {
-    id: "blank",
-    label: "Write your own",
-    body: "",
   },
 ];
 
@@ -105,6 +100,7 @@ export default function SendBulkPageClient() {
     whatsapp: TEMPLATES[0].body,
     email: "",
   });
+  const [emailSubject, setEmailSubject] = useState(TEMPLATES[0].label);
 
   const [contacts, setContacts] = useState(() => loadFromStorage(CONTACTS_STORAGE_KEY, INITIAL_CONTACTS));
   const [groupList, setGroupList] = useState(() => loadFromStorage(GROUPS_STORAGE_KEY, INITIAL_GROUPS));
@@ -169,18 +165,12 @@ export default function SendBulkPageClient() {
     setTemplateId(tpl.id);
     setTemplateOpen(false);
     setMessages((prev) => ({ ...prev, [activeTab]: tpl.body }));
+    setEmailSubject(tpl.label);
   };
 
-  const toggleChannel = (key) => {
-    setChannels((prev) => {
-      const next = { ...prev, [key]: !prev[key] };
-      // keep at least one channel active
-      if (!next.whatsapp && !next.email) return prev;
-      if (activeTab === key && !next[key]) {
-        setActiveTab(next.whatsapp ? "whatsapp" : "email");
-      }
-      return next;
-    });
+  const selectChannel = (key) => {
+    setChannels({ whatsapp: key === "whatsapp", email: key === "email" });
+    setActiveTab(key);
   };
 
   const insertVariable = (token) => {
@@ -330,10 +320,6 @@ export default function SendBulkPageClient() {
 
   const charCount = (messages[activeTab] || "").length;
   const activeTemplate = TEMPLATES.find((t) => t.id === templateId);
-  const emailSubject =
-    activeTemplate && activeTemplate.id !== "blank"
-      ? activeTemplate.label
-      : previewText.split("\n")[0].trim() || "New message";
 
   const whatsappCount = selectedContacts.filter((c) => c.hasWhatsApp).length;
   const emailCount = selectedContacts.length;
@@ -514,26 +500,42 @@ export default function SendBulkPageClient() {
               <div className="flex items-center gap-2 h-[42px]">
                 <button
                   type="button"
-                  onClick={() => toggleChannel("whatsapp")}
-                  className={`flex items-center gap-1.5 h-full px-4 rounded-full border text-[13px] font-semibold cursor-pointer transition-colors ${
+                  role="radio"
+                  aria-checked={channels.whatsapp}
+                  onClick={() => selectChannel("whatsapp")}
+                  className={`flex items-center gap-2 h-full px-4 rounded-full border text-[13px] font-semibold cursor-pointer transition-colors ${
                     channels.whatsapp
                       ? "border-[#16a34a] bg-[#f0fdf4] text-[#16a34a]"
                       : "border-[#d1d5db] text-[#9ca3af] hover:border-[#9ca3af]"
                   }`}
                 >
-                  {channels.whatsapp && <FiCheck className="text-[14px]" />}
+                  <span
+                    className={`w-3.5 h-3.5 rounded-full border-2 grid place-items-center ${
+                      channels.whatsapp ? "border-[#16a34a]" : "border-[#9ca3af]"
+                    }`}
+                  >
+                    {channels.whatsapp && <span className="w-1.5 h-1.5 rounded-full bg-[#16a34a]" />}
+                  </span>
                   WhatsApp
                 </button>
                 <button
                   type="button"
-                  onClick={() => toggleChannel("email")}
-                  className={`flex items-center gap-1.5 h-full px-4 rounded-full border text-[13px] font-semibold cursor-pointer transition-colors ${
+                  role="radio"
+                  aria-checked={channels.email}
+                  onClick={() => selectChannel("email")}
+                  className={`flex items-center gap-2 h-full px-4 rounded-full border text-[13px] font-semibold cursor-pointer transition-colors ${
                     channels.email
                       ? "border-[#2563eb] bg-[#eff6ff] text-[#2563eb]"
                       : "border-[#d1d5db] text-[#9ca3af] hover:border-[#9ca3af]"
                   }`}
                 >
-                  {channels.email && <FiCheck className="text-[14px]" />}
+                  <span
+                    className={`w-3.5 h-3.5 rounded-full border-2 grid place-items-center ${
+                      channels.email ? "border-[#2563eb]" : "border-[#9ca3af]"
+                    }`}
+                  >
+                    {channels.email && <span className="w-1.5 h-1.5 rounded-full bg-[#2563eb]" />}
+                  </span>
                   Email
                 </button>
               </div>
@@ -563,6 +565,19 @@ export default function SendBulkPageClient() {
               </button>
             )}
           </div>
+
+          {/* Subject (email only) */}
+          {activeTab === "email" && (
+            <div className="mb-4">
+              <label className="block text-[13px] font-semibold text-[#333] mb-1.5">Subject</label>
+              <input
+                value={emailSubject}
+                onChange={(e) => setEmailSubject(e.target.value)}
+                placeholder="Enter email subject"
+                className="w-full h-[42px] px-3 rounded-[8px] border border-[#d1d5db] bg-white text-[13px] text-[#111] outline-none focus:border-[#2563eb] transition-colors placeholder:text-[#9ca3af]"
+              />
+            </div>
+          )}
 
           {/* Message textarea */}
           <textarea
@@ -858,6 +873,10 @@ export default function SendBulkPageClient() {
             </div>
 
             <div className="divide-y divide-[#f1f5f9]">
+              <div className="flex items-center justify-between py-3">
+                <span className="text-[14px] text-[#666]">Template</span>
+                <span className="text-[14px] font-semibold text-[#1a1a2e]">{activeTemplate?.label}</span>
+              </div>
               <div className="flex items-center justify-between py-3">
                 <span className="text-[14px] text-[#666]">Channels</span>
                 <span className="text-[14px] font-semibold text-[#1a1a2e]">{activeChannelLabels}</span>
