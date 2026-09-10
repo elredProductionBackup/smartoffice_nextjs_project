@@ -13,17 +13,16 @@ import {
   FiPlus,
   FiSearch,
   FiClock,
-  FiSend,
   FiCheckSquare,
   FiMenu,
 } from "react-icons/fi";
 import { BsCheckAll } from "react-icons/bs";
 import CustomCheckbox from "@/_components/UI/CustomCheckbox";
-import CustomDatePicker from "@/_components/UI/CustomDatePicker";
 import GroupsModal from "./GroupsModal";
 import ContactsModal from "./ContactsModal";
 import TemplatesModal from "./TemplatesModal";
 import TemplateFormModal from "./TemplateFormModal";
+import ConfirmSendModal from "./ConfirmSendModal";
 import { INITIAL_TEMPLATES, humanizeCode, slugify } from "./templatesData";
 
 const TEMPLATES = [
@@ -52,11 +51,35 @@ const SAMPLE_VALUES = {
   date: "12 Sep, 6:00 PM",
 };
 
-const INITIAL_GROUPS = ["Cluster1 Network", "Cluster2 Network", "Vendors", "Internal team"];
+const BUILTIN_VARIABLES = ["name", "cluster", "site", "date"];
+
+const INITIAL_GROUPS = [];
 
 const INITIAL_CONTACTS = [];
 
 const DEFAULT_SELECTED = [];
+
+const GROUPS_STORAGE_KEY = "sendbulk_groups";
+const CONTACTS_STORAGE_KEY = "sendbulk_contacts";
+
+function loadFromStorage(key, fallback) {
+  if (typeof window === "undefined") return fallback;
+  try {
+    const raw = window.localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function saveToStorage(key, value) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // ignore write failures (e.g. storage disabled or full)
+  }
+}
 
 function initials(name) {
   return name
@@ -83,8 +106,8 @@ export default function SendBulkPageClient() {
     email: "",
   });
 
-  const [contacts, setContacts] = useState(INITIAL_CONTACTS);
-  const [groupList, setGroupList] = useState(INITIAL_GROUPS);
+  const [contacts, setContacts] = useState(() => loadFromStorage(CONTACTS_STORAGE_KEY, INITIAL_CONTACTS));
+  const [groupList, setGroupList] = useState(() => loadFromStorage(GROUPS_STORAGE_KEY, INITIAL_GROUPS));
   const [groupsModalOpen, setGroupsModalOpen] = useState(false);
   const [contactsModalMode, setContactsModalMode] = useState(null);
   const [templates, setTemplates] = useState(INITIAL_TEMPLATES);
@@ -93,6 +116,8 @@ export default function SendBulkPageClient() {
   const [selectedIds, setSelectedIds] = useState(new Set(DEFAULT_SELECTED));
   const [search, setSearch] = useState("");
   const [groupFilter, setGroupFilter] = useState("All groups");
+  const [showAllContacts, setShowAllContacts] = useState(false);
+  const CONTACTS_PAGE_SIZE = 5;
   const [groupFilterOpen, setGroupFilterOpen] = useState(false);
   const groupFilterRef = useRef(null);
   const [sendToMenuOpen, setSendToMenuOpen] = useState(false);
@@ -103,9 +128,7 @@ export default function SendBulkPageClient() {
   const [notice, setNotice] = useState("");
 
   const [step, setStep] = useState(1);
-  const [sendOption, setSendOption] = useState("now");
-  const [scheduleDate, setScheduleDate] = useState("");
-  const [scheduleTime, setScheduleTime] = useState("");
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -131,6 +154,14 @@ export default function SendBulkPageClient() {
     const t = setTimeout(() => setNotice(""), 2500);
     return () => clearTimeout(t);
   }, [notice]);
+
+  useEffect(() => {
+    saveToStorage(CONTACTS_STORAGE_KEY, contacts);
+  }, [contacts]);
+
+  useEffect(() => {
+    saveToStorage(GROUPS_STORAGE_KEY, groupList);
+  }, [groupList]);
 
   const showComingSoon = (label) => setNotice(`${label} — coming soon`);
 
@@ -222,6 +253,11 @@ export default function SendBulkPageClient() {
     });
   };
 
+  const deleteAllContacts = () => {
+    setContacts([]);
+    setSelectedIds(new Set());
+  };
+
   const openTemplatesList = () => setTemplatesPanel({ view: "list" });
   const closeTemplatesPanel = () => setTemplatesPanel(null);
   const openNewTemplate = () => setTemplatesPanel({ view: "form", mode: "new", template: null });
@@ -264,6 +300,8 @@ export default function SendBulkPageClient() {
       return matchesSearch && matchesGroup;
     });
   }, [contacts, search, groupFilter]);
+
+  const visibleContacts = showAllContacts ? filteredContacts : filteredContacts.slice(0, CONTACTS_PAGE_SIZE);
 
   const selectableInFilter = filteredContacts.filter((c) => c.hasWhatsApp || channels.email);
   const allFilteredSelected =
@@ -309,16 +347,17 @@ export default function SendBulkPageClient() {
   const deliverableContacts = selectedContacts.filter(
     (c) => (channels.whatsapp && c.hasWhatsApp) || channels.email
   );
-  const sendingLabel =
-    sendOption === "now"
-      ? "Immediately"
-      : scheduleDate
-      ? `${scheduleDate}${scheduleTime ? ` at ${scheduleTime}` : ""}`
-      : "Pick a date & time";
+  const sendingLabel = "Immediately";
 
   const handleGoToReview = () => {
-    if (selectedContacts.length === 0) return;
     setStep(2);
+  };
+
+  const handleConfirmSend = (payload) => {
+    // TODO: send { attendeeName, workshopName, workshopDate, sessionTime, arrivalTime, venue } to backend
+    console.log("Confirm send payload", payload);
+    setConfirmModalOpen(false);
+    setNotice("Details confirmed");
   };
 
   return (
@@ -538,17 +577,18 @@ export default function SendBulkPageClient() {
 
           <div className="flex items-center justify-between mt-3 mb-6">
             <div className="flex items-center gap-2 flex-wrap">
-              {["{name}", "{cluster}", "{site}", "{date}"].map((tok) => (
+              {BUILTIN_VARIABLES.map((v) => (
                 <button
-                  key={tok}
-                  onClick={() => insertVariable(tok)}
+                  key={v}
+                  onClick={() => insertVariable(`{${v}}`)}
                   className="px-3 py-1 rounded-full border border-[#d1d5db] text-[12px] font-medium text-[#555] hover:border-[#2563eb] hover:text-[#2563eb] cursor-pointer transition-colors"
                 >
-                  {tok}
+                  {`{${v}}`}
                 </button>
               ))}
             </div>
-            <span className="text-[13px] text-[#9ca3af] whitespace-nowrap ml-3">
+
+            <span className="text-[13px] text-[#9ca3af] whitespace-nowrap shrink-0 ml-3">
               {charCount.toLocaleString()} / 4,096
             </span>
           </div>
@@ -655,7 +695,10 @@ export default function SendBulkPageClient() {
                 <FiSearch className="text-[15px] text-[#9ca3af]" />
                 <input
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setShowAllContacts(false);
+                  }}
                   placeholder="Search name, email or number"
                   className="flex-1 text-[13px] outline-none placeholder:text-[#9ca3af]"
                 />
@@ -684,6 +727,7 @@ export default function SendBulkPageClient() {
                         onClick={() => {
                           setGroupFilter(g);
                           setGroupFilterOpen(false);
+                          setShowAllContacts(false);
                         }}
                         className={`w-full text-left px-3 py-2 text-[13px] rounded-[7px] cursor-pointer ${
                           groupFilter === g ? "bg-[#eff6ff] text-[#2563eb] font-medium" : "text-[#111] hover:bg-[#f9fafb]"
@@ -705,7 +749,7 @@ export default function SendBulkPageClient() {
             </button>
 
             <div className="flex-1 min-h-[120px] overflow-y-auto -mx-2 pr-1 space-y-1">
-              {filteredContacts.map((contact) => {
+              {visibleContacts.map((contact) => {
                 const isSelected = selectedIds.has(contact.id);
                 const disabled = !contact.hasWhatsApp && !channels.email;
                 return (
@@ -746,6 +790,15 @@ export default function SendBulkPageClient() {
                   {contacts.length === 0 ? "No contacts yet. Add one to get started." : "No contacts match your search."}
                 </div>
               )}
+
+              {filteredContacts.length > CONTACTS_PAGE_SIZE && (
+                <button
+                  onClick={() => setShowAllContacts((p) => !p)}
+                  className="w-full text-center text-[13px] font-semibold text-[#2563eb] hover:underline cursor-pointer py-2"
+                >
+                  {showAllContacts ? "Show less" : `Show more (${filteredContacts.length - CONTACTS_PAGE_SIZE})`}
+                </button>
+              )}
             </div>
           </div>
 
@@ -780,12 +833,7 @@ export default function SendBulkPageClient() {
 
             <button
               onClick={handleGoToReview}
-              disabled={selectedContacts.length === 0}
-              className={`w-full flex items-center justify-center gap-2 h-[46px] rounded-[10px] text-[14px] font-semibold transition-colors ${
-                selectedContacts.length === 0
-                  ? "bg-[#e5e7eb] text-[#9ca3af] cursor-not-allowed"
-                  : "bg-[#2563eb] text-white hover:bg-[#1d4ed8] cursor-pointer"
-              }`}
+              className="w-full flex items-center justify-center gap-2 h-[46px] rounded-[10px] text-[14px] font-semibold transition-colors bg-[#2563eb] text-white hover:bg-[#1d4ed8] cursor-pointer"
             >
               Review
               <FiArrowRight className="text-[15px]" />
@@ -839,12 +887,12 @@ export default function SendBulkPageClient() {
             </div>
 
             <div className="flex items-center justify-between gap-4 mt-4 bg-[#eff6ff] rounded-[12px] px-4 py-3">
-              <span className="text-[13px] font-medium text-[#2563eb]">Send one test to yourself first</span>
+              <span className="text-[13px] font-medium text-[#2563eb]">Confirm attendee details before sending</span>
               <button
-                onClick={() => setNotice("Test message sent to your account")}
+                onClick={() => setConfirmModalOpen(true)}
                 className="px-4 h-[34px] rounded-[8px] bg-[#2563eb] text-white text-[13px] font-semibold hover:bg-[#1d4ed8] cursor-pointer whitespace-nowrap"
               >
-                Send test
+                Confirm
               </button>
             </div>
           </div>
@@ -858,44 +906,13 @@ export default function SendBulkPageClient() {
                 </div>
                 <div>
                   <h2 className="text-lg font-bold text-[#1a1a2e]">Schedule</h2>
-                  <p className="text-[13px] text-[#888]">Send now or pick a time</p>
+                  <p className="text-[13px] text-[#888]">This broadcast sends immediately</p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 mb-4">
-                <button
-                  onClick={() => setSendOption("now")}
-                  className={`flex-1 h-[42px] rounded-[8px] border text-[13px] font-semibold cursor-pointer transition-colors ${
-                    sendOption === "now"
-                      ? "border-[#2563eb] bg-[#eff6ff] text-[#2563eb]"
-                      : "border-[#d1d5db] text-[#666] hover:border-[#9ca3af]"
-                  }`}
-                >
-                  Send now
-                </button>
-                <button
-                  onClick={() => setSendOption("later")}
-                  className={`flex-1 h-[42px] rounded-[8px] border text-[13px] font-semibold cursor-pointer transition-colors ${
-                    sendOption === "later"
-                      ? "border-[#2563eb] bg-[#eff6ff] text-[#2563eb]"
-                      : "border-[#d1d5db] text-[#666] hover:border-[#9ca3af]"
-                  }`}
-                >
-                  Schedule for later
-                </button>
+              <div className="flex items-center h-[42px] px-4 rounded-[8px] border border-[#2563eb] bg-[#eff6ff] text-[#2563eb] text-[13px] font-semibold">
+                Send now
               </div>
-
-              {sendOption === "later" && (
-                <div className="grid grid-cols-2 gap-3">
-                  <CustomDatePicker value={scheduleDate} onChange={setScheduleDate} />
-                  <input
-                    type="time"
-                    value={scheduleTime}
-                    onChange={(e) => setScheduleTime(e.target.value)}
-                    className="w-full border border-[#d1d5db] rounded-lg h-[38px] px-3 text-[0.84rem] text-slate-800 outline-none focus:border-[#2563eb]"
-                  />
-                </div>
-              )}
             </div>
 
             <div className="bg-white rounded-2xl p-6 shadow-[0px_2px_10px_rgba(0,0,0,0.04)]">
@@ -948,13 +965,6 @@ export default function SendBulkPageClient() {
                 <FiArrowLeft className="text-[15px]" />
                 Back
               </button>
-              <button
-                onClick={() => showComingSoon("Send broadcast")}
-                className="flex-1 flex items-center justify-center gap-2 h-[46px] rounded-[10px] bg-[#2563eb] text-white text-[14px] font-bold hover:bg-[#1d4ed8] cursor-pointer"
-              >
-                Send broadcast
-                <FiSend className="text-[15px]" />
-              </button>
             </div>
           </div>
         </div>
@@ -981,6 +991,7 @@ export default function SendBulkPageClient() {
           onAddContact={addContact}
           onImportContacts={importContacts}
           onDeleteContact={deleteContact}
+          onDeleteAllContacts={deleteAllContacts}
         />
       )}
 
@@ -1002,6 +1013,14 @@ export default function SendBulkPageClient() {
           onBack={openTemplatesList}
           onSaveDraft={handleSaveTemplateDraft}
           onSubmit={handleSubmitTemplate}
+        />
+      )}
+
+      {confirmModalOpen && (
+        <ConfirmSendModal
+          contacts={contacts}
+          onClose={() => setConfirmModalOpen(false)}
+          onConfirm={handleConfirmSend}
         />
       )}
     </div>
