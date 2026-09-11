@@ -24,6 +24,7 @@ import TemplatesModal from "./TemplatesModal";
 import TemplateFormModal from "./TemplateFormModal";
 import ConfirmSendModal from "./ConfirmSendModal";
 import { INITIAL_TEMPLATES, humanizeCode, slugify } from "./templatesData";
+import { createContactGroup, getContactGroups } from "@/services/contactGroup.service";
 
 const TEMPLATES = [
   {
@@ -48,33 +49,7 @@ const SAMPLE_VALUES = {
 
 const BUILTIN_VARIABLES = ["name", "cluster", "site", "date"];
 
-const INITIAL_GROUPS = [];
-
-const INITIAL_CONTACTS = [];
-
 const DEFAULT_SELECTED = [];
-
-const GROUPS_STORAGE_KEY = "sendbulk_groups";
-const CONTACTS_STORAGE_KEY = "sendbulk_contacts";
-
-function loadFromStorage(key, fallback) {
-  if (typeof window === "undefined") return fallback;
-  try {
-    const raw = window.localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : fallback;
-  } catch {
-    return fallback;
-  }
-}
-
-function saveToStorage(key, value) {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(key, JSON.stringify(value));
-  } catch {
-    // ignore write failures (e.g. storage disabled or full)
-  }
-}
 
 function initials(name) {
   return name
@@ -102,8 +77,9 @@ export default function SendBulkPageClient() {
   });
   const [emailSubject, setEmailSubject] = useState(TEMPLATES[0].label);
 
-  const [contacts, setContacts] = useState(() => loadFromStorage(CONTACTS_STORAGE_KEY, INITIAL_CONTACTS));
-  const [groupList, setGroupList] = useState(() => loadFromStorage(GROUPS_STORAGE_KEY, INITIAL_GROUPS));
+  const [contacts, setContacts] = useState([]);
+  const [groupList, setGroupList] = useState([]);
+  const [groupIds, setGroupIds] = useState({});
   const [groupsModalOpen, setGroupsModalOpen] = useState(false);
   const [contactsModalMode, setContactsModalMode] = useState(null);
   const [templates, setTemplates] = useState(INITIAL_TEMPLATES);
@@ -151,14 +127,6 @@ export default function SendBulkPageClient() {
     return () => clearTimeout(t);
   }, [notice]);
 
-  useEffect(() => {
-    saveToStorage(CONTACTS_STORAGE_KEY, contacts);
-  }, [contacts]);
-
-  useEffect(() => {
-    saveToStorage(GROUPS_STORAGE_KEY, groupList);
-  }, [groupList]);
-
   const showComingSoon = (label) => setNotice(`${label} — coming soon`);
 
   const handleTemplateSelect = (tpl) => {
@@ -201,37 +169,156 @@ export default function SendBulkPageClient() {
     });
   };
 
-  const createGroup = (name) => {
+  const toApiContact = (c) => ({ name: c.name || "", phone: c.phone || "", email: c.email || "" });
+
+  const refreshGroups = async () => {
+    try {
+      const result = await getContactGroups();
+      const rawList = Array.isArray(result?.result) ? result.result : Array.isArray(result) ? result : [];
+
+      // The UI treats group name as the unique identifier (used as React
+      // keys and as the lookup key for groupIds), but the backend can return
+      // more than one group document with the same name. Collapse those down
+      // to one entry each — keeping whichever was updated most recently —
+      // so we never hand React (or groupIds) a duplicate name.
+      const byName = new Map();
+      rawList.forEach((g) => {
+        const existing = byName.get(g.name);
+        if (!existing || new Date(g.updatedAt || 0) >= new Date(existing.updatedAt || 0)) {
+          byName.set(g.name, g);
+        }
+      });
+      const list = Array.from(byName.values());
+
+      setGroupList(list.map((g) => g.name));
+      setGroupIds(Object.fromEntries(list.map((g) => [g.name, g._id])));
+
+      // Merge each group's contacts into the local contact list so member
+      // counts/lists stay in sync with the backend after a refresh.
+      setContacts((prev) => {
+        const byKey = new Map(prev.map((c) => [c.phone || c.email || c.name, c]));
+        list.forEach((g) => {
+          (g.contacts || []).forEach((gc) => {
+            const key = gc.phone || gc.email || gc.name;
+            const existing = byKey.get(key);
+            byKey.set(key, {
+              ...existing,
+              id: existing?.id || `c-${g._id}-${key}`,
+              name: gc.name,
+              phone: gc.phone,
+              email: gc.email,
+              hasWhatsApp: !!gc.phone,
+              group: g.name,
+            });
+          });
+        });
+        return Array.from(byKey.values());
+      });
+    } catch (error) {
+      console.error("getContactGroups API Error:", error?.response || error);
+      setNotice("Failed to load groups");
+    }
+  };
+
+  useEffect(() => {
+    if (groupsModalOpen) refreshGroups();
+  }, [groupsModalOpen]);
+
+  useEffect(() => {
+    if (contactsModalMode) refreshGroups();
+  }, [contactsModalMode]);
+
+  const createGroup = async (name) => {
     const trimmed = name.trim();
     if (!trimmed) return;
-    if (groupList.some((g) => g.toLowerCase() === trimmed.toLowerCase())) return;
+    if (groupList.some((g) => g.toLowerCase() === trimmed.toLowerCase())) {
+      throw new Error("A group with this name already exists.");
+    }
+
+    const result = await createContactGroup({ groupId: "", name: trimmed, contacts: [] });
+    if (result?.success === false) {
+      throw new Error(result?.message || "Failed to create group");
+    }
+
+    // Backend returns the group document, either as the response body itself
+    // or wrapped in { success, result }: { _id, name, contacts, ... }
+    const group = result?.result || result;
+    const newGroupId = group?._id || "";
     setGroupList((prev) => [...prev, trimmed]);
+    setGroupIds((prev) => ({ ...prev, [trimmed]: newGroupId }));
   };
 
   const deleteGroup = (name) => {
     setGroupList((prev) => prev.filter((g) => g !== name));
+    setGroupIds((prev) => {
+      const next = { ...prev };
+      delete next[name];
+      return next;
+    });
     setContacts((prev) => prev.map((c) => (c.group === name ? { ...c, group: null } : c)));
     if (groupFilter === name) setGroupFilter("All groups");
   };
 
+  const syncGroupContacts = async (name, members) => {
+    const groupId = groupIds[name];
+    if (!groupId) {
+      console.warn(`No groupId on file for "${name}" — skipping createContactGroup sync.`);
+      return;
+    }
+    try {
+      const result = await createContactGroup({ groupId, name, contacts: members.map(toApiContact) });
+      if (result?.success === false) {
+        setNotice(result?.message || "Failed to sync group members");
+      }
+    } catch (error) {
+      console.error("createContactGroup sync error:", error?.response || error);
+      setNotice("Failed to sync group members");
+    }
+  };
+
   const addMemberToGroup = (name, contactId) => {
-    setContacts((prev) => prev.map((c) => (c.id === contactId ? { ...c, group: name } : c)));
+    setContacts((prev) => {
+      const next = prev.map((c) => (c.id === contactId ? { ...c, group: name } : c));
+      syncGroupContacts(name, next.filter((c) => c.group === name));
+      return next;
+    });
   };
 
   const removeMemberFromGroup = (contactId) => {
-    setContacts((prev) => prev.map((c) => (c.id === contactId ? { ...c, group: null } : c)));
+    setContacts((prev) => {
+      const removedFrom = prev.find((c) => c.id === contactId)?.group;
+      const next = prev.map((c) => (c.id === contactId ? { ...c, group: null } : c));
+      if (removedFrom) {
+        syncGroupContacts(removedFrom, next.filter((c) => c.group === removedFrom));
+      }
+      return next;
+    });
   };
 
   const addContact = (newContact) => {
     const id = `c-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-    setContacts((prev) => [...prev, { id, ...newContact }]);
+    setContacts((prev) => {
+      const next = [...prev, { id, ...newContact }];
+      if (newContact.group) {
+        syncGroupContacts(newContact.group, next.filter((c) => c.group === newContact.group));
+      }
+      return next;
+    });
   };
 
   const importContacts = (newContacts) => {
-    setContacts((prev) => [
-      ...prev,
-      ...newContacts.map((c, i) => ({ id: `c-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 5)}`, ...c })),
-    ]);
+    setContacts((prev) => {
+      const added = newContacts.map((c, i) => ({
+        id: `c-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 5)}`,
+        ...c,
+      }));
+      const next = [...prev, ...added];
+      const group = newContacts[0]?.group;
+      if (group) {
+        syncGroupContacts(group, next.filter((c) => c.group === group));
+      }
+      return next;
+    });
   };
 
   const deleteContact = (contactId) => {
