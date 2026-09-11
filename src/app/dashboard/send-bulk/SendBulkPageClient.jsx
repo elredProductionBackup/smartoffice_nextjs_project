@@ -24,7 +24,7 @@ import TemplatesModal from "./TemplatesModal";
 import TemplateFormModal from "./TemplateFormModal";
 import ConfirmSendModal from "./ConfirmSendModal";
 import { INITIAL_TEMPLATES, humanizeCode, slugify } from "./templatesData";
-import { createContactGroup, getContactGroups } from "@/services/contactGroup.service";
+import { createContactGroup, getContactGroups, getContactGroupContacts } from "@/services/contactGroup.service";
 
 const TEMPLATES = [
   {
@@ -88,6 +88,7 @@ export default function SendBulkPageClient() {
   const [selectedIds, setSelectedIds] = useState(new Set(DEFAULT_SELECTED));
   const [search, setSearch] = useState("");
   const [groupFilter, setGroupFilter] = useState("All groups");
+  const [groupFilterLoading, setGroupFilterLoading] = useState(false);
   const [showAllContacts, setShowAllContacts] = useState(false);
   const CONTACTS_PAGE_SIZE = 5;
   const [groupFilterOpen, setGroupFilterOpen] = useState(false);
@@ -227,6 +228,49 @@ export default function SendBulkPageClient() {
   useEffect(() => {
     if (contactsModalMode) refreshGroups();
   }, [contactsModalMode]);
+
+  const fetchGroupContacts = async (groupName) => {
+    const groupId = groupIds[groupName];
+    if (!groupId) {
+      console.warn(`No groupId on file for "${groupName}" — skipping getContactGroupContacts fetch.`);
+      return;
+    }
+    setGroupFilterLoading(true);
+    try {
+      const result = await getContactGroupContacts(groupId);
+      const list = Array.isArray(result?.result) ? result.result : Array.isArray(result) ? result : [];
+
+      setContacts((prev) => {
+        const byKey = new Map(prev.map((c) => [c.phone || c.email || c.name, c]));
+        list.forEach((gc) => {
+          const key = gc.phone || gc.email || gc.name;
+          const existing = byKey.get(key);
+          byKey.set(key, {
+            ...existing,
+            id: existing?.id || `c-${groupId}-${key}`,
+            name: gc.name,
+            phone: gc.phone,
+            email: gc.email,
+            hasWhatsApp: !!gc.phone,
+            group: groupName,
+          });
+        });
+        return Array.from(byKey.values());
+      });
+    } catch (error) {
+      console.error("getContactGroupContacts API Error:", error?.response || error);
+      setNotice("Failed to load group contacts");
+    } finally {
+      setGroupFilterLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (groupFilter !== "All groups") {
+      fetchGroupContacts(groupFilter);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groupFilter]);
 
   const createGroup = async (name) => {
     const trimmed = name.trim();
@@ -843,12 +887,17 @@ export default function SendBulkPageClient() {
               </div>
             </div>
 
-            <button
-              onClick={handleSelectAll}
-              className="text-[13px] font-semibold text-[#2563eb] hover:underline cursor-pointer mb-2"
-            >
-              {allFilteredSelected ? "Deselect all" : `Select all ${selectableInFilter.length}`}
-            </button>
+            <div className="flex items-center justify-between mb-2">
+              <button
+                onClick={handleSelectAll}
+                className="text-[13px] font-semibold text-[#2563eb] hover:underline cursor-pointer"
+              >
+                {allFilteredSelected ? "Deselect all" : `Select all ${selectableInFilter.length}`}
+              </button>
+              {groupFilterLoading && (
+                <span className="text-[12px] text-[#9ca3af]">Loading group…</span>
+              )}
+            </div>
 
             <div className="flex-1 min-h-[120px] overflow-y-auto -mx-2 pr-1 space-y-1">
               {visibleContacts.map((contact) => {

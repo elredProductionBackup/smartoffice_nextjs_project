@@ -44,3 +44,23 @@ export const getContactGroups = async () => {
     throw error;
   }
 };
+
+/**
+ * Fetch the contacts belonging to a single contact group.
+ *
+ * GET /getContactGroupContacts?groupId=...
+ *
+ * @param {string} groupId - The group's id
+ * @returns {Promise<Object>} - API response containing that group's contacts
+ */
+export const getContactGroupContacts = async (groupId) => {
+  try {
+    const res = await api.get("/getContactGroupContacts", {
+      params: { groupId },
+    });
+    return res.data;
+  } catch (error) {
+    console.error("getContactGroupContacts API Error:", error?.response || error);
+    throw error;
+  }
+};
