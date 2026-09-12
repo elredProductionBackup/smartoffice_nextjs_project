@@ -717,16 +717,23 @@ export default function SendBulkPageClient() {
             </div>
           )}
 
-          {/* Message textarea */}
-          <textarea
-            ref={textareaRef}
-            value={messages[activeTab] || ""}
-            onChange={(e) => setMessages((prev) => ({ ...prev, [activeTab]: e.target.value }))}
-            maxLength={4096}
-            rows={7}
-            placeholder="Write your message..."
-            className="w-full border border-[#d1d5db] rounded-[10px] px-4 py-3 text-[14px] text-[#111] outline-none focus:border-[#2563eb] transition-colors placeholder:text-[#9ca3af] resize-none"
-          />
+          {/* Message content */}
+          {activeTab === "email" ? (
+            <div
+              className="w-full min-h-[196px] max-h-[320px] overflow-y-auto border border-[#d1d5db] rounded-[10px] px-4 py-3 bg-white text-[14px] text-[#111]"
+              dangerouslySetInnerHTML={{ __html: messages.email || "" }}
+            />
+          ) : (
+            <textarea
+              ref={textareaRef}
+              value={messages[activeTab] || ""}
+              onChange={(e) => setMessages((prev) => ({ ...prev, [activeTab]: e.target.value }))}
+              maxLength={4096}
+              rows={7}
+              placeholder="Write your message..."
+              className="w-full border border-[#d1d5db] rounded-[10px] px-4 py-3 text-[14px] text-[#111] outline-none focus:border-[#2563eb] transition-colors placeholder:text-[#9ca3af] resize-none"
+            />
+          )}
 
           <div className="flex items-center justify-between mt-3 mb-6">
             <div className="flex items-center gap-2 flex-wrap">
@@ -768,9 +775,14 @@ export default function SendBulkPageClient() {
                   <span className="text-[#1a1a2e] font-semibold truncate">{emailSubject}</span>
                 </div>
               </div>
-              <div className="px-5 py-5 text-[14px] text-[#111] whitespace-pre-wrap leading-relaxed">
-                {previewText || "Your message preview will appear here."}
-              </div>
+              {previewText ? (
+                <div
+                  className="px-5 py-5 text-[14px] text-[#111] leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: previewText }}
+                />
+              ) : (
+                <div className="px-5 py-5 text-[14px] text-[#9ca3af]">Your message preview will appear here.</div>
+              )}
             </div>
           ) : (
             <div className="rounded-2xl bg-[#EFE6DA] p-6">
