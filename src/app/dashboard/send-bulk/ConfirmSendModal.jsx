@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { FiX, FiChevronDown, FiHelpCircle, FiCheckCircle } from "react-icons/fi";
+import { FiX, FiChevronDown, FiHelpCircle, FiCheckCircle, FiAlertTriangle } from "react-icons/fi";
 import CustomCheckbox from "@/_components/UI/CustomCheckbox";
 import CustomDatePicker from "@/_components/UI/CustomDatePicker";
 import CustomTimePicker from "@/_components/UI/CustomTimePicker";
+import { sendBulkBroadcastMessage } from "@/services/broadcast.service";
+import { getEmailHtmlTemplate } from "./emailTemplates";
 
 const FIELDS = [
   { key: "workshopName", label: "Workshop name", type: "text", placeholder: "North Cluster Review" },
@@ -13,6 +15,13 @@ const FIELDS = [
   { key: "arrivalTime", label: "Arrival time", type: "time" },
   { key: "venue", label: "Venue", type: "text", placeholder: "Andheri West" },
 ];
+
+function withIndianCountryCode(phone) {
+  const digits = (phone || "").replace(/\D/g, "").replace(/^0+/, "");
+  if (!digits) return "";
+  const national = digits.length > 10 ? digits.slice(-10) : digits;
+  return `+91${national}`;
+}
 
 function AttendeeSelect({ contacts, selectedNames, onChange }) {
   const [open, setOpen] = useState(false);
@@ -67,7 +76,9 @@ function AttendeeSelect({ contacts, selectedNames, onChange }) {
       {open && (
         <div className="mt-1 bg-white border border-[#e5e7eb] rounded-[10px] shadow-sm py-1.5 px-1.5 max-h-[220px] overflow-y-auto">
           {contacts.length === 0 ? (
-            <div className="px-3 py-3 text-[13px] text-[#9ca3af] text-center">No contacts yet.</div>
+            <div className="px-3 py-3 text-[13px] text-[#9ca3af] text-center">
+              No contacts selected in Send To yet.
+            </div>
           ) : (
             <>
               <button
@@ -103,7 +114,7 @@ function AttendeeSelect({ contacts, selectedNames, onChange }) {
   );
 }
 
-export default function ConfirmSendModal({ contacts, templateId, onClose, onConfirm }) {
+export default function ConfirmSendModal({ contacts, templateId, messageType, subject, onClose, onConfirm }) {
   const nameOnly = templateId === "prive_media";
 
   const [attendeeNames, setAttendeeNames] = useState([]);
@@ -116,7 +127,8 @@ export default function ConfirmSendModal({ contacts, templateId, onClose, onConf
   });
 
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [sendStatus, setSendStatus] = useState("idle"); // idle | sending | success
+  const [sendStatus, setSendStatus] = useState("idle"); // idle | sending | success | error
+  const [sendError, setSendError] = useState("");
 
   const canSubmit = attendeeNames.length > 0 && (nameOnly || FIELDS.every((f) => values[f.key].trim()));
 
@@ -134,12 +146,46 @@ export default function ConfirmSendModal({ contacts, templateId, onClose, onConf
   const handleSubmit = () => {
     if (!canSubmit) return;
     setSendStatus("idle");
+    setSendError("");
     setConfirmOpen(true);
   };
 
-  const handleFinalConfirm = () => {
+  const handleFinalConfirm = async () => {
     setSendStatus("sending");
-    setTimeout(() => setSendStatus("success"), 600);
+    try {
+      const recipients = attendeeNames.map((name) => {
+        const match = contacts.find((c) => c.name === name);
+        return messageType === "email"
+          ? { name, email: match?.email || "" }
+          : { name, phone: withIndianCountryCode(match?.phone) };
+      });
+
+      const result = await sendBulkBroadcastMessage({
+        messageType,
+        templateName: templateId,
+        contacts: recipients,
+        templateVariables: nameOnly
+          ? {}
+          : {
+              workshopName: values.workshopName.trim(),
+              workshopDate: values.workshopDate.trim(),
+              sessionTime: values.sessionTime.trim(),
+              arrivalTime: values.arrivalTime.trim(),
+              venue: values.venue.trim(),
+            },
+        subject: messageType === "email" ? subject || "" : "",
+        htmlTemplate: messageType === "email" ? getEmailHtmlTemplate(templateId) : "",
+      });
+
+      if (result?.success === false) {
+        throw new Error(result?.message || "Failed to send broadcast");
+      }
+      setSendStatus("success");
+    } catch (error) {
+      console.error("sendBulkBroadcastMessage error:", error?.response || error);
+      setSendError(error?.response?.data?.message || error?.message || "Failed to send broadcast");
+      setSendStatus("error");
+    }
   };
 
   const handleDone = () => {
@@ -256,16 +302,16 @@ export default function ConfirmSendModal({ contacts, templateId, onClose, onConf
             {sendStatus === "sending" && (
               <div className="flex flex-col items-center py-3 gap-3">
                 <div className="w-8 h-8 border-[3px] border-[#2563eb] border-t-transparent rounded-full animate-spin" />
-                <p className="text-[13px] font-semibold text-[#333]">Confirming details…</p>
+                <p className="text-[13px] font-semibold text-[#333]">Sending broadcast…</p>
               </div>
             )}
 
             {sendStatus === "success" && (
               <div className="flex flex-col items-center py-3 gap-3">
                 <FiCheckCircle className="text-[36px] text-green-500" />
-                <p className="text-[15px] font-bold text-[#1a1a2e]">Details confirmed</p>
+                <p className="text-[15px] font-bold text-[#1a1a2e]">Broadcast sent</p>
                 <p className="text-[13px] text-[#666] text-center">
-                  The message will be sent with these attendee details.
+                  Your message has been sent to the selected attendee{attendeeNames.length === 1 ? "" : "s"}.
                 </p>
                 <button
                   onClick={handleDone}
@@ -273,6 +319,28 @@ export default function ConfirmSendModal({ contacts, templateId, onClose, onConf
                 >
                   Done
                 </button>
+              </div>
+            )}
+
+            {sendStatus === "error" && (
+              <div className="flex flex-col items-center py-3 gap-3">
+                <FiAlertTriangle className="text-[32px] text-red-500" />
+                <p className="text-[15px] font-bold text-[#1a1a2e]">Couldn&apos;t send broadcast</p>
+                <p className="text-[13px] text-[#666] text-center">{sendError}</p>
+                <div className="flex items-center gap-3 w-full mt-2">
+                  <button
+                    onClick={() => setConfirmOpen(false)}
+                    className="flex-1 h-[38px] rounded-[8px] border border-[#d1d5db] text-[13px] font-semibold text-[#333] hover:bg-[#f9fafb] cursor-pointer transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleFinalConfirm}
+                    className="flex-1 h-[38px] rounded-[8px] bg-[#2563eb] text-white text-[13px] font-semibold hover:bg-[#1d4ed8] cursor-pointer transition-colors"
+                  >
+                    Try again
+                  </button>
+                </div>
               </div>
             )}
           </div>

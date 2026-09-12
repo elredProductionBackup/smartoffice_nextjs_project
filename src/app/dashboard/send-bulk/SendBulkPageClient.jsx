@@ -25,6 +25,7 @@ import TemplateFormModal from "./TemplateFormModal";
 import ConfirmSendModal from "./ConfirmSendModal";
 import { INITIAL_TEMPLATES, humanizeCode, slugify } from "./templatesData";
 import { createContactGroup, getContactGroups, getContactGroupContacts } from "@/services/contactGroup.service";
+import { PRIVE_WORKSHOP_EMAIL_HTML, PRIVE_MEDIA_EMAIL_HTML } from "./emailTemplates";
 
 const TEMPLATES = [
   {
@@ -32,12 +33,14 @@ const TEMPLATES = [
     label: "Prive workshop registration confirmation",
     body:
       "Hi {name},\n\nA quick reminder about the {cluster} review meet at {site} on {date}. Please arrive ten minutes early and bring your site checklist.\n\nTeam Smart Networks",
+    emailBody: PRIVE_WORKSHOP_EMAIL_HTML,
   },
   {
     id: "prive_media",
     label: "Prive media",
     body:
       "Hi {name},\n\nThanks for joining the {cluster} sync today. Notes and action items from the meet at {site} will follow shortly.\n\nTeam Smart Networks",
+    emailBody: PRIVE_MEDIA_EMAIL_HTML,
   },
 ];
 
@@ -73,7 +76,7 @@ export default function SendBulkPageClient() {
 
   const [messages, setMessages] = useState({
     whatsapp: TEMPLATES[0].body,
-    email: "",
+    email: TEMPLATES[0].emailBody,
   });
   const [emailSubject, setEmailSubject] = useState(TEMPLATES[0].label);
 
@@ -133,7 +136,7 @@ export default function SendBulkPageClient() {
   const handleTemplateSelect = (tpl) => {
     setTemplateId(tpl.id);
     setTemplateOpen(false);
-    setMessages((prev) => ({ ...prev, [activeTab]: tpl.body }));
+    setMessages({ whatsapp: tpl.body, email: tpl.emailBody });
     setEmailSubject(tpl.label);
   };
 
@@ -220,6 +223,11 @@ export default function SendBulkPageClient() {
       setNotice("Failed to load groups");
     }
   };
+
+  useEffect(() => {
+    refreshGroups();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (groupsModalOpen) refreshGroups();
@@ -471,10 +479,9 @@ export default function SendBulkPageClient() {
   };
 
   const handleConfirmSend = (payload) => {
-    // TODO: send { attendeeName, workshopName, workshopDate, sessionTime, arrivalTime, venue } to backend
     console.log("Confirm send payload", payload);
     setConfirmModalOpen(false);
-    setNotice("Details confirmed");
+    setNotice("Broadcast sent");
   };
 
   return (
@@ -1173,8 +1180,10 @@ export default function SendBulkPageClient() {
 
       {confirmModalOpen && (
         <ConfirmSendModal
-          contacts={contacts}
+          contacts={selectedContacts}
           templateId={templateId}
+          messageType={channels.whatsapp ? "whatsapp" : "email"}
+          subject={emailSubject}
           onClose={() => setConfirmModalOpen(false)}
           onConfirm={handleConfirmSend}
         />
