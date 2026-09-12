@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { FiX, FiTrash2, FiChevronDown, FiCheckCircle } from "react-icons/fi";
+import { FiX, FiTrash2, FiChevronDown, FiCheckCircle, FiUpload, FiAlertTriangle } from "react-icons/fi";
 
 function initials(name) {
   return name
@@ -71,16 +71,101 @@ function GroupSelect({ groups, value, onChange }) {
   );
 }
 
-export default function ContactsModal({ mode, contacts, groups, onClose, onAddContact, onDeleteContact }) {
+function parseCsv(text) {
+  const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
+  if (lines.length === 0) return [];
+  const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
+  return lines.slice(1).map((line) => {
+    const cells = line.split(",").map((c) => c.trim());
+    const row = {};
+    headers.forEach((h, i) => {
+      row[h] = cells[i] || "";
+    });
+    return row;
+  });
+}
+
+function rowsToContacts(rows, group) {
+  return rows
+    .map((row) => {
+      const name = row.name || row["full name"] || "";
+      const phone = row.phone || row["phone number"] || row.mobile || "";
+      const email = row.email || "";
+      return { name: name.trim(), phone: phone.trim(), email: email.trim(), group: group || null, hasWhatsApp: !!phone.trim() };
+    })
+    .filter((c) => c.name);
+}
+
+export default function ContactsModal({
+  mode,
+  contacts,
+  groups,
+  onClose,
+  onAddContact,
+  onImportContacts,
+  onDeleteContact,
+  onDeleteAllContacts,
+}) {
   const isManageMode = mode === "manage";
-  const isEmailMode = mode === "email";
+  const fileInputRef = useRef(null);
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [group, setGroup] = useState("");
+  const [csvNotice, setCsvNotice] = useState("");
   const [pendingDelete, setPendingDelete] = useState(null);
   const [deleteStatus, setDeleteStatus] = useState("idle"); // idle | deleting | deleted
+  const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
+  const [deleteAllStatus, setDeleteAllStatus] = useState("idle"); // idle | deleting | deleted
+
+  const canSubmit = fullName.trim() && (email.trim() || phone.trim());
+
+  useEffect(() => {
+    if (!csvNotice) return;
+    const t = setTimeout(() => setCsvNotice(""), 3000);
+    return () => clearTimeout(t);
+  }, [csvNotice]);
+
+  const handleAdd = () => {
+    if (!canSubmit) return;
+    onAddContact({
+      name: fullName.trim(),
+      email: email.trim(),
+      phone: phone.trim(),
+      group: group || null,
+      hasWhatsApp: !!phone.trim(),
+    });
+    setFullName("");
+    setEmail("");
+    setPhone("");
+    setGroup("");
+  };
+
+  const handleCsvClick = () => {
+    if (!group) return;
+    fileInputRef.current?.click();
+  };
+
+  const handleCsvChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const rows = parseCsv(String(reader.result || ""));
+      const newContacts = rowsToContacts(rows, group);
+      if (newContacts.length === 0) {
+        setCsvNotice("No valid rows found. Expect columns: name, phone, email.");
+      } else {
+        onImportContacts(newContacts);
+        setCsvNotice(
+          `Imported ${newContacts.length} contact${newContacts.length === 1 ? "" : "s"} into ${group || "no group"}.`
+        );
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  };
 
   const confirmDelete = () => {
     if (!pendingDelete) return;
@@ -95,23 +180,16 @@ export default function ContactsModal({ mode, contacts, groups, onClose, onAddCo
     }, 500);
   };
 
-  const canSubmit = isEmailMode
-    ? fullName.trim() && email.trim()
-    : fullName.trim() && (email.trim() || phone.trim());
-
-  const handleAdd = () => {
-    if (!canSubmit) return;
-    onAddContact({
-      name: fullName.trim(),
-      email: email.trim(),
-      phone: isEmailMode ? "" : phone.trim(),
-      group: group || null,
-      hasWhatsApp: isEmailMode ? false : !!phone.trim(),
-    });
-    setFullName("");
-    setEmail("");
-    setPhone("");
-    setGroup("");
+  const handleConfirmDeleteAll = () => {
+    setDeleteAllStatus("deleting");
+    setTimeout(() => {
+      onDeleteAllContacts();
+      setDeleteAllStatus("deleted");
+      setTimeout(() => {
+        setConfirmDeleteAll(false);
+        setDeleteAllStatus("idle");
+      }, 700);
+    }, 500);
   };
 
   return (
@@ -135,32 +213,19 @@ export default function ContactsModal({ mode, contacts, groups, onClose, onAddCo
         <div className="flex-1 overflow-y-auto px-7 py-5">
           {/* Add form */}
           {!isManageMode && (
-          <div className="bg-[#eff6ff] rounded-[12px] p-4 mb-5">
-            <label className="block text-[14px] font-bold text-[#2563eb] mb-3">
-              {isEmailMode ? "Add an email contact" : "Add a contact"}
-            </label>
+            <div className="bg-[#eff6ff] rounded-[12px] p-4 mb-5">
+              <label className="block text-[14px] font-bold text-[#2563eb] mb-3">Add a contact</label>
 
-            <div className="mb-3">
-              <label className="block text-[13px] font-semibold text-[#333] mb-1.5">Full name</label>
-              <input
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="Kavita Menon"
-                className="w-full h-[42px] px-3 rounded-[8px] border border-[#d1d5db] bg-white text-[13px] text-[#111] outline-none focus:border-[#2563eb] transition-colors placeholder:text-[#9ca3af]"
-              />
-            </div>
-
-            {isEmailMode ? (
               <div className="mb-3">
-                <label className="block text-[13px] font-semibold text-[#333] mb-1.5">Email</label>
+                <label className="block text-[13px] font-semibold text-[#333] mb-1.5">Full name</label>
                 <input
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@company.in"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="Kavita Menon"
                   className="w-full h-[42px] px-3 rounded-[8px] border border-[#d1d5db] bg-white text-[13px] text-[#111] outline-none focus:border-[#2563eb] transition-colors placeholder:text-[#9ca3af]"
                 />
               </div>
-            ) : (
+
               <div className="grid grid-cols-2 gap-4 mb-3">
                 <div>
                   <label className="block text-[13px] font-semibold text-[#333] mb-1.5">Email</label>
@@ -181,62 +246,106 @@ export default function ContactsModal({ mode, contacts, groups, onClose, onAddCo
                   />
                 </div>
               </div>
-            )}
 
-            <div className="mb-4">
-              <label className="block text-[13px] font-semibold text-[#333] mb-1.5">Group</label>
-              <GroupSelect groups={groups} value={group} onChange={setGroup} />
+              <div className="mb-4">
+                <label className="block text-[13px] font-semibold text-[#333] mb-1.5">Group</label>
+                <GroupSelect groups={groups} value={group} onChange={setGroup} />
+              </div>
+
+              <button
+                onClick={handleAdd}
+                disabled={!canSubmit}
+                className={`px-5 h-[42px] rounded-[8px] text-[13px] font-semibold transition-colors ${
+                  canSubmit
+                    ? "bg-[#2563eb] text-white hover:bg-[#1d4ed8] cursor-pointer"
+                    : "bg-[#e5e7eb] text-[#9ca3af] cursor-not-allowed"
+                }`}
+              >
+                Add contact
+              </button>
+
+              <div className="border-t border-[#dbeafe] mt-5 pt-4">
+                <p className="text-[13px] font-semibold text-[#333] mb-1">Or bulk import from a CSV</p>
+                <p className="text-[12px] text-[#9ca3af] mb-3">
+                  {group
+                    ? <>Contacts will be added to <span className="font-semibold text-[#2563eb]">{group}</span>.</>
+                    : "Select a group above first, then upload your file."}
+                </p>
+                <button
+                  onClick={handleCsvClick}
+                  disabled={!group}
+                  className={`flex items-center gap-1.5 px-5 h-[42px] rounded-[8px] border text-[13px] font-semibold transition-colors ${
+                    group
+                      ? "border-[#d1d5db] bg-white text-[#333] hover:bg-[#f9fafb] cursor-pointer"
+                      : "border-[#e5e7eb] bg-[#f3f4f6] text-[#9ca3af] cursor-not-allowed"
+                  }`}
+                >
+                  <FiUpload className="text-[14px]" />
+                  Upload CSV
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".csv,text/csv"
+                  onChange={handleCsvChange}
+                  className="hidden"
+                />
+                <p className="text-[12px] text-[#9ca3af] mt-2">CSV columns: name, phone, email.</p>
+                {csvNotice && <p className="text-[12px] text-[#2563eb] font-medium mt-2">{csvNotice}</p>}
+              </div>
             </div>
-
-            <button
-              onClick={handleAdd}
-              disabled={!canSubmit}
-              className={`px-5 h-[42px] rounded-[8px] text-[13px] font-semibold transition-colors ${
-                canSubmit
-                  ? "bg-[#2563eb] text-white hover:bg-[#1d4ed8] cursor-pointer"
-                  : "bg-[#e5e7eb] text-[#9ca3af] cursor-not-allowed"
-              }`}
-            >
-              {isEmailMode ? "Add email contact" : "Add contact"}
-            </button>
-          </div>
           )}
 
           {/* Existing contacts */}
           {isManageMode && (
-          <div className="flex flex-col">
-            {contacts.map((c) => {
-              const subtext = [c.email, c.phone].filter(Boolean).join(" · ");
-              return (
-                <div
-                  key={c.id}
-                  className="flex items-center gap-3 py-3 border-b border-[#f1f5f9] last:border-b-0"
-                >
-                  <div className="w-10 h-10 min-w-[40px] rounded-full bg-[#E5E7EB] text-[#555] grid place-items-center text-[13px] font-bold">
-                    {initials(c.name)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[14px] font-semibold text-[#1a1a2e] truncate">{c.name}</p>
-                    {subtext && <p className="text-[12px] text-[#888] truncate">{subtext}</p>}
-                  </div>
+            <div className="flex flex-col">
+              {contacts.length > 0 && (
+                <div className="flex items-center justify-end mb-3">
                   <button
                     onClick={() => {
-                      setDeleteStatus("idle");
-                      setPendingDelete(c);
+                      setDeleteAllStatus("idle");
+                      setConfirmDeleteAll(true);
                     }}
-                    title="Delete contact"
-                    className="text-red-500 hover:bg-red-50 rounded-[6px] p-1.5 cursor-pointer transition-colors"
+                    className="flex items-center gap-1.5 text-[13px] font-semibold text-red-600 hover:underline cursor-pointer"
                   >
-                    <FiTrash2 className="text-[15px]" />
+                    <FiTrash2 className="text-[13px]" />
+                    Delete all
                   </button>
                 </div>
-              );
-            })}
+              )}
 
-            {contacts.length === 0 && (
-              <div className="py-10 text-center text-[13px] text-[#9ca3af]">No contacts yet.</div>
-            )}
-          </div>
+              {contacts.map((c) => {
+                const subtext = [c.email, c.phone].filter(Boolean).join(" · ");
+                return (
+                  <div
+                    key={c.id}
+                    className="flex items-center gap-3 py-3 border-b border-[#f1f5f9] last:border-b-0"
+                  >
+                    <div className="w-10 h-10 min-w-[40px] rounded-full bg-[#E5E7EB] text-[#555] grid place-items-center text-[13px] font-bold">
+                      {initials(c.name)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[14px] font-semibold text-[#1a1a2e] truncate">{c.name}</p>
+                      {subtext && <p className="text-[12px] text-[#888] truncate">{subtext}</p>}
+                    </div>
+                    <button
+                      onClick={() => {
+                        setDeleteStatus("idle");
+                        setPendingDelete(c);
+                      }}
+                      title="Delete contact"
+                      className="text-red-500 hover:bg-red-50 rounded-[6px] p-1.5 cursor-pointer transition-colors"
+                    >
+                      <FiTrash2 className="text-[15px]" />
+                    </button>
+                  </div>
+                );
+              })}
+
+              {contacts.length === 0 && (
+                <div className="py-10 text-center text-[13px] text-[#9ca3af]">No contacts yet.</div>
+              )}
+            </div>
           )}
         </div>
 
@@ -254,7 +363,10 @@ export default function ContactsModal({ mode, contacts, groups, onClose, onAddCo
       {pendingDelete && (
         <div
           className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/40"
-          onClick={() => deleteStatus === "idle" && setPendingDelete(null)}
+          onClick={(e) => {
+            e.stopPropagation();
+            deleteStatus === "idle" && setPendingDelete(null);
+          }}
         >
           <div
             className="bg-white rounded-[16px] w-full max-w-[360px] mx-4 shadow-xl p-6"
@@ -295,6 +407,63 @@ export default function ContactsModal({ mode, contacts, groups, onClose, onAddCo
               <div className="flex flex-col items-center py-3 gap-3">
                 <FiCheckCircle className="text-[32px] text-green-500" />
                 <p className="text-[13px] font-semibold text-[#333]">{pendingDelete.name} deleted</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {confirmDeleteAll && (
+        <div
+          className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/40"
+          onClick={(e) => {
+            e.stopPropagation();
+            deleteAllStatus === "idle" && setConfirmDeleteAll(false);
+          }}
+        >
+          <div
+            className="bg-white rounded-[16px] w-full max-w-[380px] mx-4 shadow-xl p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {deleteAllStatus === "idle" && (
+              <>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <FiAlertTriangle className="text-[18px] text-red-600" />
+                  <h3 className="text-[16px] font-bold text-[#1a1a2e]">Delete all contacts?</h3>
+                </div>
+                <p className="text-[13px] text-[#666] mb-5">
+                  This will permanently remove all{" "}
+                  <span className="font-semibold text-[#1a1a2e]">{contacts.length}</span> saved contacts and clear
+                  every group&apos;s membership. This can&apos;t be undone.
+                </p>
+                <div className="flex items-center justify-end gap-3">
+                  <button
+                    onClick={() => setConfirmDeleteAll(false)}
+                    className="px-5 h-[38px] rounded-[8px] border border-[#d1d5db] text-[13px] font-semibold text-[#333] hover:bg-[#f9fafb] cursor-pointer transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleConfirmDeleteAll}
+                    className="px-5 h-[38px] rounded-[8px] bg-red-500 text-white text-[13px] font-semibold hover:bg-red-600 cursor-pointer transition-colors"
+                  >
+                    Delete all
+                  </button>
+                </div>
+              </>
+            )}
+
+            {deleteAllStatus === "deleting" && (
+              <div className="flex flex-col items-center py-3 gap-3">
+                <div className="w-8 h-8 border-[3px] border-red-500 border-t-transparent rounded-full animate-spin" />
+                <p className="text-[13px] font-semibold text-[#333]">Deleting all contacts…</p>
+              </div>
+            )}
+
+            {deleteAllStatus === "deleted" && (
+              <div className="flex flex-col items-center py-3 gap-3">
+                <FiCheckCircle className="text-[32px] text-green-500" />
+                <p className="text-[13px] font-semibold text-[#333]">All contacts deleted</p>
               </div>
             )}
           </div>

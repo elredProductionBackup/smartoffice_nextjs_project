@@ -75,10 +75,23 @@ export default function GroupsModal({
   onRemoveMember,
 }) {
   const [newGroupName, setNewGroupName] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState("");
 
-  const handleCreate = () => {
-    onCreateGroup(newGroupName);
-    setNewGroupName("");
+  const handleCreate = async () => {
+    const trimmed = newGroupName.trim();
+    if (!trimmed || creating) return;
+
+    setCreating(true);
+    setCreateError("");
+    try {
+      await onCreateGroup(trimmed);
+      setNewGroupName("");
+    } catch (error) {
+      setCreateError(error?.response?.data?.message || error?.message || "Failed to create group");
+    } finally {
+      setCreating(false);
+    }
   };
 
   return (
@@ -115,16 +128,17 @@ export default function GroupsModal({
               />
               <button
                 onClick={handleCreate}
-                disabled={!newGroupName.trim()}
+                disabled={!newGroupName.trim() || creating}
                 className={`px-5 h-[42px] rounded-[8px] text-[13px] font-semibold whitespace-nowrap transition-colors ${
-                  newGroupName.trim()
+                  newGroupName.trim() && !creating
                     ? "bg-[#2563eb] text-white hover:bg-[#1d4ed8] cursor-pointer"
                     : "bg-[#e5e7eb] text-[#9ca3af] cursor-not-allowed"
                 }`}
               >
-                Create group
+                {creating ? "Creating…" : "Create group"}
               </button>
             </div>
+            {createError && <p className="text-[12px] text-red-600 mt-2">{createError}</p>}
           </div>
 
           {/* Group list */}

@@ -11,39 +11,36 @@ import {
   FiChevronDown,
   FiCheck,
   FiPlus,
-  FiMail,
   FiSearch,
   FiClock,
-  FiSend,
   FiCheckSquare,
   FiMenu,
 } from "react-icons/fi";
 import { BsCheckAll } from "react-icons/bs";
 import CustomCheckbox from "@/_components/UI/CustomCheckbox";
-import CustomDatePicker from "@/_components/UI/CustomDatePicker";
 import GroupsModal from "./GroupsModal";
 import ContactsModal from "./ContactsModal";
 import TemplatesModal from "./TemplatesModal";
 import TemplateFormModal from "./TemplateFormModal";
+import ConfirmSendModal from "./ConfirmSendModal";
 import { INITIAL_TEMPLATES, humanizeCode, slugify } from "./templatesData";
+import { createContactGroup, getContactGroups, getContactGroupContacts } from "@/services/contactGroup.service";
+import { PRIVE_WORKSHOP_EMAIL_HTML, PRIVE_MEDIA_EMAIL_HTML } from "./emailTemplates";
 
 const TEMPLATES = [
   {
-    id: "event_reminder",
-    label: "Event reminder",
+    id: "prive_workshop_registration_confirmation",
+    label: "Prive workshop registration confirmation",
     body:
       "Hi {name},\n\nA quick reminder about the {cluster} review meet at {site} on {date}. Please arrive ten minutes early and bring your site checklist.\n\nTeam Smart Networks",
+    emailBody: PRIVE_WORKSHOP_EMAIL_HTML,
   },
   {
-    id: "meeting_followup",
-    label: "Meeting follow-up",
+    id: "prive_media",
+    label: "Prive media",
     body:
       "Hi {name},\n\nThanks for joining the {cluster} sync today. Notes and action items from the meet at {site} will follow shortly.\n\nTeam Smart Networks",
-  },
-  {
-    id: "blank",
-    label: "Write your own",
-    body: "",
+    emailBody: PRIVE_MEDIA_EMAIL_HTML,
   },
 ];
 
@@ -53,22 +50,9 @@ const SAMPLE_VALUES = {
   date: "12 Sep, 6:00 PM",
 };
 
-const INITIAL_GROUPS = ["Cluster1 Network", "Cluster2 Network", "Vendors", "Internal team"];
+const BUILTIN_VARIABLES = ["name", "cluster", "site", "date"];
 
-const INITIAL_CONTACTS = [
-  { id: "c1", name: "Priya Nair", group: "Cluster1 Network", hasWhatsApp: true, email: "priya.nair@smartnet.in", phone: "+91 98200 41190" },
-  { id: "c2", name: "Rakesh Menon", group: "Cluster1 Network", hasWhatsApp: true, email: "", phone: "+91 98204 77315" },
-  { id: "c3", name: "Anita Desai", group: "Cluster2 Network", hasWhatsApp: false, email: "anita.desai@smartnet.in", phone: "" },
-  { id: "c4", name: "Vikram Shetty", group: "Cluster2 Network", hasWhatsApp: true, email: "vikram.shetty@smartnet.in", phone: "+91 99300 12084" },
-  { id: "c5", name: "Farhan Qureshi", group: "Vendors", hasWhatsApp: false, email: "farhan@qureshiworks.in", phone: "+91 97690 55210" },
-  { id: "c6", name: "Meera Iyer", group: "Vendors", hasWhatsApp: true, email: "meera@iyersupply.in", phone: "+91 98110 63478" },
-  { id: "c7", name: "Sunil Rao", group: "Internal team", hasWhatsApp: true, email: "sunil.rao@smartnet.in", phone: "+91 98221 34567" },
-  { id: "c8", name: "Divya Kapoor", group: "Internal team", hasWhatsApp: false, email: "divya.kapoor@smartnet.in", phone: "" },
-  { id: "c9", name: "Arjun Pillai", group: "Cluster1 Network", hasWhatsApp: true, email: "arjun.pillai@smartnet.in", phone: "+91 99001 22334" },
-  { id: "c10", name: "Neha Joshi", group: "Cluster2 Network", hasWhatsApp: true, email: "neha.joshi@smartnet.in", phone: "+91 98765 11223" },
-];
-
-const DEFAULT_SELECTED = ["c1", "c2", "c4", "c9"];
+const DEFAULT_SELECTED = [];
 
 function initials(name) {
   return name
@@ -92,11 +76,13 @@ export default function SendBulkPageClient() {
 
   const [messages, setMessages] = useState({
     whatsapp: TEMPLATES[0].body,
-    email: "",
+    email: TEMPLATES[0].emailBody,
   });
+  const [emailSubject, setEmailSubject] = useState(TEMPLATES[0].label);
 
-  const [contacts, setContacts] = useState(INITIAL_CONTACTS);
-  const [groupList, setGroupList] = useState(INITIAL_GROUPS);
+  const [contacts, setContacts] = useState([]);
+  const [groupList, setGroupList] = useState([]);
+  const [groupIds, setGroupIds] = useState({});
   const [groupsModalOpen, setGroupsModalOpen] = useState(false);
   const [contactsModalMode, setContactsModalMode] = useState(null);
   const [templates, setTemplates] = useState(INITIAL_TEMPLATES);
@@ -105,6 +91,9 @@ export default function SendBulkPageClient() {
   const [selectedIds, setSelectedIds] = useState(new Set(DEFAULT_SELECTED));
   const [search, setSearch] = useState("");
   const [groupFilter, setGroupFilter] = useState("All groups");
+  const [groupFilterLoading, setGroupFilterLoading] = useState(false);
+  const [showAllContacts, setShowAllContacts] = useState(false);
+  const CONTACTS_PAGE_SIZE = 5;
   const [groupFilterOpen, setGroupFilterOpen] = useState(false);
   const groupFilterRef = useRef(null);
   const [sendToMenuOpen, setSendToMenuOpen] = useState(false);
@@ -115,9 +104,7 @@ export default function SendBulkPageClient() {
   const [notice, setNotice] = useState("");
 
   const [step, setStep] = useState(1);
-  const [sendOption, setSendOption] = useState("now");
-  const [scheduleDate, setScheduleDate] = useState("");
-  const [scheduleTime, setScheduleTime] = useState("");
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -149,19 +136,13 @@ export default function SendBulkPageClient() {
   const handleTemplateSelect = (tpl) => {
     setTemplateId(tpl.id);
     setTemplateOpen(false);
-    setMessages((prev) => ({ ...prev, [activeTab]: tpl.body }));
+    setMessages({ whatsapp: tpl.body, email: tpl.emailBody });
+    setEmailSubject(tpl.label);
   };
 
-  const toggleChannel = (key) => {
-    setChannels((prev) => {
-      const next = { ...prev, [key]: !prev[key] };
-      // keep at least one channel active
-      if (!next.whatsapp && !next.email) return prev;
-      if (activeTab === key && !next[key]) {
-        setActiveTab(next.whatsapp ? "whatsapp" : "email");
-      }
-      return next;
-    });
+  const selectChannel = (key) => {
+    setChannels({ whatsapp: key === "whatsapp", email: key === "email" });
+    setActiveTab(key);
   };
 
   const insertVariable = (token) => {
@@ -192,30 +173,204 @@ export default function SendBulkPageClient() {
     });
   };
 
-  const createGroup = (name) => {
+  const toApiContact = (c) => ({ name: c.name || "", phone: c.phone || "", email: c.email || "" });
+
+  const refreshGroups = async () => {
+    try {
+      const result = await getContactGroups();
+      const rawList = Array.isArray(result?.result) ? result.result : Array.isArray(result) ? result : [];
+
+      // The UI treats group name as the unique identifier (used as React
+      // keys and as the lookup key for groupIds), but the backend can return
+      // more than one group document with the same name. Collapse those down
+      // to one entry each — keeping whichever was updated most recently —
+      // so we never hand React (or groupIds) a duplicate name.
+      const byName = new Map();
+      rawList.forEach((g) => {
+        const existing = byName.get(g.name);
+        if (!existing || new Date(g.updatedAt || 0) >= new Date(existing.updatedAt || 0)) {
+          byName.set(g.name, g);
+        }
+      });
+      const list = Array.from(byName.values());
+
+      setGroupList(list.map((g) => g.name));
+      setGroupIds(Object.fromEntries(list.map((g) => [g.name, g._id])));
+
+      // Merge each group's contacts into the local contact list so member
+      // counts/lists stay in sync with the backend after a refresh.
+      setContacts((prev) => {
+        const byKey = new Map(prev.map((c) => [c.phone || c.email || c.name, c]));
+        list.forEach((g) => {
+          (g.contacts || []).forEach((gc) => {
+            const key = gc.phone || gc.email || gc.name;
+            const existing = byKey.get(key);
+            byKey.set(key, {
+              ...existing,
+              id: existing?.id || `c-${g._id}-${key}`,
+              name: gc.name,
+              phone: gc.phone,
+              email: gc.email,
+              hasWhatsApp: !!gc.phone,
+              group: g.name,
+            });
+          });
+        });
+        return Array.from(byKey.values());
+      });
+    } catch (error) {
+      console.error("getContactGroups API Error:", error?.response || error);
+      setNotice("Failed to load groups");
+    }
+  };
+
+  useEffect(() => {
+    refreshGroups();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (groupsModalOpen) refreshGroups();
+  }, [groupsModalOpen]);
+
+  useEffect(() => {
+    if (contactsModalMode) refreshGroups();
+  }, [contactsModalMode]);
+
+  const fetchGroupContacts = async (groupName) => {
+    const groupId = groupIds[groupName];
+    if (!groupId) {
+      console.warn(`No groupId on file for "${groupName}" — skipping getContactGroupContacts fetch.`);
+      return;
+    }
+    setGroupFilterLoading(true);
+    try {
+      const result = await getContactGroupContacts(groupId);
+      const list = Array.isArray(result?.result) ? result.result : Array.isArray(result) ? result : [];
+
+      setContacts((prev) => {
+        const byKey = new Map(prev.map((c) => [c.phone || c.email || c.name, c]));
+        list.forEach((gc) => {
+          const key = gc.phone || gc.email || gc.name;
+          const existing = byKey.get(key);
+          byKey.set(key, {
+            ...existing,
+            id: existing?.id || `c-${groupId}-${key}`,
+            name: gc.name,
+            phone: gc.phone,
+            email: gc.email,
+            hasWhatsApp: !!gc.phone,
+            group: groupName,
+          });
+        });
+        return Array.from(byKey.values());
+      });
+    } catch (error) {
+      console.error("getContactGroupContacts API Error:", error?.response || error);
+      setNotice("Failed to load group contacts");
+    } finally {
+      setGroupFilterLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (groupFilter !== "All groups") {
+      fetchGroupContacts(groupFilter);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groupFilter]);
+
+  const createGroup = async (name) => {
     const trimmed = name.trim();
     if (!trimmed) return;
-    if (groupList.some((g) => g.toLowerCase() === trimmed.toLowerCase())) return;
+    if (groupList.some((g) => g.toLowerCase() === trimmed.toLowerCase())) {
+      throw new Error("A group with this name already exists.");
+    }
+
+    const result = await createContactGroup({ groupId: "", name: trimmed, contacts: [] });
+    if (result?.success === false) {
+      throw new Error(result?.message || "Failed to create group");
+    }
+
+    // Backend returns the group document, either as the response body itself
+    // or wrapped in { success, result }: { _id, name, contacts, ... }
+    const group = result?.result || result;
+    const newGroupId = group?._id || "";
     setGroupList((prev) => [...prev, trimmed]);
+    setGroupIds((prev) => ({ ...prev, [trimmed]: newGroupId }));
   };
 
   const deleteGroup = (name) => {
     setGroupList((prev) => prev.filter((g) => g !== name));
+    setGroupIds((prev) => {
+      const next = { ...prev };
+      delete next[name];
+      return next;
+    });
     setContacts((prev) => prev.map((c) => (c.group === name ? { ...c, group: null } : c)));
     if (groupFilter === name) setGroupFilter("All groups");
   };
 
+  const syncGroupContacts = async (name, members) => {
+    const groupId = groupIds[name];
+    if (!groupId) {
+      console.warn(`No groupId on file for "${name}" — skipping createContactGroup sync.`);
+      return;
+    }
+    try {
+      const result = await createContactGroup({ groupId, name, contacts: members.map(toApiContact) });
+      if (result?.success === false) {
+        setNotice(result?.message || "Failed to sync group members");
+      }
+    } catch (error) {
+      console.error("createContactGroup sync error:", error?.response || error);
+      setNotice("Failed to sync group members");
+    }
+  };
+
   const addMemberToGroup = (name, contactId) => {
-    setContacts((prev) => prev.map((c) => (c.id === contactId ? { ...c, group: name } : c)));
+    setContacts((prev) => {
+      const next = prev.map((c) => (c.id === contactId ? { ...c, group: name } : c));
+      syncGroupContacts(name, next.filter((c) => c.group === name));
+      return next;
+    });
   };
 
   const removeMemberFromGroup = (contactId) => {
-    setContacts((prev) => prev.map((c) => (c.id === contactId ? { ...c, group: null } : c)));
+    setContacts((prev) => {
+      const removedFrom = prev.find((c) => c.id === contactId)?.group;
+      const next = prev.map((c) => (c.id === contactId ? { ...c, group: null } : c));
+      if (removedFrom) {
+        syncGroupContacts(removedFrom, next.filter((c) => c.group === removedFrom));
+      }
+      return next;
+    });
   };
 
   const addContact = (newContact) => {
     const id = `c-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-    setContacts((prev) => [...prev, { id, ...newContact }]);
+    setContacts((prev) => {
+      const next = [...prev, { id, ...newContact }];
+      if (newContact.group) {
+        syncGroupContacts(newContact.group, next.filter((c) => c.group === newContact.group));
+      }
+      return next;
+    });
+  };
+
+  const importContacts = (newContacts) => {
+    setContacts((prev) => {
+      const added = newContacts.map((c, i) => ({
+        id: `c-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 5)}`,
+        ...c,
+      }));
+      const next = [...prev, ...added];
+      const group = newContacts[0]?.group;
+      if (group) {
+        syncGroupContacts(group, next.filter((c) => c.group === group));
+      }
+      return next;
+    });
   };
 
   const deleteContact = (contactId) => {
@@ -225,6 +380,11 @@ export default function SendBulkPageClient() {
       next.delete(contactId);
       return next;
     });
+  };
+
+  const deleteAllContacts = () => {
+    setContacts([]);
+    setSelectedIds(new Set());
   };
 
   const openTemplatesList = () => setTemplatesPanel({ view: "list" });
@@ -270,6 +430,8 @@ export default function SendBulkPageClient() {
     });
   }, [contacts, search, groupFilter]);
 
+  const visibleContacts = showAllContacts ? filteredContacts : filteredContacts.slice(0, CONTACTS_PAGE_SIZE);
+
   const selectableInFilter = filteredContacts.filter((c) => c.hasWhatsApp || channels.email);
   const allFilteredSelected =
     selectableInFilter.length > 0 && selectableInFilter.every((c) => selectedIds.has(c.id));
@@ -297,10 +459,6 @@ export default function SendBulkPageClient() {
 
   const charCount = (messages[activeTab] || "").length;
   const activeTemplate = TEMPLATES.find((t) => t.id === templateId);
-  const emailSubject =
-    activeTemplate && activeTemplate.id !== "blank"
-      ? activeTemplate.label
-      : previewText.split("\n")[0].trim() || "New message";
 
   const whatsappCount = selectedContacts.filter((c) => c.hasWhatsApp).length;
   const emailCount = selectedContacts.length;
@@ -314,16 +472,16 @@ export default function SendBulkPageClient() {
   const deliverableContacts = selectedContacts.filter(
     (c) => (channels.whatsapp && c.hasWhatsApp) || channels.email
   );
-  const sendingLabel =
-    sendOption === "now"
-      ? "Immediately"
-      : scheduleDate
-      ? `${scheduleDate}${scheduleTime ? ` at ${scheduleTime}` : ""}`
-      : "Pick a date & time";
+  const sendingLabel = "Immediately";
 
   const handleGoToReview = () => {
-    if (selectedContacts.length === 0) return;
     setStep(2);
+  };
+
+  const handleConfirmSend = (payload) => {
+    console.log("Confirm send payload", payload);
+    setConfirmModalOpen(false);
+    setNotice("Broadcast sent");
   };
 
   return (
@@ -480,26 +638,42 @@ export default function SendBulkPageClient() {
               <div className="flex items-center gap-2 h-[42px]">
                 <button
                   type="button"
-                  onClick={() => toggleChannel("whatsapp")}
-                  className={`flex items-center gap-1.5 h-full px-4 rounded-full border text-[13px] font-semibold cursor-pointer transition-colors ${
+                  role="radio"
+                  aria-checked={channels.whatsapp}
+                  onClick={() => selectChannel("whatsapp")}
+                  className={`flex items-center gap-2 h-full px-4 rounded-full border text-[13px] font-semibold cursor-pointer transition-colors ${
                     channels.whatsapp
                       ? "border-[#16a34a] bg-[#f0fdf4] text-[#16a34a]"
                       : "border-[#d1d5db] text-[#9ca3af] hover:border-[#9ca3af]"
                   }`}
                 >
-                  {channels.whatsapp && <FiCheck className="text-[14px]" />}
+                  <span
+                    className={`w-3.5 h-3.5 rounded-full border-2 grid place-items-center ${
+                      channels.whatsapp ? "border-[#16a34a]" : "border-[#9ca3af]"
+                    }`}
+                  >
+                    {channels.whatsapp && <span className="w-1.5 h-1.5 rounded-full bg-[#16a34a]" />}
+                  </span>
                   WhatsApp
                 </button>
                 <button
                   type="button"
-                  onClick={() => toggleChannel("email")}
-                  className={`flex items-center gap-1.5 h-full px-4 rounded-full border text-[13px] font-semibold cursor-pointer transition-colors ${
+                  role="radio"
+                  aria-checked={channels.email}
+                  onClick={() => selectChannel("email")}
+                  className={`flex items-center gap-2 h-full px-4 rounded-full border text-[13px] font-semibold cursor-pointer transition-colors ${
                     channels.email
                       ? "border-[#2563eb] bg-[#eff6ff] text-[#2563eb]"
                       : "border-[#d1d5db] text-[#9ca3af] hover:border-[#9ca3af]"
                   }`}
                 >
-                  {channels.email && <FiCheck className="text-[14px]" />}
+                  <span
+                    className={`w-3.5 h-3.5 rounded-full border-2 grid place-items-center ${
+                      channels.email ? "border-[#2563eb]" : "border-[#9ca3af]"
+                    }`}
+                  >
+                    {channels.email && <span className="w-1.5 h-1.5 rounded-full bg-[#2563eb]" />}
+                  </span>
                   Email
                 </button>
               </div>
@@ -530,6 +704,19 @@ export default function SendBulkPageClient() {
             )}
           </div>
 
+          {/* Subject (email only) */}
+          {activeTab === "email" && (
+            <div className="mb-4">
+              <label className="block text-[13px] font-semibold text-[#333] mb-1.5">Subject</label>
+              <input
+                value={emailSubject}
+                onChange={(e) => setEmailSubject(e.target.value)}
+                placeholder="Enter email subject"
+                className="w-full h-[42px] px-3 rounded-[8px] border border-[#d1d5db] bg-white text-[13px] text-[#111] outline-none focus:border-[#2563eb] transition-colors placeholder:text-[#9ca3af]"
+              />
+            </div>
+          )}
+
           {/* Message textarea */}
           <textarea
             ref={textareaRef}
@@ -543,17 +730,18 @@ export default function SendBulkPageClient() {
 
           <div className="flex items-center justify-between mt-3 mb-6">
             <div className="flex items-center gap-2 flex-wrap">
-              {["{name}", "{cluster}", "{site}", "{date}"].map((tok) => (
+              {BUILTIN_VARIABLES.map((v) => (
                 <button
-                  key={tok}
-                  onClick={() => insertVariable(tok)}
+                  key={v}
+                  onClick={() => insertVariable(`{${v}}`)}
                   className="px-3 py-1 rounded-full border border-[#d1d5db] text-[12px] font-medium text-[#555] hover:border-[#2563eb] hover:text-[#2563eb] cursor-pointer transition-colors"
                 >
-                  {tok}
+                  {`{${v}}`}
                 </button>
               ))}
             </div>
-            <span className="text-[13px] text-[#9ca3af] whitespace-nowrap ml-3">
+
+            <span className="text-[13px] text-[#9ca3af] whitespace-nowrap shrink-0 ml-3">
               {charCount.toLocaleString()} / 4,096
             </span>
           </div>
@@ -642,16 +830,6 @@ export default function SendBulkPageClient() {
                     </button>
                     <button
                       onClick={() => {
-                        setContactsModalMode("email");
-                        setSendToMenuOpen(false);
-                      }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2.5 text-[13px] font-medium text-[#333] hover:bg-[#f9fafb] rounded-[7px] cursor-pointer"
-                    >
-                      <FiMail className="text-[14px] text-[#2563eb]" />
-                      Add email
-                    </button>
-                    <button
-                      onClick={() => {
                         setContactsModalMode("manage");
                         setSendToMenuOpen(false);
                       }}
@@ -670,7 +848,10 @@ export default function SendBulkPageClient() {
                 <FiSearch className="text-[15px] text-[#9ca3af]" />
                 <input
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setShowAllContacts(false);
+                  }}
                   placeholder="Search name, email or number"
                   className="flex-1 text-[13px] outline-none placeholder:text-[#9ca3af]"
                 />
@@ -699,6 +880,7 @@ export default function SendBulkPageClient() {
                         onClick={() => {
                           setGroupFilter(g);
                           setGroupFilterOpen(false);
+                          setShowAllContacts(false);
                         }}
                         className={`w-full text-left px-3 py-2 text-[13px] rounded-[7px] cursor-pointer ${
                           groupFilter === g ? "bg-[#eff6ff] text-[#2563eb] font-medium" : "text-[#111] hover:bg-[#f9fafb]"
@@ -712,15 +894,20 @@ export default function SendBulkPageClient() {
               </div>
             </div>
 
-            <button
-              onClick={handleSelectAll}
-              className="text-[13px] font-semibold text-[#2563eb] hover:underline cursor-pointer mb-2"
-            >
-              {allFilteredSelected ? "Deselect all" : `Select all ${selectableInFilter.length}`}
-            </button>
+            <div className="flex items-center justify-between mb-2">
+              <button
+                onClick={handleSelectAll}
+                className="text-[13px] font-semibold text-[#2563eb] hover:underline cursor-pointer"
+              >
+                {allFilteredSelected ? "Deselect all" : `Select all ${selectableInFilter.length}`}
+              </button>
+              {groupFilterLoading && (
+                <span className="text-[12px] text-[#9ca3af]">Loading group…</span>
+              )}
+            </div>
 
             <div className="flex-1 min-h-[120px] overflow-y-auto -mx-2 pr-1 space-y-1">
-              {filteredContacts.map((contact) => {
+              {visibleContacts.map((contact) => {
                 const isSelected = selectedIds.has(contact.id);
                 const disabled = !contact.hasWhatsApp && !channels.email;
                 return (
@@ -757,7 +944,18 @@ export default function SendBulkPageClient() {
               })}
 
               {filteredContacts.length === 0 && (
-                <div className="py-10 text-center text-[13px] text-[#9ca3af]">No contacts match your search.</div>
+                <div className="py-10 text-center text-[13px] text-[#9ca3af]">
+                  {contacts.length === 0 ? "No contacts yet. Add one to get started." : "No contacts match your search."}
+                </div>
+              )}
+
+              {filteredContacts.length > CONTACTS_PAGE_SIZE && (
+                <button
+                  onClick={() => setShowAllContacts((p) => !p)}
+                  className="w-full text-center text-[13px] font-semibold text-[#2563eb] hover:underline cursor-pointer py-2"
+                >
+                  {showAllContacts ? "Show less" : `Show more (${filteredContacts.length - CONTACTS_PAGE_SIZE})`}
+                </button>
               )}
             </div>
           </div>
@@ -793,12 +991,7 @@ export default function SendBulkPageClient() {
 
             <button
               onClick={handleGoToReview}
-              disabled={selectedContacts.length === 0}
-              className={`w-full flex items-center justify-center gap-2 h-[46px] rounded-[10px] text-[14px] font-semibold transition-colors ${
-                selectedContacts.length === 0
-                  ? "bg-[#e5e7eb] text-[#9ca3af] cursor-not-allowed"
-                  : "bg-[#2563eb] text-white hover:bg-[#1d4ed8] cursor-pointer"
-              }`}
+              className="w-full flex items-center justify-center gap-2 h-[46px] rounded-[10px] text-[14px] font-semibold transition-colors bg-[#2563eb] text-white hover:bg-[#1d4ed8] cursor-pointer"
             >
               Review
               <FiArrowRight className="text-[15px]" />
@@ -823,6 +1016,10 @@ export default function SendBulkPageClient() {
             </div>
 
             <div className="divide-y divide-[#f1f5f9]">
+              <div className="flex items-center justify-between py-3">
+                <span className="text-[14px] text-[#666]">Template</span>
+                <span className="text-[14px] font-semibold text-[#1a1a2e]">{activeTemplate?.label}</span>
+              </div>
               <div className="flex items-center justify-between py-3">
                 <span className="text-[14px] text-[#666]">Channels</span>
                 <span className="text-[14px] font-semibold text-[#1a1a2e]">{activeChannelLabels}</span>
@@ -852,12 +1049,12 @@ export default function SendBulkPageClient() {
             </div>
 
             <div className="flex items-center justify-between gap-4 mt-4 bg-[#eff6ff] rounded-[12px] px-4 py-3">
-              <span className="text-[13px] font-medium text-[#2563eb]">Send one test to yourself first</span>
+              <span className="text-[13px] font-medium text-[#2563eb]">Confirm attendee details before sending</span>
               <button
-                onClick={() => setNotice("Test message sent to your account")}
+                onClick={() => setConfirmModalOpen(true)}
                 className="px-4 h-[34px] rounded-[8px] bg-[#2563eb] text-white text-[13px] font-semibold hover:bg-[#1d4ed8] cursor-pointer whitespace-nowrap"
               >
-                Send test
+                Confirm
               </button>
             </div>
           </div>
@@ -871,44 +1068,13 @@ export default function SendBulkPageClient() {
                 </div>
                 <div>
                   <h2 className="text-lg font-bold text-[#1a1a2e]">Schedule</h2>
-                  <p className="text-[13px] text-[#888]">Send now or pick a time</p>
+                  <p className="text-[13px] text-[#888]">This broadcast sends immediately</p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 mb-4">
-                <button
-                  onClick={() => setSendOption("now")}
-                  className={`flex-1 h-[42px] rounded-[8px] border text-[13px] font-semibold cursor-pointer transition-colors ${
-                    sendOption === "now"
-                      ? "border-[#2563eb] bg-[#eff6ff] text-[#2563eb]"
-                      : "border-[#d1d5db] text-[#666] hover:border-[#9ca3af]"
-                  }`}
-                >
-                  Send now
-                </button>
-                <button
-                  onClick={() => setSendOption("later")}
-                  className={`flex-1 h-[42px] rounded-[8px] border text-[13px] font-semibold cursor-pointer transition-colors ${
-                    sendOption === "later"
-                      ? "border-[#2563eb] bg-[#eff6ff] text-[#2563eb]"
-                      : "border-[#d1d5db] text-[#666] hover:border-[#9ca3af]"
-                  }`}
-                >
-                  Schedule for later
-                </button>
+              <div className="flex items-center h-[42px] px-4 rounded-[8px] border border-[#2563eb] bg-[#eff6ff] text-[#2563eb] text-[13px] font-semibold">
+                Send now
               </div>
-
-              {sendOption === "later" && (
-                <div className="grid grid-cols-2 gap-3">
-                  <CustomDatePicker value={scheduleDate} onChange={setScheduleDate} />
-                  <input
-                    type="time"
-                    value={scheduleTime}
-                    onChange={(e) => setScheduleTime(e.target.value)}
-                    className="w-full border border-[#d1d5db] rounded-lg h-[38px] px-3 text-[0.84rem] text-slate-800 outline-none focus:border-[#2563eb]"
-                  />
-                </div>
-              )}
             </div>
 
             <div className="bg-white rounded-2xl p-6 shadow-[0px_2px_10px_rgba(0,0,0,0.04)]">
@@ -920,12 +1086,12 @@ export default function SendBulkPageClient() {
                 ]
                   .filter(Boolean)
                   .map((ch) => {
-                    const body = (messages[ch.key] || "")
+                    const chBody = (messages[ch.key] || "")
                       .replaceAll("{name}", firstSelectedName)
                       .replaceAll("{cluster}", SAMPLE_VALUES.cluster)
                       .replaceAll("{site}", SAMPLE_VALUES.site)
                       .replaceAll("{date}", SAMPLE_VALUES.date);
-                    const [firstLine, ...rest] = body.split("\n").filter(Boolean);
+                    const [firstLine, ...rest] = chBody.split("\n").filter(Boolean);
                     return (
                       <div key={ch.key} className="border border-[#f1f5f9] rounded-[10px] p-4">
                         <div className="flex items-start gap-3">
@@ -961,13 +1127,6 @@ export default function SendBulkPageClient() {
                 <FiArrowLeft className="text-[15px]" />
                 Back
               </button>
-              <button
-                onClick={() => showComingSoon("Send broadcast")}
-                className="flex-1 flex items-center justify-center gap-2 h-[46px] rounded-[10px] bg-[#2563eb] text-white text-[14px] font-bold hover:bg-[#1d4ed8] cursor-pointer"
-              >
-                Send broadcast
-                <FiSend className="text-[15px]" />
-              </button>
             </div>
           </div>
         </div>
@@ -992,7 +1151,9 @@ export default function SendBulkPageClient() {
           groups={groupList}
           onClose={() => setContactsModalMode(null)}
           onAddContact={addContact}
+          onImportContacts={importContacts}
           onDeleteContact={deleteContact}
+          onDeleteAllContacts={deleteAllContacts}
         />
       )}
 
@@ -1014,6 +1175,17 @@ export default function SendBulkPageClient() {
           onBack={openTemplatesList}
           onSaveDraft={handleSaveTemplateDraft}
           onSubmit={handleSubmitTemplate}
+        />
+      )}
+
+      {confirmModalOpen && (
+        <ConfirmSendModal
+          contacts={selectedContacts}
+          templateId={templateId}
+          messageType={channels.whatsapp ? "whatsapp" : "email"}
+          subject={emailSubject}
+          onClose={() => setConfirmModalOpen(false)}
+          onConfirm={handleConfirmSend}
         />
       )}
     </div>
