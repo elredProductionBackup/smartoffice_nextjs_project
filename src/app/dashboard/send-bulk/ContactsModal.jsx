@@ -3,6 +3,33 @@
 import { useEffect, useRef, useState } from "react";
 import { FiX, FiTrash2, FiChevronDown, FiCheckCircle, FiUpload, FiAlertTriangle } from "react-icons/fi";
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function validateName(value) {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  if (trimmed.length < 2) return "Enter at least 2 characters.";
+  if (!/^[A-Za-z][A-Za-z\s.'-]*$/.test(trimmed)) return "Name can only contain letters, spaces, and ' . -";
+  return "";
+}
+
+function validateEmail(value) {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  if (!EMAIL_REGEX.test(trimmed)) return "Enter a valid email address.";
+  return "";
+}
+
+function validatePhone(value) {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  const digits = trimmed.replace(/\D/g, "");
+  if (!/^\+?[\d\s-]+$/.test(trimmed) || digits.length < 7 || digits.length > 15) {
+    return "Enter a valid phone number.";
+  }
+  return "";
+}
+
 function initials(name) {
   return name
     .split(" ")
@@ -116,10 +143,23 @@ export default function ContactsModal({
   const [csvNotice, setCsvNotice] = useState("");
   const [pendingDelete, setPendingDelete] = useState(null);
   const [deleteStatus, setDeleteStatus] = useState("idle"); // idle | deleting | deleted
+  const [deleteError, setDeleteError] = useState("");
   const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
   const [deleteAllStatus, setDeleteAllStatus] = useState("idle"); // idle | deleting | deleted
+  const [addStatus, setAddStatus] = useState("idle"); // idle | adding | added
+  const [addError, setAddError] = useState("");
+  const [addedName, setAddedName] = useState("");
 
-  const canSubmit = fullName.trim() && (email.trim() || phone.trim());
+  const nameError = validateName(fullName);
+  const emailError = validateEmail(email);
+  const phoneError = validatePhone(phone);
+
+  const canSubmit =
+    fullName.trim() &&
+    !nameError &&
+    !emailError &&
+    !phoneError &&
+    (email.trim() || phone.trim());
 
   useEffect(() => {
     if (!csvNotice) return;
@@ -127,19 +167,30 @@ export default function ContactsModal({
     return () => clearTimeout(t);
   }, [csvNotice]);
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!canSubmit) return;
-    onAddContact({
-      name: fullName.trim(),
-      email: email.trim(),
-      phone: phone.trim(),
-      group: group || null,
-      hasWhatsApp: !!phone.trim(),
-    });
-    setFullName("");
-    setEmail("");
-    setPhone("");
-    setGroup("");
+    const name = fullName.trim();
+    setAddedName(name);
+    setAddStatus("adding");
+    setAddError("");
+    try {
+      await onAddContact({
+        name,
+        email: email.trim(),
+        phone: phone.trim(),
+        group: group || null,
+        hasWhatsApp: !!phone.trim(),
+      });
+      setFullName("");
+      setEmail("");
+      setPhone("");
+      setGroup("");
+      setAddStatus("added");
+      setTimeout(() => setAddStatus("idle"), 900);
+    } catch (error) {
+      setAddError(error?.response?.data?.message || error?.message || "Failed to add contact");
+      setAddStatus("idle");
+    }
   };
 
   const handleCsvClick = () => {
@@ -167,17 +218,21 @@ export default function ContactsModal({
     e.target.value = "";
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (!pendingDelete) return;
     setDeleteStatus("deleting");
-    setTimeout(() => {
-      onDeleteContact(pendingDelete.id);
+    setDeleteError("");
+    try {
+      await onDeleteContact(pendingDelete.id);
       setDeleteStatus("deleted");
       setTimeout(() => {
         setPendingDelete(null);
         setDeleteStatus("idle");
       }, 700);
-    }, 500);
+    } catch (error) {
+      setDeleteError(error?.response?.data?.message || error?.message || "Failed to delete contact");
+      setDeleteStatus("idle");
+    }
   };
 
   const handleConfirmDeleteAll = () => {
@@ -222,8 +277,11 @@ export default function ContactsModal({
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="Kavita Menon"
-                  className="w-full h-[42px] px-3 rounded-[8px] border border-[#d1d5db] bg-white text-[13px] text-[#111] outline-none focus:border-[#2563eb] transition-colors placeholder:text-[#9ca3af]"
+                  className={`w-full h-[42px] px-3 rounded-[8px] border bg-white text-[13px] text-[#111] outline-none transition-colors placeholder:text-[#9ca3af] ${
+                    nameError ? "border-red-400 focus:border-red-400" : "border-[#d1d5db] focus:border-[#2563eb]"
+                  }`}
                 />
+                {nameError && <p className="text-[11px] text-red-600 mt-1">{nameError}</p>}
               </div>
 
               <div className="grid grid-cols-2 gap-4 mb-3">
@@ -233,8 +291,11 @@ export default function ContactsModal({
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="name@company.in"
-                    className="w-full h-[42px] px-3 rounded-[8px] border border-[#d1d5db] bg-white text-[13px] text-[#111] outline-none focus:border-[#2563eb] transition-colors placeholder:text-[#9ca3af]"
+                    className={`w-full h-[42px] px-3 rounded-[8px] border bg-white text-[13px] text-[#111] outline-none transition-colors placeholder:text-[#9ca3af] ${
+                      emailError ? "border-red-400 focus:border-red-400" : "border-[#d1d5db] focus:border-[#2563eb]"
+                    }`}
                   />
+                  {emailError && <p className="text-[11px] text-red-600 mt-1">{emailError}</p>}
                 </div>
                 <div>
                   <label className="block text-[13px] font-semibold text-[#333] mb-1.5">Phone</label>
@@ -242,8 +303,11 @@ export default function ContactsModal({
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="+91 98765 43210"
-                    className="w-full h-[42px] px-3 rounded-[8px] border border-[#d1d5db] bg-white text-[13px] text-[#111] outline-none focus:border-[#2563eb] transition-colors placeholder:text-[#9ca3af]"
+                    className={`w-full h-[42px] px-3 rounded-[8px] border bg-white text-[13px] text-[#111] outline-none transition-colors placeholder:text-[#9ca3af] ${
+                      phoneError ? "border-red-400 focus:border-red-400" : "border-[#d1d5db] focus:border-[#2563eb]"
+                    }`}
                   />
+                  {phoneError && <p className="text-[11px] text-red-600 mt-1">{phoneError}</p>}
                 </div>
               </div>
 
@@ -254,15 +318,16 @@ export default function ContactsModal({
 
               <button
                 onClick={handleAdd}
-                disabled={!canSubmit}
+                disabled={!canSubmit || addStatus === "adding"}
                 className={`px-5 h-[42px] rounded-[8px] text-[13px] font-semibold transition-colors ${
-                  canSubmit
+                  canSubmit && addStatus !== "adding"
                     ? "bg-[#2563eb] text-white hover:bg-[#1d4ed8] cursor-pointer"
                     : "bg-[#e5e7eb] text-[#9ca3af] cursor-not-allowed"
                 }`}
               >
-                Add contact
+                {addStatus === "adding" ? "Adding…" : "Add contact"}
               </button>
+              {addError && <p className="text-[12px] text-red-600 mt-2">{addError}</p>}
 
               <div className="border-t border-[#dbeafe] mt-5 pt-4">
                 <p className="text-[13px] font-semibold text-[#333] mb-1">Or bulk import from a CSV</p>
@@ -314,7 +379,7 @@ export default function ContactsModal({
                 </div>
               )}
 
-              {contacts.map((c) => {
+              {[...contacts].sort((a, b) => a.name.localeCompare(b.name)).map((c) => {
                 const subtext = [c.email, c.phone].filter(Boolean).join(" · ");
                 return (
                   <div
@@ -331,6 +396,7 @@ export default function ContactsModal({
                     <button
                       onClick={() => {
                         setDeleteStatus("idle");
+                        setDeleteError("");
                         setPendingDelete(c);
                       }}
                       title="Delete contact"
@@ -379,6 +445,7 @@ export default function ContactsModal({
                   <span className="font-semibold text-[#1a1a2e]">{pendingDelete.name}</span> will be removed from
                   your contacts and any groups they belong to. This can&apos;t be undone.
                 </p>
+                {deleteError && <p className="text-[12px] text-red-600 mb-3">{deleteError}</p>}
                 <div className="flex items-center justify-end gap-3">
                   <button
                     onClick={() => setPendingDelete(null)}
@@ -464,6 +531,26 @@ export default function ContactsModal({
               <div className="flex flex-col items-center py-3 gap-3">
                 <FiCheckCircle className="text-[32px] text-green-500" />
                 <p className="text-[13px] font-semibold text-[#333]">All contacts deleted</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {(addStatus === "adding" || addStatus === "added") && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-[16px] w-full max-w-[360px] mx-4 shadow-xl p-6">
+            {addStatus === "adding" && (
+              <div className="flex flex-col items-center py-3 gap-3">
+                <div className="w-8 h-8 border-[3px] border-[#2563eb] border-t-transparent rounded-full animate-spin" />
+                <p className="text-[13px] font-semibold text-[#333]">Adding {addedName || "contact"}…</p>
+              </div>
+            )}
+
+            {addStatus === "added" && (
+              <div className="flex flex-col items-center py-3 gap-3">
+                <FiCheckCircle className="text-[32px] text-green-500" />
+                <p className="text-[13px] font-semibold text-[#333]">{addedName} added</p>
               </div>
             )}
           </div>
