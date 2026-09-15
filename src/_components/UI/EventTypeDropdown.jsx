@@ -9,18 +9,6 @@ import { useBudgetTypeStore } from "@/store/useBudgetTypeStore";
 const baseFieldClass =
   "flex-1 bg-[#F6F6F6] border-[1.4px] border-[#EAEAEA] rounded-lg outline-none h-[50px]";
 
-const EVENT_TYPES = [
-  "Learning",
-  "Forum",
-  "Family",
-  "Spouse Partner",
-  "Engagement",
-  "Governance",
-  "Membership",
-  "GLC",
-  "Administration",
-];
-
 export function EventTypeDropdown({
   value,     
   onChange,
@@ -43,9 +31,11 @@ export function EventTypeDropdown({
   const selectedBudgetType = budgetTypes.find((b) => b.budgetTypeId === typeId);
   const displayText = selectedBudgetType?.budgetType || value?.type?.budgetType || value?.type;
 
-  const optionsToRender = budgetTypes.length > 0
-    ? budgetTypes
-    : EVENT_TYPES.map((name) => ({ budgetType: name, budgetTypeId: name }));
+  // Only render real portfolios — a hardcoded name-as-id fallback here
+  // used to let events get saved with eventType set to a plain label
+  // (e.g. "Learning") instead of a real budgetTypeId, which then silently
+  // failed to match on /dashboard/finance-budget's strict ID-only filter.
+  const optionsToRender = budgetTypes;
 
     useEffect(() => {
       dispatch(fetchMasterConfig());
@@ -98,6 +88,9 @@ export function EventTypeDropdown({
 
         {open && (
           <div className="absolute top-[calc(100%+6px)] z-20 p-[10px] w-[calc(100%-140px)] bg-white rounded-[20px] shadow-lg border border-[#F2F6FC] flex flex-col gap-[2px]">
+            {optionsToRender.length === 0 && (
+              <div className="px-[12px] py-[8px] text-[#999999] text-[14px]">Loading portfolios…</div>
+            )}
             {optionsToRender.map((item) => {
               const itemName = item.budgetType || item.name || item.title || item.label || "";
               const itemId = item.budgetTypeId || item._id || item.id || "";
