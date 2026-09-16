@@ -117,7 +117,7 @@ function AttendeeSelect({ contacts, selectedNames, onChange }) {
 export default function ConfirmSendModal({ contacts, templateId, messageType, subject, onClose, onConfirm }) {
   const nameOnly = templateId === "prive_directory";
 
-  const [attendeeNames, setAttendeeNames] = useState([]);
+  const [attendeeNames, setAttendeeNames] = useState(() => contacts.map((c) => c.name));
   const [values, setValues] = useState({
     workshopName: "",
     workshopDate: "",
