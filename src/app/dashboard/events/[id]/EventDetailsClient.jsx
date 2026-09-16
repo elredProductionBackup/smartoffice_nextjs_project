@@ -209,7 +209,7 @@ export default function EventDetailsClient() {
   }
 
   return (
-    <div className="h-[calc(100vh-80px)] flex flex-col gap-[20px] overflow-y-auto relative pb-[20px]" ref={containerRef}>
+    <div className="h-[calc(100vh-80px)] flex flex-col gap-[20px] overflow-y-auto relative pb-[20px] focus:outline-none" ref={containerRef}>
 
       <div className="bg-white rounded-2xl pt-6 flex justify-between gap-[105px] w-full relative z-[15]">
         <div className="flex-1 flex gap-[40px]">
@@ -386,10 +386,10 @@ export default function EventDetailsClient() {
         )}
 
         {activeTab === "logistics" &&
-          <div className="min-h-[calc(100dvh-180px)] bg-[#f2f7ff] rounded-[20px] overflow-y-auto mb-10 p-4">
+          <div className="min-h-[calc(100dvh-180px)] bg-[#f2f7ff] rounded-[20px] p-4">
             <LogisticsContent /></div>}
         {activeTab === "checklist" &&
-          <div className="min-h-[calc(100dvh-180px)] bg-[#f2f7ff] rounded-[20px] overflow-y-auto mb-10 p-4" >
+          <div className="min-h-[calc(100dvh-180px)] bg-[#f2f7ff] rounded-[20px] p-4" >
             <ChecklistContent eventId={eventId} /></div>}
         {activeTab === "eventcosting" &&
           <div className="w-full max-w-[1600px] px-[12px]">
