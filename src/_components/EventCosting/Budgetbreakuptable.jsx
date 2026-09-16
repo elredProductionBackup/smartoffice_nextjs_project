@@ -33,6 +33,9 @@ export function BudgetBreakupTable({
     setAddItemSectionId(null);
   };
 
+  console.log(versions??'not yet')
+  console.log(sections??'not yet section')
+
   return (
     <div className="overflow-x-auto rounded-xl border border-gray-200">
       <table className="w-full text-sm border-collapse min-w-[900px]">

@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { closeEventThunk, createEventActionable, createEventComment, createEventSubTask, deleteDocument, deleteMembersMedia, fetchCollaborators, fetchDocuments, fetchEventChecklist, fetchEventDetails, fetchEventMembers, fetchEvents, fetchEventTaskSummaries, fetchMasterConfig, fetchMembersMedia, removeEventActionable, removeEventComment, removeEventSubTask, saveMasterConfig, toggleEventActionable, updateEventActionable, updateEventSubTask, uploadDocument, uploadMemberMedia } from "./eventsThunks";
+import { closeEventThunk, createEventActionable, createEventComment, createEventSubTask, deleteDocument, deleteMembersMedia, fetchBudgetCategoryVersions, fetchCollaborators, fetchDocuments, fetchEventChecklist, fetchEventDetails, fetchEventMembers, fetchEvents, fetchEventTaskSummaries, fetchMasterConfig, fetchMembersMedia, removeEventActionable, removeEventComment, removeEventSubTask, saveBudgetCategoryVersion, saveEventExpense, saveMasterConfig, toggleEventActionable, updateEventActionable, updateEventSubTask, uploadDocument, uploadMemberMedia } from "./eventsThunks";
 import moment from "moment";
 
 const initialState = {
@@ -13,6 +13,13 @@ const initialState = {
   eventDetailsFetched: {},
   eventDetailsError: {},
   eventDetailsFormLoader: {},
+
+    costingMap: {},        
+  costingTotal: {},      
+  costingFetched: {},   
+  costingLoading: {},    
+  costingError: {},     
+  costingSaving: false,
 
   page: 1,
   limit: 10,
@@ -666,8 +673,31 @@ const eventSlice = createSlice({
         state.eventTaskSummaries = {
           ...state.eventTaskSummaries,
           ...action.payload,
-        };
+        }
       })
+        .addCase(fetchBudgetCategoryVersions.pending, (state, action) => {
+          const { eventId } = action.meta.arg;
+          state.costingLoading[eventId] = true;
+          state.costingError[eventId] = null;
+        })
+        .addCase(fetchBudgetCategoryVersions.fulfilled, (state, action) => {
+          const { eventId, list, total } = action.payload;
+          state.costingLoading[eventId] = false;
+          state.costingMap[eventId] = list;
+          state.costingTotal[eventId] = total;
+          state.costingFetched[eventId] = true;
+        })
+        .addCase(fetchBudgetCategoryVersions.rejected, (state, action) => {
+          const { eventId } = action.meta.arg;
+          state.costingLoading[eventId] = false;
+          state.costingError[eventId] = action.payload;
+        })
+        .addCase(saveBudgetCategoryVersion.pending, (state) => { state.costingSaving = true; })
+        .addCase(saveBudgetCategoryVersion.fulfilled, (state) => { state.costingSaving = false; })
+        .addCase(saveBudgetCategoryVersion.rejected, (state) => { state.costingSaving = false; })
+        .addCase(saveEventExpense.pending, (state) => { state.costingSaving = true; })
+        .addCase(saveEventExpense.fulfilled, (state) => { state.costingSaving = false; })
+        .addCase(saveEventExpense.rejected, (state) => { state.costingSaving = false; })
 
   },
 });

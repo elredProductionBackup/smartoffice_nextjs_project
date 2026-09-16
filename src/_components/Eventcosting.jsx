@@ -1,15 +1,12 @@
 import { EventCostingTab } from './EventCosting/Eventcostingtab'
 
-const Eventcosting = () => {
+const Eventcosting = ({ eventId, eventBudget, event }) => {
   return (
     <EventCostingTab
-      totalBudget={500000}
-      categories={[
-        { name: "Workshops & Training", percentage: 33 },
-        { name: "Speaker Sessions", percentage: 28 },
-        { name: "Books & Resources", percentage: 19 },
-        { name: "Certification Programs", percentage: 20 },
-      ]}
+      eventId={eventId}
+      event={event}
+      totalBudget={eventBudget ?? 0}
+
     />
   )
 }

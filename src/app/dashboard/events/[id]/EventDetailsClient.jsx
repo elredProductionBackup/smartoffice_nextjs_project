@@ -394,8 +394,9 @@ export default function EventDetailsClient() {
         {activeTab === "eventcosting" &&
           <div className="w-full max-w-[1600px] px-[12px]">
             <Eventcosting
-              eventName={event?.eventName || '-'}
-              portfolio={event?.portfolioName || event?.portfolio || '-'}
+              eventId={eventId}
+              eventBudget={Number(event?.eventBudget) || 0}
+              event={event}
             />
           </div>}
       </>
