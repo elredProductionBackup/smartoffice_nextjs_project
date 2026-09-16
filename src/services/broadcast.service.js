@@ -1,13 +1,30 @@
 import api from "@/services/axios";
 
 /**
+ * Fetch the WhatsApp templates approved for this account.
+ *
+ * GET /getWhatsAppTemplates
+ *
+ * @returns {Promise<Object>} - API response with { result: [{ templateName, label }] }
+ */
+export const getWhatsAppTemplates = async () => {
+  try {
+    const res = await api.get("/getWhatsAppTemplates");
+    return res.data;
+  } catch (error) {
+    console.error("getWhatsAppTemplates API Error:", error?.response || error);
+    throw error;
+  }
+};
+
+/**
  * Send a bulk WhatsApp/Email broadcast using a template.
  *
  * POST /sendBulkBroadcastMessage
  *
  * @param {Object} payload
  * @param {"whatsapp"|"email"} payload.messageType
- * @param {string} payload.templateName - e.g. "prive_workshop_registration_confirmation" | "prive_media"
+ * @param {string} payload.templateName - e.g. "prive_registration_confirmation" | "prive_directory"
  * @param {Array<{name: string, phone: string}>} payload.contacts - Recipients
  * @param {Object} [payload.templateVariables] - e.g. { workshopName, workshopDate, sessionTime, arrivalTime, venue }
  * @param {File|string} [payload.mediaFile] - Optional media attachment

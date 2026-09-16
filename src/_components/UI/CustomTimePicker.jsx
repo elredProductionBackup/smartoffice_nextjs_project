@@ -5,11 +5,19 @@ import { FiChevronUp, FiChevronDown, FiCheck } from 'react-icons/fi';
 
 const STEP_MINUTES = 15;
 
+// value/onChange use this same 12-hour "hh:mm AM/PM" string — it's what
+// gets sent to the backend, not a 24-hour value converted for display.
+function to12Hour(h, m) {
+  const period = h >= 12 ? 'PM' : 'AM';
+  const hour12 = h % 12 === 0 ? 12 : h % 12;
+  return `${String(hour12).padStart(2, '0')}:${String(m).padStart(2, '0')} ${period}`;
+}
+
 function buildSlots() {
   const slots = [];
   for (let h = 0; h < 24; h++) {
     for (let m = 0; m < 60; m += STEP_MINUTES) {
-      slots.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
+      slots.push(to12Hour(h, m));
     }
   }
   return slots;
@@ -24,7 +32,7 @@ function stepValue(value, direction) {
   return SLOTS[next];
 }
 
-export default function CustomTimePicker({ value, onChange, compact = false }) {
+export default function CustomTimePicker({ value, onChange, compact = false, openUp = false }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const listRef = useRef(null);
@@ -65,7 +73,7 @@ export default function CustomTimePicker({ value, onChange, compact = false }) {
           compact ? 'px-3 py-1.5 text-[0.78rem] h-[34px]' : 'px-3 py-2 text-[0.84rem] h-[38px]'
         }`}
       >
-        <span>{value || '--:--'}</span>
+        <span>{value || '--:-- --'}</span>
         <div className="flex flex-col shrink-0 ml-2 -my-2 border-l border-gray-200 pl-2">
           <button
             type="button"
@@ -87,9 +95,15 @@ export default function CustomTimePicker({ value, onChange, compact = false }) {
       {open && (
         <div
           ref={listRef}
-          className={`absolute top-[calc(100%+6px)] left-0 w-full bg-white rounded-xl z-9999 overflow-y-auto ${
-            compact ? 'max-h-[160px] py-1' : 'max-h-[220px] py-1.5'
-          }`}
+          className={
+            openUp
+              ? `fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[200px] bg-white rounded-xl z-[10010] overflow-y-auto ${
+                  compact ? 'max-h-[220px] py-1' : 'max-h-[280px] py-1.5'
+                }`
+              : `absolute top-[calc(100%+6px)] left-0 w-full bg-white rounded-xl z-9999 overflow-y-auto ${
+                  compact ? 'max-h-[160px] py-1' : 'max-h-[220px] py-1.5'
+                }`
+          }
           style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}
         >
           {SLOTS.map((slot) => {

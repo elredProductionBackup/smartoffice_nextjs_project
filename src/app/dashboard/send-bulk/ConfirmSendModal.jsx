@@ -115,9 +115,9 @@ function AttendeeSelect({ contacts, selectedNames, onChange }) {
 }
 
 export default function ConfirmSendModal({ contacts, templateId, messageType, subject, onClose, onConfirm }) {
-  const nameOnly = templateId === "prive_media";
+  const nameOnly = templateId === "prive_directory";
 
-  const [attendeeNames, setAttendeeNames] = useState([]);
+  const [attendeeNames, setAttendeeNames] = useState(() => contacts.map((c) => c.name));
   const [values, setValues] = useState({
     workshopName: "",
     workshopDate: "",
@@ -219,9 +219,9 @@ export default function ConfirmSendModal({ contacts, templateId, messageType, su
               <div key={f.key} className={f.type === "text" ? "col-span-2" : ""}>
                 <label className="block text-[13px] font-semibold text-[#333] mb-1.5">{f.label}</label>
                 {f.type === "date" ? (
-                  <CustomDatePicker compact value={values[f.key]} onChange={(v) => setField(f.key, v)} />
+                  <CustomDatePicker compact openUp value={values[f.key]} onChange={(v) => setField(f.key, v)} />
                 ) : f.type === "time" ? (
-                  <CustomTimePicker compact value={values[f.key]} onChange={(v) => setField(f.key, v)} />
+                  <CustomTimePicker compact openUp value={values[f.key]} onChange={(v) => setField(f.key, v)} />
                 ) : (
                   <input
                     type={f.type}
@@ -252,7 +252,7 @@ export default function ConfirmSendModal({ contacts, templateId, messageType, su
                 : "bg-[#e5e7eb] text-[#9ca3af] cursor-not-allowed"
             }`}
           >
-            Confirm
+            Send
           </button>
         </div>
       </div>

@@ -85,5 +85,5 @@ export const PRIVE_WORKSHOP_EMAIL_HTML = `<div style="font-family: Helvetica, Ar
 export const PRIVE_MEDIA_EMAIL_HTML = `Hi \${user.name}, the venue is \${venue}`;
 
 export function getEmailHtmlTemplate(templateId) {
-  return templateId === "prive_media" ? PRIVE_MEDIA_EMAIL_HTML : PRIVE_WORKSHOP_EMAIL_HTML;
+  return templateId === "prive_directory" ? PRIVE_MEDIA_EMAIL_HTML : PRIVE_WORKSHOP_EMAIL_HTML;
 }
