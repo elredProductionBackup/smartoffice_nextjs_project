@@ -32,9 +32,9 @@ const EventCard = ({ eventId, title, date, location, portfolio, onClick }) => {
   return (
     <div
       onClick={() => onClick(eventId)}
-      className="group relative bg-[#f3f7fd] border border-[#e2e8f2] rounded-[10px] p-6 h-[162px] w-[400px] cursor-pointer hover:shadow-md hover:border-[#c5d5f0] transition-all duration-200"
+      className="group relative bg-[#f3f7fd] border border-[#e2e8f2] rounded-[10px] p-6 min-h-[162px] w-[400px] cursor-pointer hover:shadow-md hover:border-[#c5d5f0] transition-all duration-200"
     >
-      <h3 className="text-[#333333] font-bold text-[20px] leading-[136%] mb-2 pr-6">{title}</h3>
+      <h3 className="text-[#333333] font-bold text-[20px] leading-[136%] mb-2 pr-6 truncate" title={title}>{title}</h3>
 
       <div className='flex flex-col gap-1.5'>
         <div className="flex items-center gap-2 text-[#777777] text-[15px] ">
@@ -75,7 +75,11 @@ const TopEvents = () => {
 
     getEventsList({ networkClusterCode, start: 1, offset: 3, filterBy: 'all' })
       .then((res) => {
-        setEvents(res.data?.result || []);
+        const result = res.data?.result || [];
+        const sorted = [...result].sort(
+          (a, b) => moment(a.startDateTime).valueOf() - moment(b.startDateTime).valueOf()
+        );
+        setEvents(sorted);
       })
       .catch((error) => {
         console.error('Failed to fetch upcoming events:', error);

@@ -90,7 +90,7 @@ function AttendeeSelect({ contacts, selectedNames, onChange }) {
                 Select all
               </button>
               <div className="my-1 border-t border-[#f1f5f9]" />
-              {contacts.map((c) => {
+              {[...contacts].sort((a, b) => a.name.localeCompare(b.name)).map((c) => {
                 const checked = selectedNames.includes(c.name);
                 return (
                   <button

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { FiX, FiTrash2, FiChevronDown } from "react-icons/fi";
+import { FiX, FiChevronDown } from "react-icons/fi";
 
 function initials(name) {
   return name
@@ -24,7 +24,9 @@ function AddMemberControl({ groupName, contacts, onAddMember }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const available = contacts.filter((c) => c.group !== groupName);
+  const available = contacts
+    .filter((c) => c.group !== groupName)
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   return (
     <div ref={ref} className="relative mt-3">
@@ -70,7 +72,6 @@ export default function GroupsModal({
   groups,
   onClose,
   onCreateGroup,
-  onDeleteGroup,
   onAddMember,
   onRemoveMember,
 }) {
@@ -144,23 +145,16 @@ export default function GroupsModal({
           {/* Group list */}
           <div className="flex flex-col gap-4">
             {groups.map((groupName) => {
-              const members = contacts.filter((c) => c.group === groupName);
+              const members = contacts
+                .filter((c) => c.group === groupName)
+                .sort((a, b) => a.name.localeCompare(b.name));
               return (
                 <div key={groupName} className="border border-[#e5e7eb] rounded-[12px] p-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-[15px] font-bold text-[#1a1a2e]">{groupName}</h3>
-                    <div className="flex items-center gap-3">
-                      <span className="text-[13px] text-[#9ca3af]">
-                        {members.length} member{members.length === 1 ? "" : "s"}
-                      </span>
-                      <button
-                        onClick={() => onDeleteGroup(groupName)}
-                        title="Delete group"
-                        className="text-red-500 hover:bg-red-50 rounded-[6px] p-1.5 cursor-pointer transition-colors"
-                      >
-                        <FiTrash2 className="text-[15px]" />
-                      </button>
-                    </div>
+                    <span className="text-[13px] text-[#9ca3af]">
+                      {members.length} member{members.length === 1 ? "" : "s"}
+                    </span>
                   </div>
 
                   <div className="flex flex-wrap gap-2 mt-3">
