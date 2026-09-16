@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { FiCalendar, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 
-export default function CustomDatePicker({ value, onChange, compact = false }) {
+export default function CustomDatePicker({ value, onChange, compact = false, openUp = false }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -70,9 +70,15 @@ export default function CustomDatePicker({ value, onChange, compact = false }) {
       {/* Popover Calendar Panel */}
       {open && (
         <div
-          className={`absolute top-[calc(100%+6px)] left-0 bg-white rounded-3xl z-9999 font-sans ${
-            compact ? 'w-[260px] p-3' : 'w-[336px] p-5'
-          }`}
+          className={
+            openUp
+              ? `fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-3xl z-[10010] font-sans ${
+                  compact ? 'w-[260px] p-3' : 'w-[336px] p-5'
+                }`
+              : `absolute top-[calc(100%+6px)] left-0 bg-white rounded-3xl z-9999 font-sans ${
+                  compact ? 'w-[260px] p-3' : 'w-[336px] p-5'
+                }`
+          }
           style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}
         >
           {/* Header */}

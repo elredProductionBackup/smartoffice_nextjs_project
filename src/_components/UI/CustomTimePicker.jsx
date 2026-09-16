@@ -24,7 +24,7 @@ function stepValue(value, direction) {
   return SLOTS[next];
 }
 
-export default function CustomTimePicker({ value, onChange, compact = false }) {
+export default function CustomTimePicker({ value, onChange, compact = false, openUp = false }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const listRef = useRef(null);
@@ -87,9 +87,15 @@ export default function CustomTimePicker({ value, onChange, compact = false }) {
       {open && (
         <div
           ref={listRef}
-          className={`absolute top-[calc(100%+6px)] left-0 w-full bg-white rounded-xl z-9999 overflow-y-auto ${
-            compact ? 'max-h-[160px] py-1' : 'max-h-[220px] py-1.5'
-          }`}
+          className={
+            openUp
+              ? `fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[200px] bg-white rounded-xl z-[10010] overflow-y-auto ${
+                  compact ? 'max-h-[220px] py-1' : 'max-h-[280px] py-1.5'
+                }`
+              : `absolute top-[calc(100%+6px)] left-0 w-full bg-white rounded-xl z-9999 overflow-y-auto ${
+                  compact ? 'max-h-[160px] py-1' : 'max-h-[220px] py-1.5'
+                }`
+          }
           style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}
         >
           {SLOTS.map((slot) => {

@@ -27,24 +27,29 @@ import {
   getContactGroupContacts,
   deleteContactGroupContacts,
 } from "@/services/contactGroup.service";
+import { getWhatsAppTemplates } from "@/services/broadcast.service";
 import { PRIVE_WORKSHOP_EMAIL_HTML, PRIVE_MEDIA_EMAIL_HTML } from "./emailTemplates";
 
-const TEMPLATES = [
-  {
-    id: "prive_workshop_registration_confirmation",
-    label: "Prive workshop registration confirmation",
+// getWhatsAppTemplates only returns { templateName, label } — the message
+// bodies below aren't part of that API, so keep known-template previews
+// here and fall back to a generic body for any template it adds later.
+const TEMPLATE_CONTENT = {
+  prive_registration_confirmation: {
     body:
       "Hi {name},\n\nA quick reminder about the {cluster} review meet at {site} on {date}. Please arrive ten minutes early and bring your site checklist.\n\nTeam Smart Networks",
     emailBody: PRIVE_WORKSHOP_EMAIL_HTML,
   },
-  {
-    id: "prive_media",
-    label: "Prive media",
+  prive_directory: {
     body:
       "Hi {name},\n\nThanks for joining the {cluster} sync today. Notes and action items from the meet at {site} will follow shortly.\n\nTeam Smart Networks",
     emailBody: PRIVE_MEDIA_EMAIL_HTML,
   },
-];
+};
+
+const DEFAULT_TEMPLATE_CONTENT = {
+  body: "Hi {name},\n\n",
+  emailBody: PRIVE_WORKSHOP_EMAIL_HTML,
+};
 
 const SAMPLE_VALUES = {
   cluster: "North Cluster",
@@ -66,18 +71,18 @@ function initials(name) {
 export default function SendBulkPageClient() {
   const router = useRouter();
 
-  const [templateId, setTemplateId] = useState(TEMPLATES[0].id);
+  const [whatsappTemplates, setWhatsappTemplates] = useState([]);
+  const [templatesLoading, setTemplatesLoading] = useState(true);
+
+  const [templateId, setTemplateId] = useState("");
   const [templateOpen, setTemplateOpen] = useState(false);
   const templateRef = useRef(null);
 
   const [channels, setChannels] = useState({ whatsapp: true, email: false });
   const [activeTab, setActiveTab] = useState("whatsapp");
 
-  const [messages, setMessages] = useState({
-    whatsapp: TEMPLATES[0].body,
-    email: TEMPLATES[0].emailBody,
-  });
-  const [emailSubject, setEmailSubject] = useState(TEMPLATES[0].label);
+  const [messages, setMessages] = useState({ whatsapp: "", email: "" });
+  const [emailSubject, setEmailSubject] = useState("");
 
   const [contacts, setContacts] = useState([]);
   const [groupList, setGroupList] = useState([]);
@@ -131,12 +136,40 @@ export default function SendBulkPageClient() {
 
   const showComingSoon = (label) => setNotice(`${label} — coming soon`);
 
-  const handleTemplateSelect = (tpl) => {
+  const applyTemplate = (tpl) => {
+    const content = TEMPLATE_CONTENT[tpl.id] || DEFAULT_TEMPLATE_CONTENT;
     setTemplateId(tpl.id);
-    setTemplateOpen(false);
-    setMessages({ whatsapp: tpl.body, email: tpl.emailBody });
+    setMessages({ whatsapp: content.body, email: content.emailBody });
     setEmailSubject(tpl.label);
   };
+
+  const handleTemplateSelect = (tpl) => {
+    applyTemplate(tpl);
+    setTemplateOpen(false);
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+
+    getWhatsAppTemplates()
+      .then((res) => {
+        if (cancelled) return;
+        const list = Array.isArray(res?.result) ? res.result : [];
+        const mapped = list.map((t) => ({ id: t.templateName, label: t.label || t.templateName }));
+        setWhatsappTemplates(mapped);
+        if (mapped.length > 0) applyTemplate(mapped[0]);
+      })
+      .catch((error) => {
+        console.error("Failed to fetch WhatsApp templates:", error?.response || error);
+      })
+      .finally(() => {
+        if (!cancelled) setTemplatesLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const selectChannel = (key) => {
     setChannels({ whatsapp: key === "whatsapp", email: key === "email" });
@@ -442,7 +475,7 @@ export default function SendBulkPageClient() {
     .replaceAll("{site}", SAMPLE_VALUES.site)
     .replaceAll("{date}", SAMPLE_VALUES.date);
 
-  const activeTemplate = TEMPLATES.find((t) => t.id === templateId);
+  const activeTemplate = whatsappTemplates.find((t) => t.id === templateId);
 
   const whatsappCount = selectedContacts.filter((c) => c.hasWhatsApp).length;
   const emailCount = selectedContacts.length;
@@ -537,7 +570,9 @@ export default function SendBulkPageClient() {
                     templateOpen ? "border-[#2563eb] ring-1 ring-[#2563eb]/30" : "border-[#d1d5db] hover:border-[#9ca3af]"
                   }`}
                 >
-                  <span className="text-[#111]">{activeTemplate?.label}</span>
+                  <span className="text-[#111]">
+                    {activeTemplate?.label || (templatesLoading ? "Loading templates…" : "No templates available")}
+                  </span>
                   <FiChevronDown
                     className={`text-[#6b7280] text-[16px] transition-transform duration-200 ${
                       templateOpen ? "rotate-180" : ""
@@ -546,7 +581,12 @@ export default function SendBulkPageClient() {
                 </button>
                 {templateOpen && (
                   <div className="absolute z-30 w-full mt-1 bg-white border border-[#e5e7eb] rounded-[10px] shadow-lg py-1.5 px-1.5">
-                    {TEMPLATES.map((tpl) => {
+                    {whatsappTemplates.length === 0 && (
+                      <div className="px-3 py-2.5 text-[13px] text-[#9ca3af]">
+                        {templatesLoading ? "Loading templates…" : "No templates available"}
+                      </div>
+                    )}
+                    {whatsappTemplates.map((tpl) => {
                       const isSelected = tpl.id === templateId;
                       return (
                         <button
