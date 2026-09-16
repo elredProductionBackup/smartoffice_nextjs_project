@@ -4,11 +4,11 @@ import Link from 'next/link';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchBudgetTypes } from '@/store/events/budgetChecklist/budgetThunks';
-import { getBudgetReportCategory } from '@/services/finance.service';
+import { getBudgetEventReportCategory } from '@/services/finance.service';
 
 const CARD_COLORS = ['#3a7cf5', '#885df1', '#ec4899', '#11b981', '#f59e0b', '#5cbbf6', '#f6a65c', '#f65c5f', '#f65cf1'];
 
-const PortfolioCard = ({ title, budget, expense, color }) => {
+const PortfolioCard = ({ id, title, budget, expense, color }) => {
   const percentage = budget > 0 ? ((expense / budget) * 100).toFixed(1) : '0.0';
 
   const data = [
@@ -17,7 +17,7 @@ const PortfolioCard = ({ title, budget, expense, color }) => {
   ];
 
   return (
-    <Link href="/dashboard/Learning_portfolio" className="border border-gray-100 h-[380px] w-[230px] rounded-[10px] p-5 shadow-[0px_0px_6px_0px_#00000012] bg-white flex flex-col items-center shrink-0 cursor-pointer hover:shadow-md transition-shadow duration-200 no-underline">
+    <Link href={`/dashboard/portfolio/${id}`} className="border border-gray-100 h-[380px] w-[230px] rounded-[10px] p-5 shadow-[0px_0px_6px_0px_#00000012] bg-white flex flex-col items-center shrink-0 cursor-pointer hover:shadow-md transition-shadow duration-200 no-underline">
       <h3 className="text-[#333333] font-bold text-[20px] leading-[136%] text-center w-full flex  justify-center mb-4 min-h-[58px]">{title}</h3>
 
       <div className="w-[153px] h-[153px] mb-4 relative flex items-center justify-center">
@@ -61,35 +61,48 @@ const PortfolioCard = ({ title, budget, expense, color }) => {
 const PortfolioCards = () => {
   const dispatch = useDispatch();
   const { budgetTypes } = useSelector((state) => state.budget);
-  const [reportByType, setReportByType] = useState({});
+  const [eventReportByType, setEventReportByType] = useState({});
 
   useEffect(() => {
     dispatch(fetchBudgetTypes());
   }, [dispatch]);
 
   useEffect(() => {
-    (async () => {
-      try {
-        const response = await getBudgetReportCategory(1, 100);
-        const rows = Array.isArray(response?.result) ? response.result : [];
-        const byType = {};
-        rows.forEach((row) => {
-          byType[row.budgetTypeId] = row;
+    budgetTypes.forEach((type) => {
+      const id = type.budgetTypeId;
+      if (eventReportByType[id]) return;
+
+      getBudgetEventReportCategory(id)
+        .then((response) => {
+          const rows = Array.isArray(response?.result) ? response.result : [];
+
+          // Backend response can repeat the same event (its attendee-count
+          // lookup isn't always grouped back down to one row per event) —
+          // dedupe by eventId so the summed budget/expense don't double-count it.
+          const seen = new Set();
+          const dedupedRows = rows.filter((row) => {
+            if (seen.has(row.eventId)) return false;
+            seen.add(row.eventId);
+            return true;
+          });
+
+          setEventReportByType((prev) => ({ ...prev, [id]: dedupedRows }));
+        })
+        .catch((error) => {
+          console.error('Failed to fetch budget event report for', id, error);
+          setEventReportByType((prev) => ({ ...prev, [id]: [] }));
         });
-        setReportByType(byType);
-      } catch (error) {
-        console.error('Failed to fetch budget report by category:', error);
-      }
-    })();
-  }, []);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [budgetTypes]);
 
   const cards = budgetTypes.map((type, i) => {
-    const report = reportByType[type.budgetTypeId];
+    const eventRows = eventReportByType[type.budgetTypeId] || [];
     return {
       id: type.budgetTypeId,
       title: type.budgetType,
-      budget: Number(report?.budgetAmount) || 0,
-      expense: Number(report?.overallExpense ?? report?.totalExpense) || 0,
+      budget: eventRows.reduce((sum, r) => sum + (Number(r.eventBudget) || 0), 0),
+      expense: eventRows.reduce((sum, r) => sum + (Number(r.eventExpenseAmount) || 0), 0),
       color: CARD_COLORS[i % CARD_COLORS.length],
     };
   });
