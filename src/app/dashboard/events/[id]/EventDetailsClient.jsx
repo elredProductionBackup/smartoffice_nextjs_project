@@ -222,9 +222,9 @@ export default function EventDetailsClient() {
               }
               alt={event?.eventName || "event"}
               fill
-              className={isValidImage(event?.eventImage)
+              className={`bg-[#0002] ${isValidImage(event?.eventImage)
                 ? "object-cover"
-                : "object-contain max-h-[60%] grid place-items-center"}
+                : "object-contain max-h-[60%] grid place-items-center"}`}
             />
           </div>
 
