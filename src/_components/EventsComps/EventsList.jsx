@@ -166,12 +166,12 @@ export default function EventsList({
                           alt={event?.eventName || "event"}
                           width={400}
                           height={400}
-                          className="h-[50px] w-[50px] object-cover rounded-full border border-[#CCCCCC] bg-[#ccc]"
+                          className="h-[50px] min-w-[50px] max-w-[50px] object-cover rounded-full border border-[#CCCCCC] bg-[#ccc]"
                         />
                       ) : (
                         <div className="h-[50px] w-[50px] rounded-full bg-[#ccc]" />
                       )}
-                      <span className="text-[20px] font-[600]">
+                      <span className="text-[20px] font-[600] line-clamp-2">
                         {event.name}
                       </span>
                     </div>
