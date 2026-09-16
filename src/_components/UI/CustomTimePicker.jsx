@@ -5,11 +5,19 @@ import { FiChevronUp, FiChevronDown, FiCheck } from 'react-icons/fi';
 
 const STEP_MINUTES = 15;
 
+// value/onChange use this same 12-hour "hh:mm AM/PM" string — it's what
+// gets sent to the backend, not a 24-hour value converted for display.
+function to12Hour(h, m) {
+  const period = h >= 12 ? 'PM' : 'AM';
+  const hour12 = h % 12 === 0 ? 12 : h % 12;
+  return `${String(hour12).padStart(2, '0')}:${String(m).padStart(2, '0')} ${period}`;
+}
+
 function buildSlots() {
   const slots = [];
   for (let h = 0; h < 24; h++) {
     for (let m = 0; m < 60; m += STEP_MINUTES) {
-      slots.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
+      slots.push(to12Hour(h, m));
     }
   }
   return slots;
@@ -65,7 +73,7 @@ export default function CustomTimePicker({ value, onChange, compact = false, ope
           compact ? 'px-3 py-1.5 text-[0.78rem] h-[34px]' : 'px-3 py-2 text-[0.84rem] h-[38px]'
         }`}
       >
-        <span>{value || '--:--'}</span>
+        <span>{value || '--:-- --'}</span>
         <div className="flex flex-col shrink-0 ml-2 -my-2 border-l border-gray-200 pl-2">
           <button
             type="button"
