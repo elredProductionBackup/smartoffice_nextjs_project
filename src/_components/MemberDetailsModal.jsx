@@ -316,61 +316,57 @@ export default function MemberDetailsModal({
           )}
         </div>
 
-        {/* Nested popup example */}
-        {activeDoc && (
-          <div
-            className="fixed inset-0 z-59 "
-            onClick={() => setActiveDoc(null)}
-          ></div>
-        )}
-        {activeDoc && (
-          <div
-            className="absolute h-full inset-0 bg-black/0 z-60 flex items-center justify-center "
-            onClick={() => setActiveDoc(null)}
-          >
-            <div
-              className="flex flex-col bg-[#111] w-full h-full rounded-[20px] relative p-[40px] overflow-scroll"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="actions-nested-popup sticky top-0 right-0p flex gap-[20px] items-center justify-end">
-                {/* Download */}
-                <a
-                  href={`/api/download?fileUrl=${encodeURIComponent(activeDoc.fileUrl)}`}
-                  onClick={(e) => e.stopPropagation()}
-                  className="text-[#333] bg-[#EEEEEE] cursor-pointer flex items-center justify-center rounded-full h-[35px] w-[35px]"
-                  title="Download file"
-                >
-                  <span className="material-symbols--download-rounded"></span>
-                </a>
-
-                {/* Close */}
-                <button
-                  onClick={() => setActiveDoc(null)}
-                  className="text-[#333] bg-[#EEEEEE] cursor-pointer flex items-center justify-center rounded-full h-[35px] w-[35px]"
-                >
-                  <span className="akar-icons--cross"></span>
-                </button>
-              </div>
-              {/* Image */}
-              <div className="image-box flex flex-col gap-[20px] flex-1 items-center justify-center px-[30px] text-[#FFFFFF] font-medium">
-                <Image
-                  src={
-                    activeDoc.docType === "pdf"
-                      ? activeDoc?.pdfPreview
-                      : activeDoc?.fileUrl
-                  }
-                  alt="Document Preview"
-                  width={500}
-                  height={500}
-                  className="w-full object-contain rounded-[12px]"
-                />
-                {activeDoc.docType}
-              </div>
-            </div>
-          </div>
-        )}
         {/* </>} */}
       </div>
+
+      {/* Nested document preview popup — fixed to the viewport so it never
+          reveals the underlying modal content when scrolled to the end */}
+      {activeDoc && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-[20px]"
+          onClick={() => setActiveDoc(null)}
+        >
+          <div
+            className="flex flex-col bg-[#111] w-full max-w-[700px] h-full max-h-[90vh] rounded-[20px] relative p-[40px] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="actions-nested-popup sticky top-0 z-10 flex gap-[20px] items-center justify-end">
+              {/* Download */}
+              <a
+                href={`/api/download?fileUrl=${encodeURIComponent(activeDoc.fileUrl)}`}
+                onClick={(e) => e.stopPropagation()}
+                className="text-[#333] bg-[#EEEEEE] cursor-pointer flex items-center justify-center rounded-full h-[35px] w-[35px]"
+                title="Download file"
+              >
+                <span className="material-symbols--download-rounded"></span>
+              </a>
+
+              {/* Close */}
+              <button
+                onClick={() => setActiveDoc(null)}
+                className="text-[#333] bg-[#EEEEEE] cursor-pointer flex items-center justify-center rounded-full h-[35px] w-[35px]"
+              >
+                <span className="akar-icons--cross"></span>
+              </button>
+            </div>
+            {/* Image */}
+            <div className="image-box flex flex-col gap-[20px] flex-1 items-center justify-center px-[30px] text-[#FFFFFF] font-medium">
+              <Image
+                src={
+                  activeDoc.docType === "pdf"
+                    ? activeDoc?.pdfPreview
+                    : activeDoc?.fileUrl
+                }
+                alt="Document Preview"
+                width={500}
+                height={500}
+                className="w-full object-contain rounded-[12px]"
+              />
+              {activeDoc.docType}
+            </div>
+          </div>
+        </div>
+      )}
 
       {isExportDetailsOpen && (
         <ExportDetailsPopup onClose={() => setIsExportDetailsOpen(false)} />
