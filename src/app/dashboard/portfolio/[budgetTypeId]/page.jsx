@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useDispatch, useSelector } from "react-redux";
 import { FaArrowLeft, FaStar, FaRegStar } from "react-icons/fa6";
 import moment from "moment";
+import TitleTooltipHover from "@/_components/UI/TitleTooltipHover";
 import { fetchBudgetTypes } from "@/store/events/budgetChecklist/budgetThunks";
 import {
   getBudgetEventReportCategory,
@@ -168,6 +169,7 @@ const PortfolioDetailPage = () => {
               const showMonthHeader = monthLabel !== lastMonthLabel;
               lastMonthLabel = monthLabel;
               const isFeatured = !!featured[event.eventId];
+              const isPastEvent = moment(event.startDateTime).isBefore(moment());
 
               return (
                 <React.Fragment key={event.eventId}>
@@ -233,18 +235,25 @@ const PortfolioDetailPage = () => {
 
                     {/* Actions */}
                     <div className="flex items-center justify-start gap-6 pl-4">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleFeature(event.eventId);
-                        }}
-                        className={`flex items-center gap-1.5 font-bold text-[15px] font-nunito cursor-pointer bg-transparent border-0 p-0 outline-none transition-all duration-200 hover:opacity-85 ${
-                          isFeatured ? "text-[#F59E0B]" : "text-[#666666]"
-                        }`}
-                      >
-                        {isFeatured ? <FaStar className="text-[18px]" /> : <FaRegStar className="text-[18px]" />}
-                        <span>{isFeatured ? "Featured" : "Feature"}</span>
-                      </button>
+                      <TitleTooltipHover title={isPastEvent ? "Past Events can't be featured" : ""}>
+                        <button
+                          type="button"
+                          disabled={isPastEvent}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (isPastEvent) return;
+                            toggleFeature(event.eventId);
+                          }}
+                          className={`flex items-center gap-1.5 font-bold text-[15px] font-nunito bg-transparent border-0 p-0 outline-none transition-all duration-200 ${
+                            isPastEvent
+                              ? "text-[#cccccc] cursor-not-allowed"
+                              : `cursor-pointer hover:opacity-85 ${isFeatured ? "text-[#F59E0B]" : "text-[#666666]"}`
+                          }`}
+                        >
+                          {isFeatured ? <FaStar className="text-[18px]" /> : <FaRegStar className="text-[18px]" />}
+                          <span>{isFeatured ? "Featured" : "Feature"}</span>
+                        </button>
+                      </TitleTooltipHover>
                     </div>
                   </div>
                 </React.Fragment>
