@@ -6,7 +6,6 @@ import {
   FiArrowLeft,
   FiArrowRight,
   FiMessageCircle,
-  FiList,
   FiUsers,
   FiChevronDown,
   FiCheck,
@@ -17,10 +16,7 @@ import {
 import CustomCheckbox from "@/_components/UI/CustomCheckbox";
 import GroupsModal from "./GroupsModal";
 import ContactsModal from "./ContactsModal";
-import TemplatesModal from "./TemplatesModal";
-import TemplateFormModal from "./TemplateFormModal";
 import ConfirmSendModal from "./ConfirmSendModal";
-import { INITIAL_TEMPLATES, humanizeCode, slugify } from "./templatesData";
 import {
   createContactGroup,
   getContactGroups,
@@ -89,8 +85,6 @@ export default function SendBulkPageClient() {
   const [groupIds, setGroupIds] = useState({});
   const [groupsModalOpen, setGroupsModalOpen] = useState(false);
   const [contactsModalMode, setContactsModalMode] = useState(null);
-  const [templates, setTemplates] = useState(INITIAL_TEMPLATES);
-  const [templatesPanel, setTemplatesPanel] = useState(null);
 
   const [selectedIds, setSelectedIds] = useState(new Set(DEFAULT_SELECTED));
   const [search, setSearch] = useState("");
@@ -403,41 +397,6 @@ export default function SendBulkPageClient() {
     setSelectedIds(new Set());
   };
 
-  const openTemplatesList = () => setTemplatesPanel({ view: "list" });
-  const closeTemplatesPanel = () => setTemplatesPanel(null);
-  const openNewTemplate = () => setTemplatesPanel({ view: "form", mode: "new", template: null });
-  const openEditTemplate = (t) => setTemplatesPanel({ view: "form", mode: "edit", template: t });
-  const openCloneTemplate = (t) => setTemplatesPanel({ view: "form", mode: "clone", template: t });
-  const openViewTemplate = (t) => setTemplatesPanel({ view: "form", mode: "view", template: t });
-
-  const upsertTemplate = (payload, status, extra) => {
-    const editingId = templatesPanel?.mode === "edit" ? templatesPanel.template.id : null;
-    setTemplates((prev) => {
-      if (editingId) {
-        return prev.map((t) =>
-          t.id === editingId
-            ? { ...t, ...payload, status, rejectionReason: undefined, submittedNote: undefined, ...extra }
-            : t
-        );
-      }
-      const id = `t-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-      const code = payload.code || slugify(payload.name) || id;
-      return [...prev, { id, ...payload, code, name: payload.name || humanizeCode(code), status, ...extra }];
-    });
-  };
-
-  const handleSaveTemplateDraft = (payload) => {
-    upsertTemplate(payload, "draft", { editedNote: "Edited just now" });
-    setNotice("Template saved as draft");
-    openTemplatesList();
-  };
-
-  const handleSubmitTemplate = (payload) => {
-    upsertTemplate(payload, "pending", { submittedNote: "Submitted just now · usually approved within an hour" });
-    setNotice("Template submitted to Meta for review");
-    openTemplatesList();
-  };
-
   const filteredContacts = useMemo(() => {
     return contacts
       .filter((c) => {
@@ -533,16 +492,6 @@ export default function SendBulkPageClient() {
 
               {messageMenuOpen && (
                 <div className="absolute z-30 right-0 mt-2 w-[200px] bg-white border border-[#e5e7eb] rounded-[10px] shadow-lg py-1.5 px-1.5">
-                  <button
-                    onClick={() => {
-                      openTemplatesList();
-                      setMessageMenuOpen(false);
-                    }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2.5 text-[13px] font-medium text-[#333] hover:bg-[#f9fafb] rounded-[7px] cursor-pointer"
-                  >
-                    <FiList className="text-[14px] text-[#2563eb]" />
-                    Manage templates
-                  </button>
                   <button
                     onClick={() => {
                       setGroupsModalOpen(true);
@@ -974,27 +923,6 @@ export default function SendBulkPageClient() {
           onImportContacts={importContacts}
           onDeleteContact={deleteContact}
           onDeleteAllContacts={deleteAllContacts}
-        />
-      )}
-
-      {templatesPanel?.view === "list" && (
-        <TemplatesModal
-          templates={templates}
-          onClose={closeTemplatesPanel}
-          onNew={openNewTemplate}
-          onEdit={openEditTemplate}
-          onClone={openCloneTemplate}
-          onView={openViewTemplate}
-        />
-      )}
-
-      {templatesPanel?.view === "form" && (
-        <TemplateFormModal
-          mode={templatesPanel.mode}
-          template={templatesPanel.template}
-          onBack={openTemplatesList}
-          onSaveDraft={handleSaveTemplateDraft}
-          onSubmit={handleSubmitTemplate}
         />
       )}
 
