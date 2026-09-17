@@ -10,6 +10,7 @@ const CARD_COLORS = ['#3a7cf5', '#885df1', '#ec4899', '#11b981', '#f59e0b', '#5c
 
 const PortfolioCard = ({ id, title, budget, expense, color }) => {
   const percentage = budget > 0 ? ((expense / budget) * 100).toFixed(1) : '0.0';
+  const isEmpty = budget === 0 && expense === 0;
 
   const data = [
     { name: 'Expense', value: expense },
@@ -21,29 +22,35 @@ const PortfolioCard = ({ id, title, budget, expense, color }) => {
       <h3 className="text-[#333333] font-bold text-[20px] leading-[136%] text-center w-full flex  justify-center mb-4 min-h-[58px]">{title}</h3>
 
       <div className="w-[153px] h-[153px] mb-4 relative flex items-center justify-center">
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie
-              data={data}
-              cx="50%"
-              cy="50%"
-              innerRadius={51}
-              outerRadius={76}
-              startAngle={90}
-              endAngle={-270}
-              dataKey="value"
-              stroke="none"
-              cornerRadius={0}
-            >
-              <Cell key="cell-0" fill={color} />
-              <Cell key="cell-1" fill="#e9ecef" />
-            </Pie>
-            <Tooltip
-              formatter={(value) => `₹${value.toLocaleString()}`}
-              contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '13px' }}
-            />
-          </PieChart>
-        </ResponsiveContainer>
+        {isEmpty ? (
+          <div className="w-[153px] h-[153px] rounded-full border-[12px] border-[#e9ecef] flex items-center justify-center">
+            <span className="text-[15px] font-bold text-[#999999]">0%</span>
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={data}
+                cx="50%"
+                cy="50%"
+                innerRadius={51}
+                outerRadius={76}
+                startAngle={90}
+                endAngle={-270}
+                dataKey="value"
+                stroke="none"
+                cornerRadius={0}
+              >
+                <Cell key="cell-0" fill={color} />
+                <Cell key="cell-1" fill="#e9ecef" />
+              </Pie>
+              <Tooltip
+                formatter={(value) => `₹${value.toLocaleString()}`}
+                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '13px' }}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+        )}
       </div>
 
       <div className="text-center text-[16px] text-[#666666] mb-2 space-y-1 font-regular leading-[136%] w-full">
