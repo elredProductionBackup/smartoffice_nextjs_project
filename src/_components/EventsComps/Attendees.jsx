@@ -58,7 +58,7 @@ const Attendees = ({ eventId }) => {
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full rounded-[20px] overflow-hidden">
 
       <div className="bg-[#F2F7FF]">
         <div className="flex items-center py-[16px] px-[30px] font-bold text-lg text-[#333333]">
