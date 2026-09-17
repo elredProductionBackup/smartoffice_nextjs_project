@@ -22,9 +22,7 @@ const PortfolioCard = ({ id, title, budget, expense, percentage, color }) => {
 
       <div className="w-[153px] h-[153px] mb-4 relative flex items-center justify-center">
         {isEmpty ? (
-          <div className="w-[153px] h-[153px] rounded-full border-[25px] border-[#e9ecef] flex items-center justify-center">
-            <span className="text-[15px] font-bold text-[#999999]">0%</span>
-          </div>
+          <div className="w-[153px] h-[153px] rounded-full border-[25px] border-[#e9ecef]" />
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
