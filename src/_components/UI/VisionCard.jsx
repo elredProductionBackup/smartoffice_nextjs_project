@@ -18,7 +18,6 @@ const cardsData = [
     textColorClass: "text-[#4ca543]",
     icon: <FiTrendingUp className="text-2xl" />,
     title: "Income",
-    amount: "₹ 150,000",
     subtext: "Yearly Income 2026",
     clickable: true,
     hoverColor: '#22c55e55',
@@ -31,7 +30,6 @@ const cardsData = [
     textColorClass: "text-[#1b64df]",
     icon: <MdCurrencyRupee className="text-2xl" />,
     title: "Budget",
-    amount: "₹ 100,000",
     subtext: "Allocated Budget 2026",
     clickable: true,
     hoverColor: '#1662dd55',
@@ -44,7 +42,6 @@ const cardsData = [
     textColorClass: "text-[#8a1bdc]",
     icon: <FiTrendingDown className="text-2xl" />,
     title: "Expense",
-    amount: "₹ 0.00",
     subtext: "Total Expenses 2026",
   },
 ];
@@ -114,11 +111,11 @@ const VisionCards = () => {
   }, []);
 
   const amountFor = (title) => {
-    if (!report) return cardsData.find((c) => c.title === title)?.amount;
+    if (!report) return formatRupees(0);
     if (title === 'Income') return formatRupees(report.networkIncomeAmount);
     if (title === 'Budget') return formatRupees(report.networkBudgetAmount);
     if (title === 'Expense') return formatRupees(report.networkTotalExpenseAmount);
-    return undefined;
+    return formatRupees(0);
   };
 
   const handleCardClick = (title) => {
