@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { FiCalendar, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 
-export default function CustomDatePicker({ value, onChange, compact = false, openUp = false }) {
+export default function CustomDatePicker({ value, onChange, compact = false, openUp = false, disablePast = false }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -52,6 +52,8 @@ export default function CustomDatePicker({ value, onChange, compact = false, ope
 
   const days = getCalendarDays(viewYear, viewMonth);
   const selectedDate = value ? parseDateStr(value) : null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
   return (
     <div ref={ref} className="relative w-full">
@@ -132,11 +134,16 @@ export default function CustomDatePicker({ value, onChange, compact = false, ope
                 selectedDate.getMonth() === item.month &&
                 selectedDate.getFullYear() === item.year;
 
+              const cellDate = new Date(item.year, item.month, item.day);
+              const isDisabled = disablePast && cellDate < today;
+
               return (
                 <button
                   key={idx}
                   type="button"
+                  disabled={isDisabled}
                   onMouseDown={() => {
+                    if (isDisabled) return;
                     const chosenDate = new Date(item.year, item.month, item.day);
                     onChange(formatDateStr(chosenDate));
                     setOpen(false);
@@ -145,10 +152,15 @@ export default function CustomDatePicker({ value, onChange, compact = false, ope
                     compact
                       ? 'w-7 h-7 text-[12px]'
                       : 'w-9 h-9 text-[15px]',
-                    'flex items-center justify-center font-medium font-["Nunito_Sans"] cursor-pointer border-none rounded-lg mx-auto transition-colors duration-150 outline-none',
-                    item.isCurrentMonth
-                      ? (isSel ? 'bg-[#0B57D0] text-white font-semibold' : 'text-slate-800 bg-transparent hover:bg-slate-50')
-                      : 'text-slate-300 bg-transparent hover:bg-slate-50'
+                    'flex items-center justify-center font-medium font-["Nunito_Sans"] rounded-lg mx-auto transition-colors duration-150 outline-none border-none',
+                    isDisabled
+                      ? 'text-slate-400 bg-transparent cursor-not-allowed'
+                      : [
+                          'cursor-pointer',
+                          item.isCurrentMonth
+                            ? (isSel ? 'bg-[#0B57D0] text-white font-semibold' : 'text-slate-800 bg-transparent hover:bg-slate-50')
+                            : 'text-slate-300 bg-transparent hover:bg-slate-50'
+                        ].join(' ')
                   ].join(' ')}
                 >
                   {item.day}

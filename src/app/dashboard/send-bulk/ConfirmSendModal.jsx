@@ -219,7 +219,7 @@ export default function ConfirmSendModal({ contacts, templateId, messageType, su
               <div key={f.key} className={f.type === "text" ? "col-span-2" : ""}>
                 <label className="block text-[13px] font-semibold text-[#333] mb-1.5">{f.label}</label>
                 {f.type === "date" ? (
-                  <CustomDatePicker compact openUp value={values[f.key]} onChange={(v) => setField(f.key, v)} />
+                  <CustomDatePicker compact openUp disablePast value={values[f.key]} onChange={(v) => setField(f.key, v)} />
                 ) : f.type === "time" ? (
                   <CustomTimePicker compact openUp value={values[f.key]} onChange={(v) => setField(f.key, v)} />
                 ) : (
