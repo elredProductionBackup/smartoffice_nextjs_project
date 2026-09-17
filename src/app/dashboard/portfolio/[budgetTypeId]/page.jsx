@@ -7,7 +7,12 @@ import { useDispatch, useSelector } from "react-redux";
 import { FaArrowLeft, FaStar, FaRegStar } from "react-icons/fa6";
 import moment from "moment";
 import { fetchBudgetTypes } from "@/store/events/budgetChecklist/budgetThunks";
-import { getBudgetEventReportCategory } from "@/services/finance.service";
+import {
+  getBudgetEventReportCategory,
+  addFeaturedEvent,
+  removeFeaturedEvent,
+  getFeaturedEvents,
+} from "@/services/finance.service";
 
 const GRID_COLS = "1.2fr 2.8fr 1fr 1fr 1.2fr 1fr 2fr";
 
@@ -81,10 +86,37 @@ const PortfolioDetailPage = () => {
     fetchEvents();
   }, [budgetTypeId]);
 
+  // The star must reflect actual backend state on load — otherwise every
+  // fresh visit to this page shows everything as unfeatured even though
+  // getFeaturedEvents still lists it.
+  useEffect(() => {
+    getFeaturedEvents(1, 100)
+      .then((response) => {
+        const rows = Array.isArray(response?.result) ? response.result : [];
+        setFeatured((prev) => {
+          const next = { ...prev };
+          rows.forEach((row) => {
+            if (row.eventId) next[row.eventId] = true;
+          });
+          return next;
+        });
+      })
+      .catch((error) => {
+        console.error("Failed to fetch featured events", error);
+      });
+  }, []);
+
   const portfolioName = budgetTypes.find((t) => t.budgetTypeId === budgetTypeId)?.budgetType || "Portfolio";
 
   const toggleFeature = (eventId) => {
-    setFeatured((prev) => ({ ...prev, [eventId]: !prev[eventId] }));
+    const nextFeatured = !featured[eventId];
+    setFeatured((prev) => ({ ...prev, [eventId]: nextFeatured }));
+
+    const request = nextFeatured ? addFeaturedEvent(eventId) : removeFeaturedEvent(eventId);
+    request.catch((error) => {
+      console.error(`Failed to ${nextFeatured ? "feature" : "unfeature"} event`, eventId, error);
+      setFeatured((prev) => ({ ...prev, [eventId]: !nextFeatured }));
+    });
   };
 
   let lastMonthLabel = null;
@@ -211,7 +243,7 @@ const PortfolioDetailPage = () => {
                         }`}
                       >
                         {isFeatured ? <FaStar className="text-[18px]" /> : <FaRegStar className="text-[18px]" />}
-                        <span>Feature</span>
+                        <span>{isFeatured ? "Featured" : "Feature"}</span>
                       </button>
                     </div>
                   </div>

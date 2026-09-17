@@ -1,12 +1,17 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { FiCalendar, FiMapPin } from 'react-icons/fi';
+import { FiCalendar, FiMapPin, FiX } from 'react-icons/fi';
 import { useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
 import moment from 'moment';
-import { getEventsList } from '@/services/events.service';
+import { getFeaturedEvents, removeFeaturedEvent } from '@/services/finance.service';
 import { fetchBudgetTypes } from '@/store/events/budgetChecklist/budgetThunks';
+
+const locationLabel = (eventLocation) => {
+  if (!eventLocation) return '—';
+  return typeof eventLocation === 'string' ? eventLocation : eventLocation.location || '—';
+};
 
 const getOrdinal = (n) => {
   const s = ['th', 'st', 'nd', 'rd'];
@@ -28,12 +33,24 @@ const formatEventDate = (startDateTime, endDateTime) => {
   return `${getOrdinal(start.date())} ${start.format('MMM')} - ${getOrdinal(end.date())} ${end.format('MMM, YYYY')}`;
 };
 
-const EventCard = ({ eventId, title, date, location, portfolio, onClick }) => {
+const EventCard = ({ eventId, title, date, location, portfolio, onClick, onRemove }) => {
   return (
     <div
       onClick={() => onClick(eventId)}
       className="group relative bg-[#f3f7fd] border border-[#e2e8f2] rounded-[10px] p-6 min-h-[162px] w-[400px] cursor-pointer hover:shadow-md hover:border-[#c5d5f0] transition-all duration-200"
     >
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onRemove(eventId);
+        }}
+        title="Remove from Top Upcoming Events"
+        className="absolute top-3 right-3 w-6 h-6 rounded-full bg-white border border-[#e2e8f2] text-[#777777] flex items-center justify-center opacity-0 group-hover:opacity-100 hover:text-[#e11d48] hover:border-[#e11d48] transition-all duration-150 cursor-pointer"
+      >
+        <FiX className="text-[14px]" />
+      </button>
+
       <h3 className="text-[#333333] font-bold text-[20px] leading-[136%] mb-2 pr-6 truncate" title={title}>{title}</h3>
 
       <div className='flex flex-col gap-1.5'>
@@ -71,11 +88,9 @@ const TopEvents = () => {
   }, [dispatch]);
 
   useEffect(() => {
-    const networkClusterCode = localStorage.getItem('networkClusterCode');
-
-    getEventsList({ networkClusterCode, start: 1, offset: 3, filterBy: 'all' })
+    getFeaturedEvents(1, 10)
       .then((res) => {
-        const result = res.data?.result || [];
+        const result = Array.isArray(res?.result) ? res.result : [];
         const sorted = [...result].sort(
           (a, b) => moment(a.startDateTime).valueOf() - moment(b.startDateTime).valueOf()
         );
@@ -89,6 +104,16 @@ const TopEvents = () => {
 
   const handleCardClick = (eventId) => {
     router.push(`/dashboard/events/${eventId}`);
+  };
+
+  const handleRemove = (eventId) => {
+    const removed = events.find((e) => e.eventId === eventId);
+    setEvents((prev) => prev.filter((e) => e.eventId !== eventId));
+
+    removeFeaturedEvent(eventId).catch((error) => {
+      console.error('Failed to unfeature event', eventId, error);
+      if (removed) setEvents((prev) => [...prev, removed]);
+    });
   };
 
   const portfolioNameFor = (budgetTypeId) => {
@@ -112,9 +137,10 @@ const TopEvents = () => {
               eventId={event.eventId}
               title={event.eventName}
               date={formatEventDate(event.startDateTime, event.endDateTime)}
-              location={event.eventLocation || '—'}
+              location={locationLabel(event.eventLocation)}
               portfolio={portfolioNameFor(event.eventType?.budgetTypeId)}
               onClick={handleCardClick}
+              onRemove={handleRemove}
             />
           ))}
         </div>
