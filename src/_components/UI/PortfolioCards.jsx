@@ -1,20 +1,19 @@
 "use client";
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import Link from 'next/link';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchBudgetTypes } from '@/store/events/budgetChecklist/budgetThunks';
-import { getBudgetEventReportCategory } from '@/services/finance.service';
 
 const CARD_COLORS = ['#3a7cf5', '#885df1', '#ec4899', '#11b981', '#f59e0b', '#5cbbf6', '#f6a65c', '#f65c5f', '#f65cf1'];
 
-const PortfolioCard = ({ id, title, budget, expense, color }) => {
-  const percentage = budget > 0 ? ((expense / budget) * 100).toFixed(1) : '0.0';
+const PortfolioCard = ({ id, title, budget, expense, percentage, color }) => {
   const isEmpty = budget === 0 && expense === 0;
+  const pct = Math.min(Math.max(Number(percentage) || 0, 0), 100);
 
   const data = [
-    { name: 'Expense', value: expense },
-    { name: 'Remaining', value: Math.max(budget - expense, 0) },
+    { name: 'Utilized', value: pct },
+    { name: 'Remaining', value: Math.max(100 - pct, 0) },
   ];
 
   return (
@@ -23,7 +22,7 @@ const PortfolioCard = ({ id, title, budget, expense, color }) => {
 
       <div className="w-[153px] h-[153px] mb-4 relative flex items-center justify-center">
         {isEmpty ? (
-          <div className="w-[153px] h-[153px] rounded-full border-[12px] border-[#e9ecef] flex items-center justify-center">
+          <div className="w-[153px] h-[153px] rounded-full border-[25px] border-[#e9ecef] flex items-center justify-center">
             <span className="text-[15px] font-bold text-[#999999]">0%</span>
           </div>
         ) : (
@@ -45,7 +44,7 @@ const PortfolioCard = ({ id, title, budget, expense, color }) => {
                 <Cell key="cell-1" fill="#e9ecef" />
               </Pie>
               <Tooltip
-                formatter={(value) => `₹${value.toLocaleString()}`}
+                formatter={(value) => `${value}%`}
                 contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '13px' }}
               />
             </PieChart>
@@ -68,51 +67,19 @@ const PortfolioCard = ({ id, title, budget, expense, color }) => {
 const PortfolioCards = () => {
   const dispatch = useDispatch();
   const { budgetTypes } = useSelector((state) => state.budget);
-  const [eventReportByType, setEventReportByType] = useState({});
 
   useEffect(() => {
     dispatch(fetchBudgetTypes());
   }, [dispatch]);
 
-  useEffect(() => {
-    budgetTypes.forEach((type) => {
-      const id = type.budgetTypeId;
-      if (eventReportByType[id]) return;
-
-      getBudgetEventReportCategory(id)
-        .then((response) => {
-          const rows = Array.isArray(response?.result) ? response.result : [];
-
-          // Backend response can repeat the same event (its attendee-count
-          // lookup isn't always grouped back down to one row per event) —
-          // dedupe by eventId so the summed budget/expense don't double-count it.
-          const seen = new Set();
-          const dedupedRows = rows.filter((row) => {
-            if (seen.has(row.eventId)) return false;
-            seen.add(row.eventId);
-            return true;
-          });
-
-          setEventReportByType((prev) => ({ ...prev, [id]: dedupedRows }));
-        })
-        .catch((error) => {
-          console.error('Failed to fetch budget event report for', id, error);
-          setEventReportByType((prev) => ({ ...prev, [id]: [] }));
-        });
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [budgetTypes]);
-
-  const cards = budgetTypes.map((type, i) => {
-    const eventRows = eventReportByType[type.budgetTypeId] || [];
-    return {
-      id: type.budgetTypeId,
-      title: type.budgetType,
-      budget: eventRows.reduce((sum, r) => sum + (Number(r.eventBudget) || 0), 0),
-      expense: eventRows.reduce((sum, r) => sum + (Number(r.eventExpenseAmount) || 0), 0),
-      color: CARD_COLORS[i % CARD_COLORS.length],
-    };
-  });
+  const cards = budgetTypes.map((type, i) => ({
+    id: type.budgetTypeId,
+    title: type.budgetType,
+    budget: Number(type.budget) || 0,
+    expense: Number(type.expense) || 0,
+    percentage: (Number(type.totalPercentage) || 0).toFixed(1),
+    color: CARD_COLORS[i % CARD_COLORS.length],
+  }));
 
   return (
     <div className="mt-8">
