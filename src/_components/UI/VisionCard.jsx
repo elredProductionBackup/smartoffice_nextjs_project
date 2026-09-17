@@ -58,6 +58,7 @@ const SingleVisionCard = ({
   onClick,
   clickable,
   hoverColor,
+  loading,
 }) => {
   const [hovered, setHovered] = useState(false);
 
@@ -83,9 +84,13 @@ const SingleVisionCard = ({
         </div>
         <span className="text-[#4b5563] font-medium text-lg">{title}</span>
       </div>
-      <div className={`text-[32px] font-bold ${textColorClass} mb-1 leading-none`}>
-        {amount}
-      </div>
+      {loading ? (
+        <div className="h-[32px] w-[140px] rounded-[10px] bg-black/10 animate-pulse mb-1" />
+      ) : (
+        <div className={`text-[32px] font-bold ${textColorClass} mb-1 leading-none`}>
+          {amount}
+        </div>
+      )}
       <div className="text-[#777777] text-[14px]">{subtext}</div>
     </div>
   );
@@ -94,6 +99,7 @@ const SingleVisionCard = ({
 const VisionCards = () => {
   const [showIncomePopup, setShowIncomePopup] = useState(false);
   const [report, setReport] = useState(null);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   const fetchReport = async () => {
@@ -103,6 +109,8 @@ const VisionCards = () => {
       setReport(data || null);
     } catch (error) {
       console.error('Failed to fetch finance dashboard report:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -131,6 +139,7 @@ const VisionCards = () => {
             key={card.id}
             {...card}
             amount={amountFor(card.title)}
+            loading={loading}
             onClick={card.clickable ? () => handleCardClick(card.title) : undefined}
           />
         ))}
