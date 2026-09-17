@@ -43,7 +43,7 @@ const EventCard = ({ eventId, title, date, location, portfolio, onClick, onRemov
         type="button"
         onClick={(e) => {
           e.stopPropagation();
-          onRemove(eventId);
+          onRemove(eventId, title);
         }}
         title="Remove from Top Upcoming Events"
         className="absolute top-3 right-3 w-6 h-6 rounded-full bg-white border border-[#e2e8f2] text-[#777777] flex items-center justify-center opacity-0 group-hover:opacity-100 hover:text-[#e11d48] hover:border-[#e11d48] transition-all duration-150 cursor-pointer"
@@ -82,6 +82,7 @@ const TopEvents = () => {
   const { budgetTypes } = useSelector((state) => state.budget);
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [confirmTarget, setConfirmTarget] = useState(null);
 
   useEffect(() => {
     dispatch(fetchBudgetTypes());
@@ -106,7 +107,15 @@ const TopEvents = () => {
     router.push(`/dashboard/events/${eventId}`);
   };
 
-  const handleRemove = (eventId) => {
+  const handleRemove = (eventId, title) => {
+    setConfirmTarget({ eventId, title });
+  };
+
+  const confirmRemove = () => {
+    const eventId = confirmTarget?.eventId;
+    setConfirmTarget(null);
+    if (!eventId) return;
+
     const removed = events.find((e) => e.eventId === eventId);
     setEvents((prev) => prev.filter((e) => e.eventId !== eventId));
 
@@ -143,6 +152,38 @@ const TopEvents = () => {
               onRemove={handleRemove}
             />
           ))}
+        </div>
+      )}
+
+      {confirmTarget && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40"
+          onClick={() => setConfirmTarget(null)}
+        >
+          <div
+            className="bg-white rounded-[16px] w-full max-w-[380px] mx-4 shadow-xl p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-[16px] font-bold text-[#1a1a2e] mb-1.5">Remove from Top Upcoming Events?</h3>
+            <p className="text-[13px] text-[#666] mb-5">
+              <span className="font-semibold text-[#1a1a2e]">{confirmTarget.title}</span> will no longer be featured
+              here. You can feature it again anytime from its portfolio page.
+            </p>
+            <div className="flex items-center justify-end gap-3">
+              <button
+                onClick={() => setConfirmTarget(null)}
+                className="px-5 h-[38px] rounded-[8px] border border-[#d1d5db] text-[13px] font-semibold text-[#333] hover:bg-[#f9fafb] cursor-pointer transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmRemove}
+                className="px-5 h-[38px] rounded-[8px] bg-[#e11d48] text-white text-[13px] font-semibold hover:bg-[#be123c] cursor-pointer transition-colors"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
