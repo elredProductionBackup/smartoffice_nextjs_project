@@ -37,6 +37,102 @@ export const getFinanceDashboardReport = async () => {
 };
 
 /**
+ * Mark an event as featured — it then appears in getFeaturedEvents
+ * ("Top Upcoming Events" on the Finance dashboard). Undo with removeFeaturedEvent.
+ *
+ * PATCH /smartOffice/addFeaturedEvent
+ * Body: { eventId: string }
+ *
+ * @param {string} eventId
+ * @returns {Promise<Object>}
+ */
+export const addFeaturedEvent = async (eventId) => {
+  try {
+    const res = await api.patch("/smartOffice/addFeaturedEvent", { eventId });
+
+    if (res.status >= 400 || typeof res.data !== "object" || res.data === null) {
+      const err = new Error(
+        `addFeaturedEvent failed with status ${res.status}: ${
+          typeof res.data === "string" ? res.data : res.data?.message || "Unknown error"
+        }`
+      );
+      err.response = { status: res.status, data: res.data };
+      throw err;
+    }
+
+    return res.data;
+  } catch (error) {
+    console.error("addFeaturedEvent API Error:", error?.response || error);
+    throw error;
+  }
+};
+
+/**
+ * Fetch events marked as featured (via addFeaturedEvent) — shown as
+ * "Top Upcoming Events" on the Finance dashboard.
+ *
+ * GET /smartOffice/getFeaturedEvents?start=&offset=
+ *
+ * @param {number} [start=1]
+ * @param {number} [offset=10]
+ * @returns {Promise<Object>}
+ */
+export const getFeaturedEvents = async (start = 1, offset = 10) => {
+  try {
+    const res = await api.get("/smartOffice/getFeaturedEvents", {
+      params: { start, offset },
+    });
+
+    if (res.status >= 400 || typeof res.data !== "object" || res.data === null) {
+      const err = new Error(
+        `getFeaturedEvents failed with status ${res.status}: ${
+          typeof res.data === "string" ? res.data : res.data?.message || "Unknown error"
+        }`
+      );
+      err.response = { status: res.status, data: res.data };
+      throw err;
+    }
+
+    return res.data;
+  } catch (error) {
+    console.error("getFeaturedEvents API Error:", error?.response || error);
+    throw error;
+  }
+};
+
+/**
+ * Un-feature an event — removes it from getFeaturedEvents.
+ *
+ * DELETE /smartOffice/removeFeaturedEvent
+ * Body: { eventId: string }
+ *
+ * @param {string} eventId
+ * @returns {Promise<Object>}
+ */
+export const removeFeaturedEvent = async (eventId) => {
+  try {
+    const res = await api.delete("/smartOffice/removeFeaturedEvent", {
+      data: { eventId },
+    });
+
+    if (res.status >= 400 || typeof res.data !== "object" || res.data === null) {
+      const err = new Error(
+        `removeFeaturedEvent failed with status ${res.status}: ${
+          typeof res.data === "string" ? res.data : res.data?.message || "Unknown error"
+        }`
+      );
+      err.response = { status: res.status, data: res.data };
+      throw err;
+    }
+
+    return res.data;
+  } catch (error) {
+    console.error("removeFeaturedEvent API Error:", error?.response || error);
+    throw error;
+  }
+};
+
+/**
  * Fetch the SmartNetwork Budget Report broken down by Category (Portfolio)
  *
  * GET /smartOffice/getBudgetReportCategory?start=&offset=

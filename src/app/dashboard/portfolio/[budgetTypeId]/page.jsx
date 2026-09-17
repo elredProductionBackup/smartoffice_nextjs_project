@@ -7,7 +7,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { FaArrowLeft, FaStar, FaRegStar } from "react-icons/fa6";
 import moment from "moment";
 import { fetchBudgetTypes } from "@/store/events/budgetChecklist/budgetThunks";
-import { getBudgetEventReportCategory } from "@/services/finance.service";
+import { getBudgetEventReportCategory, addFeaturedEvent, removeFeaturedEvent } from "@/services/finance.service";
 
 const GRID_COLS = "1.2fr 2.8fr 1fr 1fr 1.2fr 1fr 2fr";
 
@@ -84,7 +84,14 @@ const PortfolioDetailPage = () => {
   const portfolioName = budgetTypes.find((t) => t.budgetTypeId === budgetTypeId)?.budgetType || "Portfolio";
 
   const toggleFeature = (eventId) => {
-    setFeatured((prev) => ({ ...prev, [eventId]: !prev[eventId] }));
+    const nextFeatured = !featured[eventId];
+    setFeatured((prev) => ({ ...prev, [eventId]: nextFeatured }));
+
+    const request = nextFeatured ? addFeaturedEvent(eventId) : removeFeaturedEvent(eventId);
+    request.catch((error) => {
+      console.error(`Failed to ${nextFeatured ? "feature" : "unfeature"} event`, eventId, error);
+      setFeatured((prev) => ({ ...prev, [eventId]: !nextFeatured }));
+    });
   };
 
   let lastMonthLabel = null;
