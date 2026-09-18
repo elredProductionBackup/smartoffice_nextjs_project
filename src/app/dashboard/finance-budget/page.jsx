@@ -2,9 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useDispatch, useSelector } from 'react-redux';
 import { FiArrowLeft, FiPlus, FiChevronRight } from 'react-icons/fi';
-import { fetchBudgetTypes } from '@/store/events/budgetChecklist/budgetThunks';
 import { getBudgetReportCategory, getBudgetEventReportCategory } from '@/services/finance.service';
 import AddBudgetFinance from '@/_components/UI/AddBudgetFinance';
 
@@ -38,26 +36,34 @@ const GENERAL_EXPENSES = [
 
 const FinanceBudgetPage = () => {
   const router   = useRouter();
-  const dispatch = useDispatch();
-  const { budgetTypes, loadingTypes } = useSelector((state) => state.budget);
   const [expanded, setExpanded]         = useState(null);
   const [showAddBudget, setShowAddBudget]   = useState(false);
-  const [reportByType, setReportByType] = useState({});
+  const [categories, setCategories]     = useState([]);
+  const [loadingReport, setLoadingReport] = useState(true);
+  const [totals, setTotals] = useState({ assigned: 0, used: 0, remaining: 0 });
   const [eventReportByType, setEventReportByType] = useState({});
   const [loadingEventReport, setLoadingEventReport] = useState({});
 
+  // getBudgetReportCategory is now the source of truth for the category list
+  // itself — it returns portfolioName, totalEventCount and remainingAmount
+  // per category, plus the page-level totalAssigned/totalUsed/totalRemaining
+  // — so it drives the rows directly instead of budgetTypes from getBudgetType.
   const fetchReport = () => {
     getBudgetReportCategory(1, 100)
       .then((response) => {
         const rows = Array.isArray(response?.result) ? response.result : [];
-        const byType = {};
-        rows.forEach((row) => {
-          byType[row.budgetTypeId] = row;
+        setCategories(rows);
+        setTotals({
+          assigned: Number(response?.totalAssigned) || 0,
+          used: Number(response?.totalUsed) || 0,
+          remaining: Number(response?.totalRemaining) || 0,
         });
-        setReportByType(byType);
       })
       .catch((error) => {
         console.error('Failed to fetch budget report by category:', error);
+      })
+      .finally(() => {
+        setLoadingReport(false);
       });
   };
 
@@ -69,9 +75,7 @@ const FinanceBudgetPage = () => {
     fetchReport();
   };
 
-  const totalAssigned = Object.values(reportByType).reduce((sum, r) => sum + (Number(r.budgetAmount) || 0), 0);
-  const totalUsed = Object.values(reportByType).reduce((sum, r) => sum + (Number(r.totalExpense) || 0), 0);
-  const totalRemaining = totalAssigned - totalUsed;
+  const { assigned: totalAssigned, used: totalUsed, remaining: totalRemaining } = totals;
 
   const fetchEventReport = (id) => {
     if (eventReportByType[id] || loadingEventReport[id]) return;
@@ -104,19 +108,8 @@ const FinanceBudgetPage = () => {
   };
 
   useEffect(() => {
-    dispatch(fetchBudgetTypes());
     fetchReport();
-  }, [dispatch]);
-
-  // Eagerly fetch every portfolio's event report on load so the collapsed
-  // "N events" badge always matches what the expanded table would show,
-  // instead of relying on a separate (and inconsistent) events source.
-  useEffect(() => {
-    budgetTypes.forEach((item) => {
-      fetchEventReport(item.budgetTypeId);
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [budgetTypes]);
+  }, []);
 
   const toggle = (id) => {
     setExpanded((prev) => (prev === id ? null : id));
@@ -125,7 +118,13 @@ const FinanceBudgetPage = () => {
 
   return (
     <div className="p-6">
-      {showAddBudget && <AddBudgetFinance onClose={() => setShowAddBudget(false)} onAdd={handleAddBudget} />}
+      {showAddBudget && (
+        <AddBudgetFinance
+          portfolios={categories}
+          onClose={() => setShowAddBudget(false)}
+          onAdd={handleAddBudget}
+        />
+      )}
 
       {/* ── Header Banner ── */}
       <div
@@ -184,17 +183,16 @@ const FinanceBudgetPage = () => {
       </div>
 
       {/* ── Category Rows ── */}
-      {loadingTypes ? (
+      {loadingReport ? (
         <div className="text-center py-16 text-slate-400 text-[15px]">Loading...</div>
       ) : (
         <div className="flex flex-col gap-3">
-          {budgetTypes.map((item) => {
-            const s        = CATEGORY_STYLES[item.budgetType] || DEFAULT_STYLE;
+          {categories.map((item) => {
+            const s        = CATEGORY_STYLES[item.portfolioName] || DEFAULT_STYLE;
             const isOpen   = expanded === item.budgetTypeId;
-            const report   = reportByType[item.budgetTypeId];
-            const assigned = Number(report?.budgetAmount) || 0;
-            const used     = Number(report?.totalExpense) || 0;
-            const remaining = assigned - used;
+            const assigned = Number(item.budgetAmount) || 0;
+            const used     = Number(item.totalExpense) || 0;
+            const remaining = Number(item.remainingAmount) || 0;
 
             const eventRows = eventReportByType[item.budgetTypeId] || [];
             const isLoadingEventReport = loadingEventReport[item.budgetTypeId];
@@ -220,10 +218,10 @@ const FinanceBudgetPage = () => {
 
                   <div className="flex-1 min-w-0">
                     <div className="text-[18px] font-semibold" style={{ color: s.text }}>
-                      {item.budgetType}
+                      {item.portfolioName}
                     </div>
                     <div className="text-[13px] text-slate-400 mt-0.5">
-                      {isLoadingEventReport ? 'Loading…' : `${eventRows.length} events`}
+                      {item.totalEventCount} event{item.totalEventCount === 1 ? '' : 's'}
                     </div>
                   </div>
 

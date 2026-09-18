@@ -2,12 +2,9 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { FiX, FiChevronDown, FiCheck } from 'react-icons/fi';
-import { useSelector } from 'react-redux';
 import { addEditBudget } from '@/services/expense.service';
 
-export default function AddBudgetFinance({ onClose, onAdd }) {
-  const { budgetTypes } = useSelector((state) => state.budget);
-
+export default function AddBudgetFinance({ portfolios, onClose, onAdd }) {
   const [form, setForm] = useState({ portfolio: '', totalBudget: '' });
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -15,7 +12,7 @@ export default function AddBudgetFinance({ onClose, onAdd }) {
 
   const isValid = form.portfolio && form.totalBudget;
 
-  const selectedLabel = budgetTypes.find((bt) => bt.budgetTypeId === form.portfolio)?.budgetType;
+  const selectedLabel = portfolios.find((bt) => bt.budgetTypeId === form.portfolio)?.portfolioName;
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -96,7 +93,7 @@ export default function AddBudgetFinance({ onClose, onAdd }) {
             {/* Dropdown list */}
             {dropdownOpen && (
               <div className="absolute z-50 w-full mt-1 bg-white border border-[#e5e7eb] rounded-[10px] shadow-lg py-1.5 px-1.5 max-h-[240px] overflow-y-auto">
-                {budgetTypes.map((bt) => {
+                {portfolios.map((bt) => {
                   const isSelected = form.portfolio === bt.budgetTypeId;
                   return (
                     <button
@@ -112,7 +109,7 @@ export default function AddBudgetFinance({ onClose, onAdd }) {
                           : 'text-[#111] hover:bg-[#f9fafb]'
                       }`}
                     >
-                      {bt.budgetType}
+                      {bt.portfolioName}
                       {isSelected && <FiCheck className="text-[#2563eb] text-[15px]" />}
                     </button>
                   );
