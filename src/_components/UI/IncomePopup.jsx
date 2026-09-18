@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { FiX } from 'react-icons/fi';
+import { FiX, FiCheckCircle, FiAlertCircle } from 'react-icons/fi';
 import CustomDatePicker from './CustomDatePicker';
 import { addIncome, deleteIncome, getIncome } from '@/services/income.service';
 
@@ -63,6 +63,13 @@ export default function IncomePopup({ onClose, onIncomeChange }) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
+  const [notice, setNotice] = useState(null);
+
+  useEffect(() => {
+    if (!notice) return;
+    const t = setTimeout(() => setNotice(null), 800);
+    return () => clearTimeout(t);
+  }, [notice]);
 
   useEffect(() => {
     try {
@@ -119,8 +126,10 @@ export default function IncomePopup({ onClose, onIncomeChange }) {
 
       setForm(EMPTY_FORM);
       setShowForm(false);
+      setNotice({ type: 'success', message: 'Income added successfully' });
     } catch (error) {
       console.error('Failed to add income:', error);
+      setNotice({ type: 'error', message: 'Failed to add income. Please try again.' });
     } finally {
       setSubmitting(false);
     }
@@ -209,6 +218,25 @@ export default function IncomePopup({ onClose, onIncomeChange }) {
             Add Income Source
           </button>
         </div>
+
+        {notice && (
+          <div className="fixed inset-0 z-10000 flex items-center justify-center pointer-events-none">
+            <div className="flex flex-col items-center gap-3 bg-white rounded-2xl shadow-2xl px-12 py-10 min-w-[280px]">
+              {notice.type === 'success' ? (
+                <FiCheckCircle className="text-[56px] text-[#16a34a]" />
+              ) : (
+                <FiAlertCircle className="text-[56px] text-red-500" />
+              )}
+              <p
+                className={`text-[18px] font-bold text-center ${
+                  notice.type === 'success' ? 'text-[#16a34a]' : 'text-red-600'
+                }`}
+              >
+                {notice.message}
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* ── Scrollable Body ── */}
         {/* scrollbar-hide: scrollbarWidth (Firefox) + ::-webkit-scrollbar (Chrome) kept as inline/style-tag */}

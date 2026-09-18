@@ -19,6 +19,17 @@ export const fetchBudgetTypes = createAsyncThunk(
     } catch (error) {
       return thunkAPI.rejectWithValue(error.response?.data);
     }
+  },
+  {
+    // Several components on the same page (e.g. PortfolioCards, TopEvents)
+    // each dispatch this independently on mount — skip firing a duplicate
+    // request when one is already in flight. Deliberate refetches after a
+    // mutation (addBudgetCategory/removeBudgetCategory) still go through
+    // once the in-flight one has settled.
+    condition: (_, { getState }) => {
+      const { budget } = getState();
+      if (budget.loadingTypes) return false;
+    },
   }
 );
 
