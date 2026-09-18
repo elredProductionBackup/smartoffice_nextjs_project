@@ -22,6 +22,47 @@ export const getBudgetType = async (start = 1, offset = 10) => {
 };
 
 /**
+ * Fetch SmartNetwork expenses (general and/or event-related)
+ *
+ * GET /smartOffice/expense
+ * Query params: networkClusterCode, start, offset, type ("all"|"event"|"general"), eventId, approvedStatus
+ *
+ * Response result shape (one entry per expense):
+ *   expenseId, desc, type, total, remark, vendorName, approvedStatus,
+ *   attachment: [], createdAt, updatedAt, eventDetails,
+ *   budgetTypeDetails: { budgetType, budgetTypeId }
+ *
+ * @param {Object} [filters]
+ * @param {number} [filters.start=1]
+ * @param {number} [filters.offset=100]
+ * @param {string} [filters.type="all"] - "all" | "event" | "general"
+ * @param {string} [filters.eventId=""]
+ * @param {string} [filters.approvedStatus=""]
+ * @returns {Promise<Object>} { success, isAuth, totalExpense, pendingCount, totalAmount, message, result: [] }
+ */
+export const getExpenses = async (filters = {}) => {
+  try {
+    const {
+      start = 1,
+      offset = 100,
+      type = "all",
+      eventId = "",
+      approvedStatus = "",
+    } = filters;
+    const networkClusterCode =
+      typeof window !== "undefined" ? localStorage.getItem("networkClusterCode") : "";
+
+    const res = await api.get("/smartOffice/expense", {
+      params: { networkClusterCode, start, offset, type, eventId, approvedStatus },
+    });
+    return res.data;
+  } catch (error) {
+    console.error("getExpenses API Error:", error?.response || error);
+    throw error;
+  }
+};
+
+/**
  * Add or Edit a SmartNetwork Expense
  *
  * Backend schema:

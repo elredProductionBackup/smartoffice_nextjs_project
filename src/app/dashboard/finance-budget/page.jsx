@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { FiArrowLeft, FiPlus, FiChevronRight } from 'react-icons/fi';
 import { getBudgetReportCategory, getBudgetEventReportCategory } from '@/services/finance.service';
+import { getExpenses } from '@/services/expense.service';
 import AddBudgetFinance from '@/_components/UI/AddBudgetFinance';
 
 const CATEGORY_STYLES = {
@@ -27,13 +28,6 @@ const formatDate = (iso) => {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 };
 
-const GENERAL_EXPENSES = [
-  { id: 1, description: 'Office Supplies',    date: '3 Apr 2026',  amount: '₹8,500',  bill: 'INV-1042', vendor: 'Staples India', remark: 'Stationery for Q1'       },
-  { id: 2, description: 'Courier & Postage',  date: '11 Apr 2026', amount: '₹2,300',  bill: 'INV-1058', vendor: 'BlueDart',      remark: 'Documents dispatch'       },
-  { id: 3, description: 'Printing & Signage', date: '2 May 2026',  amount: '₹14,750', bill: 'INV-1091', vendor: 'PrintZone',     remark: 'Banners for annual meet'  },
-  { id: 4, description: 'Staff Refreshments', date: '18 May 2026', amount: '₹6,200',  bill: 'INV-1104', vendor: 'Café Blend',    remark: 'Monthly team lunch'       },
-];
-
 const FinanceBudgetPage = () => {
   const router   = useRouter();
   const [expanded, setExpanded]         = useState(null);
@@ -43,6 +37,8 @@ const FinanceBudgetPage = () => {
   const [totals, setTotals] = useState({ assigned: 0, used: 0, remaining: 0 });
   const [eventReportByType, setEventReportByType] = useState({});
   const [loadingEventReport, setLoadingEventReport] = useState({});
+  const [generalExpenses, setGeneralExpenses] = useState(null);
+  const [loadingGeneralExpenses, setLoadingGeneralExpenses] = useState(false);
 
   // getBudgetReportCategory is now the source of truth for the category list
   // itself — it returns portfolioName, totalEventCount and remainingAmount
@@ -107,6 +103,27 @@ const FinanceBudgetPage = () => {
       });
   };
 
+  // General expenses aren't filterable by budgetTypeId server-side (only
+  // type/eventId/approvedStatus), so fetch the full "general" list once and
+  // split it by budgetTypeDetails.budgetTypeId per portfolio client-side.
+  const fetchGeneralExpenses = () => {
+    if (generalExpenses || loadingGeneralExpenses) return;
+
+    setLoadingGeneralExpenses(true);
+    getExpenses({ start: 1, offset: 100, type: 'general' })
+      .then((response) => {
+        const rows = Array.isArray(response?.result) ? response.result : [];
+        setGeneralExpenses(rows);
+      })
+      .catch((error) => {
+        console.error('Failed to fetch general expenses:', error);
+        setGeneralExpenses([]);
+      })
+      .finally(() => {
+        setLoadingGeneralExpenses(false);
+      });
+  };
+
   useEffect(() => {
     fetchReport();
   }, []);
@@ -114,6 +131,7 @@ const FinanceBudgetPage = () => {
   const toggle = (id) => {
     setExpanded((prev) => (prev === id ? null : id));
     fetchEventReport(id);
+    fetchGeneralExpenses();
   };
 
   return (
@@ -199,6 +217,11 @@ const FinanceBudgetPage = () => {
             const portfolioTotalBudget  = eventRows.reduce((sum, r) => sum + (Number(r.eventBudget) || 0), 0);
             const portfolioTotalUsed    = eventRows.reduce((sum, r) => sum + (Number(r.eventExpenseAmount) || 0), 0);
             const portfolioTotalRemaining = portfolioTotalBudget - portfolioTotalUsed;
+
+            const categoryGeneralExpenses = (generalExpenses || []).filter(
+              (e) => e.budgetTypeDetails?.budgetTypeId === item.budgetTypeId
+            );
+            const generalTotal = categoryGeneralExpenses.reduce((sum, e) => sum + (Number(e.total) || 0), 0);
 
             return (
               <div
@@ -342,25 +365,39 @@ const FinanceBudgetPage = () => {
                       </div>
 
                       {/* Rows */}
-                      {GENERAL_EXPENSES.map((row) => (
-                        <div
-                          key={row.id}
-                          className="grid grid-cols-[2fr_1fr_1fr_1fr_1.5fr_1.5fr] gap-4 px-5 py-4 border-b border-slate-100 items-center"
-                        >
-                          <div className="text-[13px] font-medium text-slate-800">{row.description}</div>
-                          <div className="text-[13px] text-slate-600">{row.date}</div>
-                          <div className="text-[13px] font-semibold" style={{ color: s.text }}>{row.amount}</div>
-                          <div className="text-[12px] text-slate-400">{row.bill}</div>
-                          <div className="text-[13px] text-slate-600">{row.vendor}</div>
-                          <div className="text-[12px] text-slate-400">{row.remark}</div>
+                      {loadingGeneralExpenses ? (
+                        <div className="text-center py-6 text-slate-400 text-[13px]">
+                          Loading general expenses...
                         </div>
-                      ))}
+                      ) : categoryGeneralExpenses.length === 0 ? (
+                        <div className="text-center py-6 text-slate-400 text-[13px]">
+                          No general expenses in this category
+                        </div>
+                      ) : (
+                        categoryGeneralExpenses.map((expense) => (
+                          <div
+                            key={expense.expenseId}
+                            className="grid grid-cols-[2fr_1fr_1fr_1fr_1.5fr_1.5fr] gap-4 px-5 py-4 border-b border-slate-100 items-center"
+                          >
+                            <div className="text-[13px] font-medium text-slate-800">{expense.desc}</div>
+                            <div className="text-[13px] text-slate-600">{formatDate(expense.createdAt)}</div>
+                            <div className="text-[13px] font-semibold" style={{ color: s.text }}>
+                              {formatRupees(expense.total)}
+                            </div>
+                            <div className="text-[12px] text-slate-400">
+                              {expense.attachment?.length > 0 ? 'Attached' : '-'}
+                            </div>
+                            <div className="text-[13px] text-slate-600">{expense.vendorName || '-'}</div>
+                            <div className="text-[12px] text-slate-400">{expense.remark || '-'}</div>
+                          </div>
+                        ))
+                      )}
 
                       {/* Total */}
                       <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1.5fr_1.5fr] gap-4 px-5 py-3 bg-slate-50 items-center">
                         <div className="text-[13px] font-bold text-slate-700 uppercase tracking-wide">Total</div>
                         <div />
-                        <div className="text-[13px] font-bold" style={{ color: s.text }}>₹31,750</div>
+                        <div className="text-[13px] font-bold" style={{ color: s.text }}>{formatRupees(generalTotal)}</div>
                         <div /><div /><div />
                       </div>
 
