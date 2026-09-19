@@ -510,7 +510,7 @@ useEffect(() => {
                 </span>
 
                 <span className="font-semibold">
-                  {item.totalPercentage}%
+                  {item.totalPercentAllocation}%
                 </span>
               </div>
 

@@ -1,6 +1,8 @@
 "use client";
 
 import Image from "next/image";
+import { HiEllipsisVertical, HiOutlineTrash } from "react-icons/hi2";
+import { closeEventThunk, deleteEventThunk, fetchDocuments, fetchEventDetails, fetchMembersMedia, uploadDocument, uploadMemberMedia } from "@/store/events/eventsThunks";
 import { useParams, useSearchParams } from "next/navigation";
 // import { UPCOMING_EVENTS, PAST_EVENTS, DRAFT_EVENTS } from "@/assets/helpers/sampleEvents";
 import { EVENTS_DETAILS } from "@/assets/helpers/sampleEvents";
@@ -16,7 +18,7 @@ import { useDispatch, useSelector } from "react-redux";
 import moment from "moment";
 import Eventcosting from "@/_components/Eventcosting";
 import { closeAllEventsModals, openEventsModal } from "@/store/events/eventsUiSlice";
-import { closeEventThunk, fetchDocuments, fetchEventDetails, fetchMembersMedia, uploadDocument, uploadMemberMedia } from "@/store/events/eventsThunks";
+// import { closeEventThunk, fetchDocuments, fetchEventDetails, fetchMembersMedia, uploadDocument, uploadMemberMedia } from "@/store/events/eventsThunks";
 import MemberDetailsModal from "@/_components/MemberDetailsModal";
 import DeleteMediaConfirm from "@/_components/EventsComps/DeleteMediaConfirm";
 import { useRef } from "react";
@@ -25,7 +27,7 @@ import useInfiniteScrollObserver from "@/hooks/useInfiniteScroll";
 import { formatText, isValidImage } from "@/utils/functions";
 import EventsMenu from "@/_components/EventsComps/EventsMenu";
 import EventActionConfirmModal from "@/_components/EventsComps/EventActionConfirmModal";
-import { HiEllipsisVertical } from "react-icons/hi2";
+// import { HiEllipsisVertical } from "react-icons/hi2";
 import { useBudgetTypeStore } from "@/store/useBudgetTypeStore";
 
 export default function EventDetailsClient() {
@@ -40,6 +42,7 @@ export default function EventDetailsClient() {
 
   // ================= LOCAL STATE =================
   const [closing, setClosing] = useState(false);
+    const [deleting, setDeleting] = useState(false);
   const [registrationEnabled, setRegistrationEnabled] = useState(true);
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef(null);
@@ -53,6 +56,19 @@ export default function EventDetailsClient() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+    const handleDeleteEvent = async () => {
+    try {
+      setDeleting(true);
+      await dispatch(deleteEventThunk({ eventId })).unwrap();
+      router.push(isPast ? "/dashboard/events?tab=past" : "/dashboard/events?tab=upcomming");
+    } catch (err) {
+      console.error(err);
+    } finally {
+      dispatch(closeAllEventsModals());
+      setDeleting(false);
+    }
+  };
 
   // ================= REFS =================
   const containerRef = useRef();
@@ -279,15 +295,25 @@ export default function EventDetailsClient() {
         </div>
 
         <div className="flex flex-col items-end justify-between pb-4">
-          <div className="relative" ref={menuRef}>
-            {!isPast &&
-            <button
-              onClick={() => setShowMenu(!showMenu)}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
-            >
-              <HiEllipsisVertical className="text-3xl text-[#333]" />
-            </button>
-            }
+                    <div className="relative" ref={menuRef}>
+            {!isPast ? (
+              <button
+                onClick={() => setShowMenu(!showMenu)}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
+              >
+                <HiEllipsisVertical className="text-3xl text-[#333]" />
+              </button>
+            ) : (
+              <button
+                onClick={() =>
+                  dispatch(openEventsModal({ type: "CONFIRM_DELETE_EVENT", payload: { eventId } }))
+                }
+                className="flex items-center gap-2 px-3 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors text-sm cursor-pointer"
+              >
+                <HiOutlineTrash className="text-lg" />
+                Delete event
+              </button>
+            )}
 
             {showMenu && (
               <EventsMenu
@@ -298,21 +324,15 @@ export default function EventDetailsClient() {
                 }}
                 onCancel={() => {
                   setShowMenu(false);
-                  dispatch(
-                    openEventsModal({
-                      type: "CONFIRM_CANCEL_EVENT",
-                      payload: { eventId },
-                    })
-                  );
+                  dispatch(openEventsModal({ type: "CONFIRM_CANCEL_EVENT", payload: { eventId } }));
                 }}
                 onComplete={() => {
                   setShowMenu(false);
-                  dispatch(
-                    openEventsModal({
-                      type: "CONFIRM_COMPLETE_EVENT",
-                      payload: { eventId },
-                    })
-                  );
+                  dispatch(openEventsModal({ type: "CONFIRM_COMPLETE_EVENT", payload: { eventId } }));
+                }}
+                onDelete={() => {
+                  setShowMenu(false);
+                  dispatch(openEventsModal({ type: "CONFIRM_DELETE_EVENT", payload: { eventId } }));
                 }}
               />
             )}
@@ -422,6 +442,16 @@ export default function EventDetailsClient() {
           onConfirm={async () => {
             await handleCloseEvent(); 
           }}
+        />
+      )}
+            {currentModal?.type === "CONFIRM_DELETE_EVENT" && (
+        <EventActionConfirmModal
+          title="Are you sure you want to delete this event?"
+          confirmText="Delete"
+          cancelText="No"
+          isLoading={deleting}
+          onCancel={() => dispatch(closeAllEventsModals())}
+          onConfirm={handleDeleteEvent}
         />
       )}
 

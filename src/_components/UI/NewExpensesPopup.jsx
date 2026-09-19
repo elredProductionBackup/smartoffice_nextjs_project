@@ -218,8 +218,8 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
       return;
     }
 
-    if (remark && remark.trim().length < 2) {
-      alert("Remark must be at least 2 characters if provided.");
+    if (remark && remark.trim().length <= 3) {
+      alert("Remark must be more than 3 characters if provided.");
       return;
     }
 

@@ -208,56 +208,93 @@
    └─────────────────────────────────────────────────────────────────────────┘ */
  
 // GET — API 9: fetch all budget-category versions for an event
-export const getBudgetCategoryVersions = ({ eventId }) => {
-  return api.get("/smartOffice/getBudgetCategoryversions", {
-    params: { eventId },
-  });
-};
+// export const getBudgetCategoryVersions = ({ eventId }) => {
+//   return api.get("/smartOffice/getBudgetCategoryversions", {
+//     params: { eventId },
+//   });
+// };
  
 // PATCH — API 10: add/edit one split (line item) of a category version.
 // qty / rate / totalSplit are FULL arrays (one entry per version).
-export const patchBudgetCategoryVersion = ({
-  budgetCategoryVersionId,
-  qty,
-  rate,
-  totalSplit,
-  splitName,
-}) => {
-  return api.patch("/smartOffice/patchBudgetCategoryVersions", {
-    budgetCategoryVersionId,
-    qty,
-    rate,
-    totalSplit,
-    splitName,
-  });
-};
+// export const patchBudgetCategoryVersion = ({
+//   budgetCategoryVersionId,
+//   qty,
+//   rate,
+//   totalSplit,
+//   splitName,
+// }) => {
+//   return api.patch("/smartOffice/patchBudgetCategoryVersions", {
+//     budgetCategoryVersionId,
+//     qty,
+//     rate,
+//     totalSplit,
+//     splitName,
+//   });
+// }
  
 // PATCH — API 11: add/edit the ACTUAL expense for one split.
 // attachment rules (per spec):
 //   attachment === ""        → send empty key  → removes existing attachment
 //   attachment instanceof File → send file      → sets/replaces attachment
 //   attachment === undefined → omit key         → leaves attachment untouched
+// export const addEditEventExpense = ({
+//   budgetCategoryVersionId,
+//   vendorName,
+//   qty,
+//   rate,
+//   totalExpense,
+//   splitName,
+//   attachment,
+// }) => {
+//   const form = new FormData();
+//   form.append("budgetCategoryVersionId", budgetCategoryVersionId);
+//   form.append("vendorName", vendorName ?? "");
+//   form.append("qty", qty ?? 0);
+//   form.append("rate", rate ?? 0);
+//   form.append("totalExpense", totalExpense ?? 0);
+//   form.append("splitName", splitName);
+ 
+//   if (attachment === "") form.append("attachment", "");
+//   else if (attachment instanceof File) form.append("attachment", attachment);
+ 
+//   return api.patch("/smartOffice/addEditEventExpense", form, {
+//     headers: { "Content-Type": "multipart/form-data" },
+//   });
+// };
+
+
+export const getBudgetCategoryVersions = ({ eventId }) =>
+  api.get("/smartOffice/getBudgetCategoryversions", { params: { eventId } });
+
+export const patchBudgetCategoryVersion = ({
+  budgetCategoryVersionId, splitName, qty, rate, totalSplit,
+}) =>
+  api.patch("/smartOffice/patchBudgetCategoryVersions", {
+    budgetCategoryVersionId, splitName, qty, rate, totalSplit,
+  });
+
 export const addEditEventExpense = ({
-  budgetCategoryVersionId,
-  vendorName,
-  qty,
-  rate,
-  totalExpense,
-  splitName,
-  attachment,
+  budgetCategoryVersionId, splitName, vendorName, qty, rate, totalExpense, attachment, date,
 }) => {
   const form = new FormData();
   form.append("budgetCategoryVersionId", budgetCategoryVersionId);
-  form.append("vendorName", vendorName ?? "");
-  form.append("qty", qty ?? 0);
-  form.append("rate", rate ?? 0);
-  form.append("totalExpense", totalExpense ?? 0);
   form.append("splitName", splitName);
- 
-  if (attachment === "") form.append("attachment", "");
-  else if (attachment instanceof File) form.append("attachment", attachment);
- 
+  form.append("vendorName", vendorName ?? "");
+  form.append("qty", Number(qty) || 0);
+  form.append("rate", Number(rate) || 0);
+  form.append("totalExpense", Number(totalExpense) || 0);
+  form.append("date", date ?? Date.now());   // required — epoch ms
+  // Always send attachment: the File if picked, otherwise an empty key.
+  if (attachment instanceof File) form.append("attachment", attachment);
+  else form.append("attachment", "");
   return api.patch("/smartOffice/addEditEventExpense", form, {
     headers: { "Content-Type": "multipart/form-data" },
+  });
+};
+
+export const deleteEvents = ({ eventId }) => {
+  return api.delete("/smartOffice/deleteEvents", {
+    data: { eventId },
+    headers: { "Content-Type": "application/json" },
   });
 };

@@ -13,7 +13,6 @@ export function BudgetBreakupTable({
   expenseSubItemsBySection,
   onSectionBudgetChange,
   onVersionValueChange,
-  onActualChange,
   onSubItemFieldChange,
   onRemoveSection,
   onRemoveItem,
@@ -33,9 +32,6 @@ export function BudgetBreakupTable({
     setAddItemSectionId(null);
   };
 
-  console.log(versions??'not yet')
-  console.log(sections??'not yet section')
-
   return (
     <div className="overflow-x-auto rounded-xl border border-gray-200">
       <table className="w-full text-sm border-collapse min-w-[900px]">
@@ -50,8 +46,8 @@ export function BudgetBreakupTable({
                 colSpan={3}
                 className="text-center py-3 px-2 font-semibold text-gray-700 border-b border-l border-gray-200"
               >
-                <div className="text-xs text-gray-500 font-normal">{v.label ==="V1" && "Considering as initial version"}
-                   {/* {v.paxLabel} */}
+                <div className="text-xs text-gray-500 font-normal">
+                  {v.label === "V1" && "Considering as initial version"}
                 </div>
                 <div>Budget Amount — {v.label}</div>
               </th>
@@ -127,7 +123,7 @@ export function BudgetBreakupTable({
                   </td>
                 </tr>
 
-                {/* Expense sub-item rows — only those not already shown as budget item rows */}
+                {/* Expense sub-item rows not already shown as budget item rows */}
                 {(expenseSubItemsBySection[section.id] || [])
                   .filter((si) => !section.items.some((item) => item.id === si.subItemId))
                   .map((si, siIdx) => (
@@ -173,25 +169,12 @@ export function BudgetBreakupTable({
                           </Fragment>
                         );
                       })}
-                      <td className="py-1 px-2 border-b border-l border-gray-100 bg-green-50/60">
-                        <input
-                          type="number"
-                          min="0"
-                          value={si.attendees === "" ? "0" : si.attendees}
-                          onChange={(e) => onSubItemFieldChange(si.expenseId, si.subItemId, "attendees", e.target.value)}
-                          placeholder="Qty"
-                          className="w-full text-sm text-right text-gray-700 bg-transparent border border-transparent rounded hover:border-gray-300 focus:border-blue-400 focus:bg-white focus:outline-none px-1 py-0.5 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                        />
+                      {/* Actuals shown read-only — entered under Expense Items */}
+                      <td className="py-1 px-2 border-b border-l border-gray-100 bg-green-50/60 text-right text-sm text-gray-700">
+                        {si.attendees === "" ? "0" : si.attendees}
                       </td>
-                      <td className="py-1 px-2 border-b border-gray-100 bg-green-50/60">
-                        <input
-                          type="number"
-                          min="0"
-                          value={si.unitCost === "" ? "0" : si.unitCost}
-                          onChange={(e) => onSubItemFieldChange(si.expenseId, si.subItemId, "unitCost", e.target.value)}
-                          placeholder="Amt"
-                          className="w-full text-sm text-right text-gray-700 bg-transparent border border-transparent rounded hover:border-gray-300 focus:border-blue-400 focus:bg-white focus:outline-none px-1 py-0.5 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                        />
+                      <td className="py-1 px-2 border-b border-gray-100 bg-green-50/60 text-right text-sm text-gray-700">
+                        {si.unitCost === "" ? "0" : fmt(si.unitCost)}
                       </td>
                       <td className="py-1 px-3 border-b border-gray-100 bg-green-50/60 text-right text-sm font-medium text-green-700">
                         {si.amount > 0 ? fmt(si.amount) : "0"}
@@ -244,21 +227,11 @@ export function BudgetBreakupTable({
                       const over = actualTotal > budgetTotal && budgetTotal > 0 && actualTotal > 0;
                       return (
                         <Fragment key={item.id + "-actual-cols"}>
-                          <td className={`py-2 px-2 border-b border-l border-gray-100 ${over ? "bg-red-50" : "bg-green-50/20"}`}>
-                            <EditableCell
-                              value={av.qty}
-                              onChange={(val) => onActualChange(item.id, "qty", val)}
-                              className={over ? "text-red-700" : ""}
-                              editable={false}
-                            />
+                          <td className={`py-2 px-2 border-b border-l border-gray-100 text-right text-sm ${over ? "bg-red-50 text-red-700" : "bg-green-50/20 text-gray-700"}`}>
+                            {av.qty || 0}
                           </td>
-                          <td className={`py-2 px-2 border-b border-gray-100 ${over ? "bg-red-50" : "bg-green-50/20"}`}>
-                            <EditableCell
-                              value={av.unitCost}
-                              onChange={(val) => onActualChange(item.id, "unitCost", val)}
-                              className={over ? "text-red-700" : ""}
-                               editable={false}
-                            />
+                          <td className={`py-2 px-2 border-b border-gray-100 text-right text-sm ${over ? "bg-red-50 text-red-700" : "bg-green-50/20 text-gray-700"}`}>
+                            {av.unitCost ? fmt(av.unitCost) : 0}
                           </td>
                           <td className={`py-2 px-3 text-right border-b border-gray-100 font-medium ${over ? "bg-red-100 text-red-700" : "bg-green-50/20 text-gray-700"}`}>
                             <div className="flex items-center justify-end gap-1">

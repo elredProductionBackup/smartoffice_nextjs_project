@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { closeEventThunk, createEventActionable, createEventComment, createEventSubTask, deleteDocument, deleteMembersMedia, fetchBudgetCategoryVersions, fetchCollaborators, fetchDocuments, fetchEventChecklist, fetchEventDetails, fetchEventMembers, fetchEvents, fetchEventTaskSummaries, fetchMasterConfig, fetchMembersMedia, removeEventActionable, removeEventComment, removeEventSubTask, saveBudgetCategoryVersion, saveEventExpense, saveMasterConfig, toggleEventActionable, updateEventActionable, updateEventSubTask, uploadDocument, uploadMemberMedia } from "./eventsThunks";
+import { closeEventThunk, createEventActionable, createEventComment, createEventSubTask, deleteDocument, deleteEventThunk, deleteMembersMedia, fetchBudgetCategoryVersions, fetchCollaborators, fetchDocuments, fetchEventChecklist, fetchEventDetails, fetchEventMembers, fetchEvents, fetchEventTaskSummaries, fetchMasterConfig, fetchMembersMedia, removeEventActionable, removeEventComment, removeEventSubTask, saveBudgetCategoryVersion, saveEventExpense, saveMasterConfig, toggleEventActionable, updateEventActionable, updateEventSubTask, uploadDocument, uploadMemberMedia } from "./eventsThunks";
 import moment from "moment";
 
 const initialState = {
@@ -20,6 +20,7 @@ const initialState = {
   costingLoading: {},    
   costingError: {},     
   costingSaving: false,
+
 
   page: 1,
   limit: 10,
@@ -675,29 +676,65 @@ const eventSlice = createSlice({
           ...action.payload,
         }
       })
-        .addCase(fetchBudgetCategoryVersions.pending, (state, action) => {
-          const { eventId } = action.meta.arg;
-          state.costingLoading[eventId] = true;
-          state.costingError[eventId] = null;
-        })
-        .addCase(fetchBudgetCategoryVersions.fulfilled, (state, action) => {
-          const { eventId, list, total } = action.payload;
-          state.costingLoading[eventId] = false;
-          state.costingMap[eventId] = list;
-          state.costingTotal[eventId] = total;
-          state.costingFetched[eventId] = true;
-        })
-        .addCase(fetchBudgetCategoryVersions.rejected, (state, action) => {
-          const { eventId } = action.meta.arg;
-          state.costingLoading[eventId] = false;
-          state.costingError[eventId] = action.payload;
-        })
-        .addCase(saveBudgetCategoryVersion.pending, (state) => { state.costingSaving = true; })
-        .addCase(saveBudgetCategoryVersion.fulfilled, (state) => { state.costingSaving = false; })
-        .addCase(saveBudgetCategoryVersion.rejected, (state) => { state.costingSaving = false; })
-        .addCase(saveEventExpense.pending, (state) => { state.costingSaving = true; })
+             .addCase(saveEventExpense.pending, (state) => { state.costingSaving = true; })
         .addCase(saveEventExpense.fulfilled, (state) => { state.costingSaving = false; })
         .addCase(saveEventExpense.rejected, (state) => { state.costingSaving = false; })
+        // .addCase(fetchBudgetCategoryVersions.pending, (state, action) => {
+        //   const { eventId } = action.meta.arg;
+        //   state.costingLoading[eventId] = true;
+        //   state.costingError[eventId] = null;
+        // })
+        // .addCase(fetchBudgetCategoryVersions.fulfilled, (state, action) => {
+        //   const { eventId, list, total } = action.payload;
+        //   state.costingLoading[eventId] = false;
+        //   state.costingMap[eventId] = list;
+        //   state.costingTotal[eventId] = total;
+        //   state.costingFetched[eventId] = true;
+        // })
+        // .addCase(fetchBudgetCategoryVersions.rejected, (state, action) => {
+        //   const { eventId } = action.meta.arg;
+        //   state.costingLoading[eventId] = false;
+        //   state.costingError[eventId] = action.payload;
+        // })
+          .addCase(fetchBudgetCategoryVersions.pending, (state, action) => {
+    state.costingLoading[action.meta.arg.eventId] = true;
+    state.costingError = null;
+  })
+  .addCase(fetchBudgetCategoryVersions.fulfilled, (state, action) => {
+    const { eventId, list } = action.payload;
+    state.costingLoading[eventId] = false;
+    state.costingMap[eventId] = list;
+  })
+  .addCase(fetchBudgetCategoryVersions.rejected, (state, action) => {
+    state.costingLoading[action.meta.arg.eventId] = false;
+    state.costingError = action.payload || action.error.message;
+  })
+        .addCase(deleteEventThunk.fulfilled, (state, action) => {
+        const { eventId } = action.payload;
+        // pull it out of the lists so it vanishes without a refetch
+        state.rawEvents = state.rawEvents.filter((e) => (e.eventId || e.id) !== eventId);
+        state.groupedEvents = state.groupedEvents
+          .map((g) => ({ ...g, items: g.items.filter((it) => it.id !== eventId) }))
+          .filter((g) => g.items.length > 0);
+        // clear cached detail so a stale copy can't reappear
+        delete state.eventDetailsMap[eventId];
+        delete state.eventDetailsFetched[eventId];
+      })
+      .addCase(deleteEventThunk.rejected, (state, action) => {
+        console.error("Delete event failed:", action.payload);
+      })
+  .addMatcher(
+    (action) => action.type === saveBudgetCategoryVersion.pending.type || action.type === saveEventExpense.pending.type,
+    (state) => { state.costingSaving = true; state.costingError = null; }
+  )
+  .addMatcher(
+    (action) => action.type === saveBudgetCategoryVersion.fulfilled.type || action.type === saveBudgetCategoryVersion.rejected.type || action.type === saveEventExpense.fulfilled.type || action.type === saveEventExpense.rejected.type,
+    (state, action) => { state.costingSaving = false; if (action.error) state.costingError = action.payload || action.error.message; }
+  )
+        // .addCase(saveBudgetCategoryVersion.pending, (state) => { state.costingSaving = true; })
+        // .addCase(saveBudgetCategoryVersion.fulfilled, (state) => { state.costingSaving = false; })
+        // .addCase(saveBudgetCategoryVersion.rejected, (state) => { state.costingSaving = false; })
+ 
 
   },
 });

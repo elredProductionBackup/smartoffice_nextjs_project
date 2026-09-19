@@ -1,6 +1,6 @@
 // redux/events/eventThunks.js
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { addDocument, addEditEventExpense, addMemberMedia, closeEvent, deleteMemberMedia, deleteMyDocument, getBudgetCategoryVersions, getEventDetails, getEventMembers, getEventsList, getMasterList, getMembersMedia, getMyDocuments, patchBudgetCategoryVersion, updateMasterList  } from "@/services/events.service";
+import { addDocument, addEditEventExpense, addMemberMedia, closeEvent, deleteEvents, deleteMemberMedia, deleteMyDocument, getBudgetCategoryVersions, getEventDetails, getEventMembers, getEventsList, getMasterList, getMembersMedia, getMyDocuments, patchBudgetCategoryVersion, updateMasterList,  } from "@/services/events.service";
 
 import { addActionable, addComment, addSubTask, deleteActionable, deleteComment, deleteSubTask, getActionables, getCollaborators } from "@/services/actionable.service";
 
@@ -620,72 +620,123 @@ export const removeEventComment = createAsyncThunk(
    │ 2) Append these three thunks.                                             │
    └─────────────────────────────────────────────────────────────────────────┘ */
  
+// export const fetchBudgetCategoryVersions = createAsyncThunk(
+//   "events/fetchBudgetCategoryVersions",
+//   async ({ eventId }, { rejectWithValue }) => {
+//     try {
+//       const res = await getBudgetCategoryVersions({ eventId });
+//       return {
+//         eventId,
+//         list: res.data?.result || [],
+//         total: res.data?.totalBudgetVersionCount || 0,
+//       };
+//     } catch (err) {
+//       return rejectWithValue(err?.response?.data?.message || err.message);
+//     }
+//   }
+// );
+ 
+// export const saveBudgetCategoryVersion = createAsyncThunk(
+//   "events/saveBudgetCategoryVersion",
+//   async (
+//     { eventId, budgetCategoryVersionId, splitName, qty, rate, totalSplit },
+//     { dispatch, rejectWithValue }
+//   ) => {
+//     try {
+//       const res = await patchBudgetCategoryVersion({
+//         budgetCategoryVersionId,
+//         splitName,
+//         qty,
+//         rate,
+//         totalSplit,
+//       });
+//       // re-sync with server truth after a save
+//       if (eventId) dispatch(fetchBudgetCategoryVersions({ eventId }));
+//       return { eventId, budgetCategoryVersionId, splitName, data: res.data };
+//     } catch (err) {
+//       return rejectWithValue(err?.response?.data?.message || err.message);
+//     }
+//   }
+// );
+ 
+// export const saveEventExpense = createAsyncThunk(
+//   "events/saveEventExpense",
+//   async (
+//     {
+//       eventId,
+//       budgetCategoryVersionId,
+//       splitName,
+//       vendorName,
+//       qty,
+//       rate,
+//       totalExpense,
+//       attachment,
+//     },
+//     { dispatch, rejectWithValue }
+//   ) => {
+//     try {
+//       const res = await addEditEventExpense({
+//         budgetCategoryVersionId,
+//         splitName,
+//         vendorName,
+//         qty,
+//         rate,
+//         totalExpense,
+//         attachment,
+//       });
+//       if (eventId) dispatch(fetchBudgetCategoryVersions({ eventId }));
+//       return { eventId, splitName, data: res.data };
+//     } catch (err) {
+//       return rejectWithValue(err?.response?.data?.message || err.message);
+//     }
+//   }
+// );
+
+
 export const fetchBudgetCategoryVersions = createAsyncThunk(
   "events/fetchBudgetCategoryVersions",
   async ({ eventId }, { rejectWithValue }) => {
     try {
       const res = await getBudgetCategoryVersions({ eventId });
-      return {
-        eventId,
-        list: res.data?.result || [],
-        total: res.data?.totalBudgetVersionCount || 0,
-      };
-    } catch (err) {
-      return rejectWithValue(err?.response?.data?.message || err.message);
+      return { eventId, list: res.data?.result || [] };
+    } catch (error) {
+      return rejectWithValue(error?.response?.data?.message || error.message);
     }
   }
 );
- 
+
 export const saveBudgetCategoryVersion = createAsyncThunk(
   "events/saveBudgetCategoryVersion",
-  async (
-    { eventId, budgetCategoryVersionId, splitName, qty, rate, totalSplit },
-    { dispatch, rejectWithValue }
-  ) => {
+  async ({ eventId, ...payload }, { dispatch, rejectWithValue }) => {
     try {
-      const res = await patchBudgetCategoryVersion({
-        budgetCategoryVersionId,
-        splitName,
-        qty,
-        rate,
-        totalSplit,
-      });
-      // re-sync with server truth after a save
-      if (eventId) dispatch(fetchBudgetCategoryVersions({ eventId }));
-      return { eventId, budgetCategoryVersionId, splitName, data: res.data };
-    } catch (err) {
-      return rejectWithValue(err?.response?.data?.message || err.message);
+      const res = await patchBudgetCategoryVersion(payload);
+      await dispatch(fetchBudgetCategoryVersions({ eventId })).unwrap();
+      return { eventId, data: res.data };
+    } catch (error) {
+      return rejectWithValue(error?.response?.data?.message || error.message);
     }
   }
 );
- 
+
 export const saveEventExpense = createAsyncThunk(
   "events/saveEventExpense",
-  async (
-    {
-      eventId,
-      budgetCategoryVersionId,
-      splitName,
-      vendorName,
-      qty,
-      rate,
-      totalExpense,
-      attachment,
-    },
-    { dispatch, rejectWithValue }
-  ) => {
+  async ({ eventId, ...payload }, { dispatch, rejectWithValue }) => {
     try {
-      const res = await addEditEventExpense({
-        budgetCategoryVersionId,
-        splitName,
-        vendorName,
-        qty,
-        rate,
-        totalExpense,
-        attachment,
-      });
-      if (eventId) dispatch(fetchBudgetCategoryVersions({ eventId }));
-      return { eventId, splitName, data: res.data };
+      const res = await addEditEventExpense(payload);
+      await dispatch(fetchBudgetCategoryVersions({ eventId })).unwrap();
+      return { eventId, data: res.data };
+    } catch (error) {
+      return rejectWithValue(error?.response?.data?.message || error.message);
+    }
+  }
+);
+
+export const deleteEventThunk = createAsyncThunk(
+  "events/deleteEvent",
+  async ({ eventId }, { rejectWithValue }) => {
+    try {
+      const res = await deleteEvents({ eventId });
+      return { eventId, data: res?.data };
     } catch (err) {
       return rejectWithValue(err?.response?.data?.message || err.message);
     }

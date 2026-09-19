@@ -7,8 +7,8 @@ export function ExpenseItemsSection({
   expenseItems,
   onAddExpense,
   onRemoveExpense,
-  onFieldChange,
   onSubItemChange,
+  onSaveExpense,
 }) {
   const [selectedCategory, setSelectedCategory] = useState("");
 
@@ -54,8 +54,8 @@ export function ExpenseItemsSection({
             key={expense.id}
             expense={expense}
             onRemove={onRemoveExpense}
-            onFieldChange={onFieldChange}
             onSubItemChange={onSubItemChange}
+            onSave={onSaveExpense}
           />
         ))}
       </div>
