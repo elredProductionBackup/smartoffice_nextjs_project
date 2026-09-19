@@ -7,6 +7,7 @@ import { getBudgetReportCategory, getBudgetEventReportCategory } from '@/service
 import { getExpenses } from '@/services/expense.service';
 import { formatCompactAmount } from '@/utils/currency';
 import AddBudgetFinance from '@/_components/UI/AddBudgetFinance';
+import TitleTooltipHover from '@/_components/UI/TitleTooltipHover';
 
 const CATEGORY_STYLES = {
   'Learning':             { text: '#2563eb', bg: '#eff6ff', border: '#dbeafe' },
@@ -23,6 +24,7 @@ const CATEGORY_STYLES = {
 const DEFAULT_STYLE = { text: '#374151', bg: '#f9fafb', border: '#f3f4f6' };
 
 const formatRupees = (value) => `₹${formatCompactAmount(value)}`;
+const formatExactRupees = (value) => `₹${(Number(value) || 0).toLocaleString('en-IN')}`;
 
 const formatDate = (iso) => {
   if (!iso) return '-';
@@ -181,21 +183,27 @@ const FinanceBudgetPage = () => {
               style={{ background: 'rgba(255,255,255,0.15)' }}
             >
               <div className="text-white/75 text-[13px] font-medium mb-1.5">Total Assigned</div>
-              <div className="text-white text-[22px] font-bold leading-none">{formatRupees(totalAssigned)}</div>
+              <TitleTooltipHover title={formatExactRupees(totalAssigned)}>
+                <div className="text-white text-[22px] font-bold leading-none">{formatRupees(totalAssigned)}</div>
+              </TitleTooltipHover>
             </div>
             <div
               className="rounded-[14px] px-7 py-4 text-center min-w-[160px]"
               style={{ background: 'rgba(255,255,255,0.15)' }}
             >
               <div className="text-white/75 text-[13px] font-medium mb-1.5">Total Used</div>
-              <div className="text-white text-[22px] font-bold leading-none">{formatRupees(totalUsed)}</div>
+              <TitleTooltipHover title={formatExactRupees(totalUsed)}>
+                <div className="text-white text-[22px] font-bold leading-none">{formatRupees(totalUsed)}</div>
+              </TitleTooltipHover>
             </div>
             <div
               className="rounded-[14px] px-7 py-4 text-center min-w-[160px]"
               style={{ background: 'rgba(255,255,255,0.15)' }}
             >
               <div className="text-white/75 text-[13px] font-medium mb-1.5">Total Remaining</div>
-              <div className="text-white text-[22px] font-bold leading-none">{formatRupees(totalRemaining)}</div>
+              <TitleTooltipHover title={formatExactRupees(totalRemaining)}>
+                <div className="text-white text-[22px] font-bold leading-none">{formatRupees(totalRemaining)}</div>
+              </TitleTooltipHover>
             </div>
           </div>
         </div>
@@ -249,26 +257,32 @@ const FinanceBudgetPage = () => {
                     </div>
                   </div>
 
-                  <div className="flex gap-14 items-center">
-                    <div className="text-right">
+                  <div className="flex items-center">
+                    <div className="text-right w-[130px] shrink-0 pr-6">
                       <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-1">
                         Assigned Budget
                       </div>
-                      <div className="text-[20px] font-bold" style={{ color: s.text }}>
-                        {formatRupees(assigned)}
-                      </div>
+                      <TitleTooltipHover title={formatExactRupees(assigned)}>
+                        <div className="text-[20px] font-bold" style={{ color: s.text }}>
+                          {formatRupees(assigned)}
+                        </div>
+                      </TitleTooltipHover>
                     </div>
-                    <div className="text-right">
+                    <div className="text-right w-[130px] shrink-0 border-l border-slate-200 px-6">
                       <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-1">
                         Used
                       </div>
-                      <div className="text-[20px] font-bold text-[#6366f1]">{formatRupees(used)}</div>
+                      <TitleTooltipHover title={formatExactRupees(used)}>
+                        <div className="text-[20px] font-bold text-[#6366f1]">{formatRupees(used)}</div>
+                      </TitleTooltipHover>
                     </div>
-                    <div className="text-right">
+                    <div className="text-right w-[130px] shrink-0 border-l border-slate-200 pl-6">
                       <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-1">
                         Remaining
                       </div>
-                      <div className="text-[20px] font-bold text-[#059669]">{formatRupees(remaining)}</div>
+                      <TitleTooltipHover title={formatExactRupees(remaining)}>
+                        <div className="text-[20px] font-bold text-[#059669]">{formatRupees(remaining)}</div>
+                      </TitleTooltipHover>
                     </div>
                   </div>
                 </div>
