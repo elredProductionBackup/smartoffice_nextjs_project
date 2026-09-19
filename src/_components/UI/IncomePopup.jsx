@@ -62,8 +62,10 @@ export default function IncomePopup({ onClose, onIncomeChange }) {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
-  const [deletingId, setDeletingId] = useState(null);
   const [notice, setNotice] = useState(null);
+  const [pendingDelete, setPendingDelete] = useState(null);
+  const [deleteStatus, setDeleteStatus] = useState('idle'); // idle | deleting | deleted
+  const [deleteError, setDeleteError] = useState('');
 
   useEffect(() => {
     if (!notice) return;
@@ -135,17 +137,26 @@ export default function IncomePopup({ onClose, onIncomeChange }) {
     }
   };
 
-  const handleDeleteSource = async (incomeId) => {
-    setDeletingId(incomeId);
+  const confirmDelete = async () => {
+    if (!pendingDelete) return;
+
+    setDeleteStatus('deleting');
+    setDeleteError('');
     try {
-      const result = await deleteIncome(incomeId);
+      const result = await deleteIncome(pendingDelete.id);
       console.log('deleteIncome result:', result);
-      setSources((prev) => prev.filter((s) => s.id !== incomeId));
+      setSources((prev) => prev.filter((s) => s.id !== pendingDelete.id));
       onIncomeChange?.();
+
+      setDeleteStatus('deleted');
+      setTimeout(() => {
+        setPendingDelete(null);
+        setDeleteStatus('idle');
+      }, 700);
     } catch (error) {
       console.error('Failed to delete income:', error);
-    } finally {
-      setDeletingId(null);
+      setDeleteError(error?.response?.data?.message || error?.message || 'Failed to delete income');
+      setDeleteStatus('idle');
     }
   };
 
@@ -382,9 +393,8 @@ export default function IncomePopup({ onClose, onIncomeChange }) {
                         </div>
                         <button
                           type="button"
-                          onClick={() => handleDeleteSource(src.id)}
-                          disabled={deletingId === src.id}
-                          className="opacity-0 group-hover:opacity-100 w-6 h-6 rounded-md flex items-center justify-center bg-red-50 hover:bg-red-100 text-red-500 cursor-pointer border-none transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed"
+                          onClick={() => setPendingDelete(src)}
+                          className="opacity-0 group-hover:opacity-100 w-6 h-6 rounded-md flex items-center justify-center bg-red-50 hover:bg-red-100 text-red-500 cursor-pointer border-none transition-all duration-150"
                         >
                           <FiX className="w-3.5 h-3.5" />
                         </button>
@@ -415,6 +425,60 @@ export default function IncomePopup({ onClose, onIncomeChange }) {
           </div>
         </div>
       </div>
+
+      {pendingDelete && (
+        <div
+          className="fixed inset-0 z-10000 flex items-center justify-center bg-black/40"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (deleteStatus === 'idle') setPendingDelete(null);
+          }}
+        >
+          <div
+            className="bg-white rounded-[16px] w-full max-w-[360px] mx-4 shadow-xl p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {deleteStatus === 'idle' && (
+              <>
+                <h3 className="text-[16px] font-bold text-[#1a1a2e] mb-1.5">Delete income source?</h3>
+                <p className="text-[13px] text-[#666] mb-5">
+                  <span className="font-semibold text-[#1a1a2e]">{pendingDelete.type}</span> (₹
+                  {formatRupees(pendingDelete.amount)}) will be removed. This can&apos;t be undone.
+                </p>
+                {deleteError && <p className="text-[12px] text-red-600 mb-3">{deleteError}</p>}
+                <div className="flex items-center justify-end gap-3">
+                  <button
+                    onClick={() => setPendingDelete(null)}
+                    className="px-5 h-[38px] rounded-[8px] border border-[#d1d5db] text-[13px] font-semibold text-[#333] hover:bg-[#f9fafb] cursor-pointer transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmDelete}
+                    className="px-5 h-[38px] rounded-[8px] bg-red-500 text-white text-[13px] font-semibold hover:bg-red-600 cursor-pointer transition-colors"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </>
+            )}
+
+            {deleteStatus === 'deleting' && (
+              <div className="flex flex-col items-center py-3 gap-3">
+                <div className="w-8 h-8 border-[3px] border-red-500 border-t-transparent rounded-full animate-spin" />
+                <p className="text-[13px] font-semibold text-[#333]">Deleting {pendingDelete.type}…</p>
+              </div>
+            )}
+
+            {deleteStatus === 'deleted' && (
+              <div className="flex flex-col items-center py-3 gap-3">
+                <FiCheckCircle className="text-[32px] text-green-500" />
+                <p className="text-[13px] font-semibold text-[#333]">{pendingDelete.type} deleted</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </>
   );
 }

@@ -81,7 +81,6 @@ import memberLogo from "@/assets/logo/tdesign_member.svg";
 // import archiveLogo from "@/assets/logo/ion_archive-outline.svg";
 import eventsLogo from "@/assets/logo/events.svg";
 import actionableLogo from "@/assets/logo/actionable.svg";
-import expenseLogo from "@/assets/logo/expense-records.svg";
 import Image from "next/image";
 import Header from "@/_components/Header";
 import useGlobalLoader from "@/store/useGlobalLoader";
@@ -89,6 +88,7 @@ import { useEffect } from "react";
 import ProtectedRoute from "@/_components/ProtectedRoute";
 import { useSelector } from "react-redux";
 import { FiDollarSign, FiMessageCircle } from "react-icons/fi";
+import { FaFileInvoiceDollar } from "react-icons/fa6";
 
 export default function DashboardLayout({ children }) {
   const pathname = usePathname();
@@ -112,12 +112,17 @@ export default function DashboardLayout({ children }) {
   {
     name: "Expense Records",
     path: "/dashboard/expense-records",
-    logo: expenseLogo,
+    icon: <FaFileInvoiceDollar className="text-[22px]" />,
   },
   {
     name: "Members",
     path: "/dashboard/members?tab=member",
     logo: memberLogo,
+  },
+  {
+    name: "Finance",
+    path: "/dashboard/finance",
+    icon: <FiDollarSign className="text-[22px]" />,
   },
 ];
 
@@ -127,7 +132,7 @@ const userMenu = [
   {
     name: "Expense Records",
     path: "/dashboard/expense-records",
-    logo: expenseLogo,
+    icon: <FaFileInvoiceDollar className="text-[22px]" />,
   },
 ];
 
