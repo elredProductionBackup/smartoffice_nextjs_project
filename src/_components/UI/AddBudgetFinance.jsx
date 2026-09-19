@@ -1,13 +1,15 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { FiX, FiChevronDown, FiCheck } from 'react-icons/fi';
+import { FiX, FiChevronDown, FiCheck, FiCheckCircle } from 'react-icons/fi';
 import { addEditBudget } from '@/services/expense.service';
 
 export default function AddBudgetFinance({ portfolios, onClose, onAdd }) {
   const [form, setForm] = useState({ portfolio: '', totalBudget: '' });
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+  const [showSuccess, setShowSuccess] = useState(false);
   const dropdownRef = useRef(null);
 
   const isValid = form.portfolio && form.totalBudget;
@@ -28,6 +30,7 @@ export default function AddBudgetFinance({ portfolios, onClose, onAdd }) {
     if (!isValid) return;
 
     setSubmitting(true);
+    setSubmitError('');
     try {
       const result = await addEditBudget({
         budgetTypeId: form.portfolio,
@@ -47,9 +50,13 @@ export default function AddBudgetFinance({ portfolios, onClose, onAdd }) {
         );
 
       onAdd(form.portfolio, Number(saved?.budgetAmount ?? form.totalBudget));
-      onClose();
+      setShowSuccess(true);
+      setTimeout(() => {
+        onClose();
+      }, 800);
     } catch (error) {
       console.error('Failed to add budget:', error);
+      setSubmitError(error?.response?.data?.message || error?.message || 'Failed to add budget. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -138,6 +145,8 @@ export default function AddBudgetFinance({ portfolios, onClose, onAdd }) {
           </div>
         </div>
 
+        {submitError && <p className="text-[13px] text-red-600 mb-4">{submitError}</p>}
+
         {/* Actions */}
         <div className="flex gap-3">
           <button
@@ -161,6 +170,15 @@ export default function AddBudgetFinance({ portfolios, onClose, onAdd }) {
         </div>
 
       </div>
+
+      {showSuccess && (
+        <div className="fixed inset-0 z-10000 flex items-center justify-center pointer-events-none">
+          <div className="flex flex-col items-center gap-3 bg-white rounded-2xl shadow-2xl px-12 py-10 min-w-[280px]">
+            <FiCheckCircle className="text-[56px] text-[#16a34a]" />
+            <p className="text-[18px] font-bold text-center text-[#16a34a]">Budget added successfully</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -42,8 +42,10 @@ const PortfolioCard = ({ id, title, budget, expense, percentage, color }) => {
                 <Cell key="cell-1" fill="#e9ecef" />
               </Pie>
               <Tooltip
-                formatter={(value) => `${value}%`}
+                formatter={(value) => `${Number(value).toFixed(2)}%`}
                 contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '13px' }}
+                itemStyle={{ color: '#333333' }}
+                labelStyle={{ color: '#333333' }}
               />
             </PieChart>
           </ResponsiveContainer>
