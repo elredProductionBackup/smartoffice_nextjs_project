@@ -1,7 +1,9 @@
 'use client';
 
+import { formatCompactAmount } from '@/utils/currency';
+
 function formatIndianCurrency(amount) {
-  return `₹${Math.round(amount).toLocaleString('en-IN')}`;
+  return `₹${formatCompactAmount(Math.round(amount))}`;
 }
 
 export default function BudgetPieChartTooltip({ active, payload, totalBudget = 0 }) {

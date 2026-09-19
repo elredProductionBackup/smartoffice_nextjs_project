@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { FiX, FiCheckCircle, FiAlertCircle } from 'react-icons/fi';
 import CustomDatePicker from './CustomDatePicker';
 import { addIncome, deleteIncome, getIncome } from '@/services/income.service';
+import { formatCompactAmount } from '@/utils/currency';
 
 const TAG_COLORS = {
   default: { bg: '#e8f0fe', text: '#1a56db', border: '#c3d3fc' },
@@ -11,7 +12,7 @@ const TAG_COLORS = {
 
 const formatRupees = (value) => {
   if (!value && value !== 0) return '';
-  return Number(value).toLocaleString('en-IN');
+  return formatCompactAmount(value);
 };
 
 const today = () => {

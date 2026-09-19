@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { FiArrowLeft, FiPlus, FiChevronRight } from 'react-icons/fi';
 import { getBudgetReportCategory, getBudgetEventReportCategory } from '@/services/finance.service';
 import { getExpenses } from '@/services/expense.service';
+import { formatCompactAmount } from '@/utils/currency';
 import AddBudgetFinance from '@/_components/UI/AddBudgetFinance';
 
 const CATEGORY_STYLES = {
@@ -21,7 +22,7 @@ const CATEGORY_STYLES = {
 
 const DEFAULT_STYLE = { text: '#374151', bg: '#f9fafb', border: '#f3f4f6' };
 
-const formatRupees = (value) => `₹${(Number(value) || 0).toLocaleString('en-IN')}`;
+const formatRupees = (value) => `₹${formatCompactAmount(value)}`;
 
 const formatDate = (iso) => {
   if (!iso) return '-';
