@@ -171,7 +171,7 @@ const userMenu = [
                       ? pathname === basePath
                       : pathname === basePath || pathname.startsWith(`${basePath}/`);
                   return (
-                    <li key={item.path}>
+                    <li key={item.path} className="relative group">
                       <Link
                         href={item.path}
                         className={`h-11 w-11 flex items-center justify-center rounded-md transition
@@ -185,10 +185,20 @@ const userMenu = [
                           ? item.icon
                           : <Image src={item.logo} alt={item.name} />}
                       </Link>
+
+                      <span
+                        className="pointer-events-none absolute left-[calc(100%+12px)] top-1/2 -translate-y-1/2 z-50
+                        whitespace-nowrap rounded-lg bg-[#1a1a2e] px-3 py-1.5 text-[13px] font-medium text-white
+                        opacity-0 scale-95 origin-left shadow-lg transition-all duration-150
+                        group-hover:opacity-100 group-hover:scale-100"
+                      >
+                        {item.name}
+                        <span className="absolute right-full top-1/2 -translate-y-1/2 border-[6px] border-transparent border-r-[#1a1a2e]" />
+                      </span>
                     </li>
                   );
                 })}
-                <li>
+                <li className="relative group">
                   <Link
                     href="/dashboard/send-bulk"
                     className={`h-11 w-11 flex items-center justify-center rounded-md transition
@@ -200,6 +210,16 @@ const userMenu = [
                   >
                     <FiMessageCircle className="text-[22px]" />
                   </Link>
+
+                  <span
+                    className="pointer-events-none absolute left-[calc(100%+12px)] top-1/2 -translate-y-1/2 z-50
+                    whitespace-nowrap rounded-lg bg-[#1a1a2e] px-3 py-1.5 text-[13px] font-medium text-white
+                    opacity-0 scale-95 origin-left shadow-lg transition-all duration-150
+                    group-hover:opacity-100 group-hover:scale-100"
+                  >
+                    Send Bulk
+                    <span className="absolute right-full top-1/2 -translate-y-1/2 border-[6px] border-transparent border-r-[#1a1a2e]" />
+                  </span>
                 </li>
               </ul>
             </div>
