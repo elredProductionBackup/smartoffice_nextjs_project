@@ -188,12 +188,12 @@ const userMenu = [
 
                       <span
                         className="pointer-events-none absolute left-[calc(100%+12px)] top-1/2 -translate-y-1/2 z-50
-                        whitespace-nowrap rounded-lg bg-[#1a1a2e] px-3 py-1.5 text-[13px] font-medium text-white
-                        opacity-0 scale-95 origin-left shadow-lg transition-all duration-150
+                        whitespace-nowrap rounded-lg bg-[#F2F7FF] border border-[#D3E3FD] px-3 py-1.5 text-[13px] font-medium text-[#333333]
+                        opacity-0 scale-95 origin-left shadow-md transition-all duration-150
                         group-hover:opacity-100 group-hover:scale-100"
                       >
                         {item.name}
-                        <span className="absolute right-full top-1/2 -translate-y-1/2 border-[6px] border-transparent border-r-[#1a1a2e]" />
+                        <span className="absolute right-full top-1/2 -translate-y-1/2 h-2.5 w-2.5 rotate-45 bg-[#F2F7FF] border-l border-b border-[#D3E3FD] -mr-[5px]" />
                       </span>
                     </li>
                   );
@@ -213,12 +213,12 @@ const userMenu = [
 
                   <span
                     className="pointer-events-none absolute left-[calc(100%+12px)] top-1/2 -translate-y-1/2 z-50
-                    whitespace-nowrap rounded-lg bg-[#1a1a2e] px-3 py-1.5 text-[13px] font-medium text-white
-                    opacity-0 scale-95 origin-left shadow-lg transition-all duration-150
+                    whitespace-nowrap rounded-lg bg-[#F2F7FF] border border-[#D3E3FD] px-3 py-1.5 text-[13px] font-medium text-[#333333]
+                    opacity-0 scale-95 origin-left shadow-md transition-all duration-150
                     group-hover:opacity-100 group-hover:scale-100"
                   >
                     Send Bulk
-                    <span className="absolute right-full top-1/2 -translate-y-1/2 border-[6px] border-transparent border-r-[#1a1a2e]" />
+                    <span className="absolute right-full top-1/2 -translate-y-1/2 h-2.5 w-2.5 rotate-45 bg-[#F2F7FF] border-l border-b border-[#D3E3FD] -mr-[5px]" />
                   </span>
                 </li>
               </ul>
