@@ -8,14 +8,6 @@ function formatExpenseDate(date) {
   return parsed.isValid() ? parsed.format("YYYY-MM-DD") : "-";
 }
 
-// function formatExpenseDate(date) {
-//   if (!date) return "-";
-//   if (typeof date === "string") return date;
-//   const parsed = new Date(date);
-//   if (Number.isNaN(parsed.getTime())) return "-";
-//   return parsed.toISOString().split("T")[0];
-// }
-
 function parseAmount(value) {
   const num = Number(String(value).replace(/,/g, ""));
   return Number.isFinite(num) ? num : 0;
@@ -46,7 +38,7 @@ export function eventCostingToExpenseRecord({
     event: eventName || "-",
     portfolio: portfolio || "-",
     date: formatExpenseDate(date),
-    totalAmount: total, 
+    totalAmount: total,
     remark: remark,
     vendor: vendorName?.trim() || "-",
     bill: billFileName || "-",
@@ -91,16 +83,16 @@ export function formExpenseToRecord(expense) {
 }
 
 // Map a raw API expense record into the shape the table expects.
-// Adjust the right-hand field names to match your actual API response.
 function apiExpenseToRecord(item) {
   return {
     id: item.expenseId,
     description: item.desc || "-",
-    type: item.type || '-',
+    type: item.type || "-",
     event: item.eventName || item.event || "-",
     portfolio: item.budgetTypeDetails?.budgetType || "-",
     date: formatExpenseDate(item.date || item.createdAt),
-    totalAmount: item.total || '-',
+    // Keep this numeric so aggregates and deltas stay reliable.
+    totalAmount: parseAmount(item.total),
     remark: item.remark || "-",
     vendor: item.vendorName || item.vendor || "-",
     bill: item.billFileName || item.bill || "-",
@@ -115,22 +107,21 @@ function apiExpenseToRecord(item) {
 export const useExpenseRecordsStore = create((set, get) => ({
   expenses: [],
   totalCount: 0,
-  totalExpense: 0,    // ← add
-  totalAmount: 0,     // ← add
+  totalExpense: 0,
+  totalAmount: 0,
   pendingCount: 0,
   loading: false,
   error: null,
   stats: { totalExpenses: 0, pendingCount: 0, totalAmount: 0 },
   hydrated: false,
 
-  // No-op kept for backward compatibility with components that still call it.
   hydrateFromStorage: () => {
     if (get().hydrated) return;
     set({ hydrated: true });
   },
 
   /**
-   * Fetch expenses using the shared axios client (same pattern as members).
+   * Fetch expenses using the shared axios client.
    */
   fetchExpenses: async (filters = {}) => {
     set({ loading: true, error: null });
@@ -143,7 +134,6 @@ export const useExpenseRecordsStore = create((set, get) => ({
         approvedStatus = "",
       } = filters;
 
-      // Same start/offset math as the members hook
       const start = (page - 1) * limit + 1;
       const offset = page * limit;
       const networkClusterCode = localStorage.getItem("networkClusterCode");
@@ -164,16 +154,15 @@ export const useExpenseRecordsStore = create((set, get) => ({
         set({
           expenses: result.map(apiExpenseToRecord),
           totalCount: response.data.totalExpense || 0,
-          totalExpense:response.data.totalExpense || 0,
-          totalAmount:response.data.totalAmount || 0,
-          pendingCount:response.data.pendingCount || 0,
+          totalExpense: response.data.totalExpense || 0,
+          totalAmount: response.data.totalAmount || 0,
+          pendingCount: response.data.pendingCount || 0,
           loading: false,
           hydrated: true,
         });
         return response.data;
       }
 
-      // Success flag false → treat as empty
       set({
         expenses: [],
         totalCount: 0,
@@ -195,7 +184,17 @@ export const useExpenseRecordsStore = create((set, get) => ({
 
   addExpenseFromEventCosting: (payload) => {
     const record = eventCostingToExpenseRecord(payload);
-    set({ expenses: [record, ...get().expenses], hydrated: true });
+    const isPending = record.status === "Pending Approval";
+
+    // Keep summary cards in sync with the new row.
+    set((state) => ({
+      expenses: [record, ...state.expenses],
+      totalCount: (Number(state.totalCount) || 0) + 1,
+      totalExpense: (Number(state.totalExpense) || 0) + 1,
+      totalAmount: (Number(state.totalAmount) || 0) + (Number(record.totalAmount) || 0),
+      pendingCount: (Number(state.pendingCount) || 0) + (isPending ? 1 : 0),
+      hydrated: true,
+    }));
 
     api
       .post("/smartOffice/expense", record)
@@ -206,7 +205,17 @@ export const useExpenseRecordsStore = create((set, get) => ({
 
   addExpenseFromForm: (expense) => {
     const record = formExpenseToRecord(expense);
-    set({ expenses: [record, ...get().expenses], hydrated: true });
+    const isPending = record.status === "Pending Approval";
+
+    // Keep summary cards in sync with the new row.
+    set((state) => ({
+      expenses: [record, ...state.expenses],
+      totalCount: (Number(state.totalCount) || 0) + 1,
+      totalExpense: (Number(state.totalExpense) || 0) + 1,
+      totalAmount: (Number(state.totalAmount) || 0) + (Number(record.totalAmount) || 0),
+      pendingCount: (Number(state.pendingCount) || 0) + (isPending ? 1 : 0),
+      hydrated: true,
+    }));
 
     api
       .post("/smartOffice/expense", record)
@@ -217,24 +226,38 @@ export const useExpenseRecordsStore = create((set, get) => ({
 
   updateExpense: (id, updatedFields) => {
     let matchedExpense = null;
+    let amountDelta = 0;
+
     const expenses = get().expenses.map((e) => {
-      if (String(e.id) === String(id)) {
-        matchedExpense = {
-          ...e,
-          description: updatedFields.description,
-          type: updatedFields.expenseType || updatedFields.type || e.type,
-          event: updatedFields.event || "-",
-          portfolio: updatedFields.portfolio || "-",
-          totalAmount: Number(updatedFields.totalAmount) || 0,
-          remark: updatedFields.remark,
-          vendor: updatedFields.vendorName || updatedFields.vendor || "-",
-          bill: updatedFields.fileName || updatedFields.bill || "-",
-        };
-        return matchedExpense;
-      }
-      return e;
+      if (String(e.id) !== String(id)) return e;
+
+      const oldAmount = Number(e.totalAmount) || 0;
+      const hasNewAmount =
+        updatedFields.totalAmount !== undefined && updatedFields.totalAmount !== "";
+      const newAmount = hasNewAmount ? Number(updatedFields.totalAmount) || 0 : oldAmount;
+      amountDelta = newAmount - oldAmount;
+
+      matchedExpense = {
+        ...e,
+        // Fall back to the existing value so unspecified fields aren't wiped to "-".
+        description: updatedFields.description ?? e.description,
+        type: updatedFields.expenseType || updatedFields.type || e.type,
+        event: updatedFields.event || e.event || "-",
+        portfolio: updatedFields.portfolio || e.portfolio || "-",
+        totalAmount: newAmount,
+        remark: updatedFields.remark ?? e.remark,
+        vendor: updatedFields.vendorName || updatedFields.vendor || e.vendor || "-",
+        bill: updatedFields.fileName || updatedFields.bill || e.bill || "-",
+      };
+      return matchedExpense;
     });
-    set({ expenses });
+
+    // THE FIX: shift the summary "Total Amount" by the price delta so the
+    // top cards reflect the edit immediately.
+    set((state) => ({
+      expenses,
+      totalAmount: (Number(state.totalAmount) || 0) + amountDelta,
+    }));
 
     if (matchedExpense) {
       api
