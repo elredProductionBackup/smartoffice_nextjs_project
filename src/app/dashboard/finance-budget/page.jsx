@@ -235,7 +235,7 @@ const FinanceBudgetPage = () => {
             return (
               <div
                 key={item.budgetTypeId}
-                className="rounded-[16px] overflow-hidden"
+                className="rounded-[16px]"
                 style={{ background: s.bg, border: `1px solid ${s.border}` }}
               >
                 {/* Header row */}
@@ -289,7 +289,7 @@ const FinanceBudgetPage = () => {
 
                 {/* Expanded section */}
                 {isOpen && (
-                  <div className="border-t bg-white pb-5" style={{ borderColor: s.border }}>
+                  <div className="border-t bg-white pb-5 rounded-b-[16px] overflow-hidden" style={{ borderColor: s.border }}>
 
                     {/* ── EVENT RELATED ── */}
                     <div className="px-6 pt-4 pb-1">
