@@ -66,7 +66,7 @@ export default function ActionItems() {
         dueSearchKey: activeItem,
       })
     );
-  }, [dispatch, page, limit, activeTab, debouncedSearch]);
+  }, [dispatch, pageParam, limit, activeItem, debouncedSearch]);
 
   const totalPages = Math.max(1, Math.ceil(total / limit));
 

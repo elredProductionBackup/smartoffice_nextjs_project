@@ -14,6 +14,7 @@ import {
   removeFeaturedEvent,
   getFeaturedEvents,
 } from "@/services/finance.service";
+import { formatCompactAmount } from "@/utils/currency";
 
 const GRID_COLS = "1.2fr 2.8fr 1fr 1fr 1.2fr 1fr 2fr";
 
@@ -36,7 +37,7 @@ const formatEventDate = (startDateTime, endDateTime) => {
   return `${getOrdinal(start.date())} ${start.format("MMM")} - ${getOrdinal(end.date())} ${end.format("MMM")}`;
 };
 
-const formatRupees = (value) => `₹${(Number(value) || 0).toLocaleString("en-IN")}`;
+const formatRupees = (value) => `₹${formatCompactAmount(value)}`;
 
 const PortfolioDetailPage = () => {
   const router = useRouter();

@@ -18,12 +18,13 @@ import {
 } from "react-icons/fi";
 import { useExpenseRecordsStore } from "@/store/useExpenseRecordsStore";
 import NewExpensesPopup from "@/_components/UI/NewExpensesPopup";
+import { formatCompactAmount } from "@/utils/currency";
 
 const TABLE_COLUMNS =
   "minmax(190px,1.6fr) minmax(100px,1fr) minmax(112px,1fr) minmax(118px,1fr) minmax(120px,1fr) minmax(130px,1.1fr) minmax(96px,0.9fr) minmax(112px,1fr) minmax(140px,1.1fr) minmax(150px,1.2fr) minmax(104px,1fr) minmax(52px,0.4fr)";
 
 function formatCurrency(amount) {
-  return `₹${Math.round(Number(amount) || 0).toLocaleString("en-IN")}`;
+  return `₹${formatCompactAmount(amount)}`;
 }
 
 const PAYMENT_STATUS_OPTIONS = ["Paid", "Pending", "Overdue"];

@@ -15,6 +15,7 @@ import {
 import { EVENTS_DETAIL_DATA } from "@/_data/eventsDetailData";
 import BreakdownPopup from "@/_components/BreakdownPopup";
 import { createBudgetPieChartTooltip } from "@/_components/UI/BudgetPieChartTooltip";
+import { formatCompactAmount } from "@/utils/currency";
 
 const INFO_VALUE_CLASS = "font-nunito font-bold text-[18px] leading-[136%] tracking-normal text-[#333333]";
 const INFO_TITLE_CLASS = "font-nunito font-medium text-[16px] leading-[136%] tracking-normal text-[#666666]";
@@ -65,7 +66,7 @@ function EventDetailContent() {
   const utilization = ((event.actualExpense / event.totalBudget) * 100).toFixed(1);
 
   const formatCurrency = (val) =>
-    `₹ ${val.toLocaleString("en-IN")}`;
+    `₹ ${formatCompactAmount(val)}`;
 
   return (
     <div className="p-6 min-h-screen bg-white font-nunito">

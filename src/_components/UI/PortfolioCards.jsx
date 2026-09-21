@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchBudgetTypes } from '@/store/events/budgetChecklist/budgetThunks';
+import { formatCompactAmount } from '@/utils/currency';
 
 const CARD_COLORS = ['#3a7cf5', '#885df1', '#ec4899', '#11b981', '#f59e0b', '#5cbbf6', '#f6a65c', '#f65c5f', '#f65cf1'];
 
@@ -53,8 +54,8 @@ const PortfolioCard = ({ id, title, budget, expense, percentage, color }) => {
       </div>
 
       <div className="text-center text-[16px] text-[#666666] mb-2 space-y-1 font-regular leading-[136%] w-full">
-        <div>Budget: ₹{budget.toLocaleString()}</div>
-        <div>Expense: ₹{expense.toLocaleString()}</div>
+        <div>Budget: ₹{formatCompactAmount(budget)}</div>
+        <div>Expense: ₹{formatCompactAmount(expense)}</div>
       </div>
 
       <div className="text-[16px] leading-[136%] font-bold mt-1" style={{ color }}>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FiX } from 'react-icons/fi';
+import { formatCompactAmount } from '@/utils/currency';
 
 export const DEFAULT_EVENT_BUDGET_CATEGORIES = [
   { key: 'printing', name: 'Printing & Stationary', value: 2, color: '#3b82f6' },
@@ -18,7 +19,7 @@ export const DEFAULT_EVENT_BUDGET_CATEGORIES = [
 ];
 
 function formatIndianCurrency(amount) {
-  return `₹${Math.round(amount).toLocaleString('en-IN')}`;
+  return `₹${formatCompactAmount(Math.round(amount))}`;
 }
 
 export default function EventBudgetPopup({

@@ -6,8 +6,9 @@ import { MdCurrencyRupee } from 'react-icons/md';
 import { useRouter } from 'next/navigation';
 import IncomePopup from './IncomePopup';
 import { getFinanceDashboardReport } from '@/services/finance.service';
+import { formatCompactAmount } from '@/utils/currency';
 
-const formatRupees = (value) => `₹ ${Number(value || 0).toLocaleString('en-IN')}`;
+const formatRupees = (value) => `₹ ${formatCompactAmount(value)}`;
 
 const cardsData = [
   {
