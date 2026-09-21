@@ -14,6 +14,7 @@ import {
   FiMail,
   FiInbox,
   FiCheck,
+  FiTrash2,
 } from "react-icons/fi";
 import { useExpenseRecordsStore } from "@/store/useExpenseRecordsStore";
 import NewExpensesPopup from "@/_components/UI/NewExpensesPopup";
@@ -233,9 +234,9 @@ function getStatusBadgeVariant(status) {
 }
 
 /* ─── Row "…" actions: portal popover with icon chips ────────────────────── */
-function RowActionsMenu({ onPick }) {
+function RowActionsMenu({ onPick, onDelete }) {
   const [open, setOpen] = useState(false);
-  const { btnRef, menuRef, pos } = usePopover(open, setOpen, { width: 232, height: 168, align: "right" });
+  const { btnRef, menuRef, pos } = usePopover(open, setOpen, { width: 232, height: 220, align: "right" });
 
   const items = [
     { channel: "whatsapp", label: "Send via WhatsApp", icon: <FiMessageCircle className="w-4 h-4" />, chip: "bg-green-50 text-green-600" },
@@ -249,7 +250,7 @@ function RowActionsMenu({ onPick }) {
         ref={btnRef}
         type="button"
         onClick={() => setOpen((v) => !v)}
-        aria-label="More send options"
+        aria-label="More options"
         className={`w-8 h-7 flex items-center justify-center rounded-md border transition-colors ${
           open ? "border-[#2B7FFF] text-[#2B7FFF] bg-[#F2F7FF]" : "border-[#E2E8F0] text-[#94A3B8] hover:bg-[#F1F5F9] hover:text-[#334155]"
         }`}
@@ -272,12 +273,27 @@ function RowActionsMenu({ onPick }) {
                   setOpen(false);
                   onPick(channel);
                 }}
-                className="w-full flex items-center gap-3 px-3.5 py-2.5 text-[13px] text-[#334155] hover:bg-[#F5F8FF] border-b border-[#F1F5F9] last:border-b-0 transition-colors"
+                className="w-full flex items-center gap-3 px-3.5 py-2.5 text-[13px] text-[#334155] hover:bg-[#F5F8FF] border-b border-[#F1F5F9] transition-colors"
               >
                 <span className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${chip}`}>{icon}</span>
                 <span className="font-medium text-left">{label}</span>
               </button>
             ))}
+
+            {/* Destructive action */}
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                onDelete();
+              }}
+              className="w-full flex items-center gap-3 px-3.5 py-2.5 text-[13px] text-[#DC2626] hover:bg-[#FEF2F2] transition-colors"
+            >
+              <span className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 bg-red-50 text-red-600">
+                <FiTrash2 className="w-4 h-4" />
+              </span>
+              <span className="font-medium text-left">Delete expense</span>
+            </button>
           </div>,
           document.body
         )}
@@ -351,10 +367,15 @@ export default function ExpenseRecordsPage() {
   const hydrateFromStorage = useExpenseRecordsStore((state) => state.hydrateFromStorage);
   const updatePaymentStatus = useExpenseRecordsStore((state) => state.updatePaymentStatus);
   const updateExpense = useExpenseRecordsStore((state) => state.updateExpense);
+  const deleteExpense = useExpenseRecordsStore((state) => state.deleteExpense);
 
   const [reminderModal, setReminderModal] = useState(null);
   const [selectedExpense, setSelectedExpense] = useState(null);
   const [showPopup, setShowPopup] = useState(false);
+
+  // Delete confirm state
+  const [deleteModal, setDeleteModal] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   // Filter state
   const [type, setType] = useState("all");
@@ -408,6 +429,18 @@ export default function ExpenseRecordsPage() {
 
   const handleSendReminder = (expenseId, channel) => {
     console.log(`Sending reminder for ${expenseId} via ${channel}`);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteModal?.expense || deleting) return;
+    setDeleting(true);
+    const res = await deleteExpense(deleteModal.expense.id);
+    setDeleting(false);
+    setDeleteModal(null);
+    // Auth failures already redirect to login via the axios interceptor.
+    if (!res?.success && res?.isAuth !== false && res?.message) {
+      alert(res.message);
+    }
   };
 
   const summaryCards = useMemo(
@@ -654,6 +687,7 @@ export default function ExpenseRecordsPage() {
                     <div className="flex justify-center">
                       <RowActionsMenu
                         onPick={(channel) => setReminderModal({ expenseId: expense.id, expense, channel })}
+                        onDelete={() => setDeleteModal({ expense })}
                       />
                     </div>
                   </div>
@@ -763,6 +797,49 @@ export default function ExpenseRecordsPage() {
                 {reminderModal.channel === "whatsapp" && "Send via WhatsApp"}
                 {reminderModal.channel === "email" && "Send via Email"}
                 {reminderModal.channel === "both" && "Send to both"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete confirm modal */}
+      {deleteModal && (
+        <div
+          className="fixed inset-0 z-50 bg-black/35 flex items-center justify-center"
+          onClick={() => !deleting && setDeleteModal(null)}
+        >
+          <div
+            className="bg-white rounded-2xl border border-[#E2E8F0] w-[400px] overflow-hidden shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-5">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3.5 bg-red-50">
+                <FiTrash2 className="w-5 h-5 text-red-600" />
+              </div>
+              <p className="font-semibold text-[15px] text-[#0F172A] mb-1.5">Delete this expense?</p>
+              <p className="text-[13px] text-[#64748B] leading-relaxed">
+                You&apos;re about to permanently delete{" "}
+                <span className="font-semibold text-[#333333]">{deleteModal.expense.description}</span>. This can&apos;t be undone.
+              </p>
+            </div>
+            <div className="flex gap-2.5 px-5 pb-5">
+              <button
+                type="button"
+                disabled={deleting}
+                className="flex-1 py-2 border border-[#CBD5E1] rounded-lg text-[13px] text-[#64748B] font-medium hover:bg-[#F8FAFC] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={() => setDeleteModal(null)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={deleting}
+                className="flex-[2] py-2 rounded-lg text-[13px] font-semibold text-white bg-[#DC2626] hover:bg-[#B91C1C] transition-colors disabled:opacity-70 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
+                onClick={handleConfirmDelete}
+              >
+                {deleting && <FiLoader className="w-4 h-4 animate-spin" />}
+                {deleting ? "Deleting..." : "Delete expense"}
               </button>
             </div>
           </div>

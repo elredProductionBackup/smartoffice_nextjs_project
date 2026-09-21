@@ -86,6 +86,8 @@ export function formExpenseToRecord(expense) {
 function apiExpenseToRecord(item) {
   return {
     id: item.expenseId,
+    // Delete endpoint keys off budgetExpenseId; fall back to the row id.
+    budgetExpenseId: item.budgetExpenseId || item.expenseId,
     description: item.desc || "-",
     type: item.type || "-",
     event: item.eventName || item.event || "-",
@@ -281,6 +283,70 @@ export const useExpenseRecordsStore = create((set, get) => ({
       api
         .patch("/smartOffice/expense", { id, paymentStatus })
         .catch((err) => console.error("Failed to sync payment status to server:", err));
+    }
+  },
+
+  /**
+   * Delete an expense.
+   * Optimistically removes the row + shifts the summary cards, then rolls
+   * back if the server rejects it. Auth failures (isAuth === false) are
+   * handled centrally by the axios interceptor, which redirects to login.
+   */
+  deleteExpense: async (id) => {
+    const target = get().expenses.find((e) => String(e.id) === String(id));
+    if (!target) return { success: false, message: "Expense not found" };
+
+    // Delete endpoint keys off budgetExpenseId; fall back to the row id.
+    const budgetExpenseId = target.budgetExpenseId || target.id;
+
+    // Snapshot so we can roll back if the server says no.
+    const snapshot = {
+      expenses: get().expenses,
+      totalCount: get().totalCount,
+      totalExpense: get().totalExpense,
+      totalAmount: get().totalAmount,
+      pendingCount: get().pendingCount,
+    };
+    const wasPending = target.status === "Pending Approval";
+
+    // Optimistically drop the row + shift the summary cards immediately.
+    set((state) => ({
+      expenses: state.expenses.filter((e) => String(e.id) !== String(id)),
+      totalCount: Math.max(0, (Number(state.totalCount) || 0) - 1),
+      totalExpense: Math.max(0, (Number(state.totalExpense) || 0) - 1),
+      totalAmount: Math.max(
+        0,
+        (Number(state.totalAmount) || 0) - (Number(target.totalAmount) || 0)
+      ),
+      pendingCount: Math.max(
+        0,
+        (Number(state.pendingCount) || 0) - (wasPending ? 1 : 0)
+      ),
+    }));
+
+    try {
+      const response = await api.delete("/smartOffice/deleteExpense", {
+        data: { budgetExpenseId }, // DELETE body
+      });
+      const data = response?.data;
+
+      // isAuth === false → interceptor already redirects; just roll back.
+      if (data?.isAuth === false) {
+        set(snapshot);
+        return { success: false, isAuth: false, message: data.message };
+      }
+
+      if (response.status === 200 && data?.success) {
+        return { success: true, message: data.message || "Expense deleted" };
+      }
+
+      // Any other failure → restore the row.
+      set(snapshot);
+      return { success: false, message: data?.message || "Failed to delete expense" };
+    } catch (err) {
+      console.error("deleteExpense API Error:", err);
+      set(snapshot);
+      return { success: false, message: err.message || "Failed to delete expense" };
     }
   },
 }));
