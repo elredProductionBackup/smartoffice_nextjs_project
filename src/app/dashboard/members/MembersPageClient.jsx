@@ -47,7 +47,7 @@ export default function MembersPageClient() {
         tabs={[
           { key: "member", label: "Members" },
           { key: "board", label: "Board" },
-          { key: "nonBoard", label: "Non-Boarded" },
+          { key: "nonBoard", label: "Manual-Entry" },
         ]}
         activeTab={tab}
         onTabChange={(key) =>
