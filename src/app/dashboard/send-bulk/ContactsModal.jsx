@@ -15,7 +15,7 @@ function validateName(value) {
 
 function validateEmail(value) {
   const trimmed = value.trim();
-  if (!trimmed) return "";
+  if (!trimmed) return "Email is required.";
   if (!EMAIL_REGEX.test(trimmed)) return "Enter a valid email address.";
   return "";
 }
@@ -138,6 +138,7 @@ export default function ContactsModal({
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
+  const [emailTouched, setEmailTouched] = useState(false);
   const [phone, setPhone] = useState("");
   const [group, setGroup] = useState("");
   const [csvNotice, setCsvNotice] = useState("");
@@ -151,15 +152,16 @@ export default function ContactsModal({
   const [addedName, setAddedName] = useState("");
 
   const nameError = validateName(fullName);
-  const emailError = validateEmail(email);
+  const emailValidationError = validateEmail(email);
+  const emailError = emailTouched ? emailValidationError : "";
   const phoneError = validatePhone(phone);
 
   const canSubmit =
     fullName.trim() &&
     !nameError &&
-    !emailError &&
+    !emailValidationError &&
     !phoneError &&
-    (email.trim() || phone.trim());
+    !!group;
 
   useEffect(() => {
     if (!csvNotice) return;
@@ -183,6 +185,7 @@ export default function ContactsModal({
       });
       setFullName("");
       setEmail("");
+      setEmailTouched(false);
       setPhone("");
       setGroup("");
       setAddStatus("added");
@@ -272,7 +275,7 @@ export default function ContactsModal({
               <label className="block text-[14px] font-bold text-[#2563eb] mb-3">Add a contact</label>
 
               <div className="mb-3">
-                <label className="block text-[13px] font-semibold text-[#333] mb-1.5">Full name</label>
+                <label className="block text-[13px] font-semibold text-[#333] mb-1.5">Full name <span className="text-red-500">*</span></label>
                 <input
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
@@ -286,10 +289,11 @@ export default function ContactsModal({
 
               <div className="grid grid-cols-2 gap-4 mb-3">
                 <div>
-                  <label className="block text-[13px] font-semibold text-[#333] mb-1.5">Email</label>
+                  <label className="block text-[13px] font-semibold text-[#333] mb-1.5">Email <span className="text-red-500">*</span></label>
                   <input
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    onBlur={() => setEmailTouched(true)}
                     placeholder="name@company.in"
                     className={`w-full h-[42px] px-3 rounded-[8px] border bg-white text-[13px] text-[#111] outline-none transition-colors placeholder:text-[#9ca3af] ${
                       emailError ? "border-red-400 focus:border-red-400" : "border-[#d1d5db] focus:border-[#2563eb]"
@@ -298,7 +302,7 @@ export default function ContactsModal({
                   {emailError && <p className="text-[11px] text-red-600 mt-1">{emailError}</p>}
                 </div>
                 <div>
-                  <label className="block text-[13px] font-semibold text-[#333] mb-1.5">Phone</label>
+                  <label className="block text-[13px] font-semibold text-[#333] mb-1.5">Phone <span className="text-red-500">*</span></label>
                   <input
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
@@ -312,7 +316,7 @@ export default function ContactsModal({
               </div>
 
               <div className="mb-4">
-                <label className="block text-[13px] font-semibold text-[#333] mb-1.5">Group</label>
+                <label className="block text-[13px] font-semibold text-[#333] mb-1.5">Group <span className="text-red-500">*</span></label>
                 <GroupSelect groups={groups} value={group} onChange={setGroup} />
               </div>
 
