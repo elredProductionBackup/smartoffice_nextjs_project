@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { FiX, FiUpload, FiChevronDown, FiLoader } from 'react-icons/fi';
+import { FiX, FiUpload, FiChevronDown, FiLoader, FiCheckCircle } from 'react-icons/fi';
 import CustomDatePicker from './CustomDatePicker';
 import { addEditExpense } from '@/services/expense.service';
 import { useBudgetTypeStore } from '@/store/useBudgetTypeStore';
@@ -100,6 +100,8 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
   const [remark, setRemark] = useState(initialData?.remark ?? '');
   const [selectedFile, setSelectedFile] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [savedPayload, setSavedPayload] = useState(null);
 
   // Budget Type Store State
   const {
@@ -193,40 +195,23 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
     }
   };
 
+  const canSubmit =
+    description.trim().length >= 2 &&
+    !!budgetTypeId &&
+    totalAmount !== '' &&
+    !isNaN(parseFloat(totalAmount)) &&
+    parseFloat(totalAmount) >= 0 &&
+    remark.trim().length > 3 &&
+    vendorName.trim().length >= 2;
+
   const handleSave = async (e) => {
     e?.preventDefault?.();
     e?.stopPropagation?.();
 
-    if (saving) return; // guard against double-submit
+    if (saving || !canSubmit) return; // guard against double-submit / invalid form
 
     const currentDate = initialData?.date ?? new Date().toISOString().split("T")[0];
-
-    // Validations
-    if (!description || description.trim().length < 2) {
-      alert("Description must be at least 2 characters.");
-      return;
-    }
-
-    if (!budgetTypeId) {
-      alert("Please select a valid Budget Type (Portfolio).");
-      return;
-    }
-
     const total = parseFloat(totalAmount);
-    if (isNaN(total) || total < 0) {
-      alert("Total amount must be a float value greater than or equal to 0.00.");
-      return;
-    }
-
-    if (remark && remark.trim().length <= 3) {
-      alert("Remark must be more than 3 characters if provided.");
-      return;
-    }
-
-    if (vendorName && vendorName.trim().length < 2) {
-      alert("Vendor name must be at least 2 characters if provided.");
-      return;
-    }
 
     const apiPayload = {
       description,
@@ -270,9 +255,14 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
     }
 
     setSaving(false);
+    setSavedPayload(localPayload);
+    setShowSuccess(true);
+  };
 
+  const handleSuccessDone = () => {
+    setShowSuccess(false);
     if (onSave) {
-      onSave(localPayload);
+      onSave(savedPayload);
     } else if (onClose) {
       onClose();
     }
@@ -318,7 +308,7 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
 
           {/* Expense Description */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-[14px] font-bold text-[#333]">Expense Description</label>
+            <label className="text-[14px] font-bold text-[#333]">Expense Description <span className="text-red-500">*</span></label>
             <input
               type="text"
               placeholder="e.g., Office supplies purchase"
@@ -330,7 +320,7 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
 
           {/* Portfolio */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-[14px] font-bold text-[#333]">Portfolio</label>
+            <label className="text-[14px] font-bold text-[#333]">Portfolio <span className="text-red-500">*</span></label>
             {budgetTypeError ? (
               <p className="text-[13px] text-red-500 font-semibold">{budgetTypeError}</p>
             ) : (
@@ -348,13 +338,14 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
           {/* Total Amount */}
           <div className="grid grid-cols-1 gap-3">
             <div className="flex flex-col gap-1.5">
-              <label className="text-[14px] font-bold text-[#333]">Total Amount</label>
+              <label className="text-[14px] font-bold text-[#333]">Total Amount <span className="text-red-500">*</span></label>
               <input
                 type="number"
                 step="0.01"
                 placeholder="0.00"
                 value={totalAmount}
                 onChange={(e) => handleTotalAmountChange(e.target.value)}
+                onWheel={(e) => e.target.blur()}
                 className="w-full border border-gray-300 rounded-[14px] px-4 py-3 text-[15px] text-slate-800 bg-white outline-none focus:border-[#1A73E8] transition-colors"
               />
             </div>
@@ -362,7 +353,7 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
 
           {/* Remark Field */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-[14px] font-bold text-[#333]">Remark</label>
+            <label className="text-[14px] font-bold text-[#333]">Remark <span className="text-red-500">*</span></label>
             <textarea
               placeholder="Add comments or notes"
               value={remark}
@@ -373,7 +364,7 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
 
           {/* Vendor Name */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-[14px] font-bold text-[#333]">Vendor Name</label>
+            <label className="text-[14px] font-bold text-[#333]">Vendor Name <span className="text-red-500">*</span></label>
             <input
               type="text"
               placeholder="e.g., Office Depot Inc."
@@ -410,7 +401,7 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
             <button
               type="button"
               onClick={handleSave}
-              disabled={saving}
+              disabled={saving || !canSubmit}
               className="flex-1 flex items-center justify-center gap-2 bg-[#1A73E8] hover:bg-[#1557B0] text-white py-3.5 px-6 rounded-[14px] font-bold text-center text-[16px] border-none cursor-pointer transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {saving && <FiLoader className="w-4 h-4 animate-spin" />}
@@ -428,6 +419,25 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
 
         </div>
       </div>
+
+      {/* Success Confirmation */}
+      {showSuccess && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-[20px] w-full max-w-[360px] mx-4 shadow-xl p-6 flex flex-col items-center gap-3">
+            <FiCheckCircle className="text-[40px] text-green-500" />
+            <p className="text-[16px] font-bold text-[#1F1F1F]">
+              {initialData ? 'Expense updated successfully' : 'Expense added successfully'}
+            </p>
+            <button
+              type="button"
+              onClick={handleSuccessDone}
+              className="mt-2 w-full bg-[#1A73E8] hover:bg-[#1557B0] text-white py-3 px-6 rounded-[14px] font-bold text-center text-[15px] border-none cursor-pointer transition-colors"
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 }
