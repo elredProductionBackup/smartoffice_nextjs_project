@@ -227,6 +227,7 @@ export default function ConfirmSendModal({ contacts, templateId, messageType, su
                     type={f.type}
                     value={values[f.key]}
                     onChange={(e) => setField(f.key, e.target.value)}
+                    onBlur={(e) => setField(f.key, e.target.value.trim())}
                     placeholder={f.placeholder}
                     className="w-full h-[42px] px-3 rounded-[8px] border border-[#d1d5db] bg-white text-[13px] text-[#111] outline-none focus:border-[#2563eb] transition-colors placeholder:text-[#9ca3af]"
                   />
