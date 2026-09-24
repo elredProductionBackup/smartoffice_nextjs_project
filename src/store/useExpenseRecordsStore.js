@@ -13,6 +13,16 @@ function parseAmount(value) {
   return Number.isFinite(num) ? num : 0;
 }
 
+// "https://.../expenseAttachment/abc/1790223327745.png" → "1790223327745.png"
+function getFileNameFromUrl(url) {
+  if (!url) return "";
+  try {
+    return decodeURIComponent(new URL(url).pathname.split("/").pop() || "");
+  } catch {
+    return String(url).split("/").pop() || "";
+  }
+}
+
 export function eventCostingToExpenseRecord({
   description,
   narrative,
@@ -42,6 +52,8 @@ export function eventCostingToExpenseRecord({
     remark: remark,
     vendor: vendorName?.trim() || "-",
     bill: billFileName || "-",
+    billUrl: "",
+    billUrls: [],
     paymentStatus: "Pending",
     status,
     canSend: status === "Pending Approval",
@@ -75,6 +87,8 @@ export function formExpenseToRecord(expense) {
     remark: expense.remark,
     vendor: expense.vendorName?.trim() || "-",
     bill: expense.fileName || "-",
+    billUrl: "",
+    billUrls: [],
     paymentStatus,
     status: "Pending Approval",
     canSend: true,
@@ -84,23 +98,38 @@ export function formExpenseToRecord(expense) {
 
 // Map a raw API expense record into the shape the table expects.
 function apiExpenseToRecord(item) {
+  // API sends attachment as an array of URLs (may be empty).
+  const attachments = (
+    Array.isArray(item.attachment) ? item.attachment : item.attachment ? [item.attachment] : []
+  ).filter(Boolean);
+
+  // API sends approvedStatus: "pending" | "approved".
+  const rawApproval = String(
+    item.approvedStatus || item.approvalStatus || item.status || ""
+  ).toLowerCase();
+  const status = rawApproval === "approved" ? "Approved" : "Pending Approval";
+
   return {
     id: item.expenseId,
     // Delete endpoint keys off budgetExpenseId; fall back to the row id.
     budgetExpenseId: item.budgetExpenseId || item.expenseId,
     description: item.desc || "-",
     type: item.type || "-",
-    event: item.eventName || item.event || "-",
+    event: item.eventDetails?.eventName || item.eventName || item.event || "-",
     portfolio: item.budgetTypeDetails?.budgetType || "-",
+    budgetTypeId: item.budgetTypeDetails?.budgetTypeId || "",
     date: formatExpenseDate(item.date || item.createdAt),
     // Keep this numeric so aggregates and deltas stay reliable.
     totalAmount: parseAmount(item.total),
     remark: item.remark || "-",
     vendor: item.vendorName || item.vendor || "-",
-    bill: item.billFileName || item.bill || "-",
+    // Bill
+    billUrl: attachments[0] || "",
+    billUrls: attachments,
+    bill: attachments.length ? getFileNameFromUrl(attachments[0]) : "-",
     paymentStatus: item.paymentStatus || "Pending",
-    status: item.approvalStatus || item.status || "Pending Approval",
-    canSend: (item.approvalStatus || item.status) !== "Approved",
+    status,
+    canSend: status !== "Approved",
     reminderCount: item.reminderCount ?? 0,
     lastReminderDate: item.lastReminderDate || "",
   };
@@ -124,6 +153,7 @@ export const useExpenseRecordsStore = create((set, get) => ({
 
   /**
    * Fetch expenses using the shared axios client.
+   * Accepts { page, limit, type, eventId, approvedStatus }.
    */
   fetchExpenses: async (filters = {}) => {
     set({ loading: true, error: null });
@@ -246,6 +276,7 @@ export const useExpenseRecordsStore = create((set, get) => ({
         type: updatedFields.expenseType || updatedFields.type || e.type,
         event: updatedFields.event || e.event || "-",
         portfolio: updatedFields.portfolio || e.portfolio || "-",
+        budgetTypeId: updatedFields.budgetTypeId || e.budgetTypeId || "",
         totalAmount: newAmount,
         remark: updatedFields.remark ?? e.remark,
         vendor: updatedFields.vendorName || updatedFields.vendor || e.vendor || "-",
@@ -254,7 +285,7 @@ export const useExpenseRecordsStore = create((set, get) => ({
       return matchedExpense;
     });
 
-    // THE FIX: shift the summary "Total Amount" by the price delta so the
+    // Shift the summary "Total Amount" by the price delta so the
     // top cards reflect the edit immediately.
     set((state) => ({
       expenses,

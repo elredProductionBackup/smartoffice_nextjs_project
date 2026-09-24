@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState, useRef } from "react";
+import React, { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import {
   FiFileText,
@@ -18,6 +18,7 @@ import {
 } from "react-icons/fi";
 import { useExpenseRecordsStore } from "@/store/useExpenseRecordsStore";
 import NewExpensesPopup from "@/_components/UI/NewExpensesPopup";
+import BillPreviewModal, { getDownloadHref } from "@/_components/UI/BillPreviewModal";
 import { formatCompactAmount } from "@/utils/currency";
 
 const TABLE_COLUMNS =
@@ -234,6 +235,37 @@ function getStatusBadgeVariant(status) {
   return "pendingApproval";
 }
 
+/* ─── Bill cell: opens the preview popup + direct download ───────────────── */
+function BillCell({ expense, onView }) {
+  if (!expense.billUrl) {
+    return <span className="text-[#CBD5E1]">—</span>;
+  }
+
+  const count = expense.billUrls?.length || 1;
+
+  return (
+    <div className="inline-flex items-center gap-2 max-w-full">
+      <button
+        type="button"
+        onClick={() => onView(expense)}
+        title={expense.bill}
+        className="inline-flex items-center gap-1.5 text-[#0B57D0] font-semibold text-[13px] hover:underline min-w-0 bg-transparent border-0 p-0 cursor-pointer"
+      >
+        <FiFileText className="w-4 h-4 shrink-0" />
+        <span className="truncate">{count > 1 ? `View (${count})` : "View"}</span>
+      </button>
+      <a
+        href={getDownloadHref(expense.billUrl)}
+        aria-label="Download bill"
+        title="Download"
+        className="w-6 h-6 flex items-center justify-center rounded-md text-[#0B57D0] hover:bg-[#E8F0FE] shrink-0"
+      >
+        <FiDownload className="w-3.5 h-3.5" />
+      </a>
+    </div>
+  );
+}
+
 /* ─── Row "…" actions: portal popover with icon chips ────────────────────── */
 function RowActionsMenu({ onPick, onDelete }) {
   const [open, setOpen] = useState(false);
@@ -374,6 +406,13 @@ export default function ExpenseRecordsPage() {
   const [selectedExpense, setSelectedExpense] = useState(null);
   const [showPopup, setShowPopup] = useState(false);
 
+  // Bill preview: keep only the id so the popup always reads the latest
+  // row from the store (fresh URLs after an edit + refetch).
+  const [billPreviewId, setBillPreviewId] = useState(null);
+  const billPreviewExpense = billPreviewId
+    ? expenses.find((e) => String(e.id) === String(billPreviewId))
+    : null;
+
   // Delete confirm state
   const [deleteModal, setDeleteModal] = useState(null);
   const [deleting, setDeleting] = useState(false);
@@ -414,10 +453,14 @@ export default function ExpenseRecordsPage() {
     updateEdges();
   }, [expenses, loading]);
 
+  // The store expects { page, limit } and computes start/offset itself.
+  const loadExpenses = useCallback(() => {
+    fetchExpenses({ page: currentPage, limit: PAGE_SIZE, type, eventId, approvedStatus });
+  }, [fetchExpenses, currentPage, type, eventId, approvedStatus]);
+
   useEffect(() => {
-    const start = (currentPage - 1) * PAGE_SIZE;
-    fetchExpenses({ start, offset: PAGE_SIZE, type, eventId, approvedStatus });
-  }, [fetchExpenses, type, eventId, approvedStatus, currentPage]);
+    loadExpenses();
+  }, [loadExpenses]);
 
   useEffect(() => {
     hydrateFromStorage();
@@ -635,18 +678,7 @@ export default function ExpenseRecordsPage() {
                       {expense.vendor}
                     </div>
                     <div>
-                      {expense.bill && expense.bill !== "-" ? (
-                        <button
-                          type="button"
-                          className="inline-flex items-center gap-1.5 text-[#0B57D0] font-semibold text-[13px] bg-transparent border-0 p-0 cursor-pointer hover:underline max-w-full"
-                        >
-                          <FiFileText className="w-4 h-4 shrink-0" />
-                          <span className="truncate max-w-[100px]">{expense.bill}</span>
-                          <FiDownload className="w-3.5 h-3.5 shrink-0" />
-                        </button>
-                      ) : (
-                        <span className="text-[#CBD5E1]">—</span>
-                      )}
+                      <BillCell expense={expense} onView={(exp) => setBillPreviewId(exp.id)} />
                     </div>
                     <div className="flex flex-col gap-0.5">
                       {expense.reminderCount > 0 ? (
@@ -847,6 +879,14 @@ export default function ExpenseRecordsPage() {
         </div>
       )}
 
+      {billPreviewExpense?.billUrls?.length > 0 && (
+        <BillPreviewModal
+          urls={billPreviewExpense.billUrls}
+          title={billPreviewExpense.description}
+          onClose={() => setBillPreviewId(null)}
+        />
+      )}
+
       {showPopup && (
         <NewExpensesPopup
           initialData={selectedExpense}
@@ -860,6 +900,8 @@ export default function ExpenseRecordsPage() {
             }
             setShowPopup(false);
             setSelectedExpense(null);
+            // Refetch so a newly uploaded bill's URL shows up in the table.
+            loadExpenses();
           }}
         />
       )}

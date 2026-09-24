@@ -129,7 +129,7 @@ const mapEventToUI = (event) => {
     resource: event.resource,
     additionalNotes: event.additionalNotes,
     // END
-    attendees: event.whoCanAttend?.length || 0,
+    attendees: event.attendeesCount || 0,
     location:
       event.eventLocation || "—",
 
