@@ -66,6 +66,36 @@ export const getContactGroupContacts = async (groupId) => {
 };
 
 /**
+ * Delete a contact group along with all of its contacts.
+ *
+ * DELETE /deleteContactGroup
+ * Body: { groupId: string }
+ *
+ * @param {string} groupId - The group's id
+ * @returns {Promise<Object>}
+ */
+export const deleteContactGroup = async (groupId) => {
+  try {
+    const res = await api.delete("/deleteContactGroup", {
+      data: { groupId },
+    });
+
+    // Axios's validateStatus accepts every status below 600 — check failures
+    // explicitly so callers can rely on a thrown error to mean "not deleted."
+    if (res.status >= 400 || res.data?.success === false) {
+      const err = new Error(res.data?.message || "Failed to delete group");
+      err.response = { status: res.status, data: res.data };
+      throw err;
+    }
+
+    return res.data;
+  } catch (error) {
+    console.error("deleteContactGroup API Error:", error?.response || error);
+    throw error;
+  }
+};
+
+/**
  * Delete one or more contacts from a contact group.
  *
  * DELETE /deleteContactGroupContacts

@@ -64,3 +64,36 @@ export const sendBulkBroadcastMessage = async ({
     throw error;
   }
 };
+
+/**
+ * Fetch reports of bulk WhatsApp/Email broadcasts already sent, newest first.
+ *
+ * GET /getBulkMessageReports?templateName=...&start=0&offset=20
+ *
+ * @param {Object} [params]
+ * @param {string} [params.templateName] - Only broadcasts sent with this WhatsApp template
+ * @param {number} [params.start=0]      - Number of broadcasts to skip
+ * @param {number} [params.offset=20]    - Page size
+ * @returns {Promise<Object>} - { count, result: [{ _id, messageType, templateName?, subject?,
+ *   totalContacts, messages: [{ name, phone, email, messageId, status, error }], createdAt }] }
+ */
+export const getBulkMessageReports = async ({ templateName = "", start = 0, offset = 20 } = {}) => {
+  try {
+    const params = { start, offset };
+    if (templateName) params.templateName = templateName;
+    const res = await api.get("/getBulkMessageReports", { params });
+
+    // Axios's validateStatus accepts every status below 600 — surface failures
+    // explicitly so the page can show an error instead of an empty report.
+    if (res.status >= 400 || res.data?.success === false) {
+      const err = new Error(res.data?.message || "Failed to load reports");
+      err.response = { status: res.status, data: res.data };
+      throw err;
+    }
+
+    return res.data;
+  } catch (error) {
+    console.error("getBulkMessageReports API Error:", error?.response || error);
+    throw error;
+  }
+};
