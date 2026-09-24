@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   FiArrowLeft,
   FiSend,
@@ -327,12 +327,38 @@ export default function BroadcastReportsClient() {
   const [error, setError] = useState("");
   const requestIdRef = useRef(0);
 
+  // Filters live in the URL (?q=&template=&status=&channel=&view=) so they
+  // survive a refresh and can be shared; unknown values fall back to defaults.
+  const searchParams = useSearchParams();
+  const pick = (key, allowed, fallback) => {
+    const v = searchParams.get(key);
+    return v && (!allowed || allowed.includes(v)) ? v : fallback;
+  };
+
   const [templates, setTemplates] = useState([]);
-  const [templateFilter, setTemplateFilter] = useState("");
-  const [channel, setChannel] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [search, setSearch] = useState("");
-  const [view, setView] = useState("messages");
+  const [templateFilter, setTemplateFilter] = useState(() => pick("template", null, ""));
+  const [channel, setChannel] = useState(() => pick("channel", ["whatsapp", "email"], "all"));
+  const [statusFilter, setStatusFilter] = useState(() =>
+    pick("status", STATUS_ORDER.filter((b) => b !== "unknown"), "all")
+  );
+  const [search, setSearch] = useState(() => pick("q", null, ""));
+  const [view, setView] = useState(() => pick("view", ["recipients"], "messages"));
+
+  // replaceState (not router.replace) so typing in search doesn't trigger a
+  // navigation or add history entries; Next keeps useSearchParams in sync.
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (search.trim()) params.set("q", search.trim());
+    if (templateFilter) params.set("template", templateFilter);
+    if (statusFilter !== "all") params.set("status", statusFilter);
+    if (channel !== "all") params.set("channel", channel);
+    if (view !== "messages") params.set("view", view);
+    const qs = params.toString();
+    const url = `${window.location.pathname}${qs ? `?${qs}` : ""}`;
+    if (url !== `${window.location.pathname}${window.location.search}`) {
+      window.history.replaceState(null, "", url);
+    }
+  }, [search, templateFilter, statusFilter, channel, view]);
 
   useEffect(() => {
     getWhatsAppTemplates()
