@@ -151,6 +151,16 @@ export default function ContactsModal({
   const [addError, setAddError] = useState("");
   const [addedName, setAddedName] = useState("");
 
+  // One row per group membership: a contact in two groups is listed twice,
+  // matching what the backend returns per group.
+  const entries = contacts
+    .flatMap((c) =>
+      c.groups?.length
+        ? c.groups.map((g) => ({ ...c, group: g, entryKey: `${c.id}::${g}` }))
+        : [{ ...c, group: null, entryKey: c.id }]
+    )
+    .sort((a, b) => a.name.localeCompare(b.name) || (a.group || "").localeCompare(b.group || ""));
+
   const nameError = validateName(fullName);
   const emailValidationError = validateEmail(email);
   const emailError = emailTouched ? emailValidationError : "";
@@ -226,7 +236,7 @@ export default function ContactsModal({
     setDeleteStatus("deleting");
     setDeleteError("");
     try {
-      await onDeleteContact(pendingDelete.id);
+      await onDeleteContact(pendingDelete.id, pendingDelete.group);
       setDeleteStatus("deleted");
       setTimeout(() => {
         setPendingDelete(null);
@@ -260,7 +270,7 @@ export default function ContactsModal({
         <div className="flex items-start justify-between px-7 pt-6 pb-4 border-b border-[#f1f5f9]">
           <div>
             <h2 className="text-[22px] font-bold text-[#1a1a2e] leading-tight">Contacts</h2>
-            <p className="text-[13px] text-[#888] mt-0.5">{contacts.length} saved</p>
+            <p className="text-[13px] text-[#888] mt-0.5">{entries.length} saved</p>
           </div>
           <button onClick={onClose} className="text-[#999] hover:text-[#333] transition-colors cursor-pointer mt-1">
             <FiX className="text-[20px]" />
@@ -383,11 +393,11 @@ export default function ContactsModal({
                 </div>
               )}
 
-              {[...contacts].sort((a, b) => a.name.localeCompare(b.name)).map((c) => {
+              {entries.map((c) => {
                 const subtext = [c.email, c.phone].filter(Boolean).join(" · ");
                 return (
                   <div
-                    key={c.id}
+                    key={c.entryKey}
                     className="flex items-center gap-3 py-3 border-b border-[#f1f5f9] last:border-b-0"
                   >
                     <div className="w-10 h-10 min-w-[40px] rounded-full bg-[#E5E7EB] text-[#555] grid place-items-center text-[13px] font-bold">
@@ -397,6 +407,9 @@ export default function ContactsModal({
                       <p className="text-[14px] font-semibold text-[#1a1a2e] truncate">{c.name}</p>
                       {subtext && <p className="text-[12px] text-[#888] truncate">{subtext}</p>}
                     </div>
+                    <span className="text-[11px] font-medium text-[#2563eb] bg-[#eff6ff] rounded-full px-2.5 py-0.5 whitespace-nowrap">
+                      {c.group || "Ungrouped"}
+                    </span>
                     <button
                       onClick={() => {
                         setDeleteStatus("idle");
@@ -446,8 +459,16 @@ export default function ContactsModal({
               <>
                 <h3 className="text-[16px] font-bold text-[#1a1a2e] mb-1.5">Delete contact?</h3>
                 <p className="text-[13px] text-[#666] mb-5">
-                  <span className="font-semibold text-[#1a1a2e]">{pendingDelete.name}</span> will be removed from
-                  your contacts and any groups they belong to. This can&apos;t be undone.
+                  <span className="font-semibold text-[#1a1a2e]">{pendingDelete.name}</span> will be removed from{" "}
+                  {pendingDelete.group ? (
+                    <>
+                      <span className="font-semibold text-[#1a1a2e]">{pendingDelete.group}</span>. Other groups
+                      they&apos;re in aren&apos;t affected.
+                    </>
+                  ) : (
+                    "your contacts."
+                  )}{" "}
+                  This can&apos;t be undone.
                 </p>
                 {deleteError && <p className="text-[12px] text-red-600 mb-3">{deleteError}</p>}
                 <div className="flex items-center justify-end gap-3">
@@ -504,7 +525,7 @@ export default function ContactsModal({
                 </div>
                 <p className="text-[13px] text-[#666] mb-5">
                   This will permanently remove all{" "}
-                  <span className="font-semibold text-[#1a1a2e]">{contacts.length}</span> saved contacts and clear
+                  <span className="font-semibold text-[#1a1a2e]">{entries.length}</span> saved contacts and clear
                   every group&apos;s membership. This can&apos;t be undone.
                 </p>
                 <div className="flex items-center justify-end gap-3">

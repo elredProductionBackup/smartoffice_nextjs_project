@@ -25,7 +25,7 @@ function AddMemberControl({ groupName, contacts, onAddMember }) {
   }, []);
 
   const available = contacts
-    .filter((c) => c.group !== groupName)
+    .filter((c) => !c.groups?.includes(groupName))
     .sort((a, b) => a.name.localeCompare(b.name));
 
   return (
@@ -58,7 +58,9 @@ function AddMemberControl({ groupName, contacts, onAddMember }) {
                 {initials(c.name)}
               </div>
               <span className="truncate">{c.name}</span>
-              {c.group && <span className="text-[11px] text-[#9ca3af] ml-auto whitespace-nowrap">was {c.group}</span>}
+              {c.groups?.length > 0 && (
+                <span className="text-[11px] text-[#9ca3af] ml-auto whitespace-nowrap">in {c.groups.join(", ")}</span>
+              )}
             </button>
           ))}
         </div>
@@ -78,6 +80,34 @@ export default function GroupsModal({
   const [newGroupName, setNewGroupName] = useState("");
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState("");
+  const [pendingRemove, setPendingRemove] = useState(null); // { groupName, member }
+
+  const [removing, setRemoving] = useState(false);
+  const [removeError, setRemoveError] = useState("");
+
+  const openRemove = (groupName, member) => {
+    setRemoveError("");
+    setPendingRemove({ groupName, member });
+  };
+
+  const closeRemove = () => {
+    if (removing) return;
+    setPendingRemove(null);
+  };
+
+  const confirmRemove = async () => {
+    if (!pendingRemove || removing) return;
+    setRemoving(true);
+    setRemoveError("");
+    try {
+      await onRemoveMember(pendingRemove.groupName, pendingRemove.member.id);
+      setPendingRemove(null);
+    } catch (error) {
+      setRemoveError(error?.response?.data?.message || error?.message || "Failed to remove member");
+    } finally {
+      setRemoving(false);
+    }
+  };
 
   const handleCreate = async () => {
     const trimmed = newGroupName.trim();
@@ -146,7 +176,7 @@ export default function GroupsModal({
           <div className="flex flex-col gap-4">
             {groups.map((groupName) => {
               const members = contacts
-                .filter((c) => c.group === groupName)
+                .filter((c) => c.groups?.includes(groupName))
                 .sort((a, b) => a.name.localeCompare(b.name));
               return (
                 <div key={groupName} className="border border-[#e5e7eb] rounded-[12px] p-4">
@@ -168,7 +198,7 @@ export default function GroupsModal({
                         </div>
                         {m.name}
                         <button
-                          onClick={() => onRemoveMember(m.id)}
+                          onClick={() => openRemove(groupName, m)}
                           title="Remove from group"
                           className="text-[#6b7280] hover:text-red-500 cursor-pointer ml-0.5"
                         >
@@ -201,6 +231,45 @@ export default function GroupsModal({
           </button>
         </div>
       </div>
+
+      {pendingRemove && (
+        <div
+          className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/40"
+          onClick={(e) => {
+            e.stopPropagation();
+            closeRemove();
+          }}
+        >
+          <div
+            className="bg-white rounded-[16px] w-full max-w-[360px] mx-4 shadow-xl p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-[16px] font-bold text-[#1a1a2e] mb-1.5">Remove from group?</h3>
+            <p className="text-[13px] text-[#666] mb-5">
+              <span className="font-semibold text-[#1a1a2e]">{pendingRemove.member.name}</span> will be removed from{" "}
+              <span className="font-semibold text-[#1a1a2e]">{pendingRemove.groupName}</span>. They&apos;ll stay in
+              your contacts and any other groups.
+            </p>
+            {removeError && <p className="text-[12px] text-red-600 mb-3">{removeError}</p>}
+            <div className="flex items-center justify-end gap-3">
+              <button
+                onClick={closeRemove}
+                disabled={removing}
+                className="px-5 h-[38px] rounded-[8px] border border-[#d1d5db] text-[13px] font-semibold text-[#333] hover:bg-[#f9fafb] cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmRemove}
+                disabled={removing}
+                className="px-5 h-[38px] rounded-[8px] bg-red-500 text-white text-[13px] font-semibold hover:bg-red-600 cursor-pointer transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {removing ? "Removing…" : "Remove"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

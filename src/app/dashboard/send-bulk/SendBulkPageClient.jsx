@@ -182,6 +182,50 @@ export default function SendBulkPageClient() {
 
   const toApiContact = (c) => ({ name: c.name || "", phone: c.phone || "", email: c.email || "" });
 
+  // A contact can belong to several groups, so membership lives in a
+  // `groups` array. Contacts are deduped by this key across groups.
+  const contactKey = (c) => c.phone || c.email || c.name;
+  const membersOf = (list, name) => list.filter((c) => c.groups?.includes(name));
+
+  // Mirror of `contacts` so handlers can compute the next list (and fire
+  // sync calls with it) outside of a setState updater, which must stay pure.
+  const contactsRef = useRef(contacts);
+  const updateContacts = (updater) => {
+    const next = updater(contactsRef.current);
+    contactsRef.current = next;
+    setContacts(next);
+    return next;
+  };
+
+  // Treat `serverGroups` ({ name, id, contacts }) as the source of truth for
+  // those groups: drop them from every local contact, then re-add them to
+  // exactly the contacts the backend returned.
+  const applyServerMembership = (serverGroups) => {
+    const names = new Set(serverGroups.map((g) => g.name));
+    updateContacts((prev) => {
+      const byKey = new Map(
+        prev.map((c) => [contactKey(c), { ...c, groups: (c.groups || []).filter((g) => !names.has(g)) }])
+      );
+      serverGroups.forEach((g) => {
+        (g.contacts || []).forEach((gc) => {
+          const key = contactKey(gc);
+          const existing = byKey.get(key);
+          const groups = existing?.groups || [];
+          byKey.set(key, {
+            ...existing,
+            id: existing?.id || `c-${g.id}-${key}`,
+            name: gc.name,
+            phone: gc.phone,
+            email: gc.email,
+            hasWhatsApp: !!gc.phone,
+            groups: groups.includes(g.name) ? groups : [...groups, g.name],
+          });
+        });
+      });
+      return Array.from(byKey.values());
+    });
+  };
+
   const refreshGroups = async () => {
     try {
       const result = await getContactGroups();
@@ -206,25 +250,7 @@ export default function SendBulkPageClient() {
 
       // Merge each group's contacts into the local contact list so member
       // counts/lists stay in sync with the backend after a refresh.
-      setContacts((prev) => {
-        const byKey = new Map(prev.map((c) => [c.phone || c.email || c.name, c]));
-        list.forEach((g) => {
-          (g.contacts || []).forEach((gc) => {
-            const key = gc.phone || gc.email || gc.name;
-            const existing = byKey.get(key);
-            byKey.set(key, {
-              ...existing,
-              id: existing?.id || `c-${g._id}-${key}`,
-              name: gc.name,
-              phone: gc.phone,
-              email: gc.email,
-              hasWhatsApp: !!gc.phone,
-              group: g.name,
-            });
-          });
-        });
-        return Array.from(byKey.values());
-      });
+      applyServerMembership(list.map((g) => ({ name: g.name, id: g._id, contacts: g.contacts })));
     } catch (error) {
       console.error("getContactGroups API Error:", error?.response || error);
       setNotice("Failed to load groups");
@@ -255,23 +281,7 @@ export default function SendBulkPageClient() {
       const result = await getContactGroupContacts(groupId);
       const list = Array.isArray(result?.result) ? result.result : Array.isArray(result) ? result : [];
 
-      setContacts((prev) => {
-        const byKey = new Map(prev.map((c) => [c.phone || c.email || c.name, c]));
-        list.forEach((gc) => {
-          const key = gc.phone || gc.email || gc.name;
-          const existing = byKey.get(key);
-          byKey.set(key, {
-            ...existing,
-            id: existing?.id || `c-${groupId}-${key}`,
-            name: gc.name,
-            phone: gc.phone,
-            email: gc.email,
-            hasWhatsApp: !!gc.phone,
-            group: groupName,
-          });
-        });
-        return Array.from(byKey.values());
-      });
+      applyServerMembership([{ name: groupName, id: groupId, contacts: list }]);
     } catch (error) {
       console.error("getContactGroupContacts API Error:", error?.response || error);
       setNotice("Failed to load group contacts");
@@ -324,67 +334,96 @@ export default function SendBulkPageClient() {
     }
   };
 
+  // Adding to one group never touches the contact's other memberships.
   const addMemberToGroup = (name, contactId) => {
-    setContacts((prev) => {
-      const next = prev.map((c) => (c.id === contactId ? { ...c, group: name } : c));
-      syncGroupContacts(name, next.filter((c) => c.group === name));
-      return next;
-    });
+    const next = updateContacts((prev) =>
+      prev.map((c) =>
+        c.id === contactId && !c.groups?.includes(name) ? { ...c, groups: [...(c.groups || []), name] } : c
+      )
+    );
+    syncGroupContacts(name, membersOf(next, name));
   };
 
-  const removeMemberFromGroup = (contactId) => {
-    setContacts((prev) => {
-      const removedFrom = prev.find((c) => c.id === contactId)?.group;
-      const next = prev.map((c) => (c.id === contactId ? { ...c, group: null } : c));
-      if (removedFrom) {
-        syncGroupContacts(removedFrom, next.filter((c) => c.group === removedFrom));
-      }
-      return next;
-    });
+  // Deletes the contact from this one group on the backend first; throws on
+  // failure (see deleteContactGroupContacts) so the member stays on-screen.
+  const removeMemberFromGroup = async (name, contactId) => {
+    const contact = contactsRef.current.find((c) => c.id === contactId);
+    const groupId = groupIds[name];
+    if (!contact || !groupId) {
+      throw new Error(`Can't remove from "${name}" — group not found. Try reopening the popup.`);
+    }
+
+    const dropFromGroup = (prev) =>
+      prev.map((c) => (c.id === contactId ? { ...c, groups: (c.groups || []).filter((g) => g !== name) } : c));
+
+    if (contact.phone) {
+      await deleteContactGroupContacts({ groupId, contacts: [{ phone: contact.phone }] });
+      updateContacts(dropFromGroup);
+    } else {
+      // The delete API identifies contacts by phone — for phone-less contacts
+      // fall back to re-saving the group without them.
+      const next = updateContacts(dropFromGroup);
+      await syncGroupContacts(name, membersOf(next, name));
+    }
   };
+
+  // Merge incoming contacts (each carrying an optional single `group` from
+  // ContactsModal) into the list. A contact that already exists — same
+  // phone/email — just gains the group instead of being duplicated.
+  const mergeIncomingContacts = (incoming) =>
+    updateContacts((prev) => {
+      const byKey = new Map(prev.map((c) => [contactKey(c), c]));
+      incoming.forEach(({ group, ...c }, i) => {
+        const key = contactKey(c);
+        const existing = byKey.get(key);
+        const groups = existing?.groups || [];
+        byKey.set(key, {
+          ...existing,
+          ...c,
+          id: existing?.id || `c-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 7)}`,
+          groups: group && !groups.includes(group) ? [...groups, group] : groups,
+        });
+      });
+      return Array.from(byKey.values());
+    });
 
   const addContact = async (newContact) => {
-    const id = `c-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-    const newEntry = { id, ...newContact };
-    setContacts((prev) => [...prev, newEntry]);
+    const next = mergeIncomingContacts([newContact]);
     // The list is sorted alphabetically and paginated to CONTACTS_PAGE_SIZE —
     // without this the new contact can silently land past the visible slice.
     setShowAllContacts(true);
     if (newContact.group) {
-      await syncGroupContacts(newContact.group, [
-        ...contacts.filter((c) => c.group === newContact.group),
-        newEntry,
-      ]);
+      await syncGroupContacts(newContact.group, membersOf(next, newContact.group));
     }
   };
 
   const importContacts = (newContacts) => {
-    setContacts((prev) => {
-      const added = newContacts.map((c, i) => ({
-        id: `c-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 5)}`,
-        ...c,
-      }));
-      const next = [...prev, ...added];
-      const group = newContacts[0]?.group;
-      if (group) {
-        syncGroupContacts(group, next.filter((c) => c.group === group));
-      }
-      return next;
-    });
+    const next = mergeIncomingContacts(newContacts);
+    const group = newContacts[0]?.group;
+    if (group) {
+      syncGroupContacts(group, membersOf(next, group));
+    }
     setShowAllContacts(true);
   };
 
-  const deleteContact = async (contactId) => {
-    const contact = contacts.find((c) => c.id === contactId);
+  // Manage contacts lists one row per group membership, so a delete targets
+  // a single group. The contact itself is only dropped once it's in no group.
+  const deleteContact = async (contactId, groupName) => {
+    const contact = contactsRef.current.find((c) => c.id === contactId);
     if (contact?.phone) {
-      const groupId = (contact.group && groupIds[contact.group]) || "";
+      const groupId = (groupName && groupIds[groupName]) || "";
       // Throws on any failure (see deleteContactGroupContacts) — that
       // propagates up to the caller, so a failed delete never reaches the
-      // setContacts filter below and the contact stays put on-screen.
+      // updateContacts call below and the contact stays put on-screen.
       await deleteContactGroupContacts({ groupId, contacts: [{ phone: contact.phone }] });
     }
 
-    setContacts((prev) => prev.filter((c) => c.id !== contactId));
+    const next = updateContacts((prev) =>
+      prev
+        .map((c) => (c.id === contactId && groupName ? { ...c, groups: (c.groups || []).filter((g) => g !== groupName) } : c))
+        .filter((c) => c.id !== contactId || (groupName && c.groups.length > 0))
+    );
+    if (next.some((c) => c.id === contactId)) return;
     setSelectedIds((prev) => {
       const next = new Set(prev);
       next.delete(contactId);
@@ -393,7 +432,7 @@ export default function SendBulkPageClient() {
   };
 
   const deleteAllContacts = () => {
-    setContacts([]);
+    updateContacts(() => []);
     setSelectedIds(new Set());
   };
 
@@ -401,7 +440,7 @@ export default function SendBulkPageClient() {
     return contacts
       .filter((c) => {
         const matchesSearch = c.name.toLowerCase().includes(search.trim().toLowerCase());
-        const matchesGroup = groupFilter === "All groups" || c.group === groupFilter;
+        const matchesGroup = groupFilter === "All groups" || c.groups?.includes(groupFilter);
         return matchesSearch && matchesGroup;
       })
       .sort((a, b) => a.name.localeCompare(b.name));
@@ -426,6 +465,8 @@ export default function SendBulkPageClient() {
   };
 
   const selectedContacts = contacts.filter((c) => selectedIds.has(c.id));
+  // Matches the Manage contacts list: one entry per group membership.
+  const contactEntryCount = contacts.reduce((n, c) => n + Math.max(1, c.groups?.length || 0), 0);
   const firstSelectedName = selectedContacts[0]?.name || "there";
 
   const previewText = (messages[activeTab] || "")
@@ -733,7 +774,7 @@ export default function SendBulkPageClient() {
                       className="w-full flex items-center gap-2.5 px-3 py-2.5 text-[13px] font-medium text-[#333] hover:bg-[#f9fafb] rounded-[7px] cursor-pointer"
                     >
                       <FiUsers className="text-[14px] text-[#2563eb]" />
-                      Manage contacts ({contacts.length})
+                      Manage contacts ({contactEntryCount})
                     </button>
                   </div>
                 )}
@@ -829,7 +870,7 @@ export default function SendBulkPageClient() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-[14px] font-semibold text-[#1a1a2e] truncate">{contact.name}</p>
-                      <p className="text-[12px] text-[#888] truncate">{contact.group || "Ungrouped"}</p>
+                      <p className="text-[12px] text-[#888] truncate">{contact.groups?.length ? contact.groups.join(", ") : "Ungrouped"}</p>
                     </div>
                     {!contact.hasWhatsApp && (
                       <span className="inline-flex items-center px-3 py-0.5 rounded-md text-[12px] font-semibold bg-[#FEF7E0] text-[#B06000] whitespace-nowrap">
