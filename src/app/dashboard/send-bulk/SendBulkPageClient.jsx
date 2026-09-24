@@ -22,6 +22,7 @@ import {
   getContactGroups,
   getContactGroupContacts,
   deleteContactGroupContacts,
+  deleteContactGroup,
 } from "@/services/contactGroup.service";
 import { getWhatsAppTemplates } from "@/services/broadcast.service";
 import { PRIVE_WORKSHOP_EMAIL_HTML, PRIVE_MEDIA_EMAIL_HTML } from "./emailTemplates";
@@ -315,6 +316,35 @@ export default function SendBulkPageClient() {
     const newGroupId = group?._id || "";
     setGroupList((prev) => [...prev, trimmed]);
     setGroupIds((prev) => ({ ...prev, [trimmed]: newGroupId }));
+  };
+
+  // Deletes the group (and its contacts) on the backend first; throws on
+  // failure so the group stays on-screen. Contacts that were only in this
+  // group go with it; members of other groups keep those memberships.
+  const deleteGroup = async (name) => {
+    const groupId = groupIds[name];
+    if (!groupId) {
+      throw new Error(`Can't delete "${name}" — group not found. Try reopening the popup.`);
+    }
+    await deleteContactGroup(groupId);
+
+    setGroupList((prev) => prev.filter((g) => g !== name));
+    setGroupIds((prev) => {
+      const next = { ...prev };
+      delete next[name];
+      return next;
+    });
+
+    const orphanIds = new Set(
+      contactsRef.current.filter((c) => c.groups?.length === 1 && c.groups[0] === name).map((c) => c.id)
+    );
+    updateContacts((prev) =>
+      prev
+        .filter((c) => !orphanIds.has(c.id))
+        .map((c) => (c.groups?.includes(name) ? { ...c, groups: c.groups.filter((g) => g !== name) } : c))
+    );
+    setSelectedIds((prev) => new Set([...prev].filter((id) => !orphanIds.has(id))));
+    if (groupFilter === name) setGroupFilter("All groups");
   };
 
   const syncGroupContacts = async (name, members) => {
@@ -949,6 +979,7 @@ export default function SendBulkPageClient() {
           groups={groupList}
           onClose={() => setGroupsModalOpen(false)}
           onCreateGroup={createGroup}
+          onDeleteGroup={deleteGroup}
           onAddMember={addMemberToGroup}
           onRemoveMember={removeMemberFromGroup}
         />
