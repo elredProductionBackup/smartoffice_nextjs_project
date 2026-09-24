@@ -12,6 +12,7 @@ import {
   FiPlus,
   FiSearch,
   FiMenu,
+  FiBarChart2,
 } from "react-icons/fi";
 import CustomCheckbox from "@/_components/UI/CustomCheckbox";
 import GroupsModal from "./GroupsModal";
@@ -519,14 +520,23 @@ export default function SendBulkPageClient() {
   return (
     <div className="pt-6 pb-10">
       {/* Header */}
-      <div className="flex items-center gap-4 mb-6">
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => router.back()}
+            className="w-10 h-10 rounded-xl bg-white shadow-[0px_2px_6px_rgba(0,0,0,0.08)] flex items-center justify-center cursor-pointer text-[#333]"
+          >
+            <FiArrowLeft className="text-[18px]" />
+          </button>
+          <h1 className="text-2xl font-bold text-[#1a1a2e]">New broadcast</h1>
+        </div>
         <button
-          onClick={() => router.back()}
-          className="w-10 h-10 rounded-xl bg-white shadow-[0px_2px_6px_rgba(0,0,0,0.08)] flex items-center justify-center cursor-pointer text-[#333]"
+          onClick={() => router.push("/dashboard/send-bulk/reports")}
+          className="flex items-center gap-2 px-4 h-10 rounded-[10px] bg-white border border-[#d1d5db] text-[13px] font-semibold text-[#333] hover:border-[#2563eb] hover:text-[#2563eb] cursor-pointer transition-colors"
         >
-          <FiArrowLeft className="text-[18px]" />
+          <FiBarChart2 className="text-[16px]" />
+          View reports
         </button>
-        <h1 className="text-2xl font-bold text-[#1a1a2e]">New broadcast</h1>
       </div>
 
       {notice && (
