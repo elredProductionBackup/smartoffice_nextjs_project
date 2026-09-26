@@ -324,7 +324,8 @@ const FinanceBudgetPage = () => {
                           return (
                             <div
                               key={event.eventId}
-                              className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr] gap-4 px-6 py-4 border-b border-slate-100 items-center"
+                              onClick={() => router.push(`/dashboard/events/${event.eventId}`)}
+                              className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr] gap-4 px-6 py-4 border-b border-slate-100 items-center cursor-pointer hover:bg-slate-50 transition-colors"
                             >
                               <div>
                                 <div className="text-[14px] font-semibold text-slate-800">{event.eventName}</div>
