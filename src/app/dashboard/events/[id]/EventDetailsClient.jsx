@@ -252,7 +252,11 @@ export default function EventDetailsClient() {
                     onClick={() => {
                       // const isPast = moment(event?.startDateTime).isBefore(moment());
 
-                      if (isPast) {
+                      const from = searchParams.get("from");
+
+                      if (from === "finance-budget" || from === "finance") {
+                        router.push(`/dashboard/${from}`);
+                      } else if (isPast) {
                         router.push("/dashboard/events?tab=past");
                       } else {
                         router.push("/dashboard/events?tab=upcomming");

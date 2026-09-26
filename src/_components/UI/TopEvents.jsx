@@ -104,7 +104,7 @@ const TopEvents = () => {
   }, []);
 
   const handleCardClick = (eventId) => {
-    router.push(`/dashboard/events/${eventId}`);
+    router.push(`/dashboard/events/${eventId}?from=finance`);
   };
 
   const handleRemove = (eventId, title) => {

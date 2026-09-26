@@ -324,7 +324,7 @@ const FinanceBudgetPage = () => {
                           return (
                             <div
                               key={event.eventId}
-                              onClick={() => router.push(`/dashboard/events/${event.eventId}`)}
+                              onClick={() => router.push(`/dashboard/events/${event.eventId}?from=finance-budget`)}
                               className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr] gap-4 px-6 py-4 border-b border-slate-100 items-center cursor-pointer hover:bg-slate-50 transition-colors"
                             >
                               <div>
