@@ -69,7 +69,7 @@ export default function MemberDetailsModal({
               alt=""
               width={100}
               height={100}
-              className="rounded-full max-h-[100]"
+              className="rounded-full max-h-[100] object-cover"
             />
           ) : (
             <div className="min-w-[100px] h-[100px] bg-[#D4DFF1] grid place-items-center text-[42px] font-semibold rounded-full">

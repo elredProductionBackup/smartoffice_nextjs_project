@@ -7,10 +7,10 @@ import MembersTableShimmer from "../Shimmer/MembersTableShimmer";
 import Link from "next/link";
 import Pagination from "../UI/Pagination";
 
-export default function MembersTable({ data=[], total, documents = false,currentPage,loading, onPageChange,onRowClick,search = "",tab }) {
+export default function MembersTable({ data = [], total, documents = false, currentPage, loading, onPageChange, onRowClick, search = "", tab }) {
   // const open = useModalStore((state) => state.open);
- const phonePopupRef = useRef(null);
- const [openTooltipFor, setOpenTooltipFor] = useState(null);
+  const phonePopupRef = useRef(null);
+  const [openTooltipFor, setOpenTooltipFor] = useState(null);
   //  const tooltipTableRef = useRef(null);
   const [openPhoneFor, setOpenPhoneFor] = useState(null);
   const [copiedPhoneFor, setCopiedPhoneFor] = useState(null);
@@ -32,7 +32,7 @@ export default function MembersTable({ data=[], total, documents = false,current
     e.stopPropagation();
     setOpenPhoneFor((prev) => (prev === member.id ? null : member.id));
   };
-  
+
 
   const paginatedData = data;
   const totalPages = Math.ceil(total / CONSTANTS.ITEMS_PER_PAGE);
@@ -56,22 +56,22 @@ export default function MembersTable({ data=[], total, documents = false,current
 
 
   useEffect(() => {
-  const handleClickOutside = (e) => {
-    if (!openTooltipFor) return;
+    const handleClickOutside = (e) => {
+      if (!openTooltipFor) return;
 
-    const tooltipEl = document.getElementById(
-      `tooltip-${openTooltipFor}`
-    );
+      const tooltipEl = document.getElementById(
+        `tooltip-${openTooltipFor}`
+      );
 
-    // click happened outside tooltip
-    if (tooltipEl && !tooltipEl.contains(e.target)) {
-      setOpenTooltipFor(null);
-    }
-  };
+      // click happened outside tooltip
+      if (tooltipEl && !tooltipEl.contains(e.target)) {
+        setOpenTooltipFor(null);
+      }
+    };
 
-  document.addEventListener("mousedown", handleClickOutside);
-  return () => document.removeEventListener("mousedown", handleClickOutside);
-}, [openTooltipFor]);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [openTooltipFor]);
 
 
 
@@ -84,7 +84,7 @@ export default function MembersTable({ data=[], total, documents = false,current
     return `${firstTwo.join(" | ")} | +${vals.length - 2}`;
   }
 
-  if (loading) return <MembersTableShimmer/>;
+  if (loading) return <MembersTableShimmer />;
 
   return (
     <div className="flex-1 min-h-0 mt-[20px] rounded-[20px] bg-[#F2F7FF]  overflow-y-auto relative flex flex-col">
@@ -102,8 +102,8 @@ export default function MembersTable({ data=[], total, documents = false,current
       {isEmpty && !loading && (
         <div className="flex flex-col justify-center items-center h-[calc(100vh-340px)] text-center">
           <div className="h-[80px] w-[80px] rounded-full bg-[#D3E3FD] grid place-items-center mb-[30px]">
-              <Image
-              src={isSearching?'/logo/no-search.svg':'/logo/no-member.svg'}
+            <Image
+              src={isSearching ? '/logo/no-search.svg' : '/logo/no-member.svg'}
               alt="Fallback logo"
               width={50}
               height={50}
@@ -122,10 +122,10 @@ export default function MembersTable({ data=[], total, documents = false,current
           ) : (
             <>
               <div className="mb-3 text-2xl font-semibold text-[#333333]">
-                No {tab === "nonBoard"?"non-boarded members":tab} yet
+                No {tab === "nonBoard" ? "non-boarded members" : tab} yet
               </div>
               <div className="text-base font-normal text-[#666666]">
-                Looks like you haven’t added any {tab=== "nonBoard"?"non-boarded members":tab} yet
+                Looks like you haven’t added any {tab === "nonBoard" ? "non-boarded members" : tab} yet
               </div>
             </>
           )}
@@ -144,9 +144,9 @@ export default function MembersTable({ data=[], total, documents = false,current
           const openUpwards = index >= paginatedData.length - 2;
 
           return (
-              <div
-                key={index}
-                className={`
+            <div
+              key={index}
+              className={`
                   flex flex-1 items-center py-[20px] px-[30px]
                   bg-[#F2F7FF] cursor-pointer transition-all duration-200
 
@@ -154,71 +154,76 @@ export default function MembersTable({ data=[], total, documents = false,current
                   hover:shadow-[0px_4px_4px_0px_#C7C7C740]
                   hover:border-transparent
 
-                  ${
-                    index !== paginatedData.length - 1
-                      ? "border-b border-b-[#D4DFF1]"
-                      : ""
-                  }
+                  ${index !== paginatedData.length - 1
+                  ? "border-b border-b-[#D4DFF1]"
+                  : ""
+                }
                 `}
-                onClick={() => onRowClick(member)}
-              >
+              onClick={() => onRowClick(member)}
+            >
 
               {/* LEFT - Name + title */}
               <div className="flex flex-3 items-center gap-4">
-                {member.avatar ? <Image
-                  src={member?.avatar}
-                  alt={member.name}
-                  width={48}
-                  height={48}
-                  className="rounded-full min-w-[48px] max-h-[48px] border border-[#CCCCCC]"
-                />: <div className="min-w-[48px] h-[48px] bg-[#D4DFF1] grid place-items-center text-[22px] font-[600] rounded-full">{member.name?.slice(0,1)}</div>}
+                {member.avatar ? (
+                  <Image
+                    src={member?.avatar}
+                    alt={member.name}
+                    width={48}
+                    height={48}
+                    className="w-12 h-12 shrink-0 rounded-full border border-[#CCCCCC] object-cover"
+                  />
+                ) : (
+                  <div className="w-12 h-12 shrink-0 bg-[#D4DFF1] grid place-items-center text-[22px] font-[600] rounded-full">
+                    {member.name?.slice(0, 1)}
+                  </div>
+                )}
                 <div>
                   <p className="font-semibold text-xl text-[#333333]">
                     {member.name}
                   </p>
-                {/* Title tool tip  */}
-                <div className="relative inline-block" >
-                  <p
-                    className="text-[20px] text-[#666666] font-[500] capitalize cursor-pointer"
-                    onClick={(e) => {
-                      
+                  {/* Title tool tip  */}
+                  <div className="relative inline-block" >
+                    <p
+                      className="text-[20px] text-[#666666] font-[500] capitalize cursor-pointer"
+                      onClick={(e) => {
 
-                      // only open if more than 2 titles
-                      if (formattedTitles.length > 2) {
-                        e.stopPropagation();
-                        setOpenTooltipFor(prev =>
-                          prev === member.id ? null : member.id
-                        );
-                      }
-                    }}
-                  >
-                    {display}
-                  </p>
 
-                  {openTooltipFor === member.id && formattedTitles.length > 2 && (
-                    <div id={`tooltip-${member.id}`}
-                      className="absolute z-50 w-max min-w-[200px] bg-[#ffffff] text-[#333]
+                        // only open if more than 2 titles
+                        if (formattedTitles.length > 2) {
+                          e.stopPropagation();
+                          setOpenTooltipFor(prev =>
+                            prev === member.id ? null : member.id
+                          );
+                        }
+                      }}
+                    >
+                      {display}
+                    </p>
+
+                    {openTooltipFor === member.id && formattedTitles.length > 2 && (
+                      <div id={`tooltip-${member.id}`}
+                        className="absolute z-50 w-max min-w-[200px] bg-[#ffffff] text-[#333]
                                 text-[16px] font-[500] p-[10px] rounded-[20px]
                                 whitespace-nowrap top-[calc(100%+8px)] right-0
                                 flex flex-col gap-[4px]"
-                      style={{ boxShadow: "0px 4px 4px 0px #99999940" }}
-                    >
-                      {/* Arrow */}
-                      <div
-                        className="absolute w-[16px] h-[8px] bg-[#ffffff] right-4 top-[-8px]"
-                        style={{
-                          clipPath: "polygon(50% 0%, 0% 100%, 100% 100%)",
-                        }}
-                      />
+                        style={{ boxShadow: "0px 4px 4px 0px #99999940" }}
+                      >
+                        {/* Arrow */}
+                        <div
+                          className="absolute w-[16px] h-[8px] bg-[#ffffff] right-4 top-[-8px]"
+                          style={{
+                            clipPath: "polygon(50% 0%, 0% 100%, 100% 100%)",
+                          }}
+                        />
 
-                      {formattedTitles.map((title, idx) => (
-                        <div key={idx} className="pl-[12px] h-[30px] w-[180px]">
-                          {title}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                        {formattedTitles.map((title, idx) => (
+                          <div key={idx} className="pl-[12px] h-[30px] w-[180px]">
+                            {title}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
 
 
                 </div>
@@ -235,32 +240,32 @@ export default function MembersTable({ data=[], total, documents = false,current
 
               {/* RIGHT - Action Icons */}
               <div className="flex flex-1  gap-4 text-[#666666]">
-                    {/* WhatsApp */}
-                    <Link
-                      href={`https://wa.me/${member?.phone}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                      className="w-10 h-10 bg-[#E6EBF2] rounded-full flex items-center justify-center cursor-pointer"
-                      title="Chat on WhatsApp"
-                    >
-                      <span className="ic--baseline-whatsapp"></span>
-                    </Link>
+                {/* WhatsApp */}
+                <Link
+                  href={`https://wa.me/${member?.phone}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="w-10 h-10 bg-[#E6EBF2] rounded-full flex items-center justify-center cursor-pointer"
+                  title="Chat on WhatsApp"
+                >
+                  <span className="ic--baseline-whatsapp"></span>
+                </Link>
 
-                    {/* Email */}
-                    <Link
-                      href={`mailto:${member?.email}`}
-                      onClick={(e) => e.stopPropagation()}
-                      className="w-10 h-10 bg-[#E6EBF2] rounded-full flex items-center justify-center cursor-pointer"
-                      title="Send Email"
-                    >
-                      <span className="oui--email"></span>
-                    </Link>
+                {/* Email */}
+                <Link
+                  href={`mailto:${member?.email}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="w-10 h-10 bg-[#E6EBF2] rounded-full flex items-center justify-center cursor-pointer"
+                  title="Send Email"
+                >
+                  <span className="oui--email"></span>
+                </Link>
 
                 {/* PHONE ICON + POPUP */}
                 <div
                   className="w-10 h-10 bg-[#E6EBF2] rounded-full flex items-center justify-center cursor-pointer relative"
-                  onClick={(e) => showPhoneDetails(e, member)}  ref={phonePopupRef}
+                  onClick={(e) => showPhoneDetails(e, member)} ref={phonePopupRef}
                 >
                   {/* <FaPhone size={24} color="#666666" /> */}
                   <span className="proicons--call"></span>
@@ -269,7 +274,7 @@ export default function MembersTable({ data=[], total, documents = false,current
                     <div
                       className={`w-[250px] bg-white z-30 p-5 rounded-[20px] absolute w-52 shadow-[0px_3px_4px_rgba(190,190,190,0.25)]
                       ${openUpwards ? "bottom-12" : "top-12"} -right-2`} ref={phonePopupRef}
-                      onClick={(e)=>e.stopPropagation()}
+                      onClick={(e) => e.stopPropagation()}
                     >
                       <div
                         className={`bg-white w-[24px] h-[24px] rotate-45 absolute right-4 
@@ -281,16 +286,16 @@ export default function MembersTable({ data=[], total, documents = false,current
                       </div>
 
                       <div className="min-w-[180px] flex gap-2.5 items-center justify-between">
-                            <div className="flex items-center gap-[6px] hover:underline" onClick={(e) => handleCopyPhone(e, member.phone, member.id)}>
-                              <div className="bg-[#E6EBF2] rounded-full h-8 w-8 flex items-center justify-center">
-                                <Image src={callIcon} alt="call" width={20} />
-                              </div>
-                              <div className="text-[#333333] text-base font-semibold">
-                                {/* Copy */}
-                                {member.phone}
-                              </div>
-                            </div>
-                          <div className="relative" >
+                        <div className="flex items-center gap-[6px] hover:underline" onClick={(e) => handleCopyPhone(e, member.phone, member.id)}>
+                          <div className="bg-[#E6EBF2] rounded-full h-8 w-8 flex items-center justify-center">
+                            <Image src={callIcon} alt="call" width={20} />
+                          </div>
+                          <div className="text-[#333333] text-base font-semibold">
+                            {/* Copy */}
+                            {member.phone}
+                          </div>
+                        </div>
+                        <div className="relative" >
                           {/* COPIED TOOLTIP */}
                           {copiedPhoneFor === member.id && (
                             <div className="absolute -top-8 left-1/2 -translate-x-1/2
@@ -309,7 +314,7 @@ export default function MembersTable({ data=[], total, documents = false,current
                             <span className="lucide--copy"></span>
                           </button>
                         </div>
-                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
