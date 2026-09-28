@@ -7,6 +7,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import moment from 'moment';
 import { getFeaturedEvents, removeFeaturedEvent } from '@/services/finance.service';
 import { fetchBudgetTypes } from '@/store/events/budgetChecklist/budgetThunks';
+import { formatCompactAmount } from '@/utils/currency';
 
 const locationLabel = (eventLocation) => {
   if (!eventLocation) return '—';
@@ -33,7 +34,13 @@ const formatEventDate = (startDateTime, endDateTime) => {
   return `${getOrdinal(start.date())} ${start.format('MMM')} - ${getOrdinal(end.date())} ${end.format('MMM, YYYY')}`;
 };
 
-const EventCard = ({ eventId, title, date, location, portfolio, onClick, onRemove }) => {
+const formatBudget = (value) => {
+  const amount = Number(value);
+  if (value == null || Number.isNaN(amount)) return '—';
+  return `₹${formatCompactAmount(amount)}`;
+};
+
+const EventCard = ({ eventId, title, date, location, portfolio, budget, onClick, onRemove }) => {
   return (
     <div
       onClick={() => onClick(eventId)}
@@ -68,8 +75,7 @@ const EventCard = ({ eventId, title, date, location, portfolio, onClick, onRemov
 
         <div className="flex justify-between items-center">
           <span className="text-[#666666] text-[14px]">{portfolio}</span>
-          {/* Per-event budget amount requires getBudgetEventReportCategory, not yet implemented */}
-          <span className="text-[#1b64df] font-bold text-[16px]">—</span>
+          <span className="text-[#1b64df] font-bold text-[16px]">{budget}</span>
         </div>
       </div>
     </div>
@@ -148,6 +154,7 @@ const TopEvents = () => {
               date={formatEventDate(event.startDateTime, event.endDateTime)}
               location={locationLabel(event.eventLocation)}
               portfolio={portfolioNameFor(event.eventType?.budgetTypeId)}
+              budget={formatBudget(event.eventbudget)}
               onClick={handleCardClick}
               onRemove={handleRemove}
             />

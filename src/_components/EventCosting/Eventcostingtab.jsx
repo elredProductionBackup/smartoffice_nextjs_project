@@ -560,7 +560,7 @@ function DistributionModal({ categories, onClose, budget }) {
             if (pct <= 0) return null;
             return (
               <div
-                key={cat.name}
+                key={`${cat.name}-${i}`}
                 className={SECTION_COLORS[i % SECTION_COLORS.length]}
                 style={{ width: `${pct}%` }}
               />
@@ -570,7 +570,7 @@ function DistributionModal({ categories, onClose, budget }) {
 
         <div className="space-y-3">
           {categories.map((cat, i) => (
-            <div key={cat.name} className="flex items-center gap-3">
+            <div key={`${cat.name}-${i}`} className="flex items-center gap-3">
               <span
                 className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${SECTION_COLORS[i % SECTION_COLORS.length]}`}
               />

@@ -59,7 +59,7 @@ export function PieChartPanel({
       <div className="mt-3 space-y-1.5">
         {chartData.map((d, i) => (
           <div
-            key={d.name}
+            key={`${d.name}-${i}`}
             className="flex items-center justify-between text-xs"
           >
             <div className="flex items-center gap-2 min-w-0">
