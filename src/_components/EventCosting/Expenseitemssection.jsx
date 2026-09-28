@@ -28,10 +28,10 @@ export function ExpenseItemsSection({
           className="flex-1 px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">Select Expense Category</option>
-          {budgetCategories.map((cat) => {
+          {budgetCategories.map((cat, i) => {
             const alreadyAdded = expenseItems.some((e) => e.category === cat.name);
             return (
-              <option key={cat.name} value={cat.name} disabled={alreadyAdded}>
+              <option key={`${cat.name}-${i}`} value={cat.name} disabled={alreadyAdded}>
                 {cat.name}
                 {alreadyAdded ? " (already added)" : ""}
               </option>
