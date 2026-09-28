@@ -154,7 +154,7 @@ const FinanceBudgetPage = () => {
       >
         <div className="flex items-center justify-between mb-8">
           <button
-            onClick={() => router.back()}
+            onClick={() => router.push('/dashboard/finance')}
             className="flex items-center gap-2 text-white text-[14px] font-medium px-5 py-2.5 rounded-full cursor-pointer border-none"
             style={{ background: 'rgba(255,255,255,0.18)' }}
           >
