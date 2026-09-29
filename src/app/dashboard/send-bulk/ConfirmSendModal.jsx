@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { FiX, FiChevronDown, FiHelpCircle, FiCheckCircle, FiAlertTriangle } from "react-icons/fi";
 import CustomCheckbox from "@/_components/UI/CustomCheckbox";
 import CustomDatePicker from "@/_components/UI/CustomDatePicker";
-import CustomTimePicker from "@/_components/UI/CustomTimePicker";
+import CustomTimePicker, { slotToMinutes } from "@/_components/UI/CustomTimePicker";
 import { sendBulkBroadcastMessage } from "@/services/broadcast.service";
 import { getEmailHtmlTemplate } from "./emailTemplates";
 
@@ -15,6 +15,20 @@ const FIELDS = [
   { key: "arrivalTime", label: "Arrival time", type: "time" },
   { key: "venue", label: "Venue", type: "text", placeholder: "Andheri West" },
 ];
+
+// Workshop date is "DD-MM-YYYY" (CustomDatePicker format).
+function isToday(dateStr) {
+  const now = new Date();
+  const today = `${String(now.getDate()).padStart(2, "0")}-${String(now.getMonth() + 1).padStart(2, "0")}-${now.getFullYear()}`;
+  return dateStr === today;
+}
+
+// Earliest selectable time in minutes since midnight — only restricted when the workshop is today.
+function getMinMinutes(dateStr) {
+  if (!isToday(dateStr)) return 0;
+  const now = new Date();
+  return now.getHours() * 60 + now.getMinutes();
+}
 
 function withIndianCountryCode(phone) {
   const digits = (phone || "").replace(/\D/g, "").replace(/^0+/, "");
@@ -130,9 +144,28 @@ export default function ConfirmSendModal({ contacts, templateId, messageType, su
   const [sendStatus, setSendStatus] = useState("idle"); // idle | sending | success | error
   const [sendError, setSendError] = useState("");
 
-  const canSubmit = attendeeNames.length > 0 && (nameOnly || FIELDS.every((f) => values[f.key].trim()));
+  const minMinutes = getMinMinutes(values.workshopDate);
+  const isPastTime = (slot) => Boolean(slot) && slotToMinutes(slot) < minMinutes;
 
-  const setField = (key, val) => setValues((prev) => ({ ...prev, [key]: val }));
+  const canSubmit =
+    attendeeNames.length > 0 &&
+    (nameOnly ||
+      (FIELDS.every((f) => values[f.key].trim()) &&
+        !isPastTime(values.sessionTime) &&
+        !isPastTime(values.arrivalTime)));
+
+  const setField = (key, val) =>
+    setValues((prev) => {
+      const next = { ...prev, [key]: val };
+      // Switching the date to today clears any times that are now in the past.
+      if (key === "workshopDate") {
+        const min = getMinMinutes(val);
+        ["sessionTime", "arrivalTime"].forEach((k) => {
+          if (next[k] && slotToMinutes(next[k]) < min) next[k] = "";
+        });
+      }
+      return next;
+    });
 
   const buildPayload = () => ({
     attendeeName: attendeeNames.join(", "),
@@ -221,7 +254,13 @@ export default function ConfirmSendModal({ contacts, templateId, messageType, su
                 {f.type === "date" ? (
                   <CustomDatePicker compact openUp disablePast value={values[f.key]} onChange={(v) => setField(f.key, v)} />
                 ) : f.type === "time" ? (
-                  <CustomTimePicker compact openUp value={values[f.key]} onChange={(v) => setField(f.key, v)} />
+                  <CustomTimePicker
+                    compact
+                    openUp
+                    minMinutes={minMinutes}
+                    value={values[f.key]}
+                    onChange={(v) => setField(f.key, v)}
+                  />
                 ) : (
                   <input
                     type={f.type}

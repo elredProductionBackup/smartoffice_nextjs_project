@@ -9,7 +9,7 @@ export const PRIVE_WORKSHOP_EMAIL_HTML = `<div style="font-family: Helvetica, Ar
         <div style="border-bottom: 1px solid #E72D38; padding-bottom: 15px;">
             <a href=""
                 style="font-size: 1.5em; color: #000; text-decoration: none; font-weight: 600;">
-                Prive
+                Privé
             </a>
         </div>
 
@@ -18,7 +18,7 @@ export const PRIVE_WORKSHOP_EMAIL_HTML = `<div style="font-family: Helvetica, Ar
         </p>
 
         <p>
-            Welcome to Prive! 🎉
+            Welcome to Privé! 
         </p>
 
         <p>
@@ -65,13 +65,13 @@ export const PRIVE_WORKSHOP_EMAIL_HTML = `<div style="font-family: Helvetica, Ar
         <p style="margin-top: 30px;">
             Warm regards,<br>
             <strong>Nandini</strong><br>
-            Program Lead | Prive
+            Program Lead | Privé
         </p>
 
         <hr style="border: none; border-top: 1px solid #eee; margin-top: 30px;">
 
         <div style="color: #888; font-size: 0.8em; line-height: 1.4;">
-            <p style="margin: 5px 0;">Prive</p>
+            <p style="margin: 5px 0;">Privé</p>
             <p style="margin: 5px 0;">
                 REXTONE DIGITAL PRIVATE LIMITED.
             </p>
