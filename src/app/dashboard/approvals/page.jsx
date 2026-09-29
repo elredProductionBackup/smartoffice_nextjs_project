@@ -1,31 +1,57 @@
 "use client";
 
-import React, { useMemo, useState } from 'react';
-import { FiClock, FiCheckCircle, FiXCircle, FiFileText, FiChevronRight, FiPaperclip } from 'react-icons/fi';
+import React, { Suspense, useMemo, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { FiClock, FiCheckCircle, FiXCircle, FiFileText, FiChevronRight, FiInbox } from 'react-icons/fi';
 import moment from 'moment';
+import ReviewApprovalModal from './ReviewApprovalModal';
 
 // TODO: replace with approvals API response
 const MOCK_APPROVALS = [
-  { id: '1', request: 'Lanyards And Badges', type: 'Expense', date: '2026-09-23', amount: 15000, relatedEvent: 'Annual Leadership Forum', billUrl: '#', status: 'pending', isNew: true },
-  { id: '2', request: 'Supplies', type: 'Expense', date: '2026-09-22', amount: 10000, relatedEvent: 'Learning Event', billUrl: '#', status: 'pending', isNew: true },
-  { id: '3', request: 'Foods And Beverages', type: 'Expense', date: '2026-09-22', amount: 25000, relatedEvent: 'Forum Event', billUrl: '#', status: 'pending' },
-  { id: '4', request: 'Photography Services', type: 'Expense', date: '2026-09-21', amount: 18000, relatedEvent: 'SPF Annual Gathering', billUrl: null, status: 'pending' },
-  { id: '5', request: 'Venue Booking', type: 'Expense', date: '2026-09-20', amount: 120000, relatedEvent: 'Annual Leadership Forum', billUrl: '#', status: 'approved' },
-  { id: '6', request: 'Speakers Professional Charges', type: 'Expense', date: '2026-09-19', amount: 50000, relatedEvent: 'Learning Event', billUrl: '#', status: 'approved' },
-  { id: '7', request: 'Audio Visual Setup', type: 'Expense', date: '2026-09-18', amount: 30000, relatedEvent: 'Forum Event', billUrl: null, status: 'approved' },
-  { id: '8', request: 'Printing And Stationery', type: 'Expense', date: '2026-09-17', amount: 8000, relatedEvent: 'SPF Annual Gathering', billUrl: '#', status: 'approved' },
-  { id: '9', request: 'Decor And Florals', type: 'Expense', date: '2026-09-16', amount: 22000, relatedEvent: 'Annual Leadership Forum', billUrl: '#', status: 'approved' },
-  { id: '10', request: 'Travel Reimbursement', type: 'Expense', date: '2026-09-15', amount: 14000, relatedEvent: 'Learning Event', billUrl: '#', status: 'approved' },
-  { id: '11', request: 'Gifts And Mementos', type: 'Expense', date: '2026-09-14', amount: 12000, relatedEvent: 'Forum Event', billUrl: null, status: 'approved' },
-  { id: '12', request: 'Hotel Accommodation', type: 'Expense', date: '2026-09-13', amount: 65000, relatedEvent: 'SPF Annual Gathering', billUrl: '#', status: 'approved' },
-  { id: '13', request: 'Entertainment', type: 'Expense', date: '2026-09-12', amount: 40000, relatedEvent: 'Forum Event', billUrl: '#', status: 'rejected' },
-  { id: '14', request: 'Transport', type: 'Expense', date: '2026-09-11', amount: 9000, relatedEvent: 'Learning Event', billUrl: null, status: 'rejected' },
+  { id: '1', request: 'Lanyards And Badges', type: 'Expense', date: '2026-09-23', amount: 15000, relatedEvent: 'Annual Leadership Forum', billUrl: '#', vendor: 'Mayur Printers', status: 'pending', isNew: true },
+  { id: '2', request: 'Supplies', type: 'Expense', date: '2026-09-22', amount: 10000, relatedEvent: 'Learning Event', billUrl: '#', vendor: 'Genx Agencies', status: 'pending', isNew: true },
+  { id: '3', request: 'Foods And Beverages', type: 'Expense', date: '2026-09-22', amount: 25000, relatedEvent: 'Forum Event', billUrl: '#', vendor: 'Royal Caterers', status: 'pending' },
+  { id: '4', request: 'Photography Services', type: 'Expense', date: '2026-09-21', amount: 18000, relatedEvent: 'SPF Annual Gathering', billUrl: null, vendor: 'Lens Studio', status: 'pending' },
+  { id: '5', request: 'Venue Booking', type: 'Expense', date: '2026-09-20', amount: 120000, relatedEvent: 'Annual Leadership Forum', billUrl: '#', vendor: 'Taj Lands End', status: 'approved' },
+  { id: '6', request: 'Speakers Professional Charges', type: 'Expense', date: '2026-09-19', amount: 50000, relatedEvent: 'Learning Event', billUrl: '#', vendor: 'Dr Anil Lamba', status: 'approved' },
+  { id: '7', request: 'Audio Visual Setup', type: 'Expense', date: '2026-09-18', amount: 30000, relatedEvent: 'Forum Event', billUrl: null, vendor: 'SoundWave AV', status: 'approved' },
+  { id: '8', request: 'Printing And Stationery', type: 'Expense', date: '2026-09-17', amount: 8000, relatedEvent: 'SPF Annual Gathering', billUrl: '#', vendor: 'Mayur Printers', status: 'approved' },
+  { id: '9', request: 'Decor And Florals', type: 'Expense', date: '2026-09-16', amount: 22000, relatedEvent: 'Annual Leadership Forum', billUrl: '#', vendor: 'Bloom Decor', status: 'approved' },
+  { id: '10', request: 'Travel Reimbursement', type: 'Expense', date: '2026-09-15', amount: 14000, relatedEvent: 'Learning Event', billUrl: '#', vendor: 'Admin', status: 'approved' },
+  { id: '11', request: 'Gifts And Mementos', type: 'Expense', date: '2026-09-14', amount: 12000, relatedEvent: 'Forum Event', billUrl: null, vendor: 'Gift Studio', status: 'approved' },
+  { id: '12', request: 'Hotel Accommodation', type: 'Expense', date: '2026-09-13', amount: 65000, relatedEvent: 'SPF Annual Gathering', billUrl: '#', vendor: 'Taj Lands End', status: 'approved' },
+  { id: '13', request: 'Entertainment', type: 'Expense', date: '2026-09-12', amount: 40000, relatedEvent: 'Forum Event', billUrl: '#', vendor: 'Star Events', status: 'rejected' },
+  { id: '14', request: 'Transport', type: 'Expense', date: '2026-09-11', amount: 9000, relatedEvent: 'Learning Event', billUrl: null, vendor: 'City Cabs', status: 'rejected' },
 ];
 
+// Timeline mirrors the approval flow; the final entry depends on the current status.
+const buildTimeline = (a) => {
+  const items = [
+    { label: `Expense submitted by ${a.submittedBy}`, date: a.date },
+    { label: 'Sent for Finance Officer approval', date: a.date },
+    { label: 'Viewed by Finance Officer', date: null },
+  ];
+  if (a.status === 'approved') items.push({ label: 'Approved by Finance Officer', date: a.decidedAt ?? null });
+  if (a.status === 'rejected') items.push({ label: 'Rejected by Finance Officer', date: a.decidedAt ?? null });
+  return items;
+};
+
+// Fields the review popup needs that aren't in the row list above.
+const withDetails = (a) => ({
+  submittedBy: 'Admin',
+  paymentStatus: 'Pending',
+  description: a.request,
+  remark: `${a.request} required for ${a.relatedEvent}.`,
+  ...a,
+});
+
+const INITIAL_APPROVALS = MOCK_APPROVALS.map(withDetails);
+
+// Badge colours match StatusBadge on /dashboard/expense-records
 const STATUS_BADGE = {
-  pending: { label: 'Pending Approval', Icon: FiClock, className: 'bg-[#fef3c7] border-[#fcd34d] text-[#92400e]' },
-  approved: { label: 'Approved', Icon: FiCheckCircle, className: 'bg-[#dcfce7] border-[#86efac] text-[#166534]' },
-  rejected: { label: 'Rejected', Icon: FiXCircle, className: 'bg-[#fee2e2] border-[#fca5a5] text-[#991b1b]' },
+  pending: { label: 'Pending Approval', className: 'bg-[#FEF7E0] text-[#B06000]' },
+  approved: { label: 'Approved', className: 'bg-[#E6F4EA] text-[#137333]' },
+  rejected: { label: 'Rejected', className: 'bg-[#FEE2E2] text-[#B91C1C]' },
 };
 
 const TABS = [
@@ -37,32 +63,80 @@ const TABS = [
 
 const COLUMNS = ['Request', 'Type', 'Date', 'Amount', 'Bill', 'Related Event', 'Status', 'Action'];
 
+const TABLE_COLUMNS =
+  'minmax(190px,1.6fr) minmax(90px,0.8fr) minmax(112px,1fr) minmax(110px,1fr) minmax(110px,0.9fr) minmax(180px,1.4fr) minmax(140px,1.1fr) minmax(96px,0.8fr)';
+
+const PAGE_SIZE = 10;
+
 const formatAmount = (value) => `₹${(Number(value) || 0).toLocaleString('en-IN')}`;
 
-const StatCard = ({ label, value, Icon, className, iconClassName }) => (
-  <div className={`flex-1 min-w-[220px] rounded-[12px] border px-4 py-4 ${className}`}>
-    <div className="flex items-start justify-between">
-      <span className="text-[12px] font-medium uppercase tracking-wide">{label}</span>
-      <Icon className={`text-[20px] ${iconClassName}`} />
+// Same card style as the summary cards on /dashboard/expense-records
+const StatCard = ({ label, value, sublabel, Icon, accent, iconBg, iconColor }) => (
+  <div className="group relative bg-white rounded-2xl border border-[#EAEEF2] shadow-[0_1px_3px_rgba(16,24,40,0.04)] p-5 pl-6 flex justify-between items-start overflow-hidden transition-all duration-200 hover:-translate-y-[3px] hover:shadow-[0_12px_30px_rgba(16,24,40,0.10)] hover:border-[#DDE3EA]">
+    <span className="absolute left-0 top-0 h-full w-[3px]" style={{ backgroundColor: accent }} />
+    <div className="flex flex-col gap-2">
+      <span className="font-nunito font-semibold text-[14px] text-[#64748B]">{label}</span>
+      <span className="font-nunito font-extrabold text-[30px] leading-none text-[#0F172A] tabular-nums tracking-tight">
+        {value}
+      </span>
+      <span className="font-nunito font-medium text-[12px] text-[#94A3B8]">{sublabel}</span>
     </div>
-    <p className="text-[30px] font-bold leading-[1.2] mt-2">{value}</p>
+    <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${iconBg}`}>
+      <Icon className={`w-5 h-5 ${iconColor}`} />
+    </div>
   </div>
 );
 
-const ApprovalsPage = () => {
-  const [activeTab, setActiveTab] = useState('pending');
+const TAB_KEYS = TABS.map((t) => t.key);
+
+const ApprovalsContent = () => {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Tab and page live in the URL (?tab=approved&page=2) so they survive a refresh.
+  const urlTab = searchParams.get('tab');
+  const activeTab = TAB_KEYS.includes(urlTab) ? urlTab : 'pending';
+  const urlPage = Number(searchParams.get('page')) || 1;
+
+  const updateParams = (updates) => {
+    const params = new URLSearchParams(searchParams.toString());
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value == null) params.delete(key);
+      else params.set(key, String(value));
+    });
+    router.replace(`?${params.toString()}`, { scroll: false });
+  };
+
+  const setCurrentPage = (page) => updateParams({ page: page > 1 ? page : null });
+  const [approvals, setApprovals] = useState(INITIAL_APPROVALS);
+  const [reviewId, setReviewId] = useState(null);
 
   const counts = useMemo(() => {
-    const c = { pending: 0, approved: 0, rejected: 0, all: MOCK_APPROVALS.length };
-    MOCK_APPROVALS.forEach((a) => { c[a.status] += 1; });
+    const c = { pending: 0, approved: 0, rejected: 0, all: approvals.length };
+    approvals.forEach((a) => { c[a.status] += 1; });
     return c;
-  }, []);
+  }, [approvals]);
 
-  const rows = activeTab === 'all' ? MOCK_APPROVALS : MOCK_APPROVALS.filter((a) => a.status === activeTab);
+  const filtered = activeTab === 'all' ? approvals : approvals.filter((a) => a.status === activeTab);
+  const totalCount = filtered.length;
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  // Clamped so an out-of-range ?page= (or a row leaving this tab) still shows a valid page.
+  const currentPage = Math.min(Math.max(1, urlPage), totalPages);
+  const rows = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
-  const handleReview = (approval) => {
-    // TODO: open review flow
-    console.log('Review approval', approval.id);
+  const handleTabChange = (key) => updateParams({ tab: key, page: null });
+
+  const reviewing = approvals.find((a) => a.id === reviewId);
+
+  const handleReview = (approval) => setReviewId(approval.id);
+
+  // TODO: call the approve/reject API; for now this only updates local state
+  const updateStatus = (approval, status) => {
+    const decidedAt = moment().format('YYYY-MM-DD');
+    setApprovals((prev) =>
+      prev.map((a) => (a.id === approval.id ? { ...a, status, decidedAt, isNew: false } : a))
+    );
+    setReviewId(null);
   };
 
   return (
@@ -72,36 +146,43 @@ const ApprovalsPage = () => {
         <p className="text-[#777777] font-medium text-[18px] leading-[136%]">Review and manage pending approvals</p>
       </div>
 
-      <div className="flex flex-wrap gap-4 mb-6">
-        <StatCard label="Pending Approval" value={counts.pending} Icon={FiClock}
-          className="bg-[#fefce8] border-[#fde68a] text-[#c2410c]" iconClassName="text-[#ea580c]" />
-        <StatCard label="Approved" value={counts.approved} Icon={FiCheckCircle}
-          className="bg-[#ecfdf5] border-[#a7f3d0] text-[#047857]" iconClassName="text-[#10b981]" />
-        <StatCard label="Rejected" value={counts.rejected} Icon={FiXCircle}
-          className="bg-[#fef2f2] border-[#fecaca] text-[#b91c1c]" iconClassName="text-[#ef4444]" />
-        <StatCard label="Total Requests" value={counts.all} Icon={FiFileText}
-          className="bg-[#eff6ff] border-[#bfdbfe] text-[#1d4ed8]" iconClassName="text-[#3b82f6]" />
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
+        <StatCard label="Pending Approval" value={counts.pending} sublabel="Awaiting review" Icon={FiClock}
+          accent="#F59E0B" iconBg="bg-[#FFF4E5]" iconColor="text-[#F59E0B]" />
+        <StatCard label="Approved" value={counts.approved} sublabel="Approved requests" Icon={FiCheckCircle}
+          accent="#0F9D58" iconBg="bg-[#E6F4EA]" iconColor="text-[#0F9D58]" />
+        <StatCard label="Rejected" value={counts.rejected} sublabel="Rejected requests" Icon={FiXCircle}
+          accent="#DC2626" iconBg="bg-[#FDECEC]" iconColor="text-[#DC2626]" />
+        <StatCard label="Total Requests" value={counts.all} sublabel="All time requests" Icon={FiFileText}
+          accent="#1A73E8" iconBg="bg-[#E8F0FE]" iconColor="text-[#1A73E8]" />
       </div>
 
-      <div className="bg-white border border-[#e5e7eb] rounded-[12px] overflow-hidden">
-        <div className="flex gap-1 px-2 pt-2 border-b border-[#e5e7eb]">
+      {/* Approval requests table — same layout as the All Expenses table on /dashboard/expense-records */}
+      <div className="rounded-[22px] bg-white overflow-hidden p-6 md:p-8 border border-[#EAEEF2] mb-[20px]">
+        <div className="flex items-center gap-2.5">
+          <h2 className="font-nunito font-bold text-[20px] text-[#1E293B]">Approval Requests</h2>
+          <span className="inline-flex items-center h-6 px-2.5 rounded-full bg-[#F1F5F9] text-[12px] font-bold text-[#64748B]">
+            {counts.all}
+          </span>
+        </div>
+
+        {/* Tabs — same underline style as the events page tabs (action-tabs / tab-item in globals.css) */}
+        <div className="action-tabs flex items-center gap-[10px] relative text-[#666666] mt-5 mb-2">
           {TABS.map((tab) => {
             const isActive = activeTab === tab.key;
             return (
               <button
                 key={tab.key}
                 type="button"
-                onClick={() => setActiveTab(tab.key)}
-                className={`flex items-center gap-2 px-4 py-2.5 text-[14px] font-medium rounded-t-[8px] border border-b-0 -mb-px cursor-pointer transition-colors ${
-                  isActive
-                    ? 'bg-white border-[#e5e7eb] text-[#2563eb]'
-                    : 'bg-transparent border-transparent text-[#4b5563] hover:text-[#111827]'
+                onClick={() => handleTabChange(tab.key)}
+                className={`tab-item relative inline-flex items-center gap-2 px-[20px] py-[5px] cursor-pointer text-[20px] font-[700] transition ${
+                  isActive ? 'bordered text-[#0B57D0]' : ''
                 }`}
               >
                 {tab.label}
                 <span
-                  className={`text-[11px] font-semibold px-1.5 py-0.5 rounded-full ${
-                    isActive ? 'bg-[#dbeafe] text-[#2563eb]' : 'bg-[#f3f4f6] text-[#4b5563]'
+                  className={`inline-flex items-center h-5 px-2 rounded-full text-[11px] font-bold ${
+                    isActive ? 'bg-[#E8F0FE] text-[#0B57D0]' : 'bg-[#F1F5F9] text-[#64748B]'
                   }`}
                 >
                   {counts[tab.key]}
@@ -111,81 +192,133 @@ const ApprovalsPage = () => {
           })}
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead className="bg-[#f9fafb]">
-              <tr>
-                {COLUMNS.map((col) => (
-                  <th key={col} className="px-4 py-3 text-[12px] font-medium uppercase text-[#4b5563] whitespace-nowrap">
-                    {col}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.length === 0 && (
-                <tr>
-                  <td colSpan={COLUMNS.length} className="px-4 py-10 text-center text-[#6b7280] italic">
-                    No requests to display.
-                  </td>
-                </tr>
-              )}
-              {rows.map((a) => {
+        <div className="overflow-x-auto pb-3 [scrollbar-width:thin] [scrollbar-color:#AEB9C8_transparent] [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-[#AEB9C8] [&::-webkit-scrollbar-thumb]:rounded-full">
+          <div className="min-w-[1100px]">
+            {/* Header row */}
+            <div
+              className="grid gap-3 py-4 border-b border-[#EAEEF2] font-nunito font-bold text-[13px] text-[#64748B]"
+              style={{ gridTemplateColumns: TABLE_COLUMNS }}
+            >
+              {COLUMNS.map((col) => (
+                <div key={col} className={col === 'Request' ? 'pl-2' : ''}>{col}</div>
+              ))}
+            </div>
+
+            {/* Body */}
+            {rows.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-3 py-20 text-center">
+                <div className="w-12 h-12 rounded-2xl bg-[#F1F5F9] flex items-center justify-center">
+                  <FiInbox className="w-6 h-6 text-[#94A3B8]" />
+                </div>
+                <span className="text-[15px] font-bold text-[#334155]">No requests to show</span>
+                <span className="text-[13px] text-[#94A3B8] font-medium">New requests will appear here.</span>
+              </div>
+            ) : (
+              rows.map((a) => {
                 const badge = STATUS_BADGE[a.status];
                 return (
-                  <tr key={a.id} className="border-t border-[#f1f5f9] hover:bg-[#f9fafb] transition-colors">
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2 text-[14px] font-semibold text-[#111827]">
-                        {a.isNew && <span className="w-2 h-2 rounded-full bg-[#2563eb]" />}
-                        {a.request}
-                      </div>
-                    </td>
-                    <td className="px-4 py-4">
-                      <span className="text-[12px] font-medium text-[#374151] bg-[#f3f4f6] px-2 py-1 rounded-[6px]">{a.type}</span>
-                    </td>
-                    <td className="px-4 py-4 text-[14px] text-[#6b7280] whitespace-nowrap">{moment(a.date).format('DD MMM YYYY')}</td>
-                    <td className="px-4 py-4 text-[14px] font-bold text-[#111827] whitespace-nowrap">{formatAmount(a.amount)}</td>
-                    <td className="px-4 py-4 whitespace-nowrap">
+                  <div
+                    key={a.id}
+                    className="grid gap-3 py-5 border-b border-[#EBEFF4] last:border-b-0 items-center font-nunito text-[14px] text-[#334155] transition-colors hover:bg-[#EEF4FF]"
+                    style={{ gridTemplateColumns: TABLE_COLUMNS }}
+                  >
+                    <div className="flex items-center gap-2 pl-2 pr-2 min-w-0 font-bold text-[#0B57D0] capitalize" title={a.request}>
+                      {a.isNew && <span className="w-2 h-2 rounded-full bg-[#2B7FFF] shrink-0" />}
+                      <span className="truncate">{a.request}</span>
+                    </div>
+                    <div className="text-[#475569]">{a.type}</div>
+                    <div className="text-[#64748B]">{moment(a.date).format('DD MMM YYYY')}</div>
+                    <div className="font-bold text-[#0F172A] tabular-nums">{formatAmount(a.amount)}</div>
+                    <div>
                       {a.billUrl ? (
                         <a
                           href={a.billUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-[#2563eb] hover:underline"
+                          className="inline-flex items-center gap-1.5 text-[#0B57D0] font-semibold text-[13px] hover:underline"
                         >
-                          <FiPaperclip className="text-[14px]" />
+                          <FiFileText className="w-4 h-4 shrink-0" />
                           View Bill
                         </a>
                       ) : (
-                        <span className="text-[14px] text-[#9ca3af]">—</span>
+                        <span className="text-[#CBD5E1]">—</span>
                       )}
-                    </td>
-                    <td className="px-4 py-4 text-[14px] text-[#374151] whitespace-nowrap">{a.relatedEvent}</td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center gap-1.5 text-[12px] font-semibold px-2.5 py-1 rounded-full border ${badge.className}`}>
-                        <badge.Icon className="text-[13px]" />
+                    </div>
+                    <div className="truncate text-[#475569]" title={a.relatedEvent}>{a.relatedEvent}</div>
+                    <div>
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-[12px] font-semibold font-nunito whitespace-nowrap ${badge.className}`}>
                         {badge.label}
                       </span>
-                    </td>
-                    <td className="px-4 py-4">
+                    </div>
+                    <div>
                       <button
                         type="button"
                         onClick={() => handleReview(a)}
-                        className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#2563eb] bg-[#eff6ff] hover:bg-[#dbeafe] px-3 py-1.5 rounded-[6px] cursor-pointer transition-colors"
+                        className="inline-flex items-center gap-1 bg-[#2B7FFF] hover:bg-[#1a6fe6] active:scale-[0.97] text-white font-nunito font-semibold text-[12px] px-3 py-1.5 rounded-md transition-all cursor-pointer border-0 outline-none whitespace-nowrap"
                       >
                         Review
-                        <FiChevronRight className="text-[13px]" />
+                        <FiChevronRight className="w-3.5 h-3.5" />
                       </button>
-                    </td>
-                  </tr>
+                    </div>
+                  </div>
                 );
-              })}
-            </tbody>
-          </table>
+              })
+            )}
+          </div>
         </div>
+
+        {/* Pagination */}
+        {totalCount > 0 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between border-t border-[#F1F5F9] pt-6 mt-6 gap-4 font-nunito">
+            <span className="text-[14px] text-[#777777] font-medium">
+              Showing{' '}
+              <span className="font-bold text-[#334155]">
+                {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(totalCount, currentPage * PAGE_SIZE)}
+              </span>{' '}
+              of <span className="font-bold text-[#334155]">{totalCount}</span> records
+            </span>
+            <div className="flex items-center gap-2.5">
+              <button
+                type="button"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(currentPage - 1)}
+                className="px-4 py-2 border border-[#E2E8F0] rounded-xl text-[14px] font-semibold text-[#333333] bg-white hover:bg-slate-50 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Previous
+              </button>
+              <span className="text-[13px] font-semibold text-[#64748B] px-1">
+                Page {currentPage} of {totalPages}
+              </span>
+              <button
+                type="button"
+                disabled={currentPage >= totalPages}
+                onClick={() => setCurrentPage(currentPage + 1)}
+                className="px-4 py-2 border border-[#E2E8F0] rounded-xl text-[14px] font-semibold text-[#333333] bg-white hover:bg-slate-50 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
+
+      {reviewing && (
+        <ReviewApprovalModal
+          approval={{ ...reviewing, timeline: buildTimeline(reviewing) }}
+          onClose={() => setReviewId(null)}
+          onApprove={(a) => updateStatus(a, 'approved')}
+          onReject={(a) => updateStatus(a, 'rejected')}
+        />
+      )}
     </div>
   );
 };
+
+// useSearchParams needs a Suspense boundary in the App Router.
+const ApprovalsPage = () => (
+  <Suspense fallback={null}>
+    <ApprovalsContent />
+  </Suspense>
+);
 
 export default ApprovalsPage;

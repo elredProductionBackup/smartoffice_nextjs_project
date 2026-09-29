@@ -522,7 +522,7 @@ export default function ExpenseRecordsPage() {
       </div>
 
       {/* All Expenses table */}
-      <div className="rounded-[22px] bg-white overflow-hidden p-6 md:p-8 border border-[#EAEEF2] shadow-[0_6px_28px_rgba(16,24,40,0.06)] mb-[20px]">
+      <div className="rounded-[22px] bg-white overflow-hidden p-6 md:p-8 border border-[#EAEEF2] mb-[20px]">
         {/* Table top bar */}
         <div className="flex items-center gap-2.5">
           <h2 className="font-nunito font-bold text-[20px] text-[#1E293B]">All Expenses</h2>
