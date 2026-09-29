@@ -25,14 +25,24 @@ function buildSlots() {
 
 const SLOTS = buildSlots();
 
-function stepValue(value, direction) {
-  const idx = SLOTS.indexOf(value);
-  if (idx === -1) return SLOTS[0];
-  const next = (idx + direction + SLOTS.length) % SLOTS.length;
-  return SLOTS[next];
+// Minutes since midnight for a slot string, e.g. "01:30 PM" -> 810.
+export function slotToMinutes(slot) {
+  const idx = SLOTS.indexOf(slot);
+  return idx === -1 ? -1 : idx * STEP_MINUTES;
 }
 
-export default function CustomTimePicker({ value, onChange, compact = false, openUp = false }) {
+// Steps to the next enabled slot; slots before minMinutes are skipped.
+function stepValue(value, direction, minMinutes) {
+  const enabled = SLOTS.filter((_, i) => i * STEP_MINUTES >= minMinutes);
+  if (enabled.length === 0) return value;
+  const idx = enabled.indexOf(value);
+  if (idx === -1) return enabled[0];
+  const next = (idx + direction + enabled.length) % enabled.length;
+  return enabled[next];
+}
+
+// minMinutes: slots earlier than this (minutes since midnight) are disabled.
+export default function CustomTimePicker({ value, onChange, compact = false, openUp = false, minMinutes = 0 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const listRef = useRef(null);
@@ -52,9 +62,13 @@ export default function CustomTimePicker({ value, onChange, compact = false, ope
     }
   }, [open]);
 
+  // With no value selected, open the list scrolled to the first enabled slot.
+  const firstEnabledIdx = Math.ceil(minMinutes / STEP_MINUTES);
+  const hasSelection = SLOTS.includes(value);
+
   const handleStep = (e, direction) => {
     e.stopPropagation();
-    onChange(stepValue(value || SLOTS[0], direction));
+    onChange(stepValue(value, direction, minMinutes));
   };
 
   return (
@@ -106,20 +120,29 @@ export default function CustomTimePicker({ value, onChange, compact = false, ope
           }
           style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}
         >
-          {SLOTS.map((slot) => {
+          {SLOTS.map((slot, i) => {
             const isSel = slot === value;
+            const isDisabled = i * STEP_MINUTES < minMinutes;
             return (
               <button
                 key={slot}
                 type="button"
-                ref={isSel ? selectedRef : null}
+                disabled={isDisabled}
+                ref={isSel || (!hasSelection && i === firstEnabledIdx) ? selectedRef : null}
                 onMouseDown={() => {
+                  if (isDisabled) return;
                   onChange(slot);
                   setOpen(false);
                 }}
-                className={`w-full flex items-center justify-between px-4 cursor-pointer border-none outline-none text-left transition-colors duration-150 ${
+                className={`w-full flex items-center justify-between px-4 border-none outline-none text-left transition-colors duration-150 ${
                   compact ? 'py-1.5 text-[12px]' : 'py-2 text-[13px]'
-                } ${isSel ? 'bg-[#eff6ff] text-[#2563eb] font-semibold' : 'text-slate-700 bg-transparent hover:bg-slate-50'}`}
+                } ${
+                  isDisabled
+                    ? 'text-slate-300 bg-transparent cursor-not-allowed'
+                    : isSel
+                    ? 'bg-[#eff6ff] text-[#2563eb] font-semibold cursor-pointer'
+                    : 'text-slate-700 bg-transparent hover:bg-slate-50 cursor-pointer'
+                }`}
               >
                 {slot}
                 {isSel && <FiCheck className={compact ? 'w-3.5 h-3.5' : 'w-4 h-4'} />}
