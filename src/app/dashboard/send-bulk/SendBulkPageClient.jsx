@@ -528,11 +528,11 @@ export default function SendBulkPageClient() {
           >
             <FiArrowLeft className="text-[18px]" />
           </button>
-          <h1 className="text-2xl font-bold text-[#1a1a2e]">New broadcast</h1>
+          <h1 className="text-[32px] font-semibold text-[#1a1a2e]">New broadcast</h1>
         </div>
         <button
           onClick={() => router.push("/dashboard/send-bulk/reports")}
-          className="flex items-center gap-2 px-4 h-10 rounded-[10px] bg-white border border-[#d1d5db] text-[13px] font-semibold text-[#333] hover:border-[#2563eb] hover:text-[#2563eb] cursor-pointer transition-colors"
+          className="flex items-center gap-2 px-4 h-10 rounded-[10px] bg-white border border-[#d1d5db] text-[16px] font-semibold text-[#333] hover:border-[#2563eb] hover:text-[#2563eb] cursor-pointer transition-colors"
         >
           <FiBarChart2 className="text-[16px]" />
           View reports
@@ -540,7 +540,7 @@ export default function SendBulkPageClient() {
       </div>
 
       {notice && (
-        <div className="mb-4 inline-block px-4 py-2 rounded-[10px] bg-[#eff6ff] text-[#2563eb] text-[13px] font-semibold">
+        <div className="mb-4 inline-block px-4 py-2 rounded-[10px] bg-[#eff6ff] text-[#2563eb] text-[16px] font-semibold">
           {notice}
         </div>
       )}
@@ -554,8 +554,8 @@ export default function SendBulkPageClient() {
                 <FiMessageCircle className="text-[20px]" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-[#1a1a2e]">Message</h2>
-                <p className="text-[13px] text-[#888]">Pick a template or write your own</p>
+                <h2 className="text-[22px] font-bold text-[#1a1a2e]">Message</h2>
+                <p className="text-[16px] text-[#888]">Pick a template or write your own</p>
               </div>
             </div>
 
@@ -578,9 +578,9 @@ export default function SendBulkPageClient() {
                       setGroupsModalOpen(true);
                       setMessageMenuOpen(false);
                     }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2.5 text-[13px] font-medium text-[#333] hover:bg-[#f9fafb] rounded-[7px] cursor-pointer"
+                    className="w-full flex items-center gap-2.5 px-3 py-2.5 text-[16px] font-medium text-[#333] hover:bg-[#f9fafb] rounded-[7px] cursor-pointer"
                   >
-                    <FiUsers className="text-[14px] text-[#2563eb]" />
+                    <FiUsers className="text-[16px] text-[#2563eb]" />
                     Manage groups
                   </button>
                 </div>
@@ -591,12 +591,12 @@ export default function SendBulkPageClient() {
           {/* Template + Channels */}
           <div className="grid grid-cols-2 gap-4 mb-5">
             <div>
-              <label className="block text-[13px] font-semibold text-[#333] mb-1.5">Template</label>
+              <label className="block text-[16px] font-semibold text-[#333] mb-1.5">Template</label>
               <div ref={templateRef} className="relative">
                 <button
                   type="button"
                   onClick={() => setTemplateOpen((p) => !p)}
-                  className={`w-full flex items-center justify-between h-[42px] px-3 rounded-[8px] border text-[13px] bg-white transition-colors cursor-pointer ${
+                  className={`w-full flex items-center justify-between h-[42px] px-3 rounded-[8px] border text-[16px] bg-white transition-colors cursor-pointer ${
                     templateOpen ? "border-[#2563eb] ring-1 ring-[#2563eb]/30" : "border-[#d1d5db] hover:border-[#9ca3af]"
                   }`}
                 >
@@ -612,7 +612,7 @@ export default function SendBulkPageClient() {
                 {templateOpen && (
                   <div className="absolute z-30 w-full mt-1 bg-white border border-[#e5e7eb] rounded-[10px] shadow-lg py-1.5 px-1.5">
                     {whatsappTemplates.length === 0 && (
-                      <div className="px-3 py-2.5 text-[13px] text-[#9ca3af]">
+                      <div className="px-3 py-2.5 text-[16px] text-[#9ca3af]">
                         {templatesLoading ? "Loading templates…" : "No templates available"}
                       </div>
                     )}
@@ -623,12 +623,12 @@ export default function SendBulkPageClient() {
                           key={tpl.id}
                           type="button"
                           onClick={() => handleTemplateSelect(tpl)}
-                          className={`w-full flex items-center justify-between px-3 py-2.5 text-[13px] text-left rounded-[7px] cursor-pointer ${
+                          className={`w-full flex items-center justify-between px-3 py-2.5 text-[16px] text-left rounded-[7px] cursor-pointer ${
                             isSelected ? "bg-[#eff6ff] text-[#2563eb] font-medium" : "text-[#111] hover:bg-[#f9fafb]"
                           }`}
                         >
                           {tpl.label}
-                          {isSelected && <FiCheck className="text-[#2563eb] text-[13px]" />}
+                          {isSelected && <FiCheck className="text-[#2563eb] text-[16px]" />}
                         </button>
                       );
                     })}
@@ -638,14 +638,14 @@ export default function SendBulkPageClient() {
             </div>
 
             <div>
-              <label className="block text-[13px] font-semibold text-[#333] mb-1.5">Channels</label>
+              <label className="block text-[16px] font-semibold text-[#333] mb-1.5">Channels</label>
               <div className="flex items-center gap-2 h-[42px]">
                 <button
                   type="button"
                   role="radio"
                   aria-checked={channels.whatsapp}
                   onClick={() => selectChannel("whatsapp")}
-                  className={`flex items-center gap-2 h-full px-4 rounded-full border text-[13px] font-semibold cursor-pointer transition-colors ${
+                  className={`flex items-center gap-2 h-full px-4 rounded-full border text-[16px] font-semibold cursor-pointer transition-colors ${
                     channels.whatsapp
                       ? "border-[#16a34a] bg-[#f0fdf4] text-[#16a34a]"
                       : "border-[#d1d5db] text-[#9ca3af] hover:border-[#9ca3af]"
@@ -665,7 +665,7 @@ export default function SendBulkPageClient() {
                   role="radio"
                   aria-checked={channels.email}
                   onClick={() => selectChannel("email")}
-                  className={`flex items-center gap-2 h-full px-4 rounded-full border text-[13px] font-semibold cursor-pointer transition-colors ${
+                  className={`flex items-center gap-2 h-full px-4 rounded-full border text-[16px] font-semibold cursor-pointer transition-colors ${
                     channels.email
                       ? "border-[#2563eb] bg-[#eff6ff] text-[#2563eb]"
                       : "border-[#d1d5db] text-[#9ca3af] hover:border-[#9ca3af]"
@@ -689,7 +689,7 @@ export default function SendBulkPageClient() {
             {channels.whatsapp && (
               <button
                 onClick={() => setActiveTab("whatsapp")}
-                className={`pb-2.5 text-[14px] font-semibold cursor-pointer border-b-2 -mb-px transition-colors ${
+                className={`pb-2.5 text-[16px] font-semibold cursor-pointer border-b-2 -mb-px transition-colors ${
                   activeTab === "whatsapp" ? "border-[#16a34a] text-[#16a34a]" : "border-transparent text-[#9ca3af]"
                 }`}
               >
@@ -699,7 +699,7 @@ export default function SendBulkPageClient() {
             {channels.email && (
               <button
                 onClick={() => setActiveTab("email")}
-                className={`pb-2.5 text-[14px] font-semibold cursor-pointer border-b-2 -mb-px transition-colors ${
+                className={`pb-2.5 text-[16px] font-semibold cursor-pointer border-b-2 -mb-px transition-colors ${
                   activeTab === "email" ? "border-[#2563eb] text-[#2563eb]" : "border-transparent text-[#9ca3af]"
                 }`}
               >
@@ -711,12 +711,12 @@ export default function SendBulkPageClient() {
           {/* Subject (email only) */}
           {activeTab === "email" && (
             <div className="mb-4">
-              <label className="block text-[13px] font-semibold text-[#333] mb-1.5">Subject</label>
+              <label className="block text-[16px] font-semibold text-[#333] mb-1.5">Subject</label>
               <input
                 value={emailSubject}
                 onChange={(e) => setEmailSubject(e.target.value)}
                 placeholder="Enter email subject"
-                className="w-full h-[42px] px-3 rounded-[8px] border border-[#d1d5db] bg-white text-[13px] text-[#111] outline-none focus:border-[#2563eb] transition-colors placeholder:text-[#9ca3af]"
+                className="w-full h-[42px] px-3 rounded-[8px] border border-[#d1d5db] bg-white text-[16px] text-[#111] outline-none focus:border-[#2563eb] transition-colors placeholder:text-[#9ca3af]"
               />
             </div>
           )}
@@ -725,41 +725,41 @@ export default function SendBulkPageClient() {
             <>
               {/* Message content */}
               <div
-                className="w-full min-h-[196px] max-h-[320px] overflow-y-auto border border-[#d1d5db] rounded-[10px] px-4 py-3 bg-white text-[14px] text-[#111]"
+                className="w-full min-h-[196px] max-h-[320px] overflow-y-auto border border-[#d1d5db] rounded-[10px] px-4 py-3 bg-white text-[16px] text-[#111]"
                 dangerouslySetInnerHTML={{ __html: messages.email || "" }}
               />
 
               {/* Preview */}
-              <h3 className="text-[15px] font-bold text-[#1a1a2e] mt-6 mb-2">Preview</h3>
+              <h3 className="text-[18px] font-bold text-[#1a1a2e] mt-6 mb-2">Preview</h3>
               <div className="rounded-2xl border border-[#e5e7eb] bg-white overflow-hidden">
                 <div className="px-5 py-4 border-b border-[#f1f5f9] flex flex-col gap-1.5">
-                  <div className="flex items-center text-[13px]">
+                  <div className="flex items-center text-[16px]">
                     <span className="w-16 shrink-0 text-[#9ca3af]">From</span>
                     <span className="text-[#111] font-medium truncate">
                       Team Smart Networks &lt;noreply@smartnetworks.in&gt;
                     </span>
                   </div>
-                  <div className="flex items-center text-[13px]">
+                  <div className="flex items-center text-[16px]">
                     <span className="w-16 shrink-0 text-[#9ca3af]">To</span>
                     <span className="text-[#111] truncate">
                       {firstSelectedName} &lt;{selectedContacts[0]?.email || "name@company.in"}&gt;
                     </span>
                   </div>
-                  <div className="flex items-center text-[13px]">
+                  <div className="flex items-center text-[16px]">
                     <span className="w-16 shrink-0 text-[#9ca3af]">Subject</span>
                     <span className="text-[#1a1a2e] font-semibold truncate">{emailSubject}</span>
                   </div>
                 </div>
                 {previewText ? (
                   <div
-                    className="px-5 py-5 text-[14px] text-[#111] leading-relaxed"
+                    className="px-5 py-5 text-[16px] text-[#111] leading-relaxed"
                     dangerouslySetInnerHTML={{ __html: previewText }}
                   />
                 ) : (
-                  <div className="px-5 py-5 text-[14px] text-[#9ca3af]">Your message preview will appear here.</div>
+                  <div className="px-5 py-5 text-[16px] text-[#9ca3af]">Your message preview will appear here.</div>
                 )}
               </div>
-              <p className="text-[12px] text-[#9ca3af] mt-3">
+              <p className="text-[14px] text-[#9ca3af] mt-3">
                 Variables are filled per contact. Shown here with sample values.
               </p>
             </>
@@ -775,8 +775,8 @@ export default function SendBulkPageClient() {
                   <FiUsers className="text-[20px]" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-[#1a1a2e]">Send To</h2>
-                  <p className="text-[13px] text-[#888]">
+                  <h2 className="text-[22px] font-bold text-[#1a1a2e]">Send To</h2>
+                  <p className="text-[16px] text-[#888]">
                     {selectedContacts.length} of {contacts.length} contacts selected
                   </p>
                 </div>
@@ -801,9 +801,9 @@ export default function SendBulkPageClient() {
                         setContactsModalMode("contact");
                         setSendToMenuOpen(false);
                       }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2.5 text-[13px] font-medium text-[#333] hover:bg-[#f9fafb] rounded-[7px] cursor-pointer"
+                      className="w-full flex items-center gap-2.5 px-3 py-2.5 text-[16px] font-medium text-[#333] hover:bg-[#f9fafb] rounded-[7px] cursor-pointer"
                     >
-                      <FiPlus className="text-[14px] text-[#2563eb]" />
+                      <FiPlus className="text-[16px] text-[#2563eb]" />
                       Add contact
                     </button>
                     <button
@@ -811,9 +811,9 @@ export default function SendBulkPageClient() {
                         setContactsModalMode("manage");
                         setSendToMenuOpen(false);
                       }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2.5 text-[13px] font-medium text-[#333] hover:bg-[#f9fafb] rounded-[7px] cursor-pointer"
+                      className="w-full flex items-center gap-2.5 px-3 py-2.5 text-[16px] font-medium text-[#333] hover:bg-[#f9fafb] rounded-[7px] cursor-pointer"
                     >
-                      <FiUsers className="text-[14px] text-[#2563eb]" />
+                      <FiUsers className="text-[16px] text-[#2563eb]" />
                       Manage contacts ({contactEntryCount})
                     </button>
                   </div>
@@ -823,7 +823,7 @@ export default function SendBulkPageClient() {
 
             <div className="flex items-center gap-2 mb-4">
               <div className="flex-1 flex items-center gap-2 h-[42px] px-3 rounded-[8px] border border-[#d1d5db] focus-within:border-[#2563eb] transition-colors">
-                <FiSearch className="text-[15px] text-[#9ca3af]" />
+                <FiSearch className="text-[18px] text-[#9ca3af]" />
                 <input
                   value={search}
                   onChange={(e) => {
@@ -831,7 +831,7 @@ export default function SendBulkPageClient() {
                     setShowAllContacts(false);
                   }}
                   placeholder="Search name, email or number"
-                  className="flex-1 text-[13px] outline-none placeholder:text-[#9ca3af]"
+                  className="flex-1 text-[16px] outline-none placeholder:text-[#9ca3af]"
                 />
               </div>
 
@@ -839,13 +839,13 @@ export default function SendBulkPageClient() {
                 <button
                   type="button"
                   onClick={() => setGroupFilterOpen((p) => !p)}
-                  className={`flex items-center gap-2 h-[42px] px-3 rounded-[8px] border text-[13px] bg-white cursor-pointer whitespace-nowrap ${
+                  className={`flex items-center gap-2 h-[42px] px-3 rounded-[8px] border text-[16px] bg-white cursor-pointer whitespace-nowrap ${
                     groupFilterOpen ? "border-[#2563eb]" : "border-[#d1d5db] hover:border-[#9ca3af]"
                   }`}
                 >
                   {groupFilter}
                   <FiChevronDown
-                    className={`text-[#6b7280] text-[14px] transition-transform duration-200 ${
+                    className={`text-[#6b7280] text-[16px] transition-transform duration-200 ${
                       groupFilterOpen ? "rotate-180" : ""
                     }`}
                   />
@@ -860,7 +860,7 @@ export default function SendBulkPageClient() {
                           setGroupFilterOpen(false);
                           setShowAllContacts(false);
                         }}
-                        className={`w-full text-left px-3 py-2 text-[13px] rounded-[7px] cursor-pointer ${
+                        className={`w-full text-left px-3 py-2 text-[16px] rounded-[7px] cursor-pointer ${
                           groupFilter === g ? "bg-[#eff6ff] text-[#2563eb] font-medium" : "text-[#111] hover:bg-[#f9fafb]"
                         }`}
                       >
@@ -875,12 +875,12 @@ export default function SendBulkPageClient() {
             <div className="flex items-center justify-between mb-2">
               <button
                 onClick={handleSelectAll}
-                className="text-[13px] font-semibold text-[#2563eb] hover:underline cursor-pointer"
+                className="text-[16px] font-semibold text-[#2563eb] hover:underline cursor-pointer"
               >
                 {allFilteredSelected ? "Deselect all" : `Select all ${selectableInFilter.length}`}
               </button>
               {groupFilterLoading && (
-                <span className="text-[12px] text-[#9ca3af]">Loading group…</span>
+                <span className="text-[14px] text-[#9ca3af]">Loading group…</span>
               )}
             </div>
 
@@ -902,18 +902,18 @@ export default function SendBulkPageClient() {
                       onChange={() => toggleContact(contact)}
                     />
                     <div
-                      className={`w-10 h-10 min-w-[40px] rounded-full grid place-items-center text-[13px] font-bold ${
+                      className={`w-10 h-10 min-w-[40px] rounded-full grid place-items-center text-[16px] font-bold ${
                         isSelected ? "bg-[#6366F1] text-white" : "bg-[#E5E7EB] text-[#555]"
                       }`}
                     >
                       {initials(contact.name)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[14px] font-semibold text-[#1a1a2e] truncate">{contact.name}</p>
-                      <p className="text-[12px] text-[#888] truncate">{contact.groups?.length ? contact.groups.join(", ") : "Ungrouped"}</p>
+                      <p className="text-[18px] font-semibold text-[#1a1a2e] truncate">{contact.name}</p>
+                      <p className="text-[14px] text-[#888] truncate">{contact.groups?.length ? contact.groups.join(", ") : "Ungrouped"}</p>
                     </div>
                     {!contact.hasWhatsApp && (
-                      <span className="inline-flex items-center px-3 py-0.5 rounded-md text-[12px] font-semibold bg-[#FEF7E0] text-[#B06000] whitespace-nowrap">
+                      <span className="inline-flex items-center px-3 py-0.5 rounded-md text-[14px] font-semibold bg-[#FEF7E0] text-[#B06000] whitespace-nowrap">
                         No WhatsApp
                       </span>
                     )}
@@ -922,7 +922,7 @@ export default function SendBulkPageClient() {
               })}
 
               {filteredContacts.length === 0 && (
-                <div className="py-10 text-center text-[13px] text-[#9ca3af]">
+                <div className="py-10 text-center text-[16px] text-[#9ca3af]">
                   {contacts.length === 0 ? "No contacts yet. Add one to get started." : "No contacts match your search."}
                 </div>
               )}
@@ -930,7 +930,7 @@ export default function SendBulkPageClient() {
               {filteredContacts.length > CONTACTS_PAGE_SIZE && (
                 <button
                   onClick={() => setShowAllContacts((p) => !p)}
-                  className="w-full text-center text-[13px] font-semibold text-[#2563eb] hover:underline cursor-pointer py-2"
+                  className="w-full text-center text-[16px] font-semibold text-[#2563eb] hover:underline cursor-pointer py-2"
                 >
                   {showAllContacts ? "Show less" : `Show more (${filteredContacts.length - CONTACTS_PAGE_SIZE})`}
                 </button>
@@ -940,29 +940,29 @@ export default function SendBulkPageClient() {
 
           {/* Will be delivered to */}
           <div className="bg-white rounded-2xl p-6 shadow-[0px_2px_10px_rgba(0,0,0,0.04)]">
-            <h3 className="text-[15px] font-bold text-[#1a1a2e] mb-4">Will be delivered to</h3>
+            <h3 className="text-[18px] font-bold text-[#1a1a2e] mb-4">Will be delivered to</h3>
 
             <div className="flex flex-col gap-3 mb-5">
               {channels.whatsapp && (
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-full bg-[#dcfce7] text-[#16a34a] grid place-items-center text-[12px] font-bold">
+                    <div className="w-8 h-8 rounded-full bg-[#dcfce7] text-[#16a34a] grid place-items-center text-[14px] font-bold">
                       W
                     </div>
-                    <span className="text-[14px] font-medium text-[#333]">WhatsApp</span>
+                    <span className="text-[16px] font-medium text-[#333]">WhatsApp</span>
                   </div>
-                  <span className="text-[15px] font-bold text-[#1a1a2e]">{whatsappCount}</span>
+                  <span className="text-[18px] font-bold text-[#1a1a2e]">{whatsappCount}</span>
                 </div>
               )}
               {channels.email && (
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-full bg-[#eff6ff] text-[#2563eb] grid place-items-center text-[12px] font-bold">
+                    <div className="w-8 h-8 rounded-full bg-[#eff6ff] text-[#2563eb] grid place-items-center text-[14px] font-bold">
                       E
                     </div>
-                    <span className="text-[14px] font-medium text-[#333]">Email</span>
+                    <span className="text-[16px] font-medium text-[#333]">Email</span>
                   </div>
-                  <span className="text-[15px] font-bold text-[#1a1a2e]">{emailCount}</span>
+                  <span className="text-[18px] font-bold text-[#1a1a2e]">{emailCount}</span>
                 </div>
               )}
             </div>
@@ -970,14 +970,14 @@ export default function SendBulkPageClient() {
             <button
               onClick={() => setConfirmModalOpen(true)}
               disabled={selectedContacts.length === 0}
-              className={`w-full flex items-center justify-center gap-2 h-[46px] rounded-[10px] text-[14px] font-semibold transition-colors ${
+              className={`w-full flex items-center justify-center gap-2 h-[46px] rounded-[10px] text-[16px] font-semibold transition-colors ${
                 selectedContacts.length === 0
                   ? "bg-[#e5e7eb] text-[#9ca3af] cursor-not-allowed"
                   : "bg-[#2563eb] text-white hover:bg-[#1d4ed8] cursor-pointer"
               }`}
             >
               Confirm
-              <FiArrowRight className="text-[15px]" />
+              <FiArrowRight className="text-[18px]" />
             </button>
           </div>
         </div>
