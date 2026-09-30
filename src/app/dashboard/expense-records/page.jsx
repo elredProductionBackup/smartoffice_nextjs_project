@@ -6,7 +6,6 @@ import {
   FiFileText,
   FiSend,
   FiDownload,
-  FiDollarSign,
   FiLoader,
   FiChevronDown,
   FiMoreHorizontal,
@@ -16,6 +15,7 @@ import {
   FiCheck,
   FiTrash2,
 } from "react-icons/fi";
+import { MdCurrencyRupee } from "react-icons/md";
 import { useExpenseRecordsStore } from "@/store/useExpenseRecordsStore";
 import NewExpensesPopup from "@/_components/UI/NewExpensesPopup";
 import { formatCompactAmount } from "@/utils/currency";
@@ -115,33 +115,30 @@ function StatCard({ card, loading }) {
   const animated = useCountUp(card.rawValue, !loading);
   const Icon = card.icon;
 
+  // Same card style as the Income / Budget / Expense cards (VisionCard)
   return (
-    <div className="group relative bg-white rounded-2xl border border-[#EAEEF2] shadow-[0_1px_3px_rgba(16,24,40,0.04)] p-5 pl-6 flex justify-between items-start overflow-hidden transition-all duration-200 hover:-translate-y-[3px] hover:shadow-[0_12px_30px_rgba(16,24,40,0.10)] hover:border-[#DDE3EA]">
-      <span className="absolute left-0 top-0 h-full w-[3px]" style={{ backgroundColor: card.accent }} />
-      <div className="flex flex-col gap-2">
-        <span className="font-nunito font-semibold text-[14px] text-[#64748B]">{card.label}</span>
-
-        {loading ? (
-          <span
-            className="mt-1 h-[30px] rounded-lg bg-[linear-gradient(100deg,#EEF2F7_30%,#F7FAFD_50%,#EEF2F7_70%)] bg-[length:200%_100%] animate-[statShimmer_1.2s_ease-in-out_infinite]"
-            style={{ width: card.money ? 140 : 72 }}
-          />
-        ) : (
-          <span className="font-nunito font-extrabold text-[30px] leading-none text-[#0F172A] tabular-nums tracking-tight">
-            {card.format(animated)}
-          </span>
-        )}
-
-        {loading ? (
-          <span className="h-3 w-28 rounded bg-[linear-gradient(100deg,#EEF2F7_30%,#F7FAFD_50%,#EEF2F7_70%)] bg-[length:200%_100%] animate-[statShimmer_1.2s_ease-in-out_infinite]" />
-        ) : (
-          <span className="font-nunito font-medium text-[12px] text-[#94A3B8]">{card.sublabel}</span>
-        )}
+    <div
+      className={`${card.bgClass} border ${card.borderClass} rounded-[20px] p-6 font-nunito shadow-[0px_1px_3px_0px_#0000001A,0px_0px_4px_-1px_#8B878733] transition-all duration-200`}
+    >
+      <div className="flex items-center gap-3 mb-4">
+        <div className={`w-[42px] h-[42px] rounded-xl ${card.iconBgClass} text-white flex items-center justify-center shrink-0`}>
+          <Icon className="text-2xl" />
+        </div>
+        <span className="text-[#4b5563] font-medium text-lg">{card.label}</span>
       </div>
 
-      <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${card.iconBg}`}>
-        <Icon className={`w-5 h-5 ${card.iconColor}`} />
-      </div>
+      {loading ? (
+        <div
+          className="h-[32px] rounded-[10px] bg-black/10 animate-pulse mb-1"
+          style={{ width: card.money ? 140 : 72 }}
+        />
+      ) : (
+        <div className={`text-[32px] font-bold ${card.textColorClass} mb-1 leading-none tabular-nums`}>
+          {card.format(animated)}
+        </div>
+      )}
+
+      <div className="text-[#777777] text-[14px]">{card.sublabel}</div>
     </div>
   );
 }
@@ -452,9 +449,10 @@ export default function ExpenseRecordsPage() {
         format: (v) => Math.round(v).toLocaleString("en-IN"),
         sublabel: "All time submissions",
         icon: FiFileText,
-        iconBg: "bg-[#E8F0FE]",
-        iconColor: "text-[#1A73E8]",
-        accent: "#1A73E8",
+        bgClass: "bg-[#eaf2ff]",
+        borderClass: "border-[#cfdfff]",
+        iconBgClass: "bg-[#1662dd]",
+        textColorClass: "text-[#1b64df]",
         money: false,
       },
       {
@@ -463,9 +461,10 @@ export default function ExpenseRecordsPage() {
         format: (v) => Math.round(v).toLocaleString("en-IN"),
         sublabel: "Awaiting review",
         icon: FiSend,
-        iconBg: "bg-[#FFF4E5]",
-        iconColor: "text-[#F59E0B]",
-        accent: "#F59E0B",
+        bgClass: "bg-[#fff6e8]",
+        borderClass: "border-[#fde7c2]",
+        iconBgClass: "bg-[#f59e0b]",
+        textColorClass: "text-[#d97706]",
         money: false,
       },
       {
@@ -473,10 +472,11 @@ export default function ExpenseRecordsPage() {
         rawValue: Number(totalAmount) || 0,
         format: (v) => formatCurrency(v),
         sublabel: "Submitted all time",
-        icon: FiDollarSign,
-        iconBg: "bg-[#E6F4EA]",
-        iconColor: "text-[#0F9D58]",
-        accent: "#0F9D58",
+        icon: MdCurrencyRupee,
+        bgClass: "bg-[#edfaef]",
+        borderClass: "border-[#d2f3d7]",
+        iconBgClass: "bg-[#56b64d]",
+        textColorClass: "text-[#4ca543]",
         money: true,
       },
     ],

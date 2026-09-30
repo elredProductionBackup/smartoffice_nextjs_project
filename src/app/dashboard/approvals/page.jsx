@@ -70,22 +70,30 @@ const PAGE_SIZE = 10;
 
 const formatAmount = (value) => `₹${(Number(value) || 0).toLocaleString('en-IN')}`;
 
+// Colour themes from the Income / Budget / Expense cards (VisionCard)
+const CARD_THEMES = {
+  amber: { bg: 'bg-[#fff6e8]', border: 'border-[#fde7c2]', iconBg: 'bg-[#f59e0b]', text: 'text-[#d97706]' },
+  green: { bg: 'bg-[#edfaef]', border: 'border-[#d2f3d7]', iconBg: 'bg-[#56b64d]', text: 'text-[#4ca543]' },
+  red: { bg: 'bg-[#fdeeee]', border: 'border-[#fbd5d5]', iconBg: 'bg-[#dc2626]', text: 'text-[#dc2626]' },
+  blue: { bg: 'bg-[#eaf2ff]', border: 'border-[#cfdfff]', iconBg: 'bg-[#1662dd]', text: 'text-[#1b64df]' },
+};
+
 // Same card style as the summary cards on /dashboard/expense-records
-const StatCard = ({ label, value, sublabel, Icon, accent, iconBg, iconColor }) => (
-  <div className="group relative bg-white rounded-2xl border border-[#EAEEF2] shadow-[0_1px_3px_rgba(16,24,40,0.04)] p-5 pl-6 flex justify-between items-start overflow-hidden transition-all duration-200 hover:-translate-y-[3px] hover:shadow-[0_12px_30px_rgba(16,24,40,0.10)] hover:border-[#DDE3EA]">
-    <span className="absolute left-0 top-0 h-full w-[3px]" style={{ backgroundColor: accent }} />
-    <div className="flex flex-col gap-2">
-      <span className="font-nunito font-semibold text-[14px] text-[#64748B]">{label}</span>
-      <span className="font-nunito font-extrabold text-[30px] leading-none text-[#0F172A] tabular-nums tracking-tight">
-        {value}
-      </span>
-      <span className="font-nunito font-medium text-[12px] text-[#94A3B8]">{sublabel}</span>
+const StatCard = ({ label, value, sublabel, Icon, theme }) => {
+  const t = CARD_THEMES[theme];
+  return (
+    <div className={`${t.bg} border ${t.border} rounded-[20px] p-6 font-nunito shadow-[0px_1px_3px_0px_#0000001A,0px_0px_4px_-1px_#8B878733]`}>
+      <div className="flex items-center gap-3 mb-4">
+        <div className={`w-[42px] h-[42px] rounded-xl ${t.iconBg} text-white flex items-center justify-center shrink-0`}>
+          <Icon className="text-2xl" />
+        </div>
+        <span className="text-[#4b5563] font-medium text-lg">{label}</span>
+      </div>
+      <div className={`text-[32px] font-bold ${t.text} mb-1 leading-none tabular-nums`}>{value}</div>
+      <div className="text-[#777777] text-[14px]">{sublabel}</div>
     </div>
-    <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${iconBg}`}>
-      <Icon className={`w-5 h-5 ${iconColor}`} />
-    </div>
-  </div>
-);
+  );
+};
 
 const TAB_KEYS = TABS.map((t) => t.key);
 
@@ -147,14 +155,10 @@ const ApprovalsContent = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
-        <StatCard label="Pending Approval" value={counts.pending} sublabel="Awaiting review" Icon={FiClock}
-          accent="#F59E0B" iconBg="bg-[#FFF4E5]" iconColor="text-[#F59E0B]" />
-        <StatCard label="Approved" value={counts.approved} sublabel="Approved requests" Icon={FiCheckCircle}
-          accent="#0F9D58" iconBg="bg-[#E6F4EA]" iconColor="text-[#0F9D58]" />
-        <StatCard label="Rejected" value={counts.rejected} sublabel="Rejected requests" Icon={FiXCircle}
-          accent="#DC2626" iconBg="bg-[#FDECEC]" iconColor="text-[#DC2626]" />
-        <StatCard label="Total Requests" value={counts.all} sublabel="All time requests" Icon={FiFileText}
-          accent="#1A73E8" iconBg="bg-[#E8F0FE]" iconColor="text-[#1A73E8]" />
+        <StatCard label="Pending Approval" value={counts.pending} sublabel="Awaiting review" Icon={FiClock} theme="amber" />
+        <StatCard label="Approved" value={counts.approved} sublabel="Approved requests" Icon={FiCheckCircle} theme="green" />
+        <StatCard label="Rejected" value={counts.rejected} sublabel="Rejected requests" Icon={FiXCircle} theme="red" />
+        <StatCard label="Total Requests" value={counts.all} sublabel="All time requests" Icon={FiFileText} theme="blue" />
       </div>
 
       {/* Approval requests table — same layout as the All Expenses table on /dashboard/expense-records */}
