@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { useDispatch, useSelector } from "react-redux";
 import { FaArrowLeft, FaStar, FaRegStar } from "react-icons/fa6";
@@ -41,6 +41,7 @@ const formatRupees = (value) => `₹${formatCompactAmount(value)}`;
 
 const PortfolioDetailPage = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const dispatch = useDispatch();
   const params = useParams();
   const budgetTypeId = params?.budgetTypeId;
@@ -129,7 +130,13 @@ const PortfolioDetailPage = () => {
       <div className="flex flex-col gap-1 mb-6">
         <div className="flex items-center gap-3">
           <button
-            onClick={() => router.push("/dashboard/finance")}
+            onClick={() =>
+              router.push(
+                searchParams.get("from") === "portfolio-officer"
+                  ? "/dashboard/portfolio-officer"
+                  : "/dashboard/finance"
+              )
+            }
             className="text-[#333333] hover:opacity-80 transition-opacity flex items-center justify-center cursor-pointer border-0 bg-transparent p-0 outline-none"
           >
             <FaArrowLeft size={32} />

@@ -266,7 +266,7 @@ export default function EventDetailsClient() {
 
                       const from = searchParams.get("from");
 
-                      if (from === "finance-budget" || from === "finance") {
+                      if (from === "finance-budget" || from === "finance" || from === "portfolio-officer") {
                         router.push(`/dashboard/${from}`);
                       } else if (isFinanceManager) {
                         router.push("/dashboard/finance-budget");
