@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSelector } from 'react-redux';
 import { FiArrowLeft, FiPlus, FiChevronRight } from 'react-icons/fi';
 import { getBudgetReportCategory, getBudgetEventReportCategory } from '@/services/finance.service';
 import { getExpenses } from '@/services/expense.service';
@@ -33,6 +34,8 @@ const formatDate = (iso) => {
 
 const FinanceBudgetPage = () => {
   const router   = useRouter();
+  const adminDetail = useSelector((state) => state.auth.adminDetail);
+  const isFinanceManager = adminDetail?.role?.includes('financeManager');
   const [expanded, setExpanded]         = useState(null);
   const [showAddBudget, setShowAddBudget]   = useState(false);
   const [categories, setCategories]     = useState([]);
@@ -324,7 +327,7 @@ const FinanceBudgetPage = () => {
                           return (
                             <div
                               key={event.eventId}
-                              onClick={() => router.push(`/dashboard/events/${event.eventId}?from=finance-budget`)}
+                              onClick={() => router.push(`/dashboard/events/${event.eventId}?from=finance-budget${isFinanceManager ? '&tab=eventcosting' : ''}`)}
                               className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr] gap-4 px-6 py-4 border-b border-slate-100 items-center cursor-pointer hover:bg-slate-50 transition-colors"
                             >
                               <div>
