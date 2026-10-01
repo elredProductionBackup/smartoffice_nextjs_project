@@ -32,14 +32,21 @@
 import { useEffect, useState } from "react";
 import { usePathname, useRouter, notFound } from "next/navigation";
 import { useSelector } from "react-redux";
-import { ADMIN_ONLY_ROUTES } from "@/utils/routeAccess";
+import {
+  ADMIN_ONLY_ROUTES,
+  FINANCE_MANAGER_HOME,
+  isFinanceManagerRouteAllowed,
+} from "@/utils/routeAccess";
 
 export default function ProtectedRoute({ children }) {
   const router = useRouter();
   const pathname = usePathname();
 
-  const { isAuthenticated, user } = useSelector((state) => state.auth);
+  const { isAuthenticated, user, adminDetail } = useSelector((state) => state.auth);
   const isAdmin = user?.userType?.toLowerCase() === "admin";
+  const isFinanceManager = adminDetail?.role?.includes("financeManager");
+  const isFinanceManagerBlocked =
+    isFinanceManager && !isFinanceManagerRouteAllowed(pathname);
 
   const [ready, setReady] = useState(false);
 
@@ -52,15 +59,21 @@ export default function ProtectedRoute({ children }) {
     setReady(true);
   }, [isAuthenticated, router]);
 
+  useEffect(() => {
+    if (ready && isFinanceManagerBlocked) {
+      router.replace(FINANCE_MANAGER_HOME);
+    }
+  }, [ready, isFinanceManagerBlocked, router]);
+
   const isAdminRoute = ADMIN_ONLY_ROUTES.some((route) =>
     pathname.startsWith(route)
   );
 
-  if (ready && !isAdmin && isAdminRoute) {
+  if (ready && !isAdmin && !isFinanceManager && isAdminRoute) {
     notFound();
   }
 
-  if (!ready) {
+  if (!ready || isFinanceManagerBlocked) {
     return (
       <div className="h-screen flex items-center justify-center">
         Loading...

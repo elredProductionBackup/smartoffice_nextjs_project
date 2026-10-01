@@ -268,6 +268,8 @@ export default function EventDetailsClient() {
 
                       if (from === "finance-budget" || from === "finance") {
                         router.push(`/dashboard/${from}`);
+                      } else if (isFinanceManager) {
+                        router.push("/dashboard/finance-budget");
                       } else if (isPast) {
                         router.push("/dashboard/events?tab=past");
                       } else {
