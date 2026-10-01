@@ -86,19 +86,38 @@ import Header from "@/_components/Header";
 import useGlobalLoader from "@/store/useGlobalLoader";
 import { useEffect } from "react";
 import ProtectedRoute from "@/_components/ProtectedRoute";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { setAdminDetail } from "@/store/auth/authSlice";
+import { getNetworkClusterAdminDetail } from "@/services/auth.service";
 import { FiDollarSign, FiMessageCircle } from "react-icons/fi";
 import { FaFileInvoiceDollar } from "react-icons/fa6";
 
 export default function DashboardLayout({ children }) {
   const pathname = usePathname();
   const { hideLoader } = useGlobalLoader.getState();
-  const { user } = useSelector((state) => state.auth);
+  const dispatch = useDispatch();
+  const { user, isAuthenticated } = useSelector((state) => state.auth);
   const isAdmin = user?.userType?.toLowerCase() === "admin";
 
   useEffect(() => {
     hideLoader();
   }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const networkClusterCode = localStorage.getItem("networkClusterCode");
+    const email = user?.email || localStorage.getItem("userEmail");
+    if (!networkClusterCode || !email) return;
+
+    getNetworkClusterAdminDetail({ networkClusterCode, email })
+      .then((res) => {
+        if (res?.data?.success) {
+          dispatch(setAdminDetail(res.data.result));
+        }
+      })
+      .catch((error) => console.error("Admin detail fetch error:", error));
+  }, [isAuthenticated, user?.email]);
 
   function removeAllParams(url) {
     return url.split("?")[0];
