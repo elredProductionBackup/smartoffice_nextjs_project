@@ -68,7 +68,7 @@ const MyProfilePage = () => {
     <div className="p-6 bg-white font-nunito">
       <div className="flex items-center gap-4 mb-6">
         <button
-          onClick={() => router.back()}
+          onClick={() => router.push("/dashboard/profile")}
           aria-label="Back"
           className="w-10 h-10 rounded-full flex items-center justify-center text-[#333333] hover:bg-[#F2F7FF] cursor-pointer transition-colors shrink-0"
         >
