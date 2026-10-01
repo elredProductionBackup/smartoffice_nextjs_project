@@ -312,7 +312,7 @@ export default function EventDetailsClient() {
 
         <div className="flex flex-col items-end justify-between pb-4">
                     <div className="relative" ref={menuRef}>
-            {!isPast ? (
+            {isFinanceManager ? null : !isPast ? (
               <button
                 onClick={() => setShowMenu(!showMenu)}
                 className="p-2 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
@@ -331,7 +331,7 @@ export default function EventDetailsClient() {
               </button>
             )}
 
-            {showMenu && (
+            {showMenu && !isFinanceManager && (
               <EventsMenu
                 isPast={isPast}
                 onEdit={() => {
