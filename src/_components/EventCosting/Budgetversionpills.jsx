@@ -6,6 +6,7 @@ export function BudgetVersionPills({
   latestVersionId,
   onAddVersion,
   onRemoveVersion,
+  readOnly = false,
 }) {
   const [showAddVersion, setShowAddVersion] = useState(false);
   const [newPax, setNewPax] = useState(0);
@@ -20,6 +21,7 @@ export function BudgetVersionPills({
 
   return (
     <>
+      {!readOnly && (
       <div className="flex items-center justify-end gap-2 mb-4">
           <button
             onClick={submit}
@@ -29,6 +31,7 @@ export function BudgetVersionPills({
             Add Version
           </button>
       </div>
+      )}
 
       <div className="flex items-center gap-2 mb-4 flex-wrap">
         {versions.map((v) => (
@@ -45,7 +48,7 @@ export function BudgetVersionPills({
               {/* — {v.paxLabel} */}
             </span>
 
-            {versions.length > 1 && (
+            {versions.length > 1 && !readOnly && (
               <button
                 onClick={() => onRemoveVersion(v.id)}
                 className="opacity-60 hover:opacity-100 transition-opacity ml-0.5"

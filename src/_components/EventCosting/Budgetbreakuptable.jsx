@@ -17,6 +17,7 @@ export function BudgetBreakupTable({
   onRemoveSection,
   onRemoveItem,
   onAddItem,
+  readOnly = false,
 }) {
   const [addItemSectionId, setAddItemSectionId] = useState(null);
   const [newItemDesc, setNewItemDesc] = useState("");
@@ -98,6 +99,7 @@ export function BudgetBreakupTable({
                           <EditableCell
                             value={sTotal}
                             onChange={(val) => onSectionBudgetChange(v.id, section.id, val)}
+                            editable={!readOnly}
                             isHighlighted={changed}
                             className={changed ? "text-yellow-800 font-semibold" : "font-semibold text-gray-800"}
                           />
@@ -114,12 +116,14 @@ export function BudgetBreakupTable({
                     </div>
                   </td>
                   <td className="py-2.5 px-2 border-b border-l border-gray-200 text-center">
+                    {!readOnly && (
                     <button
                       onClick={() => onRemoveSection(section.id)}
                       className="text-gray-300 hover:text-red-500 transition-colors"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
+                    )}
                   </td>
                 </tr>
 
@@ -133,6 +137,7 @@ export function BudgetBreakupTable({
                           type="text"
                           value={si.label}
                           onChange={(e) => onSubItemFieldChange(si.expenseId, si.subItemId, "description", e.target.value)}
+                          readOnly={readOnly}
                           placeholder="—"
                           className="w-full text-sm italic text-gray-600 bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-400 focus:outline-none px-0 py-0.5 transition-colors placeholder:not-italic placeholder:text-gray-400"
                         />
@@ -150,6 +155,7 @@ export function BudgetBreakupTable({
                                 value={vals.qty}
                                 placeholder="Qty"
                                 onChange={(e) => onVersionValueChange(v.id, vKey, "qty", parseFloat(e.target.value) || 0)}
+                                readOnly={readOnly}
                                 className="w-full text-sm text-right bg-transparent border border-transparent rounded hover:border-gray-300 focus:border-blue-400 focus:bg-white focus:outline-none px-1 py-0.5 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                               />
                             </td>
@@ -160,6 +166,7 @@ export function BudgetBreakupTable({
                                 value={vals.unitCost}
                                 placeholder="Amt"
                                 onChange={(e) => onVersionValueChange(v.id, vKey, "unitCost", parseFloat(e.target.value) || 0)}
+                                readOnly={readOnly}
                                 className="w-full text-sm text-right bg-transparent border border-transparent rounded hover:border-gray-300 focus:border-blue-400 focus:bg-white focus:outline-none px-1 py-0.5 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                               />
                             </td>
@@ -201,6 +208,7 @@ export function BudgetBreakupTable({
                             <EditableCell
                               value={vals.qty}
                               onChange={(val) => onVersionValueChange(v.id, item.id, "qty", val)}
+                              editable={!readOnly}
                               isHighlighted={qtyChanged}
                               className={qtyChanged ? "text-yellow-800" : ""}
                             />
@@ -209,6 +217,7 @@ export function BudgetBreakupTable({
                             <EditableCell
                               value={vals.unitCost}
                               onChange={(val) => onVersionValueChange(v.id, item.id, "unitCost", val)}
+                              editable={!readOnly}
                               isHighlighted={costChanged}
                               className={costChanged ? "text-yellow-800" : ""}
                             />
@@ -243,17 +252,20 @@ export function BudgetBreakupTable({
                       );
                     })()}
                     <td className="py-2 px-2 border-b border-l border-gray-100 text-center">
+                      {!readOnly && (
                       <button
                         onClick={() => onRemoveItem(section.id, item.id)}
                         className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500 transition-colors"
                       >
                         <X className="w-3.5 h-3.5" />
                       </button>
+                      )}
                     </td>
                   </tr>
                 ))}
 
                 {/* Add item row */}
+                {!readOnly && (
                 <tr className="bg-gray-50/50">
                   <td colSpan={3 * versions.length + 4} className="py-1.5 px-4 border-b border-gray-100">
                     {addItemSectionId === section.id ? (
@@ -296,6 +308,7 @@ export function BudgetBreakupTable({
                     )}
                   </td>
                 </tr>
+                )}
               </Fragment>
             );
           })}

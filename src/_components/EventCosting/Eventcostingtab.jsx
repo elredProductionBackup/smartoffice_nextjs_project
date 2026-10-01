@@ -27,6 +27,10 @@ export function EventCostingTab({
 }) {
   const dispatch = useDispatch();
 
+  // Finance managers can view costing but not change it
+  const adminDetail = useSelector((s) => s.auth.adminDetail);
+  const readOnly = !!adminDetail?.role?.includes("financeManager");
+
   // ── Server state (Redux) ──────────────────────────────────────────────────
   const rawVersions = useSelector((s) => s.events.costingMap?.[eventId]) ?? EMPTY_LIST;
   const costingLoading = useSelector((s) => s.events.costingLoading?.[eventId]) ?? false;
@@ -390,6 +394,7 @@ export function EventCostingTab({
           setShowEditBudget(true);
         }}
         onOpenDistribution={() => setShowDistribution(true)}
+        readOnly={readOnly}
       />
 
       {(costingLoading || costingSaving) && (
@@ -423,7 +428,9 @@ export function EventCostingTab({
           <div>
             <h3 className="text-base font-semibold text-gray-900">Budget Breakup</h3>
             <p className="text-xs text-gray-500 mt-0.5">
-              Click a budget cell to edit • Actuals are entered under Expense Items below
+              {readOnly
+                ? "Budget versions and actual amounts for this event"
+                : "Click a budget cell to edit • Actuals are entered under Expense Items below"}
             </p>
           </div>
         </div>
@@ -433,6 +440,7 @@ export function EventCostingTab({
           latestVersionId={latestVersion?.id}
           onAddVersion={handleAddVersion}
           onRemoveVersion={handleRemoveVersion}
+          readOnly={readOnly}
         />
 
         <BudgetBreakupTable
@@ -449,6 +457,7 @@ export function EventCostingTab({
           onRemoveSection={handleRemoveSection}
           onRemoveItem={handleRemoveItem}
           onAddItem={handleAddItem}
+          readOnly={readOnly}
         />
 
         <div className="mt-4 flex items-center gap-4 text-xs text-gray-500 flex-wrap">
@@ -470,9 +479,10 @@ export function EventCostingTab({
         onRemoveExpense={handleRemoveExpense}
         onSubItemChange={handleSubItemChange}
         onSaveExpense={handleSaveExpense}
+        readOnly={readOnly}
       />
 
-      {showEditBudget && (
+      {showEditBudget && !readOnly && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl p-6 w-full max-w-sm">
             <h3 className="text-base font-semibold text-gray-900 mb-3">Edit Budget</h3>
