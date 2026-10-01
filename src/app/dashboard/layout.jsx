@@ -89,7 +89,7 @@ import ProtectedRoute from "@/_components/ProtectedRoute";
 import { useDispatch, useSelector } from "react-redux";
 import { setAdminDetail } from "@/store/auth/authSlice";
 import { getNetworkClusterAdminDetail } from "@/services/auth.service";
-import { FiCheckSquare, FiDollarSign, FiMessageCircle } from "react-icons/fi";
+import { FiCheckSquare, FiDollarSign, FiHome, FiMessageCircle } from "react-icons/fi";
 import { FaFileInvoiceDollar } from "react-icons/fa6";
 
 export default function DashboardLayout({ children }) {
@@ -167,6 +167,11 @@ const userMenu = [
   ];
 
   const financeManagerMenu = [
+    {
+      name: "Home",
+      path: "/dashboard/profile",
+      icon: <FiHome className="text-[22px]" />,
+    },
     {
       name: "Finance",
       path: "/dashboard/finance",

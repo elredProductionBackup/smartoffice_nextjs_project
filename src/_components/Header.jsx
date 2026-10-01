@@ -112,7 +112,13 @@ const confirmLogout = () => {
                 <div className="w-[250px] bg-white rounded-[20px] p-[20px]
                   shadow-[0px_4px_4px_0px_#99999940]">
                   <div className="flex flex-col gap-[10px]">
-                    <button className="flex gap-[6px] py-[8px] pl-[12px] text-[20px] text-[#333] rounded-lg cursor-pointer capitalize">
+                    <button
+                      onClick={() => {
+                        setOpen(false);
+                        router.push("/dashboard/my-profile");
+                      }}
+                      className="flex gap-[6px] py-[8px] pl-[12px] text-[20px] text-[#333] rounded-lg cursor-pointer capitalize"
+                    >
                       <span className="h-[30px] w-[30px] rounded-full bg-[#CCCCCC] flex items-center justify-center">
                         <img src={avatar} alt="" width={30} height={30} className="w-[30px] h-[30px] rounded-full object-cover" />
                       </span>
