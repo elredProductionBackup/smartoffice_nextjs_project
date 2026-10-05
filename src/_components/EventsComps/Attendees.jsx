@@ -25,6 +25,9 @@ const Attendees = ({ eventId }) => {
     membersFetched,
   } = useSelector((state) => state.events);
 
+  const adminDetail = useSelector((state) => state.auth.adminDetail);
+  const isFinanceManager = adminDetail?.role?.includes("financeManager");
+
   const membersList = membersMap[eventId] || [];
   const isMembersLoading = membersLoading[eventId];
   const isMembersFetched = membersFetched[eventId];
@@ -63,7 +66,7 @@ const Attendees = ({ eventId }) => {
       <div className="bg-[#F2F7FF]">
         <div className="flex items-center py-[16px] px-[30px] font-bold text-lg text-[#333333]">
           <div className="flex-3">Name / Title</div>
-          <div className="flex-1">Actions</div>
+          {!isFinanceManager && <div className="flex-1">Actions</div>}
         </div>
       </div>
 
@@ -136,6 +139,7 @@ const Attendees = ({ eventId }) => {
                   </div>
                 </div>
 
+                {!isFinanceManager && (
                 <div className="flex flex-1 gap-4 text-[#666666]">
                   <a
                     href={`mailto:${member.email}`}
@@ -160,6 +164,7 @@ const Attendees = ({ eventId }) => {
                     <FiBell size={24} />
                   </button>
                 </div>
+                )}
               </div>
             );
           })

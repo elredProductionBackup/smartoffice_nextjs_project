@@ -9,6 +9,7 @@ export function ExpenseItemsSection({
   onRemoveExpense,
   onSubItemChange,
   onSaveExpense,
+  readOnly = false,
 }) {
   const [selectedCategory, setSelectedCategory] = useState("");
 
@@ -21,6 +22,7 @@ export function ExpenseItemsSection({
   return (
     <div className="mt-8 pt-6 border-t border-gray-200">
       <h3 className="text-base font-semibold text-gray-900 mb-4">Expense Items</h3>
+      {!readOnly && (
       <div className="flex items-center gap-3 mb-6">
         <select
           value={selectedCategory}
@@ -47,6 +49,7 @@ export function ExpenseItemsSection({
           Add new item
         </button>
       </div>
+      )}
 
       <div className="space-y-4">
         {expenseItems.map((expense) => (
@@ -56,6 +59,7 @@ export function ExpenseItemsSection({
             onRemove={onRemoveExpense}
             onSubItemChange={onSubItemChange}
             onSave={onSaveExpense}
+            readOnly={readOnly}
           />
         ))}
       </div>

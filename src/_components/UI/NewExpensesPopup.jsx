@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { FiX, FiUpload, FiChevronDown, FiLoader, FiCheckCircle } from 'react-icons/fi';
 import CustomDatePicker from './CustomDatePicker';
 import { addEditExpense } from '@/services/expense.service';
+import { getBudgetEventReportCategory } from '@/services/finance.service';
 import { useBudgetTypeStore } from '@/store/useBudgetTypeStore';
 
 /* ── Reusable Custom Select Dropdown ── */
@@ -113,6 +114,11 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
 
   const [budgetTypeId, setBudgetTypeId] = useState(initialData?.budgetTypeId ?? '');
 
+  // Optional event — restricted to the events of the selected portfolio
+  const [eventId, setEventId] = useState(initialData?.eventId ?? '');
+  // { forId, events, error } — results of the last events fetch, keyed by the portfolio it was for
+  const [eventsState, setEventsState] = useState({ forId: '', events: [], error: '' });
+
   const fileInputRef = useRef(null);
 
   // Fetch Budget Types on Mount
@@ -149,7 +155,53 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
     value: item.budgetTypeId ?? item._id ?? item.id ?? '',
   }));
 
+  // Fetch the events belonging to the selected portfolio
+  useEffect(() => {
+    if (!budgetTypeId) return;
+
+    let cancelled = false;
+    getBudgetEventReportCategory(budgetTypeId)
+      .then((response) => {
+        if (cancelled) return;
+        const rows = Array.isArray(response?.result) ? response.result : [];
+        // Backend can repeat an event — dedupe by eventId
+        const seen = new Set();
+        const deduped = rows.filter((row) => {
+          if (!row?.eventId || seen.has(row.eventId)) return false;
+          seen.add(row.eventId);
+          return true;
+        });
+        setEventsState({ forId: budgetTypeId, events: deduped, error: '' });
+        // Drop a previously selected event that isn't part of this portfolio
+        setEventId((prev) => (prev && !seen.has(prev) ? '' : prev));
+      })
+      .catch(() => {
+        if (cancelled) return;
+        // Can't verify the event belongs to this portfolio — fall back to a general expense
+        setEventId('');
+        setEventsState({ forId: budgetTypeId, events: [], error: 'Failed to load events for this portfolio.' });
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [budgetTypeId]);
+
+  const eventsLoaded = !!budgetTypeId && eventsState.forId === budgetTypeId;
+  const eventsLoading = !!budgetTypeId && !eventsLoaded;
+  const portfolioEvents = eventsLoaded ? eventsState.events : [];
+  const eventsError = eventsLoaded ? eventsState.error : '';
+
+  const eventOptions = portfolioEvents.map((ev) => ({
+    label: ev.eventName || 'Untitled Event',
+    value: ev.eventId,
+  }));
+
+  // Selected event (if any) must belong to the selected portfolio
+  const isEventValid = !eventId || portfolioEvents.some((ev) => ev.eventId === eventId);
+
   const handlePortfolioChange = (selectedId) => {
+    if (selectedId !== budgetTypeId) setEventId('');
     setBudgetTypeId(selectedId);
     const matched = budgetTypesList.find(b => (b.budgetTypeId === selectedId || b._id === selectedId || b.id === selectedId));
     if (matched) {
@@ -198,6 +250,8 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
   const canSubmit =
     description.trim().length >= 2 &&
     !!budgetTypeId &&
+    !eventsLoading &&
+    isEventValid &&
     totalAmount !== '' &&
     !isNaN(parseFloat(totalAmount)) &&
     parseFloat(totalAmount) >= 0 &&
@@ -215,8 +269,9 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
 
     const apiPayload = {
       description,
-      expenseType: 'general', // Backend schema accepts 'general' / 'event'
-      eventId: '',
+      // addEditExpense maps 'Event Related' -> type "event" and only then sends eventId
+      expenseType: eventId ? 'Event Related' : 'general',
+      eventId,
       portfolioId: budgetTypeId,
       portfolio,
       budgetTypeId,
@@ -239,9 +294,10 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
 
     const localPayload = {
       description,
-      expenseType: 'General',
+      expenseType: eventId ? 'Event Related' : 'General',
       portfolio,
       budgetTypeId,
+      eventId,
       date: currentDate,
       totalAmount: total,
       remark,
@@ -331,6 +387,31 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
                 placeholder="Select Portfolio"
                 loading={budgetTypeLoading}
                 disabled={budgetTypeLoading}
+              />
+            )}
+          </div>
+
+          {/* Event (optional) — only events of the selected portfolio */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[14px] font-bold text-[#333]">
+              Event <span className="text-[12px] font-medium text-slate-400">(optional)</span>
+            </label>
+            {eventsError ? (
+              <p className="text-[13px] text-red-500 font-semibold">{eventsError}</p>
+            ) : (
+              <CustomSelectDropdown
+                value={eventId}
+                onChange={setEventId}
+                options={eventOptions}
+                placeholder={
+                  !budgetTypeId
+                    ? 'Select a portfolio first'
+                    : eventOptions.length === 0 && !eventsLoading
+                      ? 'No events in this portfolio'
+                      : 'Select Event'
+                }
+                loading={eventsLoading}
+                disabled={!budgetTypeId || eventsLoading || eventOptions.length === 0}
               />
             )}
           </div>

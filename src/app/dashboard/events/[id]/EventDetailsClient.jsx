@@ -38,7 +38,19 @@ export default function EventDetailsClient() {
   const dispatch = useDispatch();
 
   const eventId = params?.id;
-  const activeTab = searchParams.get("tab") || "attendees";
+
+  // Finance managers only get the attendees and event costing tabs
+  const adminDetail = useSelector((state) => state.auth.adminDetail);
+  const isFinanceManager = adminDetail?.role?.includes("financeManager");
+  const FINANCE_MANAGER_HIDDEN_TABS = ["checklist", "memberMedia", "documents"];
+  const eventTabs = isFinanceManager
+    ? EVENTS_DETAILS.filter((t) => !FINANCE_MANAGER_HIDDEN_TABS.includes(t.value))
+    : EVENTS_DETAILS;
+
+  const requestedTab = searchParams.get("tab") || "attendees";
+  const activeTab = eventTabs.some((t) => t.value === requestedTab)
+    ? requestedTab
+    : "attendees";
 
   // ================= LOCAL STATE =================
   const [closing, setClosing] = useState(false);
@@ -254,8 +266,10 @@ export default function EventDetailsClient() {
 
                       const from = searchParams.get("from");
 
-                      if (from === "finance-budget" || from === "finance") {
+                      if (from === "finance-budget" || from === "finance" || from === "portfolio-officer") {
                         router.push(`/dashboard/${from}`);
+                      } else if (isFinanceManager) {
+                        router.push("/dashboard/finance-budget");
                       } else if (isPast) {
                         router.push("/dashboard/events?tab=past");
                       } else {
@@ -300,7 +314,7 @@ export default function EventDetailsClient() {
 
         <div className="flex flex-col items-end justify-between pb-4">
                     <div className="relative" ref={menuRef}>
-            {!isPast ? (
+            {isFinanceManager ? null : !isPast ? (
               <button
                 onClick={() => setShowMenu(!showMenu)}
                 className="p-2 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
@@ -319,7 +333,7 @@ export default function EventDetailsClient() {
               </button>
             )}
 
-            {showMenu && (
+            {showMenu && !isFinanceManager && (
               <EventsMenu
                 isPast={isPast}
                 onEdit={() => {
@@ -366,7 +380,7 @@ export default function EventDetailsClient() {
       </div>
 
       <div className="bg-white sticky z-10 top-0 pt-[20px]">
-        <ActionableTabs tabs={EVENTS_DETAILS} defaultTab="attendees" />
+        <ActionableTabs tabs={eventTabs} defaultTab="attendees" />
       </div>
 
       <>

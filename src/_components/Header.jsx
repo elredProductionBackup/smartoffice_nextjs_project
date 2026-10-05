@@ -12,9 +12,10 @@ const Header = () => {
   const [open, setOpen] = useState(false);
   const dispatch = useDispatch();
 
-  const { user } = useSelector((state) => state.auth);
+  const { user, adminDetail } = useSelector((state) => state.auth);
 
-  const firstName = user?.firstname ?? "Me";
+  const firstName = adminDetail?.firstname || user?.firstname || "Me";
+  const avatar = adminDetail?.dpURL || user?.dpURL || "/logo/user-icon.svg";
 
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const meRef = useRef(null);
@@ -88,12 +89,12 @@ const confirmLogout = () => {
               onClick={() => setOpen(!open)}
               className="flex items-center gap-[10px] text-xl font-medium cursor-pointer"
             >
-              <Image
-                src="/logo/user-icon.svg"
+              <img
+                src={avatar}
                 alt="user"
                 width={32}
                 height={32}
-                className="rounded-full"
+                className="w-[32px] h-[32px] rounded-full object-cover"
               />
               {/* <div>Me</div> */}
             </div>
@@ -111,9 +112,15 @@ const confirmLogout = () => {
                 <div className="w-[250px] bg-white rounded-[20px] p-[20px]
                   shadow-[0px_4px_4px_0px_#99999940]">
                   <div className="flex flex-col gap-[10px]">
-                    <button className="flex gap-[6px] py-[8px] pl-[12px] text-[20px] text-[#333] rounded-lg cursor-pointer capitalize">
+                    <button
+                      onClick={() => {
+                        setOpen(false);
+                        router.push("/dashboard/my-profile");
+                      }}
+                      className="flex gap-[6px] py-[8px] pl-[12px] text-[20px] text-[#333] rounded-lg cursor-pointer capitalize"
+                    >
                       <span className="h-[30px] w-[30px] rounded-full bg-[#CCCCCC] flex items-center justify-center">
-                        <Image src="/logo/user-icon.svg" alt="" width={30} height={30} />
+                        <img src={avatar} alt="" width={30} height={30} className="w-[30px] h-[30px] rounded-full object-cover" />
                       </span>
                       {firstName}
                     </button>

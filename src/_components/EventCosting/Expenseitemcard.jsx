@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Trash2, Upload, FileText, Check, X } from "lucide-react";
 import { fmt } from "./utils";
 
-export function ExpenseItemCard({ expense, onRemove, onSubItemChange, onSave }) {
+export function ExpenseItemCard({ expense, onRemove, onSubItemChange, onSave, readOnly = false }) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -32,6 +32,7 @@ export function ExpenseItemCard({ expense, onRemove, onSubItemChange, onSave }) 
         <h4 className="text-sm font-semibold text-gray-900">{expense.category}</h4>
         <div className="flex items-center gap-3">
           <span className="text-sm font-semibold text-gray-700">₹{fmt(cardTotal)}</span>
+          {!readOnly && (
           <button
             onClick={() => onRemove(expense.id)}
             className="text-gray-300 hover:text-red-500 transition-colors"
@@ -39,6 +40,7 @@ export function ExpenseItemCard({ expense, onRemove, onSubItemChange, onSave }) 
           >
             <Trash2 className="w-4 h-4" />
           </button>
+          )}
         </div>
       </div>
 
@@ -70,7 +72,8 @@ export function ExpenseItemCard({ expense, onRemove, onSubItemChange, onSave }) 
                     onSubItemChange(expense.id, si.id, "vendorName", e.target.value)
                   }
                   placeholder="Vendor name"
-                  className="w-full text-sm px-2 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={readOnly}
+                  className="w-full text-sm px-2 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-default"
                 />
               </div>
 
@@ -85,7 +88,8 @@ export function ExpenseItemCard({ expense, onRemove, onSubItemChange, onSave }) 
                     onSubItemChange(expense.id, si.id, "attendees", e.target.value)
                   }
                   placeholder="0"
-                  className="w-full text-sm text-right px-2 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  disabled={readOnly}
+                  className="w-full text-sm text-right px-2 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-default [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
               </div>
 
@@ -100,7 +104,8 @@ export function ExpenseItemCard({ expense, onRemove, onSubItemChange, onSave }) 
                     onSubItemChange(expense.id, si.id, "unitCost", e.target.value)
                   }
                   placeholder="0"
-                  className="w-full text-sm text-right px-2 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  disabled={readOnly}
+                  className="w-full text-sm text-right px-2 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-default [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
               </div>
 
@@ -114,6 +119,15 @@ export function ExpenseItemCard({ expense, onRemove, onSubItemChange, onSave }) 
 
               {/* Receipt */}
               <div className="col-span-6 md:col-span-1 flex items-center gap-1 md:justify-end">
+                {readOnly ? (
+                  si.billUploaded && (
+                    <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border border-green-300 text-green-700 bg-green-50">
+                      <FileText className="w-3.5 h-3.5" />
+                      Bill
+                    </span>
+                  )
+                ) : (
+                <>
                 <label
                   className={`cursor-pointer inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border transition-colors ${
                     si.billUploaded
@@ -148,6 +162,8 @@ export function ExpenseItemCard({ expense, onRemove, onSubItemChange, onSave }) 
                     <X className="w-3.5 h-3.5" />
                   </button>
                 )}
+                </>
+                )}
               </div>
             </div>
           );
@@ -155,6 +171,7 @@ export function ExpenseItemCard({ expense, onRemove, onSubItemChange, onSave }) 
       </div>
 
       {/* Save CTA */}
+      {!readOnly && (
       <div className="flex items-center justify-end px-4 py-3 bg-gray-50 border-t border-gray-200">
         <button
           onClick={handleSave}
@@ -165,6 +182,7 @@ export function ExpenseItemCard({ expense, onRemove, onSubItemChange, onSave }) 
           {saving ? "Saving…" : saved ? "Saved" : "Save Expense"}
         </button>
       </div>
+      )}
     </div>
   );
 }

@@ -86,19 +86,39 @@ import Header from "@/_components/Header";
 import useGlobalLoader from "@/store/useGlobalLoader";
 import { useEffect } from "react";
 import ProtectedRoute from "@/_components/ProtectedRoute";
-import { useSelector } from "react-redux";
-import { FiDollarSign, FiMessageCircle } from "react-icons/fi";
+import { useDispatch, useSelector } from "react-redux";
+import { setAdminDetail } from "@/store/auth/authSlice";
+import { getNetworkClusterAdminDetail } from "@/services/auth.service";
+import { FiCheckSquare, FiDollarSign, FiHome, FiMessageCircle } from "react-icons/fi";
 import { FaFileInvoiceDollar } from "react-icons/fa6";
 
 export default function DashboardLayout({ children }) {
   const pathname = usePathname();
   const { hideLoader } = useGlobalLoader.getState();
-  const { user } = useSelector((state) => state.auth);
+  const dispatch = useDispatch();
+  const { user, isAuthenticated, adminDetail } = useSelector((state) => state.auth);
   const isAdmin = user?.userType?.toLowerCase() === "admin";
+  const isFinanceManager = adminDetail?.role?.includes("financeManager");
 
   useEffect(() => {
     hideLoader();
   }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const networkClusterCode = localStorage.getItem("networkClusterCode");
+    const email = user?.email || localStorage.getItem("userEmail");
+    if (!networkClusterCode || !email) return;
+
+    getNetworkClusterAdminDetail({ networkClusterCode, email })
+      .then((res) => {
+        if (res?.data?.success) {
+          dispatch(setAdminDetail(res.data.result));
+        }
+      })
+      .catch((error) => console.error("Admin detail fetch error:", error));
+  }, [isAuthenticated, user?.email]);
 
   function removeAllParams(url) {
     return url.split("?")[0];
@@ -146,7 +166,32 @@ const userMenu = [
     { name: "Actionable",        path: "/dashboard/actionable",  logo: actionableLogo },
   ];
 
-  const menu = isPortfolioOfficer ? portfolioOfficerMenu : (isAdmin ? adminMenu : userMenu);
+  const financeManagerMenu = [
+    {
+      name: "Home",
+      path: "/dashboard/profile",
+      icon: <FiHome className="text-[22px]" />,
+    },
+    {
+      name: "Finance",
+      path: "/dashboard/finance",
+      icon: <FiDollarSign className="text-[22px]" />,
+    },
+    { name: "Actionable", path: "/dashboard/actionable", logo: actionableLogo },
+    {
+      name: "Approvals",
+      path: "/dashboard/approvals",
+      icon: <FiCheckSquare className="text-[22px]" />,
+    },
+  ];
+
+  const menu = isPortfolioOfficer
+    ? portfolioOfficerMenu
+    : isFinanceManager
+      ? financeManagerMenu
+      : isAdmin
+        ? adminMenu
+        : userMenu;
 
     // { name: "Vendors", path: "/dashboard/vendors?tab=hotels", logo: vendorsLogo },
     // { name: "Resources", path: "/dashboard/resources", logo: resourcesLogo },
@@ -198,6 +243,7 @@ const userMenu = [
                     </li>
                   );
                 })}
+                {!isFinanceManager && (
                 <li className="relative group">
                   <Link
                     href="/dashboard/send-bulk"
@@ -221,6 +267,7 @@ const userMenu = [
                     <span className="absolute right-full top-1/2 -translate-y-1/2 h-2.5 w-2.5 rotate-45 bg-[#F2F7FF] border-l border-b border-[#D3E3FD] -mr-[5px]" />
                   </span>
                 </li>
+                )}
               </ul>
             </div>
           </div>

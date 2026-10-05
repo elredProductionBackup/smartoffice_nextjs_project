@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { useSelector } from "react-redux";
 import { FiUpload } from "react-icons/fi";
 import NewExpensesPopup from "./UI/NewExpensesPopup";
 import { useFinanceStore } from "@/store/useFinanceStore";
@@ -10,6 +11,10 @@ import { useExpenseRecordsStore } from "@/store/useExpenseRecordsStore";
 export default function DashboardFinanceList() {
   const [showNewExpense, setShowNewExpense] = useState(false);
   const listRef = useRef(null);
+
+  // Finance managers see this card as "Approvals" and can't upload expenses
+  const adminDetail = useSelector((state) => state.auth.adminDetail);
+  const isFinanceManager = adminDetail?.role?.includes("financeManager");
 
   const financeItems = useFinanceStore((state) => state.items);
   const loading = useFinanceStore((state) => state.loading);
@@ -41,9 +46,11 @@ const handleSaveExpense = (expense) => {
     <div className="flex flex-col rounded-2xl bg-[#F2F7FF] px-6 py-6 min-h-[500px] max-h-[500px] mb-[20px]">
       {/* Header */}
       <div className="flex items-center justify-between mb-5 shrink-0">
-        <h3 className="text-[20px] font-bold text-[#333]">Finance</h3>
+        <h3 className="text-[20px] font-bold text-[#333]">
+          {isFinanceManager ? "Approvals" : "Finance"}
+        </h3>
         <Link
-          href="/dashboard/expense-records"
+          href={isFinanceManager ? "/dashboard/approvals" : "/dashboard/expense-records"}
           className="text-[14px] font-semibold text-[#0B57D0] border border-[#0B57D0] px-3.5 py-1 rounded-full cursor-pointer bg-transparent hover:bg-[#0B57D0]/5 transition-colors"
         >
           View All
@@ -72,8 +79,11 @@ const handleSaveExpense = (expense) => {
               No finance items yet
             </h4>
             <p className="text-[13px] text-[#5F6368] font-medium mb-4 max-w-[240px]">
-              You don&apos;t have any pending approvals or payments right now. Add an expense to get started.
+              {isFinanceManager
+                ? "You don't have any pending approvals right now."
+                : "You don't have any pending approvals or payments right now. Add an expense to get started."}
             </p>
+            {!isFinanceManager && (
             <button
               type="button"
               onClick={() => setShowNewExpense(true)}
@@ -82,6 +92,7 @@ const handleSaveExpense = (expense) => {
               <FiUpload className="w-[16px] h-[16px]" />
               Add an expense
             </button>
+            )}
           </div>
         ) : (
           financeItems.slice(0, 5).map((item) => (
@@ -138,7 +149,7 @@ const handleSaveExpense = (expense) => {
       </div>
 
       {/* Divider + Upload Button — only when the list has items */}
-      {!isEmpty && (
+      {!isEmpty && !isFinanceManager && (
         <>
           <hr className="border-t border-[#D4DFF1] my-4 shrink-0" />
           <div className="shrink-0">

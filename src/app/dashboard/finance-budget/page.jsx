@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSelector } from 'react-redux';
 import { FiArrowLeft, FiPlus, FiChevronRight } from 'react-icons/fi';
 import { getBudgetReportCategory, getBudgetEventReportCategory } from '@/services/finance.service';
 import { getExpenses } from '@/services/expense.service';
@@ -33,6 +34,8 @@ const formatDate = (iso) => {
 
 const FinanceBudgetPage = () => {
   const router   = useRouter();
+  const adminDetail = useSelector((state) => state.auth.adminDetail);
+  const isFinanceManager = adminDetail?.role?.includes('financeManager');
   const [expanded, setExpanded]         = useState(null);
   const [showAddBudget, setShowAddBudget]   = useState(false);
   const [categories, setCategories]     = useState([]);
@@ -47,7 +50,7 @@ const FinanceBudgetPage = () => {
   // itself — it returns portfolioName, totalEventCount and remainingAmount
   // per category, plus the page-level totalAssigned/totalUsed/totalRemaining
   // — so it drives the rows directly instead of budgetTypes from getBudgetType.
-  const fetchReport = () => {
+  const fetchReport = (onLoaded) => {
     getBudgetReportCategory(1, 100)
       .then((response) => {
         const rows = Array.isArray(response?.result) ? response.result : [];
@@ -57,6 +60,7 @@ const FinanceBudgetPage = () => {
           used: Number(response?.totalUsed) || 0,
           remaining: Number(response?.totalRemaining) || 0,
         });
+        onLoaded?.();
       })
       .catch((error) => {
         console.error('Failed to fetch budget report by category:', error);
@@ -127,15 +131,45 @@ const FinanceBudgetPage = () => {
       });
   };
 
-  useEffect(() => {
-    fetchReport();
-  }, []);
-
   const toggle = (id) => {
     setExpanded((prev) => (prev === id ? null : id));
     fetchEventReport(id);
     fetchGeneralExpenses();
   };
+
+  useEffect(() => {
+    // ?expand=<budgetTypeId> opens that portfolio on load (e.g. "View All" from Portfolio Officer)
+    const expandId = new URLSearchParams(window.location.search).get('expand');
+    fetchReport(
+      expandId
+        ? () => {
+            // Load the data now so it's ready by the time the dropdown opens
+            fetchEventReport(expandId);
+            fetchGeneralExpenses();
+
+            // set (not toggle) so a double-run effect in Strict Mode doesn't close it again
+            let opened = false;
+            const open = () => {
+              if (opened) return;
+              opened = true;
+              document.removeEventListener('scrollend', open, true);
+              setExpanded(expandId);
+            };
+
+            // wait for the rows to render, scroll the portfolio into view,
+            // then open it once scrolling finishes (timeout covers no-scroll / no scrollend support)
+            setTimeout(() => {
+              document.addEventListener('scrollend', open, true);
+              document
+                .getElementById(`portfolio-${expandId}`)
+                ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              setTimeout(open, 900);
+            }, 100);
+          }
+        : undefined
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="p-6">
@@ -235,8 +269,9 @@ const FinanceBudgetPage = () => {
             return (
               <div
                 key={item.budgetTypeId}
+                id={`portfolio-${item.budgetTypeId}`}
+                style={{ background: s.bg, border: `1px solid ${s.border}`, scrollMarginTop: 16 }}
                 className="rounded-[16px]"
-                style={{ background: s.bg, border: `1px solid ${s.border}` }}
               >
                 {/* Header row */}
                 <div
@@ -288,7 +323,11 @@ const FinanceBudgetPage = () => {
                 </div>
 
                 {/* Expanded section */}
-                {isOpen && (
+                <div
+                  className="grid transition-[grid-template-rows,opacity] duration-300 ease-in-out"
+                  style={{ gridTemplateRows: isOpen ? '1fr' : '0fr', opacity: isOpen ? 1 : 0 }}
+                >
+                  <div className="overflow-hidden min-h-0">
                   <div className="border-t bg-white pb-5 rounded-b-[16px] overflow-hidden" style={{ borderColor: s.border }}>
 
                     {/* ── EVENT RELATED ── */}
@@ -324,7 +363,7 @@ const FinanceBudgetPage = () => {
                           return (
                             <div
                               key={event.eventId}
-                              onClick={() => router.push(`/dashboard/events/${event.eventId}?from=finance-budget`)}
+                              onClick={() => router.push(`/dashboard/events/${event.eventId}?from=finance-budget${isFinanceManager ? '&tab=eventcosting' : ''}`)}
                               className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr] gap-4 px-6 py-4 border-b border-slate-100 items-center cursor-pointer hover:bg-slate-50 transition-colors"
                             >
                               <div>
@@ -420,7 +459,8 @@ const FinanceBudgetPage = () => {
                     </div>
 
                   </div>
-                )}
+                  </div>
+                </div>
               </div>
             );
           })}

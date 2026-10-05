@@ -6,6 +6,7 @@ export function BudgetOverviewBar({
   isOverBudget,
   onEditBudget,
   onOpenDistribution,
+  readOnly = false,
 }) {
   const utilizedPct =
     totalBudget > 0
@@ -54,6 +55,7 @@ export function BudgetOverviewBar({
       </div>
 
       <div className="flex gap-2.5 flex-shrink-0">
+        {!readOnly && (
         <button
           onClick={onEditBudget}
           className="flex items-center gap-2 px-4 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors text-sm"
@@ -61,6 +63,7 @@ export function BudgetOverviewBar({
           <Edit2 className="w-3.5 h-3.5" />
           Edit Budget
         </button>
+        )}
 
         <button
           onClick={onOpenDistribution}

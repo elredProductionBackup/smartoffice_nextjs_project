@@ -257,7 +257,6 @@ export const useExpenseRecordsStore = create((set, get) => ({
   },
 
   updateExpense: (id, updatedFields) => {
-    let matchedExpense = null;
     let amountDelta = 0;
 
     const expenses = get().expenses.map((e) => {
@@ -269,7 +268,7 @@ export const useExpenseRecordsStore = create((set, get) => ({
       const newAmount = hasNewAmount ? Number(updatedFields.totalAmount) || 0 : oldAmount;
       amountDelta = newAmount - oldAmount;
 
-      matchedExpense = {
+      return {
         ...e,
         // Fall back to the existing value so unspecified fields aren't wiped to "-".
         description: updatedFields.description ?? e.description,
@@ -282,21 +281,15 @@ export const useExpenseRecordsStore = create((set, get) => ({
         vendor: updatedFields.vendorName || updatedFields.vendor || e.vendor || "-",
         bill: updatedFields.fileName || updatedFields.bill || e.bill || "-",
       };
-      return matchedExpense;
     });
 
     // Shift the summary "Total Amount" by the price delta so the
     // top cards reflect the edit immediately.
+    // Local update only — the popup already saved the edit via addEditExpense.
     set((state) => ({
       expenses,
       totalAmount: (Number(state.totalAmount) || 0) + amountDelta,
     }));
-
-    if (matchedExpense) {
-      api
-        .patch("/smartOffice/expense", { id, ...matchedExpense })
-        .catch((err) => console.error("Failed to sync updated expense to server:", err));
-    }
   },
 
   updatePaymentStatus: (id, paymentStatus) => {
