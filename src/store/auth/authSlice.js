@@ -64,6 +64,7 @@ const authSlice = createSlice({
       localStorage.removeItem("userEmail");
       localStorage.removeItem("networkClusterCode");
       localStorage.removeItem("adminDetail");
+      localStorage.removeItem("selectedRole");
     },
   },
 });

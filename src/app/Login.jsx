@@ -9,6 +9,7 @@ import { sendOtp } from "@/services/auth.service";
 import { isValidEmail } from "@/utils/isValidEmail";
 import useGlobalLoader from "@/store/useGlobalLoader";
 import GuestRoute from "@/_components/GuestRoute";
+import RoleSelection from "@/_components/RoleSelection";
 
 const Login = () => {
   const params = useSearchParams();
@@ -17,6 +18,7 @@ const Login = () => {
   const { showLoader, hideLoader } = useGlobalLoader.getState();
 
   const [login, setLogin] = useState(true);
+  const [showRoles, setShowRoles] = useState(false);
   const [invalidEmail, setInvalidEmail] = useState(false);
   const [emailData, setEmailData] = useState({
     email: "",
@@ -51,6 +53,11 @@ const Login = () => {
   };
 
   console.log('main: pretest')
+
+  if (showRoles) {
+    return <RoleSelection />;
+  }
+
   return (
     <GuestRoute>
       <div className="h-screen flex items-center justify-center">
@@ -71,6 +78,7 @@ const Login = () => {
               email={emailData.email}
               networkClusterCode={emailData.networkClusterCode}
               data={emailData}
+              onVerified={() => setShowRoles(true)}
             />
           )}
         </div>
