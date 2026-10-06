@@ -13,7 +13,7 @@ import { useDispatch } from "react-redux";
 import { setAuth } from "@/store/auth/authSlice";
 
 
-const OTPComponent = ({ email, length = 6, networkClusterCode, data }) => {
+const OTPComponent = ({ email, length = 6, networkClusterCode, data, onVerified }) => {
   const [otp, setOtp] = useState(Array(length).fill(""));
   const [error, setError] = useState(false);
 
@@ -49,6 +49,12 @@ const OTPComponent = ({ email, length = 6, networkClusterCode, data }) => {
       if (res?.data?.success) {
           const user = res?.data?.result?.[0];
           dispatch(setAuth(user));
+
+          if (onVerified) {
+            hideLoader();
+            onVerified(user);
+            return;
+          }
 
           router.push("/dashboard");
           return;

@@ -14,6 +14,7 @@ import {
   FiInbox,
   FiCheck,
   FiTrash2,
+  FiCheckCircle,
 } from "react-icons/fi";
 import { MdCurrencyRupee } from "react-icons/md";
 import { useExpenseRecordsStore } from "@/store/useExpenseRecordsStore";
@@ -331,6 +332,117 @@ function RowActionsMenu({ onPick, onDelete }) {
   );
 }
 
+/* ─── Send for approval: details → confirm → success (dummy, no API yet) ──── */
+// Placeholder approver until the backend provides the real one
+const APPROVER_CONTACT = {
+  email: "approver@smartnetworks.com",
+  whatsapp: "+91 98765 43210",
+};
+
+function SendApprovalModal({ expense, onClose }) {
+  const [sent, setSent] = useState(false);
+
+  const details = [
+    { label: "Portfolio", value: expense.portfolio },
+    { label: "Date", value: expense.date },
+    { label: "Vendor", value: expense.vendor },
+    { label: "Payment Status", value: expense.paymentStatus },
+    { label: "Remark", value: expense.remark },
+    { label: "Bill", value: expense.bill },
+  ];
+
+  const contacts = [
+    { label: "Email", value: APPROVER_CONTACT.email, icon: <FiMail className="w-4 h-4" />, chip: "bg-blue-50 text-blue-600" },
+    { label: "WhatsApp", value: APPROVER_CONTACT.whatsapp, icon: <FiMessageCircle className="w-4 h-4" />, chip: "bg-green-50 text-green-600" },
+  ];
+
+  // Same look as DeleteConfirm / IncomePopup: 480px card, 28px radius, pill buttons
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
+      <div
+        className="w-[480px] max-w-[95vw] max-h-[92vh] overflow-y-auto rounded-[28px] bg-white shadow-xl font-nunito px-10 py-10 flex flex-col items-center"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {sent ? (
+          <>
+            <FiCheckCircle className="text-[56px] text-green-500" />
+            <div className="mt-5 text-[24px] font-[700] text-[#333333] text-center">Sent successfully</div>
+            <p className="mt-2 text-[16px] text-[#727272] text-center leading-[136%]">
+              <span className="font-bold text-[#333333] capitalize">{expense.description}</span> has been sent for
+              approval via Email and WhatsApp.
+            </p>
+            <button
+              type="button"
+              onClick={onClose}
+              className="mt-9 rounded-full text-[20px] bg-gradient-to-r from-[#5597ED] to-[#00449C] w-[120px] px-[16px] py-[8px] text-white cursor-pointer"
+            >
+              Done
+            </button>
+          </>
+        ) : (
+          <>
+            <div className="text-[24px] font-[700] text-[#333333] text-center">Send for approval?</div>
+            <p className="mt-1.5 text-[16px] text-[#727272] text-center">Review the expense details before sending.</p>
+
+            {/* Expense details */}
+            <div className="mt-6 w-full bg-[#f0f4ff] border border-[#c7d7fb] rounded-[14px] p-[18px]">
+              <div className="flex items-center justify-between gap-3 mb-3.5">
+                <span className="text-[16px] font-bold text-[#0B57D0] truncate capitalize" title={expense.description}>
+                  {expense.description}
+                </span>
+                <span className="text-[16px] font-bold text-[#333333] tabular-nums shrink-0">
+                  {formatCurrency(expense.totalAmount)}
+                </span>
+              </div>
+              <dl className="grid grid-cols-[120px_1fr] gap-y-2 text-[14px]">
+                {details.map(({ label, value }) => (
+                  <React.Fragment key={label}>
+                    <dt className="text-[#727272] font-medium">{label}</dt>
+                    <dd className="text-[#333333] font-semibold truncate" title={value || ""}>
+                      {value && value !== "-" ? value : "—"}
+                    </dd>
+                  </React.Fragment>
+                ))}
+              </dl>
+            </div>
+
+            {/* Approver */}
+            <div className="mt-5 w-full">
+              <div className="text-[14px] font-bold text-[#333333] mb-2">The bill will go for approval to</div>
+              <div className="flex flex-col gap-2">
+                {contacts.map(({ label, value, icon, chip }) => (
+                  <div key={label} className="flex items-center gap-3 px-3.5 py-2.5 rounded-[14px] border border-[#E2E8F0]">
+                    <span className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${chip}`}>{icon}</span>
+                    <span className="text-[14px] text-[#727272] font-medium w-[72px]">{label}</span>
+                    <span className="text-[14px] font-semibold text-[#333333] truncate">{value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-9 flex gap-[80px]">
+              <button
+                type="button"
+                onClick={onClose}
+                className="rounded-full text-[20px] bg-[#999999] px-6 py-2 text-white w-[120px] cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => setSent(true)}
+                className="rounded-full text-[20px] bg-gradient-to-r from-[#5597ED] to-[#00449C] w-[120px] px-[16px] py-[8px] text-white cursor-pointer"
+              >
+                Confirm
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* ─── Sleek Filter Dropdown ─────────────────────────────────────────────── */
 function FilterDropdown({ label, value, onChange, options }) {
   const [open, setOpen] = useState(false);
@@ -400,6 +512,7 @@ export default function ExpenseRecordsPage() {
   const deleteExpense = useExpenseRecordsStore((state) => state.deleteExpense);
 
   const [reminderModal, setReminderModal] = useState(null);
+  const [approvalExpense, setApprovalExpense] = useState(null);
   const [selectedExpense, setSelectedExpense] = useState(null);
   const [showPopup, setShowPopup] = useState(false);
 
@@ -706,6 +819,7 @@ export default function ExpenseRecordsPage() {
                       {expense.canSend ? (
                         <button
                           type="button"
+                          onClick={() => setApprovalExpense(expense)}
                           className="inline-flex items-center gap-1.5 bg-[#2B7FFF] hover:bg-[#1a6fe6] active:scale-[0.97] text-white font-nunito font-semibold text-[12px] px-3 py-1.5 rounded-md transition-all cursor-pointer border-0 outline-none whitespace-nowrap"
                         >
                           <FiSend className="w-3.5 h-3.5" />
@@ -834,6 +948,10 @@ export default function ExpenseRecordsPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {approvalExpense && (
+        <SendApprovalModal expense={approvalExpense} onClose={() => setApprovalExpense(null)} />
       )}
 
       {/* Delete confirm modal */}
