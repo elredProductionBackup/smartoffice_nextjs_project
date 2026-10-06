@@ -16,14 +16,12 @@ import {
   Wallet,
 } from "lucide-react";
 import useGlobalLoader from "@/store/useGlobalLoader";
-import { FINANCE_MANAGER_HOME } from "@/utils/routeAccess";
 
 const ROLES = [
   {
     key: "admin",
     title: "Admin",
     description: "Manage events, members, actionables & expenses across your network.",
-    path: "/dashboard",
     icon: ShieldCheck,
     sideIcons: [Users, BriefcaseBusiness],
     tint: "#2563eb",
@@ -32,7 +30,6 @@ const ROLES = [
     key: "financeOfficer",
     title: "Finance Officer",
     description: "Set budgets, review expenses and approve event costing.",
-    path: FINANCE_MANAGER_HOME,
     icon: Wallet,
     sideIcons: [Receipt, Landmark],
     tint: "#059669",
@@ -41,7 +38,6 @@ const ROLES = [
     key: "portfolioOfficer",
     title: "Portfolio Officer",
     description: "Track your portfolio budget, request events & monitor spend.",
-    path: "/dashboard/portfolio-officer",
     icon: BriefcaseBusiness,
     sideIcons: [ChartPie, TrendingUp],
     tint: "#7c3aed",
@@ -94,12 +90,12 @@ const RoleSelection = () => {
   const [selectedRole, setSelectedRole] = useState(null);
 
   const handleContinue = () => {
-    const role = ROLES.find((r) => r.key === selectedRole);
-    if (!role) return;
+    if (!selectedRole) return;
 
-    localStorage.setItem("selectedRole", role.key);
+    // UI only for now: the choice isn't saved or used until the backend supports roles.
+    // Continue behaves exactly like the old post-OTP redirect.
     showLoader();
-    router.push(role.path);
+    router.push("/dashboard");
   };
 
   return (
