@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import {
-  ArrowRight,
   BriefcaseBusiness,
   ChartPie,
   Check,
@@ -89,11 +88,13 @@ const RoleSelection = () => {
 
   const [selectedRole, setSelectedRole] = useState(null);
 
-  const handleContinue = () => {
-    if (!selectedRole) return;
+  // Picking a role logs the user straight in.
+  // UI only for now: the choice isn't saved or used until the backend supports roles,
+  // so every role goes through the old post-OTP redirect.
+  const handleSelect = (roleKey) => {
+    if (selectedRole) return; // ignore extra clicks while navigating
 
-    // UI only for now: the choice isn't saved or used until the backend supports roles.
-    // Continue behaves exactly like the old post-OTP redirect.
+    setSelectedRole(roleKey);
     showLoader();
     router.push("/dashboard");
   };
@@ -142,7 +143,7 @@ const RoleSelection = () => {
                 type="button"
                 role="radio"
                 aria-checked={selected}
-                onClick={() => setSelectedRole(role.key)}
+                onClick={() => handleSelect(role.key)}
                 className={`group relative text-left rounded-2xl border bg-white p-5 pb-7 transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
                   selected
                     ? "border-blue-600 shadow-lg shadow-blue-100"
@@ -170,19 +171,6 @@ const RoleSelection = () => {
           })}
         </div>
 
-        <button
-          type="button"
-          onClick={handleContinue}
-          disabled={!selectedRole}
-          className={`mt-12 h-12 px-10 rounded-full flex items-center gap-2 text-base font-medium text-white transition ${
-            selectedRole
-              ? "bg-blue-600 hover:bg-blue-700 cursor-pointer"
-              : "bg-blue-500/50 cursor-not-allowed"
-          }`}
-        >
-          Continue
-          <ArrowRight size={18} />
-        </button>
       </main>
     </div>
   );
