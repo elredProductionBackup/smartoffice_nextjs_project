@@ -34,3 +34,33 @@ export const isFinanceManagerRouteAllowed = (pathname = "") => {
   const eventMatch = pathname.match(/^\/dashboard\/events\/([^/]+)/);
   return !!eventMatch && !FINANCE_MANAGER_BLOCKED_EVENT_PAGES.includes(eventMatch[1]);
 };
+
+// Learning officers can only open these pages; everything else is blocked.
+const LEARNING_OFFICER_ROUTES = [
+  "/dashboard/portfolio-officer",
+  "/dashboard/my-profile",
+  "/dashboard/actionable",
+  "/dashboard/events",
+];
+
+export const LEARNING_OFFICER_HOME = "/dashboard/portfolio-officer";
+
+export const isLearningOfficerRouteAllowed = (pathname = "") =>
+  pathname === "/dashboard" ||
+  LEARNING_OFFICER_ROUTES.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`)
+  );
+
+// Admins can open everything except these finance / portfolio officer pages.
+const ADMIN_BLOCKED_ROUTES = [
+  "/dashboard/finance",
+  "/dashboard/finance-budget",
+  "/dashboard/portfolio-officer",
+];
+
+export const ADMIN_HOME = "/dashboard/profile";
+
+export const isAdminRouteAllowed = (pathname = "") =>
+  !ADMIN_BLOCKED_ROUTES.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`)
+  );

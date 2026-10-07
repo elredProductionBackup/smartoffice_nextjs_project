@@ -1,20 +1,24 @@
 "use client";
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import {
+  Award,
+  BookOpen,
   BriefcaseBusiness,
-  ChartPie,
   Check,
+  GraduationCap,
   Landmark,
   Receipt,
   ShieldCheck,
-  TrendingUp,
   Users,
   Wallet,
 } from "lucide-react";
 import useGlobalLoader from "@/store/useGlobalLoader";
+import { setAdminDetail, setSelectedRole } from "@/store/auth/authSlice";
+import { getNetworkClusterAdminDetail } from "@/services/auth.service";
+import { FINANCE_MANAGER_HOME, LEARNING_OFFICER_HOME } from "@/utils/routeAccess";
 
 const ROLES = [
   {
@@ -34,14 +38,27 @@ const ROLES = [
     tint: "#059669",
   },
   {
-    key: "portfolioOfficer",
-    title: "Portfolio Officer",
-    description: "Track your portfolio budget, request events & monitor spend.",
-    icon: BriefcaseBusiness,
-    sideIcons: [ChartPie, TrendingUp],
+    key: "learningOfficer",
+    title: "Learning Officer",
+    description: "Plan learning programs, track sessions & grow your network's skills.",
+    icon: GraduationCap,
+    sideIcons: [BookOpen, Award],
     tint: "#7c3aed",
   },
 ];
+
+// Where each role lands after picking it
+const ROLE_HOME = {
+  financeOfficer: FINANCE_MANAGER_HOME,
+  learningOfficer: LEARNING_OFFICER_HOME,
+};
+
+// Keep the cards centred whatever number of roles the user has
+const GRID_COLS = {
+  1: "sm:grid-cols-1 max-w-sm",
+  2: "sm:grid-cols-2 max-w-2xl",
+  3: "sm:grid-cols-3 max-w-4xl",
+};
 
 // Stacked "card" illustration: one main tile with two tilted tiles behind it
 const RoleIllustration = ({ role, selected }) => {
@@ -82,21 +99,53 @@ const RoleIllustration = ({ role, selected }) => {
 
 const RoleSelection = () => {
   const router = useRouter();
+  const dispatch = useDispatch();
   const { showLoader } = useGlobalLoader.getState();
-  const { user } = useSelector((state) => state.auth);
+  const { user, adminDetail } = useSelector((state) => state.auth);
   const network = user?.networkClusterDetails;
 
-  const [selectedRole, setSelectedRole] = useState(null);
+  const [selectedRole, setSelected] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
-  // Picking a role logs the user straight in.
-  // UI only for now: the choice isn't saved or used until the backend supports roles,
-  // so every role goes through the old post-OTP redirect.
+  // Fetch the roles assigned to this user in the network
+  useEffect(() => {
+    const networkClusterCode =
+      network?.networkClusterCode || localStorage.getItem("networkClusterCode");
+    const email = user?.email || localStorage.getItem("userEmail");
+    if (!networkClusterCode || !email) {
+      setLoading(false);
+      setError(true);
+      return;
+    }
+
+    getNetworkClusterAdminDetail({ networkClusterCode, email })
+      .then((res) => {
+        if (res?.data?.success) {
+          dispatch(setAdminDetail(res.data.result));
+        } else {
+          setError(true);
+        }
+      })
+      .catch((err) => {
+        console.error("Admin detail fetch error:", err);
+        setError(true);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  const userRoles = adminDetail?.role ?? [];
+  const availableRoles = ROLES.filter((role) => userRoles.includes(role.key));
+  const firstname = adminDetail?.firstname || user?.firstname;
+
+  // Picking a role saves it and logs the user straight in
   const handleSelect = (roleKey) => {
     if (selectedRole) return; // ignore extra clicks while navigating
 
-    setSelectedRole(roleKey);
+    setSelected(roleKey);
+    dispatch(setSelectedRole(roleKey));
     showLoader();
-    router.push("/dashboard");
+    router.push(ROLE_HOME[roleKey] ?? "/dashboard");
   };
 
   return (
@@ -124,18 +173,31 @@ const RoleSelection = () => {
         )}
 
         <h1 className="text-2xl sm:text-3xl font-semibold text-[#1a1a1a] text-center">
-          How would you like to continue{user?.firstname ? `, ${user.firstname}` : ""}?
+          How would you like to continue{firstname ? `, ${firstname}` : ""}?
         </h1>
         <p className="mt-2 text-sm sm:text-base text-gray-500 text-center">
           Choose your role and we&apos;ll tailor your Smart Networks workspace accordingly.
         </p>
 
+        {loading ? (
+          <div className="mt-12 w-full max-w-4xl grid grid-cols-1 sm:grid-cols-3 gap-5">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="h-[300px] rounded-2xl border border-gray-100 bg-gray-50 animate-pulse" />
+            ))}
+          </div>
+        ) : availableRoles.length === 0 ? (
+          <p className="mt-12 text-sm text-gray-500 text-center">
+            {error
+              ? "We couldn't load your roles. Please refresh the page and try again."
+              : "No roles have been assigned to you in this network. Please contact your network admin."}
+          </p>
+        ) : (
         <div
           role="radiogroup"
           aria-label="Select your role"
-          className="mt-12 w-full max-w-4xl grid grid-cols-1 sm:grid-cols-3 gap-5"
+          className={`mt-12 w-full grid grid-cols-1 gap-5 ${GRID_COLS[availableRoles.length] ?? GRID_COLS[3]}`}
         >
-          {ROLES.map((role) => {
+          {availableRoles.map((role) => {
             const selected = selectedRole === role.key;
             return (
               <button
@@ -170,7 +232,7 @@ const RoleSelection = () => {
             );
           })}
         </div>
-
+        )}
       </main>
     </div>
   );
