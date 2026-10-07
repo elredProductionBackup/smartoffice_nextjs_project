@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
+import { Trash2 } from "lucide-react";
 import ButtonComp from "./ButtonComp";
 import AddTask from "./AddTask";
 import { useDispatch, useSelector } from "react-redux";
 import { openModal, closeModal } from "@/store/actionable/actionableUiSlice";
 import ActionableDetailsModal from "./ActionableDetailsModal";
+import StatusSelect from "./UI/StatusSelect";
 import {
   fetchEventChecklist,
   toggleEventActionable,
@@ -19,6 +21,13 @@ import {
 
 
 
+
+// TODO: persist once the backend supports a task status field
+const TASK_STATUS_OPTIONS = [
+  { value: "wip", label: "WIP", dotClassName: "bg-amber-500" },
+  { value: "done", label: "Done", dotClassName: "bg-green-600" },
+  { value: "notRequired", label: "Not Required", dotClassName: "bg-slate-400" },
+];
 
 // ─── Circular Progress Ring ────────────────────────────────────────────────────
 const CircularProgress = ({ done, total, fillColor, emptyColor, onClick }) => {
@@ -78,11 +87,11 @@ const ChecklistContent = ({ eventId }) => {
   const { modal } = useSelector((state) => state.actionableUi);
   const { user } = useSelector((state) => state.auth);
 
-  const [openMenu, setOpenMenu] = useState(null);
+  const [deleteTask, setDeleteTask] = useState(null); // { id, title } awaiting confirmation
   const [showAddModal, setShowAddModal] = useState(false);
   const [activeDifficulty, setActiveDifficulty] = useState(null);
   const [showDifficultyBar, setShowDifficultyBar] = useState(false);
-  const menuRefs = useRef({});
+  const [taskStatus, setTaskStatus] = useState({}); // { [taskId]: "wip" | "done" | "notRequired" }
 
   // Fetch tasks for this event ONLY
   useEffect(() => {
@@ -100,26 +109,11 @@ const ChecklistContent = ({ eventId }) => {
     isLocal: false
   } : null;
 
-  useEffect(() => {
-    if (!openMenu) return;
-    const handleOutsideClick = (e) => {
-      const node = menuRefs.current[openMenu];
-      if (node && !node.contains(e.target)) {
-        setOpenMenu(null);
-      }
-    };
-    document.addEventListener("mousedown", handleOutsideClick);
-    return () => document.removeEventListener("mousedown", handleOutsideClick);
-  }, [openMenu]);
-
   const toggleCheck = (task) => {
     const taskId = task.actionableId || task.id;
     const newCompleted = !(task.isCompleted === true || task.isCompleted === "true");
     dispatch(toggleEventActionable({ actionableId: taskId, isCompleted: newCompleted }));
   };
-
-  const toggleMenu = (id) =>
-    setOpenMenu((prev) => (prev === id ? null : id));
 
   const handleAddTask = ({ label, difficulty }) => {
     const categoryValue =
@@ -150,10 +144,11 @@ const ChecklistContent = ({ eventId }) => {
     setShowAddModal(false);
   };
 
-  const handleDeleteTask = (actionableId) => {
+  const handleDeleteTask = () => {
+    if (!deleteTask) return;
     const networkClusterCode = localStorage.getItem("networkClusterCode");
-    dispatch(removeEventActionable({ actionableId, networkClusterCode }));
-    setOpenMenu(null);
+    dispatch(removeEventActionable({ actionableId: deleteTask.id, networkClusterCode }));
+    setDeleteTask(null);
   };
 
   return (
@@ -310,6 +305,13 @@ const ChecklistContent = ({ eventId }) => {
                       )}
                     </div>
 
+                    {/* Status */}
+                    <StatusSelect
+                      value={taskStatus[taskId] ?? ""}
+                      onChange={(value) => setTaskStatus((prev) => ({ ...prev, [taskId]: value }))}
+                      options={TASK_STATUS_OPTIONS}
+                    />
+
                     {/* Avatar Stack */}
                     <div className="h-[32px] w-[200px] pt-[2px] flex items-center -space-x-3">
                       {task.collaborators && task.collaborators.length > 0 && (
@@ -331,51 +333,15 @@ const ChecklistContent = ({ eventId }) => {
                       )}
                     </div>
 
-                    {/* 3-dot menu */}
-                    <div ref={(el) => (menuRefs.current[taskId] = el)} className="relative shrink-0 pt-[4px]">
-                      <button
-                        onClick={() => toggleMenu(taskId)}
-                        className="w-6 h-6 flex items-center justify-center hover:opacity-70"
-                      >
-                        <img
-                          src="/image/Three-dots.svg"
-                          alt="More options"
-                          className="w-[24px] h-[24px] cursor-pointer"
-                        />
-                      </button>
-
-                      {openMenu === taskId && (
-                        <div
-                          className="absolute right-0 top-8 z-5 bg-white rounded-[20px] gap-[10px] shadow-2xl p-[20px] w-[300px] "
-                          style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.18)" }}
-                          onMouseDown={(e) => e.stopPropagation()}
-                        >
-                          {/* Move item */}
-                          <button onMouseDown={(e) => e.stopPropagation()} className="w-full flex items-center gap-3 px-4 py-2.5 text-[18px] font-[500] text-gray-800 hover:bg-gray-50">
-                            <img
-                              src="/image/Group.svg"
-                              alt="Move"
-                              className="w-[18px] h-[18px]"
-                            />
-                            Move item
-                          </button>
-
-                          {/* Delete item */}
-                          <button
-                            onMouseDown={(e) => e.stopPropagation()}
-                            onClick={() => handleDeleteTask(taskId)}
-                            className="w-full flex items-center gap-3 px-4 py-2.5 text-[18px] font-[500] text-red-600 hover:bg-red-50"
-                          >
-                            <img
-                              src="/image/Delete-content.svg"
-                              alt="Delete"
-                              className="w-[18px] h-[18px]"
-                            />
-                            Delete item
-                          </button>
-                        </div>
-                      )}
-                    </div>
+                    {/* Delete */}
+                    <button
+                      type="button"
+                      title="Delete task"
+                      onClick={() => setDeleteTask({ id: taskId, title: task.title })}
+                      className="shrink-0 h-9 w-9 rounded-md grid place-items-center text-[#71717A] hover:text-[#E40000] hover:bg-red-50 transition-colors cursor-pointer"
+                    >
+                      <Trash2 size={18} />
+                    </button>
                   </div>
                 );
               })}
@@ -397,6 +363,37 @@ const ChecklistContent = ({ eventId }) => {
           hideLinkEvent={true}
           canEdit={true}
         />
+      )}
+
+      {/* =============== Delete confirmation ================  */}
+      {deleteTask && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onClick={() => setDeleteTask(null)}
+        >
+          <div
+            className="w-[480px] rounded-[28px] bg-white pt-[70px] pb-[40px] shadow-xl flex flex-col items-center gap-[45px]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="text-[24px] font-[700] px-[60px] text-center break-words">
+              Are you sure you want to delete &quot;{deleteTask.title}&quot;?
+            </div>
+            <div className="flex gap-[80px]">
+              <button
+                onClick={() => setDeleteTask(null)}
+                className="rounded-full text-[20px] bg-[#999999] px-6 py-2 text-white w-[120px] cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteTask}
+                className="rounded-full text-[20px] bg-gradient-to-r from-[#5597ED] to-[#00449C] w-[120px] px-[16px] py-[8px] text-white cursor-pointer"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* =============== Event List – empty condition ================  */}
