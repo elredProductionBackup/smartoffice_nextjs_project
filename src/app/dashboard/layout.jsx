@@ -86,39 +86,22 @@ import Header from "@/_components/Header";
 import useGlobalLoader from "@/store/useGlobalLoader";
 import { useEffect } from "react";
 import ProtectedRoute from "@/_components/ProtectedRoute";
-import { useDispatch, useSelector } from "react-redux";
-import { setAdminDetail } from "@/store/auth/authSlice";
-import { getNetworkClusterAdminDetail } from "@/services/auth.service";
+import { useSelector } from "react-redux";
+import { selectIsFinanceOfficer, selectIsLearningOfficer } from "@/store/auth/authSlice";
 import { FiCheckSquare, FiDollarSign, FiHome, FiMessageCircle } from "react-icons/fi";
 import { FaFileInvoiceDollar } from "react-icons/fa6";
 
 export default function DashboardLayout({ children }) {
   const pathname = usePathname();
   const { hideLoader } = useGlobalLoader.getState();
-  const dispatch = useDispatch();
-  const { user, isAuthenticated, adminDetail } = useSelector((state) => state.auth);
+  const { user } = useSelector((state) => state.auth);
   const isAdmin = user?.userType?.toLowerCase() === "admin";
-  const isFinanceManager = adminDetail?.role?.includes("financeManager");
+  const isFinanceManager = useSelector(selectIsFinanceOfficer);
+  const isLearningOfficer = useSelector(selectIsLearningOfficer);
 
   useEffect(() => {
     hideLoader();
   }, []);
-
-  useEffect(() => {
-    if (!isAuthenticated) return;
-
-    const networkClusterCode = localStorage.getItem("networkClusterCode");
-    const email = user?.email || localStorage.getItem("userEmail");
-    if (!networkClusterCode || !email) return;
-
-    getNetworkClusterAdminDetail({ networkClusterCode, email })
-      .then((res) => {
-        if (res?.data?.success) {
-          dispatch(setAdminDetail(res.data.result));
-        }
-      })
-      .catch((error) => console.error("Admin detail fetch error:", error));
-  }, [isAuthenticated, user?.email]);
 
   function removeAllParams(url) {
     return url.split("?")[0];
@@ -139,11 +122,6 @@ export default function DashboardLayout({ children }) {
     path: "/dashboard/members?tab=member",
     logo: memberLogo,
   },
-  {
-    name: "Finance",
-    path: "/dashboard/finance",
-    icon: <FiDollarSign className="text-[22px]" />,
-  },
 ];
 
 const userMenu = [
@@ -157,13 +135,10 @@ const userMenu = [
 ];
 
 
-  const isPortfolioOfficer = pathname.startsWith("/dashboard/portfolio-officer");
-
-  const portfolioOfficerMenu = [
-    { name: "Portfolio Officer", path: "/dashboard/portfolio-officer", logo: dashboardLogo, exact: true },
-    { name: "Yearly Budget",     path: "/dashboard/portfolio-officer/yearly-budget", icon: <FiDollarSign className="text-[22px]" /> },
-    { name: "Events",            path: "/dashboard/events",      logo: eventsLogo },
-    { name: "Actionable",        path: "/dashboard/actionable",  logo: actionableLogo },
+  const learningOfficerMenu = [
+    { name: "Dashboard",  path: "/dashboard/portfolio-officer", logo: dashboardLogo },
+    { name: "Actionable", path: "/dashboard/actionable",        logo: actionableLogo },
+    { name: "Events",     path: "/dashboard/events",            logo: eventsLogo },
   ];
 
   const financeManagerMenu = [
@@ -185,8 +160,8 @@ const userMenu = [
     },
   ];
 
-  const menu = isPortfolioOfficer
-    ? portfolioOfficerMenu
+  const menu = isLearningOfficer
+    ? learningOfficerMenu
     : isFinanceManager
       ? financeManagerMenu
       : isAdmin
@@ -243,7 +218,7 @@ const userMenu = [
                     </li>
                   );
                 })}
-                {!isFinanceManager && (
+                {!isFinanceManager && !isLearningOfficer && (
                 <li className="relative group">
                   <Link
                     href="/dashboard/send-bulk"

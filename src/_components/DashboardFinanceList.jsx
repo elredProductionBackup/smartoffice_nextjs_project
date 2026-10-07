@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useSelector } from "react-redux";
+import { selectIsFinanceOfficer } from "@/store/auth/authSlice";
 import { FiUpload } from "react-icons/fi";
 import NewExpensesPopup from "./UI/NewExpensesPopup";
 import { useFinanceStore } from "@/store/useFinanceStore";
@@ -13,8 +14,7 @@ export default function DashboardFinanceList() {
   const listRef = useRef(null);
 
   // Finance managers see this card as "Approvals" and can't upload expenses
-  const adminDetail = useSelector((state) => state.auth.adminDetail);
-  const isFinanceManager = adminDetail?.role?.includes("financeManager");
+  const isFinanceManager = useSelector(selectIsFinanceOfficer);
 
   const financeItems = useFinanceStore((state) => state.items);
   const loading = useFinanceStore((state) => state.loading);

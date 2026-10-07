@@ -7,6 +7,7 @@ const getInitialState = () => {
       token: null,
       isAuthenticated: false,
       adminDetail: null,
+      selectedRole: null,
     };
   }
 
@@ -20,6 +21,7 @@ const getInitialState = () => {
       token: token ?? null,
       isAuthenticated: !!token,
       adminDetail: adminDetail ?? null,
+      selectedRole: localStorage.getItem("selectedRole"),
     };
   } catch {
     return {
@@ -27,6 +29,7 @@ const getInitialState = () => {
       token: null,
       isAuthenticated: false,
       adminDetail: null,
+      selectedRole: null,
     };
   }
 };
@@ -53,20 +56,33 @@ const authSlice = createSlice({
       localStorage.setItem("adminDetail", JSON.stringify(action.payload));
     },
 
+    // Role picked on the role selection screen ("admin" | "financeOfficer" | "learningOfficer")
+    setSelectedRole(state, action) {
+      state.selectedRole = action.payload;
+
+      localStorage.setItem("selectedRole", action.payload);
+    },
+
     logout(state) {
       state.user = null;
       state.token = null;
       state.isAuthenticated = false;
       state.adminDetail = null;
+      state.selectedRole = null;
 
       localStorage.removeItem("networkData");
       localStorage.removeItem("token");
       localStorage.removeItem("userEmail");
       localStorage.removeItem("networkClusterCode");
       localStorage.removeItem("adminDetail");
+      localStorage.removeItem("selectedRole");
     },
   },
 });
 
-export const { setAuth, setAdminDetail, logout } = authSlice.actions;
+export const { setAuth, setAdminDetail, setSelectedRole, logout } = authSlice.actions;
+
+export const selectIsAdminRole = (state) => state.auth.selectedRole === "admin";
+export const selectIsFinanceOfficer = (state) => state.auth.selectedRole === "financeOfficer";
+export const selectIsLearningOfficer = (state) => state.auth.selectedRole === "learningOfficer";
 export default authSlice.reducer;

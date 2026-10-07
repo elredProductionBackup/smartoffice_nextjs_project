@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import { FiMail, FiPhone, FiBriefcase, FiShield, FiHash, FiCopy, FiCheck, FiArrowLeft } from "react-icons/fi";
 
-// "financeManager" -> "Finance Manager"
+// "financeOfficer" -> "Finance Officer"
 const formatRole = (role = "") =>
   role
     .replace(/([a-z])([A-Z])/g, "$1 $2")

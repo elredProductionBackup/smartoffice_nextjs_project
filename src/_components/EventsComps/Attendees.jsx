@@ -2,6 +2,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { FiBell } from "react-icons/fi";
 import { useDispatch, useSelector } from "react-redux";
+import { selectIsFinanceOfficer } from "@/store/auth/authSlice";
 import { fetchEventMembers } from "@/store/events/eventsThunks";
 import TitleTooltip from "../UI/TitleTooltip";
 import PhonePopup from "../UI/PhonePopup";
@@ -25,8 +26,7 @@ const Attendees = ({ eventId }) => {
     membersFetched,
   } = useSelector((state) => state.events);
 
-  const adminDetail = useSelector((state) => state.auth.adminDetail);
-  const isFinanceManager = adminDetail?.role?.includes("financeManager");
+  const isFinanceManager = useSelector(selectIsFinanceOfficer);
 
   const membersList = membersMap[eventId] || [];
   const isMembersLoading = membersLoading[eventId];

@@ -8,8 +8,10 @@ export default function GuestRoute({ children }) {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
+    const selectedRole = localStorage.getItem("selectedRole");
 
-    if (token) {
+    // Login is complete only after OTP *and* role selection
+    if (token && selectedRole) {
       router.replace("/dashboard");
     } else {
       setChecked(true); // ✅ allow rendering

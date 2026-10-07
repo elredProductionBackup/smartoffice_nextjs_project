@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import LoginComponent from "@/_components/LoginComponent";
 import OTPComponent from "@/_components/OTPComponent";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { sendOtp } from "@/services/auth.service";
 import { isValidEmail } from "@/utils/isValidEmail";
 import useGlobalLoader from "@/store/useGlobalLoader";
@@ -25,6 +25,13 @@ const Login = () => {
     networkClusterCode: code,
     hashId: "elRed",
   });
+
+  // OTP verified but no role picked yet (e.g. page refreshed on the role screen)
+  useEffect(() => {
+    if (localStorage.getItem("token") && !localStorage.getItem("selectedRole")) {
+      setShowRoles(true);
+    }
+  }, []);
 
   const sendOTP = async () => {
     if (!isValidEmail(emailData.email)) {

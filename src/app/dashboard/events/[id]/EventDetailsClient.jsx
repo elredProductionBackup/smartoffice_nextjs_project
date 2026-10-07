@@ -15,6 +15,7 @@ import Attendees from "@/_components/EventsComps/Attendees";
 import LogisticsContent from "@/_components/LogisticsContent";
 import ChecklistContent from "@/_components/ChecklistContent";
 import { useDispatch, useSelector } from "react-redux";
+import { selectIsFinanceOfficer } from "@/store/auth/authSlice";
 import moment from "moment";
 import Eventcosting from "@/_components/Eventcosting";
 import { closeAllEventsModals, openEventsModal } from "@/store/events/eventsUiSlice";
@@ -40,8 +41,7 @@ export default function EventDetailsClient() {
   const eventId = params?.id;
 
   // Finance managers only get the attendees and event costing tabs
-  const adminDetail = useSelector((state) => state.auth.adminDetail);
-  const isFinanceManager = adminDetail?.role?.includes("financeManager");
+  const isFinanceManager = useSelector(selectIsFinanceOfficer);
   const FINANCE_MANAGER_HIDDEN_TABS = ["checklist", "memberMedia", "documents"];
   const eventTabs = isFinanceManager
     ? EVENTS_DETAILS.filter((t) => !FINANCE_MANAGER_HIDDEN_TABS.includes(t.value))

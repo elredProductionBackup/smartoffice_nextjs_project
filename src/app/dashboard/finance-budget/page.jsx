@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSelector } from 'react-redux';
+import { selectIsFinanceOfficer } from "@/store/auth/authSlice";
 import { FiArrowLeft, FiPlus, FiChevronRight } from 'react-icons/fi';
 import { getBudgetReportCategory, getBudgetEventReportCategory } from '@/services/finance.service';
 import { getExpenses } from '@/services/expense.service';
@@ -34,8 +35,7 @@ const formatDate = (iso) => {
 
 const FinanceBudgetPage = () => {
   const router   = useRouter();
-  const adminDetail = useSelector((state) => state.auth.adminDetail);
-  const isFinanceManager = adminDetail?.role?.includes('financeManager');
+  const isFinanceManager = useSelector(selectIsFinanceOfficer);
   const [expanded, setExpanded]         = useState(null);
   const [showAddBudget, setShowAddBudget]   = useState(false);
   const [categories, setCategories]     = useState([]);

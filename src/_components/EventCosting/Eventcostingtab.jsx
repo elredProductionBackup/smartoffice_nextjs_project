@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { selectIsFinanceOfficer } from "@/store/auth/authSlice";
 import { categorySlug } from "./utils";
 import { BudgetOverviewBar } from "./Budgetoverviewbar";
 import { BudgetVersionPills } from "./Budgetversionpills";
@@ -28,8 +29,7 @@ export function EventCostingTab({
   const dispatch = useDispatch();
 
   // Finance managers can view costing but not change it
-  const adminDetail = useSelector((s) => s.auth.adminDetail);
-  const readOnly = !!adminDetail?.role?.includes("financeManager");
+  const readOnly = useSelector(selectIsFinanceOfficer);
 
   // ── Server state (Redux) ──────────────────────────────────────────────────
   const rawVersions = useSelector((s) => s.events.costingMap?.[eventId]) ?? EMPTY_LIST;

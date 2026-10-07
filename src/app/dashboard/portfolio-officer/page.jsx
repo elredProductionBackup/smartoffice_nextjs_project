@@ -3,14 +3,13 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useSelector } from 'react-redux';
 import { MdCurrencyRupee } from 'react-icons/md';
 import { FiArrowRight, FiCalendar, FiTrendingUp, FiSend, FiCheckSquare } from 'react-icons/fi';
-import { HiOutlineLightBulb } from 'react-icons/hi';
 import RequestEvent from '@/_components/UI/RequestEvent';
 import DashboardActionableList from '@/_components/DashboardActionableList';
 import TitleTooltipHover from '@/_components/UI/TitleTooltipHover';
 import { getBudgetReportCategory, getBudgetEventReportCategory } from '@/services/finance.service';
-import { getEventsList } from '@/services/events.service';
 import { formatCompactAmount } from '@/utils/currency';
 
 // This page belongs to the Learning portfolio officer
@@ -34,31 +33,17 @@ const DUMMY_ACTIONABLES = [
   { actionableId: 'a5', title: 'Smart networks demo with YPO at 4 pm', dueDate: '2026-09-23' },
 ];
 
-const UPCOMING_EVENTS_LIMIT = 4;
+const capitalize = (str = '') => str.charAt(0).toUpperCase() + str.slice(1);
 
 const PortfolioOfficerPage = () => {
   const router = useRouter();
+  const { user, adminDetail } = useSelector((state) => state.auth);
+  const profile = adminDetail || user || {};
+  const fullName = [profile.firstname, profile.lastname].filter(Boolean).map(capitalize).join(' ');
   const [showRequestEvent, setShowRequestEvent] = useState(false);
   const [portfolio, setPortfolio] = useState(null);
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [upcomingEvents, setUpcomingEvents] = useState([]);
-  const [loadingUpcoming, setLoadingUpcoming] = useState(true);
-
-  useEffect(() => {
-    getEventsList({
-      networkClusterCode: localStorage.getItem('networkClusterCode'),
-      start: 1,
-      offset: UPCOMING_EVENTS_LIMIT,
-      filterBy: 'upcomming',
-    })
-      .then((res) => {
-        const list = Array.isArray(res?.data?.result) ? res.data.result : [];
-        setUpcomingEvents(list.slice(0, UPCOMING_EVENTS_LIMIT));
-      })
-      .catch((error) => console.error('Failed to fetch upcoming events:', error))
-      .finally(() => setLoadingUpcoming(false));
-  }, []);
 
   // Same APIs as Finance Budget: find the Learning category in the report,
   // then load its events by budgetTypeId.
@@ -106,32 +91,18 @@ const PortfolioOfficerPage = () => {
 
         {/* Left: name + role */}
         <div className="shrink-0">
-          <h1 className="text-[32px] font-bold text-[#1a1a2e] leading-tight">Rahul Sharma</h1>
+          <h1 className="text-[32px] font-bold text-[#1a1a2e] leading-tight">{fullName}</h1>
           <p className="text-[15px] text-[#888] mt-1">Learning Portfolio Officer · FY 2026</p>
         </div>
 
-        {/* Right: Vision Board card */}
-        <div
-          className="rounded-[18px] px-7 py-4 flex-1 max-w-[760px] flex items-center gap-6"
-          style={{ background: 'linear-gradient(135deg, #3b63e8, #2445cc)' }}
+        {/* Right: Request an Event */}
+        <button
+          onClick={() => setShowRequestEvent(true)}
+          className="shrink-0 flex items-center justify-center gap-2 bg-[#2445cc] text-white text-[14px] font-semibold px-6 py-2.5 rounded-full cursor-pointer border-none hover:opacity-90 transition-opacity"
         >
-          <div className="flex-1 flex flex-col gap-1">
-            <div className="flex items-center gap-2">
-              <HiOutlineLightBulb className="text-white text-[20px]" />
-              <span className="text-white text-[16px] font-bold">Vision Board</span>
-            </div>
-            <p className="text-white/80 text-[13px] leading-[1.6]">
-              Have a learning initiative in mind? Submit an event request to your admin for review and approval.
-            </p>
-          </div>
-          <button
-            onClick={() => setShowRequestEvent(true)}
-            className="shrink-0 flex items-center justify-center gap-2 bg-white text-[#2445cc] text-[14px] font-semibold px-6 py-2.5 rounded-full cursor-pointer border-none hover:opacity-90 transition-opacity"
-          >
-            <FiSend className="text-[14px]" />
-            Request an Event
-          </button>
-        </div>
+          <FiSend className="text-[14px]" />
+          Request an Event
+        </button>
 
       </div>
 
@@ -266,62 +237,6 @@ const PortfolioOfficerPage = () => {
         )}
         </div>
       </div>
-
-      {/* ── Upcoming Events ── */}
-      <div className="mt-6 bg-white border border-[#e5e7eb] rounded-[16px] shadow-[0px_1px_4px_0px_#0000000d] overflow-hidden">
-
-        {/* Section header */}
-        <div className="flex items-center justify-between px-6 pt-6 pb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-[42px] h-[42px] rounded-[10px] bg-[#eff6ff] flex items-center justify-center">
-              <FiCalendar className="text-[20px] text-[#2563eb]" />
-            </div>
-            <span className="text-[18px] font-semibold text-[#2563eb]">Upcoming Events</span>
-          </div>
-          <Link
-            href={
-              portfolio?.budgetTypeId
-                ? `/dashboard/portfolio/${portfolio.budgetTypeId}?from=portfolio-officer`
-                : '/dashboard/portfolio-officer/events'
-            }
-            className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#eff6ff] text-[#2563eb] text-[14px] font-semibold hover:bg-[#dbeafe] transition-colors no-underline">
-            View All Events
-            <FiArrowRight className="text-[15px]" />
-          </Link>
-        </div>
-
-        {/* Table header */}
-        <div className="grid grid-cols-3 gap-4 px-6 py-3 border-y border-slate-100">
-          {['Event Name', 'Date', 'Location'].map((col) => (
-            <div key={col} className={`text-[11px] font-semibold text-slate-400 uppercase tracking-wide ${col === 'Date' ? 'text-center' : ''}`}>
-              {col}
-            </div>
-          ))}
-        </div>
-
-        {/* Event rows */}
-        {loadingUpcoming ? (
-          <div className="text-center py-6 text-slate-400 text-[13px]">Loading events...</div>
-        ) : upcomingEvents.length === 0 ? (
-          <div className="text-center py-6 text-slate-400 text-[13px]">No upcoming events</div>
-        ) : (
-          upcomingEvents.map((event) => (
-            <div
-              key={event.eventId}
-              onClick={() => router.push(`/dashboard/events/${event.eventId}?from=portfolio-officer`)}
-              className="grid grid-cols-3 gap-4 px-6 py-4 border-b border-slate-100 last:border-b-0 items-center cursor-pointer hover:bg-slate-50 transition-colors"
-            >
-              <div className="text-[14px] font-semibold text-slate-800">{event.eventName}</div>
-              <div className="text-[14px] text-slate-600 text-center">{formatDate(event.startDateTime)}</div>
-              <div className="text-[14px] text-slate-600">
-                {(typeof event.eventLocation === 'string' ? event.eventLocation : event.eventLocation?.location) || '-'}
-              </div>
-            </div>
-          ))
-        )}
-
-      </div>
-
     </div>
   );
 };
