@@ -15,6 +15,7 @@ import {
   FiCheck,
   FiTrash2,
   FiCheckCircle,
+  FiClock,
 } from "react-icons/fi";
 import { MdCurrencyRupee } from "react-icons/md";
 import { useExpenseRecordsStore } from "@/store/useExpenseRecordsStore";
@@ -348,6 +349,7 @@ const isAlreadyPendingError = (message = "") => /already pending/i.test(message)
 
 function SendApprovalModal({ expense, onClose, onSent }) {
   const [sent, setSent] = useState(false);
+  const [alreadySent, setAlreadySent] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
 
@@ -365,9 +367,9 @@ function SendApprovalModal({ expense, onClose, onSent }) {
     } catch (err) {
       const message = err?.response?.data?.message || err?.message || "";
       if (isAlreadyPendingError(message)) {
-        // Already sent earlier: lock the row's button and close
+        // Already sent earlier: lock the row's button and tell the user
         onSent?.(expense.id, { refetch: false });
-        onClose();
+        setAlreadySent(true);
         return;
       }
       setError(message || "Failed to send for approval. Please try again.");
@@ -411,6 +413,22 @@ function SendApprovalModal({ expense, onClose, onSent }) {
               className="mt-9 rounded-full text-[20px] bg-gradient-to-r from-[#5597ED] to-[#00449C] w-[120px] px-[16px] py-[8px] text-white cursor-pointer"
             >
               Done
+            </button>
+          </>
+        ) : alreadySent ? (
+          <>
+            <FiClock className="text-[56px] text-[#F59E0B]" />
+            <div className="mt-5 text-[24px] font-[700] text-[#333333] text-center">Already sent for approval</div>
+            <p className="mt-2 text-[16px] text-[#727272] text-center leading-[136%]">
+              <span className="font-bold text-[#333333] capitalize">{expense.description}</span> is already awaiting
+              approval. You&apos;ll be able to send it again once a decision is made.
+            </p>
+            <button
+              type="button"
+              onClick={onClose}
+              className="mt-9 rounded-full text-[20px] bg-gradient-to-r from-[#5597ED] to-[#00449C] w-[120px] px-[16px] py-[8px] text-white cursor-pointer"
+            >
+              OK
             </button>
           </>
         ) : (

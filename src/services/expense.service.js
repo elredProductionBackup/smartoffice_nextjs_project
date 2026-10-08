@@ -255,7 +255,11 @@ export const requestEventExpenseApproval = async (payload) => {
 
     return data;
   } catch (error) {
-    console.error("requestEventExpenseApproval API Error:", error?.response || error);
+    // "Already pending" is an expected case the UI handles, so don't log it as an error
+    const message = error?.response?.data?.message || "";
+    if (!/already pending/i.test(message)) {
+      console.error("requestEventExpenseApproval API Error:", error?.response || error);
+    }
     throw error;
   }
 };
