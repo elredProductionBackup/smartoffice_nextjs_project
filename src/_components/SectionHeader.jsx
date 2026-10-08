@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { FaPlus } from "react-icons/fa6";
 
 export default function SectionHeader({
   title = "Members",
@@ -9,7 +10,9 @@ export default function SectionHeader({
   search = "",
   onSearch = () => {},
   searchBy="Name",
-  setSearchBy=()=>{}
+  setSearchBy=()=>{},
+  searchByOptions = ["Name", "Title"],
+  onAdd,
 }) {
   const dropdownRef = useRef(null);
   const searchParams = useSearchParams();
@@ -87,6 +90,15 @@ export default function SectionHeader({
                {tab.label}
              </button>
            ))}
+           {onAdd && (
+             <button
+               type="button"
+               onClick={onAdd}
+               className="w-[50px] h-[36px] mb-[4px] rounded-full bg-gradient-to-r from-[#5597ED] to-[#00449C] text-white flex items-center justify-center cursor-pointer hover:opacity-90 transition"
+             >
+               <FaPlus size={16} />
+             </button>
+           )}
          </div>
        )}
 
@@ -107,7 +119,7 @@ export default function SectionHeader({
 
                {openDropdown && (
                  <div className="absolute p-[10px] top-[46px] left-[-20px] bg-white border border-[#F2F6FC] rounded-[20px] shadow-md w-[120px] z-20 ">
-                   {["Name", "Title"].map((item) => (
+                   {searchByOptions.map((item) => (
                      <button
                        key={item}
                        onClick={() => {

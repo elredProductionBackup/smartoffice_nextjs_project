@@ -224,3 +224,38 @@ export const addBudgetCategory = async (payload) => {
   }
 };
 
+
+/**
+ * Send an expense for approval (approver gets it on Email + WhatsApp)
+ *
+ * POST /smartOffice/requestEventExpenseApproval
+ * Body: { expenseId: string, phoneNumber: string, email: string }
+ *
+ * @param {Object} payload
+ * @param {string} payload.expenseId - Expense to send
+ * @param {string} payload.phoneNumber - Approver's WhatsApp number, with country code
+ * @param {string} payload.email - Approver's email
+ * @returns {Promise<Object>}
+ */
+export const requestEventExpenseApproval = async (payload) => {
+  try {
+    const res = await api.post("/smartOffice/requestEventExpenseApproval", payload);
+
+    const data = res.data;
+
+    // Axios validateStatus allows all status codes — check success flag manually
+    if (data?.success === false) {
+      const err = new Error(data?.message || "Failed to send for approval");
+      err.response = {
+        status: res.status,
+        data,
+      };
+      throw err;
+    }
+
+    return data;
+  } catch (error) {
+    console.error("requestEventExpenseApproval API Error:", error?.response || error);
+    throw error;
+  }
+};

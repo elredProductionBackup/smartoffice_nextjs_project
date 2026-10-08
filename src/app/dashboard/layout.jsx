@@ -81,6 +81,7 @@ import memberLogo from "@/assets/logo/tdesign_member.svg";
 // import archiveLogo from "@/assets/logo/ion_archive-outline.svg";
 import eventsLogo from "@/assets/logo/events.svg";
 import actionableLogo from "@/assets/logo/actionable.svg";
+import alliancesLogo from "@/assets/logo/la_handshake.svg";
 import Image from "next/image";
 import Header from "@/_components/Header";
 import useGlobalLoader from "@/store/useGlobalLoader";
@@ -122,6 +123,7 @@ export default function DashboardLayout({ children }) {
     path: "/dashboard/members?tab=member",
     logo: memberLogo,
   },
+  { name: "Vendor/Resources", path: "/dashboard/alliances?tab=vendors", logo: alliancesLogo },
 ];
 
 const userMenu = [
@@ -139,6 +141,7 @@ const userMenu = [
     { name: "Dashboard",  path: "/dashboard/portfolio-officer", logo: dashboardLogo },
     { name: "Actionable", path: "/dashboard/actionable",        logo: actionableLogo },
     { name: "Events",     path: "/dashboard/events",            logo: eventsLogo },
+    { name: "Vendor/Resources",  path: "/dashboard/alliances?tab=vendors", logo: alliancesLogo },
   ];
 
   const financeManagerMenu = [

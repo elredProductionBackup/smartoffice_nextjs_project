@@ -1,28 +1,11 @@
 "use client";
 
-import React, { Suspense, useMemo, useState } from 'react';
+import React, { Suspense, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { FiClock, FiCheckCircle, FiXCircle, FiFileText, FiChevronRight, FiInbox } from 'react-icons/fi';
+import { FiClock, FiCheckCircle, FiXCircle, FiFileText, FiChevronRight, FiInbox, FiLoader } from 'react-icons/fi';
 import moment from 'moment';
 import ReviewApprovalModal from './ReviewApprovalModal';
-
-// TODO: replace with approvals API response
-const MOCK_APPROVALS = [
-  { id: '1', request: 'Lanyards And Badges', type: 'Expense', date: '2026-09-23', amount: 15000, relatedEvent: 'Annual Leadership Forum', billUrl: '#', vendor: 'Mayur Printers', status: 'pending', isNew: true },
-  { id: '2', request: 'Supplies', type: 'Expense', date: '2026-09-22', amount: 10000, relatedEvent: 'Learning Event', billUrl: '#', vendor: 'Genx Agencies', status: 'pending', isNew: true },
-  { id: '3', request: 'Foods And Beverages', type: 'Expense', date: '2026-09-22', amount: 25000, relatedEvent: 'Forum Event', billUrl: '#', vendor: 'Royal Caterers', status: 'pending' },
-  { id: '4', request: 'Photography Services', type: 'Expense', date: '2026-09-21', amount: 18000, relatedEvent: 'SPF Annual Gathering', billUrl: null, vendor: 'Lens Studio', status: 'pending' },
-  { id: '5', request: 'Venue Booking', type: 'Expense', date: '2026-09-20', amount: 120000, relatedEvent: 'Annual Leadership Forum', billUrl: '#', vendor: 'Taj Lands End', status: 'approved' },
-  { id: '6', request: 'Speakers Professional Charges', type: 'Expense', date: '2026-09-19', amount: 50000, relatedEvent: 'Learning Event', billUrl: '#', vendor: 'Dr Anil Lamba', status: 'approved' },
-  { id: '7', request: 'Audio Visual Setup', type: 'Expense', date: '2026-09-18', amount: 30000, relatedEvent: 'Forum Event', billUrl: null, vendor: 'SoundWave AV', status: 'approved' },
-  { id: '8', request: 'Printing And Stationery', type: 'Expense', date: '2026-09-17', amount: 8000, relatedEvent: 'SPF Annual Gathering', billUrl: '#', vendor: 'Mayur Printers', status: 'approved' },
-  { id: '9', request: 'Decor And Florals', type: 'Expense', date: '2026-09-16', amount: 22000, relatedEvent: 'Annual Leadership Forum', billUrl: '#', vendor: 'Bloom Decor', status: 'approved' },
-  { id: '10', request: 'Travel Reimbursement', type: 'Expense', date: '2026-09-15', amount: 14000, relatedEvent: 'Learning Event', billUrl: '#', vendor: 'Admin', status: 'approved' },
-  { id: '11', request: 'Gifts And Mementos', type: 'Expense', date: '2026-09-14', amount: 12000, relatedEvent: 'Forum Event', billUrl: null, vendor: 'Gift Studio', status: 'approved' },
-  { id: '12', request: 'Hotel Accommodation', type: 'Expense', date: '2026-09-13', amount: 65000, relatedEvent: 'SPF Annual Gathering', billUrl: '#', vendor: 'Taj Lands End', status: 'approved' },
-  { id: '13', request: 'Entertainment', type: 'Expense', date: '2026-09-12', amount: 40000, relatedEvent: 'Forum Event', billUrl: '#', vendor: 'Star Events', status: 'rejected' },
-  { id: '14', request: 'Transport', type: 'Expense', date: '2026-09-11', amount: 9000, relatedEvent: 'Learning Event', billUrl: null, vendor: 'City Cabs', status: 'rejected' },
-];
+import { getApprovalDetails, getApprovals, updateApprovalStatus } from '@/services/approval.service';
 
 // Timeline mirrors the approval flow; the final entry depends on the current status.
 const buildTimeline = (a) => {
@@ -36,16 +19,42 @@ const buildTimeline = (a) => {
   return items;
 };
 
-// Fields the review popup needs that aren't in the row list above.
-const withDetails = (a) => ({
-  submittedBy: 'Admin',
-  paymentStatus: 'Pending',
-  description: a.request,
-  remark: `${a.request} required for ${a.relatedEvent}.`,
-  ...a,
+// Map a getApprovals record into the shape the table + review popup use
+const toApprovalRow = (item) => {
+  const type = item.type || 'expense';
+  return {
+    id: item._id,
+    _id: item._id,
+    expenseId: item.expenseId,
+    request: item.title || item.description || '-',
+    type: type.charAt(0).toUpperCase() + type.slice(1),
+    date: item.submittedDate || item.createdAt,
+    amount: item.amount,
+    billUrl: Array.isArray(item.bill) ? item.bill[0] : item.bill || null,
+    relatedEvent: item.eventName || '',
+    status: item.status || 'pending',
+    submittedBy: item.submittedBy || '',
+    vendor: item.vendorName || '',
+    paymentStatus: item.paymentStatus
+      ? item.paymentStatus.charAt(0).toUpperCase() + item.paymentStatus.slice(1)
+      : '',
+    description: item.description || '',
+    remark: item.remark || '',
+    rejectReason: item.rejectReason || '',
+    // updatedAt is when the decision was saved
+    decidedAt: item.status && item.status !== 'pending' ? item.updatedAt : null,
+  };
+};
+
+// getApprovals returns counts for every status with each list:
+// { counts: { pending, approved, rejected, total }, totalCount, result }
+const toCounts = (c) => ({
+  pending: Number(c?.pending) || 0,
+  approved: Number(c?.approved) || 0,
+  rejected: Number(c?.rejected) || 0,
+  all: Number(c?.total) || 0,
 });
 
-const INITIAL_APPROVALS = MOCK_APPROVALS.map(withDetails);
 
 // Badge colours match StatusBadge on /dashboard/expense-records
 const STATUS_BADGE = {
@@ -116,35 +125,128 @@ const ApprovalsContent = () => {
   };
 
   const setCurrentPage = (page) => updateParams({ page: page > 1 ? page : null });
-  const [approvals, setApprovals] = useState(INITIAL_APPROVALS);
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  // Comes with every list response; null ("—") until the first one arrives
+  const [counts, setCounts] = useState({ pending: null, approved: null, rejected: null, all: null });
+  const [listTotal, setListTotal] = useState(0); // total for the tab on screen (drives pagination)
   const [reviewId, setReviewId] = useState(null);
+  const [reloadKey, setReloadKey] = useState(0); // bump to refetch the current page
 
-  const counts = useMemo(() => {
-    const c = { pending: 0, approved: 0, rejected: 0, all: approvals.length };
-    approvals.forEach((a) => { c[a.status] += 1; });
-    return c;
-  }, [approvals]);
+  // Pages already loaded this visit, keyed "tab:page", so switching back to a tab doesn't refetch
+  const pageCache = useRef(new Map());
 
-  const filtered = activeTab === 'all' ? approvals : approvals.filter((a) => a.status === activeTab);
-  const totalCount = filtered.length;
+  const currentPage = Math.max(1, urlPage);
+  const totalCount = listTotal;
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
-  // Clamped so an out-of-range ?page= (or a row leaving this tab) still shows a valid page.
-  const currentPage = Math.min(Math.max(1, urlPage), totalPages);
-  const rows = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  // Current tab + page: 1 request (0 if cached). The response also refreshes all the counts.
+  useEffect(() => {
+    const cacheKey = `${activeTab}:${currentPage}`;
+    const cached = pageCache.current.get(cacheKey);
+    if (cached) {
+      setRows(cached.list);
+      setListTotal(cached.total);
+      setError('');
+      setLoading(false);
+      return;
+    }
+
+    let cancelled = false; // ignore a response that arrives after the tab/page changed
+    setLoading(true);
+    setError('');
+
+    getApprovals({
+      status: activeTab === 'all' ? undefined : activeTab,
+      start: (currentPage - 1) * PAGE_SIZE,
+      offset: PAGE_SIZE,
+    })
+      .then((data) => {
+        if (cancelled) return;
+        const list = (Array.isArray(data?.result) ? data.result : []).map(toApprovalRow);
+        const total = Number(data?.totalCount) || 0;
+        pageCache.current.set(cacheKey, { list, total });
+        setRows(list);
+        setListTotal(total);
+        if (data?.counts) setCounts(toCounts(data.counts));
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setRows([]);
+        setListTotal(0);
+        setError(err?.response?.data?.message || err?.message || 'Failed to load approvals');
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab, currentPage, reloadKey]);
+
+  const reloadCurrentPage = () => {
+    pageCache.current.clear();
+    setReloadKey((k) => k + 1);
+  };
 
   const handleTabChange = (key) => updateParams({ tab: key, page: null });
 
-  const reviewing = approvals.find((a) => a.id === reviewId);
+  // Full details (bill, vendor, remark…) per approval id, fetched when Review is opened
+  const [detailsById, setDetailsById] = useState({});
+  const [detailsLoadingId, setDetailsLoadingId] = useState(null);
+  const [detailsError, setDetailsError] = useState('');
 
-  const handleReview = (approval) => setReviewId(approval.id);
+  const reviewRow = rows.find((a) => a.id === reviewId);
+  // Row data shows straight away; details fill in on top once loaded
+  const reviewing = reviewRow && { ...reviewRow, ...detailsById[reviewId] };
 
-  // TODO: call the approve/reject API; for now this only updates local state
-  const updateStatus = (approval, status) => {
-    const decidedAt = moment().format('YYYY-MM-DD');
-    setApprovals((prev) =>
-      prev.map((a) => (a.id === approval.id ? { ...a, status, decidedAt, isNew: false } : a))
-    );
+  const handleReview = (approval) => {
+    setReviewId(approval.id);
+    setDetailsError('');
+    if (detailsById[approval.id]) return; // already loaded this visit
+
+    setDetailsLoadingId(approval.id);
+    getApprovalDetails(approval._id ?? approval.id)
+      .then((data) => {
+        const raw = Array.isArray(data?.result) ? data.result[0] : data?.result;
+        if (!raw) return;
+        const mapped = toApprovalRow(raw);
+        // toApprovalRow fills defaults for these; don't let a default override the row's real value
+        if (!raw.status) delete mapped.status;
+        if (!raw.type) delete mapped.type;
+        // Keep only fields that have a value so empty ones don't wipe out the row data
+        const details = Object.fromEntries(
+          Object.entries(mapped).filter(([, v]) => v != null && v !== '' && v !== '-')
+        );
+        setDetailsById((prev) => ({ ...prev, [approval.id]: details }));
+      })
+      .catch((err) => {
+        setDetailsError(err?.response?.data?.message || err?.message || 'Failed to load details');
+      })
+      .finally(() => {
+        setDetailsLoadingId((current) => (current === approval.id ? null : current));
+      });
+  };
+
+  // Saves the decision, then updates the row. Errors bubble up to the review popup.
+  const updateStatus = async (approval, status, rejectReason) => {
+    await updateApprovalStatus({
+      approvalId: approval._id ?? approval.id,
+      status,
+      ...(status === 'rejected' && { rejectReason }),
+    });
+
     setReviewId(null);
+    // Its status / reject reason changed, so drop the cached details
+    setDetailsById((prev) => {
+      const next = { ...prev };
+      delete next[approval.id];
+      return next;
+    });
+    // Every cached page is now stale; refetch only the page on screen (brings fresh counts too)
+    reloadCurrentPage();
   };
 
   return (
@@ -155,19 +257,21 @@ const ApprovalsContent = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
-        <StatCard label="Pending Approval" value={counts.pending} sublabel="Awaiting review" Icon={FiClock} theme="amber" />
-        <StatCard label="Approved" value={counts.approved} sublabel="Approved requests" Icon={FiCheckCircle} theme="green" />
-        <StatCard label="Rejected" value={counts.rejected} sublabel="Rejected requests" Icon={FiXCircle} theme="red" />
-        <StatCard label="Total Requests" value={counts.all} sublabel="All time requests" Icon={FiFileText} theme="blue" />
+        <StatCard label="Pending Approval" value={counts.pending ?? '—'} sublabel="Awaiting review" Icon={FiClock} theme="amber" />
+        <StatCard label="Approved" value={counts.approved ?? '—'} sublabel="Approved requests" Icon={FiCheckCircle} theme="green" />
+        <StatCard label="Rejected" value={counts.rejected ?? '—'} sublabel="Rejected requests" Icon={FiXCircle} theme="red" />
+        <StatCard label="Total Requests" value={counts.all ?? '—'} sublabel="All time requests" Icon={FiFileText} theme="blue" />
       </div>
 
       {/* Approval requests table — same layout as the All Expenses table on /dashboard/expense-records */}
       <div className="rounded-[22px] bg-white overflow-hidden p-6 md:p-8 border border-[#EAEEF2] mb-[20px]">
         <div className="flex items-center gap-2.5">
           <h2 className="font-nunito font-bold text-[20px] text-[#1E293B]">Approval Requests</h2>
-          <span className="inline-flex items-center h-6 px-2.5 rounded-full bg-[#F1F5F9] text-[12px] font-bold text-[#64748B]">
-            {counts.all}
-          </span>
+          {counts.all != null && (
+            <span className="inline-flex items-center h-6 px-2.5 rounded-full bg-[#F1F5F9] text-[12px] font-bold text-[#64748B]">
+              {counts.all}
+            </span>
+          )}
         </div>
 
         {/* Tabs — same underline style as the events page tabs (action-tabs / tab-item in globals.css) */}
@@ -184,13 +288,15 @@ const ApprovalsContent = () => {
                 }`}
               >
                 {tab.label}
-                <span
-                  className={`inline-flex items-center h-5 px-2 rounded-full text-[11px] font-bold ${
-                    isActive ? 'bg-[#E8F0FE] text-[#0B57D0]' : 'bg-[#F1F5F9] text-[#64748B]'
-                  }`}
-                >
-                  {counts[tab.key]}
-                </span>
+                {counts[tab.key] != null && (
+                  <span
+                    className={`inline-flex items-center h-5 px-2 rounded-full text-[11px] font-bold ${
+                      isActive ? 'bg-[#E8F0FE] text-[#0B57D0]' : 'bg-[#F1F5F9] text-[#64748B]'
+                    }`}
+                  >
+                    {counts[tab.key]}
+                  </span>
+                )}
               </button>
             );
           })}
@@ -209,7 +315,23 @@ const ApprovalsContent = () => {
             </div>
 
             {/* Body */}
-            {rows.length === 0 ? (
+            {loading ? (
+              <div className="flex items-center justify-center gap-2 py-20 text-[14px] font-semibold text-[#64748B]">
+                <FiLoader className="w-5 h-5 animate-spin" />
+                Loading requests...
+              </div>
+            ) : error ? (
+              <div className="flex flex-col items-center justify-center gap-3 py-20 text-center">
+                <span className="text-[15px] font-bold text-[#B91C1C]">{error}</span>
+                <button
+                  type="button"
+                  onClick={reloadCurrentPage}
+                  className="px-4 py-2 border border-[#E2E8F0] rounded-xl text-[14px] font-semibold text-[#333333] bg-white hover:bg-slate-50 transition-all cursor-pointer"
+                >
+                  Retry
+                </button>
+              </div>
+            ) : rows.length === 0 ? (
               <div className="flex flex-col items-center justify-center gap-3 py-20 text-center">
                 <div className="w-12 h-12 rounded-2xl bg-[#F1F5F9] flex items-center justify-center">
                   <FiInbox className="w-6 h-6 text-[#94A3B8]" />
@@ -219,7 +341,7 @@ const ApprovalsContent = () => {
               </div>
             ) : (
               rows.map((a) => {
-                const badge = STATUS_BADGE[a.status];
+                const badge = STATUS_BADGE[a.status] ?? STATUS_BADGE.pending;
                 return (
                   <div
                     key={a.id}
@@ -227,11 +349,10 @@ const ApprovalsContent = () => {
                     style={{ gridTemplateColumns: TABLE_COLUMNS }}
                   >
                     <div className="flex items-center gap-2 pl-2 pr-2 min-w-0 font-bold text-[#0B57D0] capitalize" title={a.request}>
-                      {a.isNew && <span className="w-2 h-2 rounded-full bg-[#2B7FFF] shrink-0" />}
                       <span className="truncate">{a.request}</span>
                     </div>
                     <div className="text-[#475569]">{a.type}</div>
-                    <div className="text-[#64748B]">{moment(a.date).format('DD MMM YYYY')}</div>
+                    <div className="text-[#64748B]">{a.date ? moment(a.date).format('DD MMM YYYY') : '—'}</div>
                     <div className="font-bold text-[#0F172A] tabular-nums">{formatAmount(a.amount)}</div>
                     <div>
                       {a.billUrl ? (
@@ -248,7 +369,7 @@ const ApprovalsContent = () => {
                         <span className="text-[#CBD5E1]">—</span>
                       )}
                     </div>
-                    <div className="truncate text-[#475569]" title={a.relatedEvent}>{a.relatedEvent}</div>
+                    <div className="truncate text-[#475569]" title={a.relatedEvent}>{a.relatedEvent || '—'}</div>
                     <div>
                       <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-[12px] font-semibold font-nunito whitespace-nowrap ${badge.className}`}>
                         {badge.label}
@@ -272,7 +393,7 @@ const ApprovalsContent = () => {
         </div>
 
         {/* Pagination */}
-        {totalCount > 0 && (
+        {!loading && !error && totalCount > 0 && (
           <div className="flex flex-col sm:flex-row items-center justify-between border-t border-[#F1F5F9] pt-6 mt-6 gap-4 font-nunito">
             <span className="text-[14px] text-[#777777] font-medium">
               Showing{' '}
@@ -309,9 +430,11 @@ const ApprovalsContent = () => {
       {reviewing && (
         <ReviewApprovalModal
           approval={{ ...reviewing, timeline: buildTimeline(reviewing) }}
+          detailsLoading={detailsLoadingId === reviewId}
+          detailsError={detailsError}
           onClose={() => setReviewId(null)}
           onApprove={(a) => updateStatus(a, 'approved')}
-          onReject={(a) => updateStatus(a, 'rejected')}
+          onReject={(a, reason) => updateStatus(a, 'rejected', reason)}
         />
       )}
     </div>

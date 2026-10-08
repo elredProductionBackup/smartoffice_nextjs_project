@@ -82,25 +82,40 @@ export function formExpenseToRecord(expense) {
   };
 }
 
+// API sends approvedStatus as lowercase ("approved" | "pending" | "rejected").
+const APPROVAL_STATUS_LABELS = {
+  approved: "Approved",
+  rejected: "Rejected",
+  pending: "Pending Approval",
+};
+
+function getApprovalStatusLabel(item) {
+  const raw = String(item.approvedStatus || item.approvalStatus || item.status || "").toLowerCase();
+  return APPROVAL_STATUS_LABELS[raw] || "Pending Approval";
+}
+
 // Map a raw API expense record into the shape the table expects.
 function apiExpenseToRecord(item) {
+  const status = getApprovalStatusLabel(item);
+  const billUrl = item.attachment?.[0] || "";
   return {
     id: item.expenseId,
     // Delete endpoint keys off budgetExpenseId; fall back to the row id.
     budgetExpenseId: item.budgetExpenseId || item.expenseId,
     description: item.desc || "-",
     type: item.type || "-",
-    event: item.eventName || item.event || "-",
+    event: item.eventDetails?.eventName || item.eventName || item.event || "-",
     portfolio: item.budgetTypeDetails?.budgetType || "-",
     date: formatExpenseDate(item.date || item.createdAt),
     // Keep this numeric so aggregates and deltas stay reliable.
     totalAmount: parseAmount(item.total),
     remark: item.remark || "-",
     vendor: item.vendorName || item.vendor || "-",
-    bill: item.billFileName || item.bill || "-",
+    bill: item.billFileName || item.bill || billUrl?.split("/").pop() || "-",
+    billUrl,
     paymentStatus: item.paymentStatus || "Pending",
-    status: item.approvalStatus || item.status || "Pending Approval",
-    canSend: (item.approvalStatus || item.status) !== "Approved",
+    status,
+    canSend: status === "Pending Approval",
     reminderCount: item.reminderCount ?? 0,
     lastReminderDate: item.lastReminderDate || "",
   };
