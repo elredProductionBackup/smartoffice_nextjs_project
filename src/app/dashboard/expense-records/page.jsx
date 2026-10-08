@@ -21,6 +21,7 @@ import { useExpenseRecordsStore } from "@/store/useExpenseRecordsStore";
 import NewExpensesPopup from "@/_components/UI/NewExpensesPopup";
 import BillPreviewModal, { getDownloadHref } from "@/_components/UI/BillPreviewModal";
 import { formatCompactAmount } from "@/utils/currency";
+import { requestEventExpenseApproval } from "@/services/expense.service";
 
 const TABLE_COLUMNS =
   "minmax(190px,1.6fr) minmax(100px,1fr) minmax(112px,1fr) minmax(118px,1fr) minmax(120px,1fr) minmax(130px,1.1fr) minmax(96px,0.9fr) minmax(112px,1fr) minmax(140px,1.1fr) minmax(150px,1.2fr) minmax(104px,1fr) minmax(52px,0.4fr)";
@@ -152,6 +153,7 @@ function StatusBadge({ children, variant }) {
     overdue: "bg-[#FEE2E2] text-[#B91C1C]",
     approved: "bg-[#E6F4EA] text-[#137333]",
     pendingApproval: "bg-[#FEF7E0] text-[#B06000]",
+    rejected: "bg-[#FEE2E2] text-[#B91C1C]",
   };
   return (
     <span
@@ -230,6 +232,7 @@ function PaymentStatusDropdown({ expenseId, currentStatus, onUpdate }) {
 
 function getStatusBadgeVariant(status) {
   if (status === "Approved") return "approved";
+  if (status === "Rejected") return "rejected";
   return "pendingApproval";
 }
 
@@ -332,15 +335,46 @@ function RowActionsMenu({ onPick, onDelete }) {
   );
 }
 
-/* ─── Send for approval: details → confirm → success (dummy, no API yet) ──── */
-// Placeholder approver until the backend provides the real one
+/* ─── Send for approval: details → confirm → success ──────────────────────── */
+// Fixed approver for now
 const APPROVER_CONTACT = {
-  email: "approver@smartnetworks.com",
-  whatsapp: "+91 98765 43210",
+  email: "rayyan@elred.io",
+  phoneNumber: "+917348166329", // sent to the API
+  whatsapp: "+91 73481 66329", // display only
 };
 
-function SendApprovalModal({ expense, onClose }) {
+// Backend error when a request for this expense is still awaiting a decision
+const isAlreadyPendingError = (message = "") => /already pending/i.test(message);
+
+function SendApprovalModal({ expense, onClose, onSent }) {
   const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleConfirm = async () => {
+    setSending(true);
+    setError("");
+    try {
+      await requestEventExpenseApproval({
+        expenseId: expense.id,
+        phoneNumber: APPROVER_CONTACT.phoneNumber,
+        email: APPROVER_CONTACT.email,
+      });
+      setSent(true);
+      onSent?.(expense.id);
+    } catch (err) {
+      const message = err?.response?.data?.message || err?.message || "";
+      if (isAlreadyPendingError(message)) {
+        // Already sent earlier: lock the row's button and close
+        onSent?.(expense.id, { refetch: false });
+        onClose();
+        return;
+      }
+      setError(message || "Failed to send for approval. Please try again.");
+    } finally {
+      setSending(false);
+    }
+  };
 
   const details = [
     { label: "Portfolio", value: expense.portfolio },
@@ -358,7 +392,7 @@ function SendApprovalModal({ expense, onClose }) {
 
   // Same look as DeleteConfirm / IncomePopup: 480px card, 28px radius, pill buttons
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => !sending && onClose()}>
       <div
         className="w-[480px] max-w-[95vw] max-h-[92vh] overflow-y-auto rounded-[28px] bg-white shadow-xl font-nunito px-10 py-10 flex flex-col items-center"
         onClick={(e) => e.stopPropagation()}
@@ -420,20 +454,26 @@ function SendApprovalModal({ expense, onClose }) {
               </div>
             </div>
 
-            <div className="mt-9 flex gap-[80px]">
+            {error && (
+              <p className="mt-5 w-full text-[14px] text-[#E40000] text-center">{error}</p>
+            )}
+
+            <div className={`${error ? "mt-5" : "mt-9"} flex gap-[80px]`}>
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-full text-[20px] bg-[#999999] px-6 py-2 text-white w-[120px] cursor-pointer"
+                disabled={sending}
+                className="rounded-full text-[20px] bg-[#999999] px-6 py-2 text-white w-[120px] cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>
               <button
                 type="button"
-                onClick={() => setSent(true)}
-                className="rounded-full text-[20px] bg-gradient-to-r from-[#5597ED] to-[#00449C] w-[120px] px-[16px] py-[8px] text-white cursor-pointer"
+                onClick={handleConfirm}
+                disabled={sending}
+                className="rounded-full text-[20px] bg-gradient-to-r from-[#5597ED] to-[#00449C] w-[120px] px-[16px] py-[8px] text-white cursor-pointer flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed"
               >
-                Confirm
+                {sending ? <FiLoader className="w-5 h-5 animate-spin" /> : "Confirm"}
               </button>
             </div>
           </>
@@ -513,6 +553,13 @@ export default function ExpenseRecordsPage() {
 
   const [reminderModal, setReminderModal] = useState(null);
   const [approvalExpense, setApprovalExpense] = useState(null);
+  // Expenses with an approval request awaiting a decision; their Send button shows "Sent"
+  const [sentExpenseIds, setSentExpenseIds] = useState(() => new Set());
+
+  const markExpenseSent = (expenseId, { refetch = true } = {}) => {
+    setSentExpenseIds((prev) => new Set(prev).add(expenseId));
+    if (refetch) refetchExpenses();
+  };
   const [selectedExpense, setSelectedExpense] = useState(null);
   const [showPopup, setShowPopup] = useState(false);
 
@@ -563,10 +610,10 @@ export default function ExpenseRecordsPage() {
     updateEdges();
   }, [expenses, loading]);
 
-  // The store expects { page, limit } and computes start/offset itself.
-  const loadExpenses = useCallback(() => {
-    fetchExpenses({ page: currentPage, limit: PAGE_SIZE, type, eventId, approvedStatus });
-  }, [fetchExpenses, currentPage, type, eventId, approvedStatus]);
+  const refetchExpenses = () => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    fetchExpenses({ start, offset: PAGE_SIZE, type, eventId, approvedStatus });
+  };
 
   useEffect(() => {
     loadExpenses();
@@ -791,7 +838,19 @@ export default function ExpenseRecordsPage() {
                       {expense.vendor}
                     </div>
                     <div>
-                      <BillCell expense={expense} onView={(exp) => setBillPreviewId(exp.id)} />
+                      {expense.bill && expense.bill !== "-" ? (
+                        <button
+                          type="button"
+                          onClick={() => expense.billUrl && window.open(expense.billUrl, "_blank", "noopener,noreferrer")}
+                          className="inline-flex items-center gap-1.5 text-[#0B57D0] font-semibold text-[13px] bg-transparent border-0 p-0 cursor-pointer hover:underline max-w-full"
+                        >
+                          <FiFileText className="w-4 h-4 shrink-0" />
+                          <span className="truncate max-w-[100px]">{expense.bill}</span>
+                          <FiDownload className="w-3.5 h-3.5 shrink-0" />
+                        </button>
+                      ) : (
+                        <span className="text-[#CBD5E1]">—</span>
+                      )}
                     </div>
                     <div className="flex flex-col gap-0.5">
                       {expense.reminderCount > 0 ? (
@@ -816,7 +875,17 @@ export default function ExpenseRecordsPage() {
                       <StatusBadge variant={getStatusBadgeVariant(expense.status)}>{expense.status}</StatusBadge>
                     </div>
                     <div>
-                      {expense.canSend ? (
+                      {expense.canSend && sentExpenseIds.has(expense.id) ? (
+                        <button
+                          type="button"
+                          disabled
+                          title="Approval request already sent"
+                          className="inline-flex items-center gap-1.5 bg-[#E2E8F0] text-[#64748B] font-nunito font-semibold text-[12px] px-3 py-1.5 rounded-md border-0 outline-none whitespace-nowrap cursor-not-allowed"
+                        >
+                          <FiCheck className="w-3.5 h-3.5" />
+                          Sent
+                        </button>
+                      ) : expense.canSend ? (
                         <button
                           type="button"
                           onClick={() => setApprovalExpense(expense)}
@@ -951,7 +1020,11 @@ export default function ExpenseRecordsPage() {
       )}
 
       {approvalExpense && (
-        <SendApprovalModal expense={approvalExpense} onClose={() => setApprovalExpense(null)} />
+        <SendApprovalModal
+          expense={approvalExpense}
+          onClose={() => setApprovalExpense(null)}
+          onSent={markExpenseSent}
+        />
       )}
 
       {/* Delete confirm modal */}

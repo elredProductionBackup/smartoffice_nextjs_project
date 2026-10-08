@@ -96,6 +96,18 @@ export function formExpenseToRecord(expense) {
   };
 }
 
+// API sends approvedStatus as lowercase ("approved" | "pending" | "rejected").
+const APPROVAL_STATUS_LABELS = {
+  approved: "Approved",
+  rejected: "Rejected",
+  pending: "Pending Approval",
+};
+
+function getApprovalStatusLabel(item) {
+  const raw = String(item.approvedStatus || item.approvalStatus || item.status || "").toLowerCase();
+  return APPROVAL_STATUS_LABELS[raw] || "Pending Approval";
+}
+
 // Map a raw API expense record into the shape the table expects.
 function apiExpenseToRecord(item) {
   // API sends attachment as an array of URLs (may be empty).
@@ -103,11 +115,7 @@ function apiExpenseToRecord(item) {
     Array.isArray(item.attachment) ? item.attachment : item.attachment ? [item.attachment] : []
   ).filter(Boolean);
 
-  // API sends approvedStatus: "pending" | "approved".
-  const rawApproval = String(
-    item.approvedStatus || item.approvalStatus || item.status || ""
-  ).toLowerCase();
-  const status = rawApproval === "approved" ? "Approved" : "Pending Approval";
+  const status = getApprovalStatusLabel(item);
 
   return {
     id: item.expenseId,
@@ -126,10 +134,10 @@ function apiExpenseToRecord(item) {
     // Bill
     billUrl: attachments[0] || "",
     billUrls: attachments,
-    bill: attachments.length ? getFileNameFromUrl(attachments[0]) : "-",
+    bill: item.billFileName || (attachments.length ? getFileNameFromUrl(attachments[0]) : "-"),
     paymentStatus: item.paymentStatus || "Pending",
     status,
-    canSend: status !== "Approved",
+    canSend: status === "Pending Approval",
     reminderCount: item.reminderCount ?? 0,
     lastReminderDate: item.lastReminderDate || "",
   };

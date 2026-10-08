@@ -29,7 +29,6 @@ import { formatText, isValidImage } from "@/utils/functions";
 import EventsMenu from "@/_components/EventsComps/EventsMenu";
 import EventActionConfirmModal from "@/_components/EventsComps/EventActionConfirmModal";
 // import { HiEllipsisVertical } from "react-icons/hi2";
-import { useBudgetTypeStore } from "@/store/useBudgetTypeStore";
 
 export default function EventDetailsClient() {
   // ================= ROUTER / PARAMS =================
@@ -97,30 +96,11 @@ export default function EventDetailsClient() {
     (state) => state.events.eventDetailsMap[eventId]
   );
 
-  // ================= BUDGET TYPES =================
-  const { budgetTypes, fetchBudgetTypes } = useBudgetTypeStore();
-
-  useEffect(() => {
-    fetchBudgetTypes(true);
-  }, [fetchBudgetTypes]);
-
-  const matchedBudgetType = budgetTypes.find((b) => {
-    const eventTypeStr = typeof event?.eventType === 'object'
-      ? (event.eventType.budgetTypeId || event.eventType.id || event.eventType.type || event.eventType.name || '')
-      : (event?.eventType || '');
-
-    const target = String(eventTypeStr).toLowerCase().trim();
-    if (!target) return false;
-
-    const bId = String(b.budgetTypeId || b._id || b.id || '').toLowerCase().trim();
-    const bName = String(b.budgetType || b.name || b.title || b.label || '').toLowerCase().trim();
-
-    return bId === target || bName === target;
-  });
-
-  const budgetTypeName = matchedBudgetType
-    ? (matchedBudgetType.budgetType || matchedBudgetType.name || matchedBudgetType.title || matchedBudgetType.label)
-    : (typeof event?.eventType === 'object' ? event?.eventType?.type || event?.eventType?.name : event?.eventType);
+  // ================= BUDGET TYPE =================
+  // getEventsDetails already returns the budget type name inside eventType
+  const budgetTypeName = typeof event?.eventType === 'object'
+    ? event?.eventType?.budgetType || event?.eventType?.type || event?.eventType?.name
+    : event?.eventType;
 
   const currentModal = modalStack[modalStack.length - 1];
 

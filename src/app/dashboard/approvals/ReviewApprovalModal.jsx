@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import moment from 'moment';
 import {
   FiX, FiClock, FiCheckCircle, FiXCircle, FiUser, FiCalendar, FiTag, FiClipboard,
-  FiFileText, FiEye, FiDownload,
+  FiFileText, FiEye, FiDownload, FiLoader,
 } from 'react-icons/fi';
 import { FaRupeeSign, FaRegBuilding } from 'react-icons/fa';
 
@@ -41,21 +41,51 @@ const SectionTitle = ({ Icon, children }) => (
   </div>
 );
 
-export default function ReviewApprovalModal({ approval, onClose, onApprove, onReject }) {
+// onApprove(approval) / onReject(approval, reason) return promises; a rejection shows its message here.
+export default function ReviewApprovalModal({ approval, detailsLoading, detailsError, onClose, onApprove, onReject }) {
+  const [rejecting, setRejecting] = useState(false); // reject reason field open
+  const [rejectReason, setRejectReason] = useState('');
+  const [submitting, setSubmitting] = useState(null); // 'approve' | 'reject' while the API call runs
+  const [error, setError] = useState('');
+
+  const handleClose = () => {
+    if (!submitting) onClose();
+  };
+
   // Close on Escape
   useEffect(() => {
-    const onKey = (e) => e.key === 'Escape' && onClose();
+    const onKey = (e) => e.key === 'Escape' && !submitting && onClose();
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  }, [onClose, submitting]);
 
   if (!approval) return null;
 
   const pill = STATUS_PILL[approval.status] ?? STATUS_PILL.pending;
   const isPending = approval.status === 'pending';
+  const trimmedReason = rejectReason.trim();
+
+  const submit = async (action) => {
+    setSubmitting(action);
+    setError('');
+    try {
+      if (action === 'approve') await onApprove(approval);
+      else await onReject(approval, trimmedReason);
+    } catch (err) {
+      setError(err?.response?.data?.message || err?.message || 'Something went wrong. Please try again.');
+    } finally {
+      setSubmitting(null);
+    }
+  };
+
+  const cancelReject = () => {
+    setRejecting(false);
+    setRejectReason('');
+    setError('');
+  };
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 font-nunito" onClick={onClose}>
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 font-nunito" onClick={handleClose}>
       <div
         className="bg-white rounded-2xl w-full max-w-[640px] mx-4 shadow-xl flex flex-col max-h-[90vh] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
@@ -72,7 +102,7 @@ export default function ReviewApprovalModal({ approval, onClose, onApprove, onRe
           </div>
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             className="text-[#94A3B8] hover:text-[#334155] transition-colors cursor-pointer bg-transparent border-0 p-1 shrink-0"
           >
             <FiX className="w-5 h-5" />
@@ -81,6 +111,15 @@ export default function ReviewApprovalModal({ approval, onClose, onApprove, onRe
 
         {/* Scrollable body */}
         <div className="flex-1 overflow-y-auto">
+          {detailsLoading && (
+            <div className="flex items-center gap-2 px-7 pt-4 text-[14px] font-semibold text-[#64748B]">
+              <FiLoader className="w-4 h-4 animate-spin" />
+              Loading full details...
+            </div>
+          )}
+          {!detailsLoading && detailsError && (
+            <p className="px-7 pt-4 text-[14px] text-[#B91C1C]">{detailsError}</p>
+          )}
           <div className="grid grid-cols-2 gap-x-6 gap-y-5 px-7 py-5 border-b border-[#F1F5F9]">
             <InfoItem Icon={FaRupeeSign} label="Amount" value={formatAmount(approval.amount)} />
             <InfoItem Icon={FiUser} label="Submitted By" value={approval.submittedBy} />
@@ -130,6 +169,11 @@ export default function ReviewApprovalModal({ approval, onClose, onApprove, onRe
               <DetailField label="Related Event">
                 <p className="text-[16px] text-[#334155]">{approval.relatedEvent || '—'}</p>
               </DetailField>
+              {approval.status === 'rejected' && approval.rejectReason && (
+                <DetailField label="Reject Reason">
+                  <p className="text-[16px] text-[#B91C1C] bg-[#FEF2F2] rounded-lg px-3 py-2.5 break-words">{approval.rejectReason}</p>
+                </DetailField>
+              )}
             </div>
           </div>
 
@@ -149,35 +193,80 @@ export default function ReviewApprovalModal({ approval, onClose, onApprove, onRe
         </div>
 
         {/* Fixed footer */}
-        <div className="flex items-center gap-3 px-7 py-4 border-t border-[#F1F5F9] shrink-0">
-          {isPending ? (
-            <>
-              <button
-                type="button"
-                onClick={() => onReject(approval)}
-                className="flex-1 inline-flex items-center justify-center gap-2 h-12 rounded-xl border border-[#FCA5A5] text-[16px] font-semibold text-[#B91C1C] bg-white hover:bg-[#FEF2F2] transition-colors cursor-pointer"
-              >
-                <FiXCircle className="w-4 h-4" />
-                Reject
-              </button>
-              <button
-                type="button"
-                onClick={() => onApprove(approval)}
-                className="flex-1 inline-flex items-center justify-center gap-2 h-12 rounded-xl text-[16px] font-semibold text-white bg-[#0F9D58] hover:bg-[#0B8043] transition-colors cursor-pointer border-0"
-              >
-                <FiCheckCircle className="w-4 h-4" />
-                Approve
-              </button>
-            </>
-          ) : (
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 h-12 rounded-xl border border-[#E2E8F0] text-[16px] font-semibold text-[#334155] bg-white hover:bg-slate-50 transition-colors cursor-pointer"
-            >
-              Close
-            </button>
+        <div className="px-7 py-4 border-t border-[#F1F5F9] shrink-0">
+          {isPending && rejecting && (
+            <div className="mb-4">
+              <label htmlFor="reject-reason" className="block text-[14px] font-semibold text-[#334155] mb-1.5">
+                Reject reason <span className="text-[#B91C1C]">*</span>
+              </label>
+              <textarea
+                id="reject-reason"
+                autoFocus
+                rows={3}
+                maxLength={500}
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                disabled={!!submitting}
+                placeholder="Tell the requester why this expense is being rejected"
+                className="w-full resize-none rounded-xl border border-[#E2E8F0] px-3.5 py-2.5 text-[15px] text-[#0F172A] placeholder:text-[#94A3B8] outline-none focus:border-[#FCA5A5] focus:ring-[3px] focus:ring-[#FEE2E2] disabled:bg-[#F8FAFC]"
+              />
+            </div>
           )}
+
+          {error && <p className="mb-3 text-[14px] text-[#B91C1C]">{error}</p>}
+
+          <div className="flex items-center gap-3">
+            {!isPending ? (
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 h-12 rounded-xl border border-[#E2E8F0] text-[16px] font-semibold text-[#334155] bg-white hover:bg-slate-50 transition-colors cursor-pointer"
+              >
+                Close
+              </button>
+            ) : rejecting ? (
+              <>
+                <button
+                  type="button"
+                  onClick={cancelReject}
+                  disabled={!!submitting}
+                  className="flex-1 h-12 rounded-xl border border-[#E2E8F0] text-[16px] font-semibold text-[#334155] bg-white hover:bg-slate-50 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => submit('reject')}
+                  disabled={!trimmedReason || !!submitting}
+                  className="flex-1 inline-flex items-center justify-center gap-2 h-12 rounded-xl text-[16px] font-semibold text-white bg-[#DC2626] hover:bg-[#B91C1C] transition-colors cursor-pointer border-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {submitting === 'reject' ? <FiLoader className="w-4 h-4 animate-spin" /> : <FiXCircle className="w-4 h-4" />}
+                  Submit Rejection
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={() => { setRejecting(true); setError(''); }}
+                  disabled={!!submitting}
+                  className="flex-1 inline-flex items-center justify-center gap-2 h-12 rounded-xl border border-[#FCA5A5] text-[16px] font-semibold text-[#B91C1C] bg-white hover:bg-[#FEF2F2] transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  <FiXCircle className="w-4 h-4" />
+                  Reject
+                </button>
+                <button
+                  type="button"
+                  onClick={() => submit('approve')}
+                  disabled={!!submitting}
+                  className="flex-1 inline-flex items-center justify-center gap-2 h-12 rounded-xl text-[16px] font-semibold text-white bg-[#0F9D58] hover:bg-[#0B8043] transition-colors cursor-pointer border-0 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {submitting === 'approve' ? <FiLoader className="w-4 h-4 animate-spin" /> : <FiCheckCircle className="w-4 h-4" />}
+                  Approve
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>
