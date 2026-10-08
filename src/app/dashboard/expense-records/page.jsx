@@ -610,10 +610,12 @@ export default function ExpenseRecordsPage() {
     updateEdges();
   }, [expenses, loading]);
 
-  const refetchExpenses = () => {
-    const start = (currentPage - 1) * PAGE_SIZE;
-    fetchExpenses({ start, offset: PAGE_SIZE, type, eventId, approvedStatus });
-  };
+  // Store's fetchExpenses takes page/limit and computes start/offset itself.
+  const loadExpenses = useCallback(() => {
+    fetchExpenses({ page: currentPage, limit: PAGE_SIZE, type, eventId, approvedStatus });
+  }, [fetchExpenses, currentPage, type, eventId, approvedStatus]);
+
+  const refetchExpenses = loadExpenses;
 
   useEffect(() => {
     loadExpenses();
