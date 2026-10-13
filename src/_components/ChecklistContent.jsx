@@ -4,6 +4,8 @@ import ButtonComp from "./ButtonComp";
 import AddTask from "./AddTask";
 import { useDispatch, useSelector } from "react-redux";
 import { openModal, closeModal } from "@/store/actionable/actionableUiSlice";
+import { openEventsModal } from "@/store/events/eventsUiSlice";
+import EventsPopups from "./EventsComps/EventsPopups";
 import ActionableDetailsModal from "./ActionableDetailsModal";
 import StatusSelect from "./UI/StatusSelect";
 import {
@@ -16,7 +18,8 @@ import {
   updateEventSubTask,
   removeEventSubTask,
   createEventComment,
-  removeEventComment
+  removeEventComment,
+  fetchMasterConfig
 } from "@/store/events/eventsThunks";
 
 
@@ -28,6 +31,23 @@ const TASK_STATUS_OPTIONS = [
   { value: "done", label: "Done", dotClassName: "bg-green-600" },
   { value: "notRequired", label: "Not Required", dotClassName: "bg-slate-400" },
 ];
+
+// Master checklist difficulty -> event task category / colour
+const MASTER_DIFFICULTY_CATEGORY = {
+  hard: "Very difficult",
+  medium: "Mildly difficult",
+  easy: "Easy to do",
+};
+const MASTER_DIFFICULTY_COLOR = {
+  hard: "bg-red-500",
+  medium: "bg-yellow-400",
+  easy: "bg-green-500",
+};
+const CATEGORY_COLOR = {
+  "Very difficult": "bg-red-500",
+  "Mildly difficult": "bg-yellow-400",
+  "Easy to do": "bg-green-500",
+};
 
 // ─── Circular Progress Ring ────────────────────────────────────────────────────
 const CircularProgress = ({ done, total, fillColor, emptyColor, onClick }) => {
@@ -83,7 +103,13 @@ const CircularProgress = ({ done, total, fillColor, emptyColor, onClick }) => {
 
 const ChecklistContent = ({ eventId }) => {
   const dispatch = useDispatch();
-  const { eventChecklist: taskList, eventChecklistLoading: loading, selectedEvent } = useSelector((state) => state.events);
+  const {
+    eventChecklist: taskList,
+    eventChecklistLoading: loading,
+    selectedEvent,
+    checklistMaster: masterList,
+    masterLoading,
+  } = useSelector((state) => state.events);
   const { modal } = useSelector((state) => state.actionableUi);
   const { user } = useSelector((state) => state.auth);
 
@@ -99,6 +125,18 @@ const ChecklistContent = ({ eventId }) => {
       dispatch(fetchEventChecklist({ eventId }));
     }
   }, [dispatch, eventId]);
+
+  // Master checklist items are shown on every event
+  useEffect(() => {
+    dispatch(fetchMasterConfig());
+  }, [dispatch]);
+
+  const visibleMasterList = masterList.filter(
+    (item) => !activeDifficulty || MASTER_DIFFICULTY_CATEGORY[item.difficulty] === activeDifficulty
+  );
+  const visibleTaskList = taskList.filter(
+    (task) => !activeDifficulty || task.category === activeDifficulty
+  );
 
   const selectedTaskForModal = taskList.find(
     (t) => t.id === modal.taskId || t.actionableId === modal.taskId
@@ -242,11 +280,73 @@ const ChecklistContent = ({ eventId }) => {
           <button onClick={() => { setActiveDifficulty(null); setShowDifficultyBar(false); }} className="w-[106px] border-[2px] text-[16px] cursor-pointer border-[#666666] text-[#666666] h-full rounded-full flex items-center justify-center gap-2">Close <span><img src="/image/cross.svg" /></span></button>
         </div>}
 
-        {/* =============== Task List ================ */}
-        {taskList.length > 0 && (
+        {/* =============== Master Checklist ================ */}
+        <div className="flex items-center gap-4 mt-8">
+          <span className="text-[20px] font-[600] text-[#333333] whitespace-nowrap pl-2">
+            Master Checklist
+          </span>
+          <div className="flex-1 h-[1px] bg-[#B3C6E7]" />
+          <button
+            onClick={() => dispatch(openEventsModal({ type: "MASTER_CHECKLIST" }))}
+            className="py-[6px] px-[16px] rounded-[100px] border border-[#BCBCD9] bg-white text-[16px] font-[500] cursor-pointer flex items-center gap-[4px] whitespace-nowrap"
+          >
+            + Add / Edit
+          </button>
+        </div>
+        {masterLoading && !masterList.length && (
+          <div className="flex justify-center py-6">
+            <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          </div>
+        )}
+        {visibleMasterList.length > 0 && (
           <div className="flex flex-col gap-2 mt-5">
-            {taskList
-              .filter((task) => !activeDifficulty || task.category === activeDifficulty)
+            {visibleMasterList.map((item, idx) => {
+              const masterKey = `master-${item._id || idx}`;
+              return (
+                <div
+                  key={masterKey}
+                  className="flex min-h-[80px] items-center gap-3 pb-[20px] pt-[20px] pl-2 border-b border-[#d4dff1]"
+                >
+                  {/* Same columns as event rows so everything lines up */}
+                  <span className="shrink-0 w-[18px]" />
+
+                  <div className="flex-1 min-w-0 text-[20px] font-[500] leading-snug text-[#333333] break-words">
+                    {item.label}
+                  </div>
+
+                  <span
+                    className={`h-[12px] w-[50px] shrink-0 rounded-full ${MASTER_DIFFICULTY_COLOR[item.difficulty]}`}
+                  />
+
+                  {/* Status */}
+                  <StatusSelect
+                    value={taskStatus[masterKey] ?? ""}
+                    onChange={(value) => setTaskStatus((prev) => ({ ...prev, [masterKey]: value }))}
+                    options={TASK_STATUS_OPTIONS}
+                  />
+
+                  <span className="shrink-0 w-[200px]" />
+                  <span className="shrink-0 w-9" />
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* =============== Event Specific Checklist ================ */}
+        {(masterList.length > 0 || taskList.length > 0) && (
+          <div className="flex items-center gap-4 mt-8">
+            <span className="text-[20px] font-[600] text-[#333333] whitespace-nowrap pl-2">
+              Event Specific Checklist
+            </span>
+            <div className="flex-1 h-[1px] bg-[#B3C6E7]" />
+          </div>
+        )}
+
+        {/* =============== Task List ================ */}
+        {visibleTaskList.length > 0 && (
+          <div className="flex flex-col gap-2 mt-5">
+            {visibleTaskList
               .map((task, idx) => {
                 const creatorName = task.createdBy?.name || (task.createdBy?.firstname ? `${task.createdBy.firstname} ${task.createdBy.lastname || ""}` : "Me");
                 const isDone = task.isCompleted === true || task.isCompleted === "true";
@@ -303,6 +403,13 @@ const ChecklistContent = ({ eventId }) => {
                           ))}
                         </div>
                       )}
+                    </div>
+
+                    {/* Difficulty */}
+                    <div className="h-9 flex items-center shrink-0">
+                      <span
+                        className={`h-[12px] w-[50px] rounded-full ${CATEGORY_COLOR[task.category] || "bg-transparent"}`}
+                      />
                     </div>
 
                     {/* Status */}
@@ -365,6 +472,9 @@ const ChecklistContent = ({ eventId }) => {
         />
       )}
 
+      {/* Master checklist popup + its add/edit form */}
+      <EventsPopups />
+
       {/* =============== Delete confirmation ================  */}
       {deleteTask && (
         <div
@@ -397,7 +507,13 @@ const ChecklistContent = ({ eventId }) => {
       )}
 
       {/* =============== Event List – empty condition ================  */}
-      {taskList.length === 0 && !loading && (
+      {taskList.length === 0 && masterList.length > 0 && !loading && (
+        <div className="text-center text-gray-500 text-[16px] py-8">
+          No event specific items yet
+        </div>
+      )}
+
+      {taskList.length === 0 && masterList.length === 0 && !loading && !masterLoading && (
         <div className="flex flex-col items-center justify-center py-24 w-full mt-10">
           <img
             src="/image/Events_checklist.svg"
