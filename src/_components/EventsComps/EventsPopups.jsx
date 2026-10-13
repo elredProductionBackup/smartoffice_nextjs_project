@@ -10,6 +10,9 @@ import PointSystemModal from "./PointSystemModal";
 import { saveMasterConfig } from "@/store/events/eventsThunks";
 import { setChecklistMaster } from "@/store/events/eventsSlice";
 
+// Other pages share the modal stack, so only render the types handled here
+const HANDLED_TYPES = ["MASTER_CHECKLIST", "CHECKLIST_FORM", "POINT_SYSTEM"];
+
 export default function EventsPopups() {
   // const [pointSystem, setPointSystem] = useState(null);
   const dispatch = useDispatch();
@@ -40,6 +43,8 @@ export default function EventsPopups() {
   return (
     <>
       {modalStack.map((modal, index) => {
+        if (!HANDLED_TYPES.includes(modal.type)) return null;
+
         const isTop = index === modalStack.length - 1;
 
         return (

@@ -4,6 +4,8 @@ import ButtonComp from "./ButtonComp";
 import AddTask from "./AddTask";
 import { useDispatch, useSelector } from "react-redux";
 import { openModal, closeModal } from "@/store/actionable/actionableUiSlice";
+import { openEventsModal } from "@/store/events/eventsUiSlice";
+import EventsPopups from "./EventsComps/EventsPopups";
 import ActionableDetailsModal from "./ActionableDetailsModal";
 import StatusSelect from "./UI/StatusSelect";
 import {
@@ -279,6 +281,18 @@ const ChecklistContent = ({ eventId }) => {
         </div>}
 
         {/* =============== Master Checklist ================ */}
+        <div className="flex items-center gap-4 mt-8">
+          <span className="text-[20px] font-[600] text-[#333333] whitespace-nowrap pl-2">
+            Master Checklist
+          </span>
+          <div className="flex-1 h-[1px] bg-[#B3C6E7]" />
+          <button
+            onClick={() => dispatch(openEventsModal({ type: "MASTER_CHECKLIST" }))}
+            className="py-[6px] px-[16px] rounded-[100px] border border-[#BCBCD9] bg-white text-[16px] font-[500] cursor-pointer flex items-center gap-[4px] whitespace-nowrap"
+          >
+            + Add / Edit
+          </button>
+        </div>
         {masterLoading && !masterList.length && (
           <div className="flex justify-center py-6">
             <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
@@ -457,6 +471,9 @@ const ChecklistContent = ({ eventId }) => {
           canEdit={true}
         />
       )}
+
+      {/* Master checklist popup + its add/edit form */}
+      <EventsPopups />
 
       {/* =============== Delete confirmation ================  */}
       {deleteTask && (
