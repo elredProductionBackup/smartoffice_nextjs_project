@@ -114,7 +114,7 @@ export const buildBreakup = ({ categories, eventBudget, versions, expenses }) =>
 export const apiExpenseToCard = (e) => ({
   id: e.budgetExpenseId || e.expenseId || e._id,
   category: e.budgetType || e.desc || "",
-  vendorName: e.vendorName || "",
+  vendorName: e.vendorDetails?.name || "",
   amount: Number(e.total ?? e.totalExpense) || 0,
   remark: e.remark || "",
   approvalStatus: e.approvedStatus || "Pending",

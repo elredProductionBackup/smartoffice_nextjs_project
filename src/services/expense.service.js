@@ -73,7 +73,7 @@ export const getExpenses = async (filters = {}) => {
  *   portfolioId - string, must be a valid portfolio
  *   budgetTypeId- string, budget type ID from getBudgetType
  *   total       - float, min 0.00
- *   remark      - string, allow empty or min 2 chars
+ *   remark      - string, optional; min 2 chars when sent
  *   vendorId    - string, optional; "" = no vendor
  *   expenseId   - string, empty = new entry, non-empty = update
  *   attachment  - File   -> upload new file
@@ -112,15 +112,15 @@ export const addEditExpense = async (payload) => {
     // eventId: only send when type is "event"
     formData.append("eventId", isEventType ? payload.eventId || payload.event || "" : "");
 
-    // Budget Type ID
-    if (payload.budgetTypeId) {
-      formData.append("budgetTypeId", payload.budgetTypeId);
-    }
+    // Budget Type ID (required)
+    formData.append("budgetTypeId", payload.budgetTypeId || "");
 
     formData.append("total", Number(payload.totalAmount) || 0);
 
     // -- Optional fields --------------------------------------------------
-    formData.append("remark", payload.remark || "");
+    // Remark is optional, but when sent it must be 2+ chars, so skip it when empty
+    const remark = payload.remark?.trim();
+    if (remark) formData.append("remark", remark);
     // Vendor is picked from the vendor list; "" means no vendor
     formData.append("vendorId", payload.vendorId || "");
 
@@ -141,7 +141,19 @@ export const addEditExpense = async (payload) => {
       headers: { "Content-Type": "multipart/form-data" },
     });
 
-    return res.data;
+    const data = res.data;
+
+    // Axios validateStatus allows all status codes — check success flag manually
+    if (data?.success === false) {
+      const err = new Error(data?.message || "Failed to save expense");
+      err.response = {
+        status: res.status,
+        data,
+      };
+      throw err;
+    }
+
+    return data;
   } catch (error) {
     console.error("addEditExpense API Error:", error?.response || error);
     throw error;
