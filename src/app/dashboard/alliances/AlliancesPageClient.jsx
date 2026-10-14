@@ -9,33 +9,58 @@ import SuccessPopup from "@/_components/ConfirmationPopups/SuccessPopup";
 import ConfirmPopup from "@/_components/ConfirmationPopups/ConfirmPopup";
 import useInfiniteScrollObserver from "@/hooks/useInfiniteScroll";
 import { addEditVendor, deleteVendor, getVendors } from "@/services/vendor.service";
+import { addEditResource, deleteResource, getResources } from "@/services/resource.service";
 
-const VENDOR_PAGE_SIZE = 10;
+const PAGE_SIZE = 10;
 
+// Everything that differs between the two tabs
 const TAB_CONFIG = {
   vendors: {
+    singular: "vendor",
+    idKey: "vendorId",
     modalTitle: "Add Vendor",
     subtitleKey: "location",
     subtitleLabel: "Location",
-    searchByOptions: ["Name", "Location"],
+    // dropdown label -> searchBy sent to the API
+    searchBy: { Name: "name", Location: "location" },
     fields: [
       { key: "name", label: "Vendor name", placeholder: "Enter vendor name", minLength: 2, maxLength: 100 },
       { key: "location", label: "Location", placeholder: "Enter location", required: false, maxLength: 100 },
       { key: "email", label: "Email", placeholder: "Enter email", type: "email", required: false },
       { key: "phone", label: "Phone", placeholder: "Enter phone number", type: "tel", required: false },
     ],
+    fetchList: getVendors,
+    save: (values) => addEditVendor({ vendorId: "", ...values }),
+    remove: deleteVendor,
+    deleteWarning: "Any expenses, event costing lines and approvals linked to this vendor will no longer show a vendor.",
+    // deleteVendor returns how many linked records lost the vendor
+    deleteSuccess: (item, cleared) => ({
+      message: `${item.name} has been deleted. These records no longer have a vendor:`,
+      stats: [
+        { label: "Expenses", value: cleared.expensesCleared ?? 0 },
+        { label: "Event costing lines", value: cleared.eventExpensesCleared ?? 0 },
+        { label: "Approvals", value: cleared.approvalsCleared ?? 0 },
+      ],
+    }),
   },
   resources: {
+    singular: "resource",
+    idKey: "resourceId",
     modalTitle: "Add Resource",
-    subtitleKey: "company",
+    subtitleKey: "organization",
     subtitleLabel: "Company/University",
-    searchByOptions: ["Name", "Email"],
+    searchBy: { Name: "name", "Company/University": "organization" },
     fields: [
-      { key: "name", label: "Resource name", placeholder: "Enter resource name" },
-      { key: "company", label: "Company/University", placeholder: "Enter company or university" },
-      { key: "email", label: "Email", placeholder: "Enter email", type: "email" },
-      { key: "phone", label: "Phone", placeholder: "Enter phone number", type: "tel" },
+      { key: "name", label: "Resource name", placeholder: "Enter resource name", minLength: 2, maxLength: 100 },
+      { key: "organization", label: "Company/University", placeholder: "Enter company or university", required: false, maxLength: 150 },
+      { key: "email", label: "Email", placeholder: "Enter email", type: "email", required: false },
+      { key: "phone", label: "Phone", placeholder: "Enter phone number", type: "tel", required: false },
     ],
+    fetchList: getResources,
+    save: (values) => addEditResource({ resourceId: "", ...values }),
+    remove: deleteResource,
+    deleteWarning: "This resource will be removed from your list.",
+    deleteSuccess: (item) => ({ message: `${item.name} has been deleted.` }),
   },
 };
 
@@ -48,135 +73,115 @@ export default function AlliancesPageClient() {
   const [search, setSearch] = useState("");
   const [searchBy, setSearchBy] = useState("Name");
   const [isAddOpen, setIsAddOpen] = useState(false);
-  // Success popup after adding or deleting: { title, message } | null
+
+  // List for the active tab
+  const [items, setItems] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState(false);
+  const requestIdRef = useRef(0); // drops responses from outdated tabs/searches
+
+  // Success popup after adding or deleting: { title, message, stats? } | null
   const [success, setSuccess] = useState(null);
 
-  // Vendor waiting for delete confirmation
-  const [vendorToDelete, setVendorToDelete] = useState(null);
+  // Row waiting for delete confirmation
+  const [itemToDelete, setItemToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
-  // TODO: replace with API once resource endpoints are available
-  const [resources, setResources] = useState([]);
-
-  // Vendors come from GET /smartOffice/vendors
-  const [vendors, setVendors] = useState([]);
-  const [vendorTotal, setVendorTotal] = useState(0);
-  const [vendorLoading, setVendorLoading] = useState(true);
-  const [vendorLoadingMore, setVendorLoadingMore] = useState(false);
-  const [vendorError, setVendorError] = useState(false);
-  const requestIdRef = useRef(0); // drops responses from outdated searches
 
   // Each tab has its own search fields
   useEffect(() => {
     setSearchBy("Name");
   }, [tab]);
 
-  const fetchVendors = useCallback(
+  const fetchItems = useCallback(
     async (reset) => {
       const requestId = ++requestIdRef.current;
-      reset ? setVendorLoading(true) : setVendorLoadingMore(true);
-      setVendorError(false);
+      reset ? setLoading(true) : setLoadingMore(true);
+      setError(false);
+      if (reset) setItems([]);
 
       try {
-        const { result, totalCount } = await getVendors({
-          searchBy: searchBy === "Location" ? "location" : "name",
+        const { result, totalCount } = await config.fetchList({
+          searchBy: config.searchBy[searchBy] ?? "name",
           searchKey: search,
-          start: reset ? 0 : vendors.length,
-          offset: VENDOR_PAGE_SIZE,
+          start: reset ? 0 : items.length,
+          offset: PAGE_SIZE,
         });
         if (requestId !== requestIdRef.current) return;
 
-        const page = result.map((v) => ({ ...v, id: v.vendorId }));
-        setVendors((prev) => (reset ? page : [...prev, ...page]));
-        setVendorTotal(totalCount);
+        const page = result.map((item) => ({ ...item, id: item[config.idKey] }));
+        setItems((prev) => (reset ? page : [...prev, ...page]));
+        setTotal(totalCount);
       } catch {
         if (requestId !== requestIdRef.current) return;
-        setVendorError(true);
+        setError(true);
       } finally {
         if (requestId === requestIdRef.current) {
-          setVendorLoading(false);
-          setVendorLoadingMore(false);
+          setLoading(false);
+          setLoadingMore(false);
         }
       }
     },
-    [search, searchBy, vendors.length]
+    [config, search, searchBy, items.length]
   );
 
   // Fresh list whenever the tab opens or the search changes
   useEffect(() => {
-    if (tab === "vendors") fetchVendors(true);
+    fetchItems(true);
   }, [tab, search, searchBy]);
 
-  const hasMoreVendors = vendors.length < vendorTotal;
-  const lastVendorRef = useInfiniteScrollObserver({
-    hasMore: tab === "vendors" && hasMoreVendors && !vendorError,
-    loading: vendorLoading || vendorLoadingMore,
-    onLoadMore: () => fetchVendors(false),
+  const lastRowRef = useInfiniteScrollObserver({
+    hasMore: items.length < total && !error,
+    loading: loading || loadingMore,
+    onLoadMore: () => fetchItems(false),
   });
 
-  const rows = useMemo(() => {
-    if (tab === "vendors") {
-      return vendors.map((item) => ({ ...item, subtitle: item.location }));
-    }
-
-    const list = resources.map((item) => ({ ...item, subtitle: item[config.subtitleKey] }));
-    if (search.length < 3) return list;
-    const field = searchBy === "Email" ? "email" : "name";
-    const q = search.toLowerCase();
-    return list.filter((item) => item[field]?.toLowerCase().includes(q));
-  }, [tab, vendors, resources, config, search, searchBy]);
+  const rows = useMemo(
+    () => items.map((item) => ({ ...item, subtitle: item[config.subtitleKey] })),
+    [items, config]
+  );
 
   // Errors are thrown back to the popup so it can show them and stay open
   const handleAdd = async (values) => {
-    if (tab === "vendors") {
-      await addEditVendor({ vendorId: "", ...values });
-      setIsAddOpen(false);
-      setSuccess({
-        title: "Vendor added",
-        message: `${values.name} has been added to your vendors.`,
-      });
-      fetchVendors(true); // list is newest first, so the new vendor shows on top
-      return;
-    }
-
-    // TODO: save through addEditResource once available
-    setResources((prev) => [{ id: Date.now(), ...values }, ...prev]);
+    await config.save(values);
     setIsAddOpen(false);
+    setSuccess({
+      title: `${config.modalTitle.replace("Add ", "")} added`,
+      message: `${values.name} has been added to your ${tab}.`,
+    });
+    fetchItems(true); // list is newest first, so the new row shows on top
   };
 
-  const openDeleteConfirm = (vendor) => {
+  const openDeleteConfirm = (item) => {
     setDeleteError("");
-    setVendorToDelete(vendor);
+    setItemToDelete(item);
   };
 
-  const handleDeleteVendor = async () => {
-    if (!vendorToDelete || deleting) return;
+  const handleDelete = async () => {
+    if (!itemToDelete || deleting) return;
     setDeleting(true);
     setDeleteError("");
 
     try {
-      const cleared = await deleteVendor(vendorToDelete.vendorId);
-      setVendors((prev) => prev.filter((v) => v.vendorId !== vendorToDelete.vendorId));
-      setVendorTotal((prev) => Math.max(prev - 1, 0));
+      const response = await config.remove(itemToDelete.id);
+      setItems((prev) => prev.filter((item) => item.id !== itemToDelete.id));
+      setTotal((prev) => Math.max(prev - 1, 0));
 
       setSuccess({
-        title: "Vendor deleted",
-        message: `${vendorToDelete.name} has been deleted. These records no longer have a vendor:`,
-        stats: [
-          { label: "Expenses", value: cleared.expensesCleared ?? 0 },
-          { label: "Event costing lines", value: cleared.eventExpensesCleared ?? 0 },
-          { label: "Approvals", value: cleared.approvalsCleared ?? 0 },
-        ],
+        title: `${config.modalTitle.replace("Add ", "")} deleted`,
+        ...config.deleteSuccess(itemToDelete, response),
       });
-      setVendorToDelete(null);
+      setItemToDelete(null);
     } catch (err) {
-      setDeleteError(err?.response?.data?.message || err?.message || "Couldn't delete the vendor. Please try again.");
+      setDeleteError(
+        err?.response?.data?.message || err?.message || `Couldn't delete the ${config.singular}. Please try again.`
+      );
     } finally {
       setDeleting(false);
     }
   };
-
-  const isVendors = tab === "vendors";
 
   return (
     <div className="h-[calc(100vh-120px)] my-5 flex flex-col">
@@ -190,7 +195,7 @@ export default function AlliancesPageClient() {
         onSearch={setSearch}
         searchBy={searchBy}
         setSearchBy={setSearchBy}
-        searchByOptions={config.searchByOptions}
+        searchByOptions={Object.keys(config.searchBy)}
         onAdd={() => setIsAddOpen(true)}
       />
       <div className="flex-1 flex flex-col min-h-0">
@@ -199,12 +204,12 @@ export default function AlliancesPageClient() {
           search={search}
           tab={tab}
           subtitleLabel={config.subtitleLabel}
-          loading={isVendors && vendorLoading}
-          loadingMore={isVendors && vendorLoadingMore}
-          error={isVendors && vendorError}
-          onRetry={() => fetchVendors(vendors.length === 0)}
-          lastRowRef={isVendors ? lastVendorRef : undefined}
-          onDelete={isVendors ? openDeleteConfirm : undefined}
+          loading={loading}
+          loadingMore={loadingMore}
+          error={error}
+          onRetry={() => fetchItems(items.length === 0)}
+          lastRowRef={lastRowRef}
+          onDelete={openDeleteConfirm}
         />
       </div>
 
@@ -217,14 +222,14 @@ export default function AlliancesPageClient() {
       />
 
       <ConfirmPopup
-        isOpen={!!vendorToDelete}
-        title={`Delete ${vendorToDelete?.name ?? "this vendor"}?`}
-        message="Any expenses, event costing lines and approvals linked to this vendor will no longer show a vendor."
+        isOpen={!!itemToDelete}
+        title={`Delete ${itemToDelete?.name ?? `this ${config.singular}`}?`}
+        message={config.deleteWarning}
         confirmText="Delete"
         isLoading={deleting}
         error={deleteError}
-        onConfirm={handleDeleteVendor}
-        onCancel={() => setVendorToDelete(null)}
+        onConfirm={handleDelete}
+        onCancel={() => setItemToDelete(null)}
       />
 
       <SuccessPopup
