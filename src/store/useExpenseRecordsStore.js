@@ -74,6 +74,7 @@ export function formExpenseToRecord(expense) {
     balance: balanceAmount,
     remark: expense.remark,
     vendor: expense.vendorName?.trim() || "-",
+    vendorId: expense.vendorId || "",
     bill: expense.fileName || "-",
     paymentStatus,
     status: "Pending Approval",
@@ -110,7 +111,8 @@ function apiExpenseToRecord(item) {
     // Keep this numeric so aggregates and deltas stay reliable.
     totalAmount: parseAmount(item.total),
     remark: item.remark || "-",
-    vendor: item.vendorName || item.vendor || "-",
+    vendor: item.vendorDetails?.name || "-",
+    vendorId: item.vendorDetails?.vendorId || "",
     bill: item.billFileName || item.bill || billUrl?.split("/").pop() || "-",
     billUrl,
     paymentStatus: item.paymentStatus || "Pending",
@@ -262,7 +264,10 @@ export const useExpenseRecordsStore = create((set, get) => ({
         portfolio: updatedFields.portfolio || e.portfolio || "-",
         totalAmount: newAmount,
         remark: updatedFields.remark ?? e.remark,
-        vendor: updatedFields.vendorName || updatedFields.vendor || e.vendor || "-",
+        // vendorId "" means the vendor was cleared
+        ...("vendorId" in updatedFields
+          ? { vendor: updatedFields.vendorName || "-", vendorId: updatedFields.vendorId }
+          : {}),
         bill: updatedFields.fileName || updatedFields.bill || e.bill || "-",
       };
     });

@@ -28,7 +28,8 @@ export const getBudgetType = async (start = 1, offset = 10) => {
  * Query params: networkClusterCode, start, offset, type ("all"|"event"|"general"), eventId, approvedStatus
  *
  * Response result shape (one entry per expense):
- *   expenseId, desc, type, total, remark, vendorName, approvedStatus,
+ *   expenseId, desc, type, total, remark, approvedStatus,
+ *   vendorDetails: { vendorId, name, location, email, phone } | null,
  *   attachment: [], createdAt, updatedAt, eventDetails,
  *   budgetTypeDetails: { budgetType, budgetTypeId }
  *
@@ -73,7 +74,7 @@ export const getExpenses = async (filters = {}) => {
  *   budgetTypeId- string, budget type ID from getBudgetType
  *   total       - float, min 0.00
  *   remark      - string, allow empty or min 2 chars
- *   vendorName  - string, allow empty or min 2 chars
+ *   vendorId    - string, optional; "" = no vendor
  *   expenseId   - string, empty = new entry, non-empty = update
  *   attachment  - File   -> upload new file
  *               - ""     -> remove existing attachment
@@ -90,8 +91,7 @@ export const getExpenses = async (filters = {}) => {
  * @param {string}  [payload.budgetTypeId]    - Budget Type ID from getBudgetType API
  * @param {number}  payload.totalAmount       - Total amount (mapped to "total")
  * @param {string}  [payload.remark]          - Remark / notes
- * @param {string}  [payload.vendorName]      - Vendor name
- * @param {string}  [payload.vendor]          - Fallback for vendorName
+ * @param {string}  [payload.vendorId]        - Vendor from the vendor list; "" for none
  * @param {string}  [payload.expenseId]       - Expense ID for updates; empty for new
  * @param {string}  [payload.id]              - Fallback for expenseId
  * @param {File}    [payload.file]            - New file to upload
@@ -121,7 +121,8 @@ export const addEditExpense = async (payload) => {
 
     // -- Optional fields --------------------------------------------------
     formData.append("remark", payload.remark || "");
-    formData.append("vendorName", payload.vendorName || payload.vendor || "");
+    // Vendor is picked from the vendor list; "" means no vendor
+    formData.append("vendorId", payload.vendorId || "");
 
     // expenseId: empty string = create new, non-empty = update existing
     formData.append("expenseId", payload.expenseId || payload.id || "");
