@@ -34,7 +34,8 @@ const toApprovalRow = (item) => {
     relatedEvent: item.eventName || '',
     status: item.status || 'pending',
     submittedBy: item.submittedBy || '',
-    vendor: item.vendorName || '',
+    // Only getApprovalDetails returns the vendor, looked up from vendorId (null when none)
+    vendor: item.vendorDetails?.name || '',
     paymentStatus: item.paymentStatus
       ? item.paymentStatus.charAt(0).toUpperCase() + item.paymentStatus.slice(1)
       : '',
