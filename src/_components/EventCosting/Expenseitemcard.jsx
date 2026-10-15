@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Trash2, Upload, FileText, Check, X } from "lucide-react";
 import { fmt } from "./utils";
+import VendorSelect from "../UI/VendorSelect";
 
 export function ExpenseItemCard({ expense, onRemove, onSubItemChange, onSave, readOnly = false }) {
   const [saving, setSaving] = useState(false);
@@ -26,9 +27,10 @@ export function ExpenseItemCard({ expense, onRemove, onSubItemChange, onSave, re
   };
 
   return (
-    <div className="border border-gray-200 rounded-xl overflow-hidden">
+    // No overflow-hidden here — it would clip the vendor dropdown; corners are rounded per section instead
+    <div className="border border-gray-200 rounded-xl">
       {/* Header */}
-      <div className="flex items-center justify-between bg-gray-50 px-4 py-3 border-b border-gray-200">
+      <div className="flex items-center justify-between bg-gray-50 px-4 py-3 border-b border-gray-200 rounded-t-xl">
         <h4 className="text-sm font-semibold text-gray-900">{expense.category}</h4>
         <div className="flex items-center gap-3">
           <span className="text-sm font-semibold text-gray-700">₹{fmt(cardTotal)}</span>
@@ -65,16 +67,22 @@ export function ExpenseItemCard({ expense, onRemove, onSubItemChange, onSave, re
               {/* Vendor */}
               <div className="col-span-6 md:col-span-3">
                 <label className="block text-[11px] text-gray-500 mb-1">Vendor</label>
-                <input
-                  type="text"
-                  value={si.vendorName || ""}
-                  onChange={(e) =>
-                    onSubItemChange(expense.id, si.id, "vendorName", e.target.value)
-                  }
-                  placeholder="Vendor name"
-                  disabled={readOnly}
-                  className="w-full text-sm px-2 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-default"
-                />
+                {readOnly ? (
+                  <div className="text-sm px-2 py-1.5 bg-gray-50 border border-gray-300 rounded-lg text-gray-700 truncate">
+                    {si.vendorName || "—"}
+                  </div>
+                ) : (
+                  <VendorSelect
+                    size="sm"
+                    visibleCount={4}
+                    pageSize={10}
+                    value={si.vendorName ? { vendorId: si.vendorId || "", name: si.vendorName } : null}
+                    onChange={(vendor) => {
+                      onSubItemChange(expense.id, si.id, "vendorId", vendor?.vendorId || "");
+                      onSubItemChange(expense.id, si.id, "vendorName", vendor?.name || "");
+                    }}
+                  />
+                )}
               </div>
 
               {/* Qty */}
@@ -172,7 +180,7 @@ export function ExpenseItemCard({ expense, onRemove, onSubItemChange, onSave, re
 
       {/* Save CTA */}
       {!readOnly && (
-      <div className="flex items-center justify-end px-4 py-3 bg-gray-50 border-t border-gray-200">
+      <div className="flex items-center justify-end px-4 py-3 bg-gray-50 border-t border-gray-200 rounded-b-xl">
         <button
           onClick={handleSave}
           disabled={saving}

@@ -1,21 +1,34 @@
 'use client';
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { FiChevronDown, FiLoader, FiSearch, FiX } from 'react-icons/fi';
 import { getVendors } from '@/services/vendor.service';
 
 const PAGE_SIZE = 20;
 const SEARCH_DEBOUNCE_MS = 300;
+const MENU_ESTIMATED_HEIGHT = 300; // search box + list, used to decide open-up vs open-down
 
 /*
  * Searchable vendor dropdown backed by GET /smartOffice/vendors.
- * Opens with the first 20 vendors, searches by name as the user types
+ * Opens with the first page of vendors, searches by name as the user types
  * (300 ms debounce) and loads the next page when scrolled to the bottom.
  *
- * value:    { vendorId, name } | null
- * onChange: (vendor | null) => void
+ * value:        { vendorId, name } | null
+ * onChange:     (vendor | null) => void
+ * size:         'md' (forms) | 'sm' (compact table rows)
+ * visibleCount: rows shown before the list scrolls (default: fixed 240px height)
+ * pageSize:     vendors fetched per request
  */
-export default function VendorSelect({ value, onChange, placeholder = 'Select Vendor', disabled = false }) {
+export default function VendorSelect({
+  value,
+  onChange,
+  placeholder = 'Select Vendor',
+  disabled = false,
+  size = 'md',
+  visibleCount,
+  pageSize = PAGE_SIZE,
+}) {
+  const isSmall = size === 'sm';
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
@@ -25,8 +38,11 @@ export default function VendorSelect({ value, onChange, placeholder = 'Select Ve
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(false);
+  const [openUp, setOpenUp] = useState(false);
+  const [listMaxHeight, setListMaxHeight] = useState(240);
 
   const ref = useRef(null);
+  const listRef = useRef(null);
   const searchInputRef = useRef(null);
   const requestIdRef = useRef(0); // drops responses from outdated searches
 
@@ -56,7 +72,7 @@ export default function VendorSelect({ value, onChange, placeholder = 'Select Ve
           searchBy: 'name',
           searchKey: debouncedQuery,
           start: reset ? 0 : vendors.length,
-          offset: PAGE_SIZE,
+          offset: pageSize,
         });
         if (requestId !== requestIdRef.current) return;
 
@@ -72,13 +88,22 @@ export default function VendorSelect({ value, onChange, placeholder = 'Select Ve
         }
       }
     },
-    [debouncedQuery, vendors.length]
+    [debouncedQuery, vendors.length, pageSize]
   );
 
   // Fresh list each time the dropdown opens or the search changes
   useEffect(() => {
     if (open) fetchVendors(true);
   }, [open, debouncedQuery]);
+
+  // Size the list to exactly `visibleCount` rows; the rest is reached by scrolling
+  useLayoutEffect(() => {
+    if (!open || !visibleCount || !listRef.current) return;
+    const rows = Array.from(listRef.current.querySelectorAll('[data-vendor-option]')).slice(0, visibleCount);
+    if (rows.length < visibleCount) return; // fewer rows than the limit — keep the cap until the list fills
+    const height = rows.reduce((sum, row) => sum + row.offsetHeight, 0);
+    setListMaxHeight(height);
+  }, [open, visibleCount, vendors]);
 
   const hasMore = vendors.length < total;
 
@@ -95,6 +120,12 @@ export default function VendorSelect({ value, onChange, placeholder = 'Select Ve
       setQuery('');
       setDebouncedQuery('');
       setTimeout(() => searchInputRef.current?.focus(), 0);
+      // Open upward when there isn't room below (e.g. last rows near the page bottom)
+      if (ref.current) {
+        const rect = ref.current.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - rect.bottom;
+        setOpenUp(spaceBelow < MENU_ESTIMATED_HEIGHT && rect.top > spaceBelow);
+      }
     }
     setOpen(!open);
   };
@@ -112,7 +143,9 @@ export default function VendorSelect({ value, onChange, placeholder = 'Select Ve
         onClick={handleToggle}
         onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && handleToggle()}
         aria-disabled={disabled}
-        className={`w-full flex items-center justify-between px-4 py-3 border border-gray-300 rounded-[14px] bg-white text-[15px] outline-none text-left focus:border-[#1A73E8] transition-colors ${
+        className={`w-full flex items-center justify-between border border-gray-300 bg-white outline-none text-left focus:border-[#1A73E8] transition-colors ${
+          isSmall ? 'px-2 py-1.5 rounded-lg text-sm' : 'px-4 py-3 rounded-[14px] text-[15px]'
+        } ${
           disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'
         }`}
         style={{ color: value ? '#1e293b' : '#94a3b8' }}
@@ -141,7 +174,9 @@ export default function VendorSelect({ value, onChange, placeholder = 'Select Ve
 
       {open && (
         <div
-          className="absolute top-[calc(100%+6px)] left-0 w-full bg-white rounded-[14px] z-[9999] p-2 flex flex-col"
+          className={`absolute left-0 w-full bg-white rounded-[14px] z-[9999] p-2 flex flex-col ${
+            openUp ? 'bottom-[calc(100%+6px)]' : 'top-[calc(100%+6px)]'
+          } ${isSmall ? 'min-w-[240px]' : ''}`}
           style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.13)' }}
         >
           {/* Search */}
@@ -153,7 +188,9 @@ export default function VendorSelect({ value, onChange, placeholder = 'Select Ve
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search vendor by name"
-              className="w-full bg-transparent outline-none text-[15px] text-slate-800 placeholder:text-slate-400"
+              className={`w-full bg-transparent outline-none text-slate-800 placeholder:text-slate-400 ${
+                isSmall ? 'text-sm' : 'text-[15px]'
+              }`}
             />
             {query && (
               <button
@@ -168,7 +205,12 @@ export default function VendorSelect({ value, onChange, placeholder = 'Select Ve
           </div>
 
           {/* Options */}
-          <div className="overflow-y-auto" style={{ maxHeight: '240px' }} onScroll={handleScroll}>
+          <div
+            ref={listRef}
+            className="overflow-y-auto"
+            style={{ maxHeight: `${visibleCount ? listMaxHeight : 240}px` }}
+            onScroll={handleScroll}
+          >
             {loading ? (
               <div className="flex items-center justify-center gap-2 py-6 text-[14px] text-slate-400">
                 <FiLoader className="animate-spin" /> Loading vendors...
@@ -195,18 +237,24 @@ export default function VendorSelect({ value, onChange, placeholder = 'Select Ve
                   return (
                     <button
                       key={vendor.vendorId}
+                      data-vendor-option
                       type="button"
                       onMouseDown={() => handleSelect(vendor)}
                       className={[
-                        'block w-full text-left px-4 py-2.5 cursor-pointer border-none rounded-lg transition-colors duration-150',
+                        'block w-full text-left cursor-pointer border-none rounded-lg transition-colors duration-150',
+                        isSmall ? 'px-3 py-2' : 'px-4 py-2.5',
                         isSelected ? 'bg-indigo-50' : 'bg-transparent hover:bg-slate-50',
                       ].join(' ')}
                     >
-                      <span className="block font-['Nunito_Sans'] font-medium text-[16px] leading-[136%] text-[#333333]">
+                      <span
+                        className={`block font-['Nunito_Sans'] font-medium leading-[136%] text-[#333333] ${
+                          isSmall ? 'text-sm' : 'text-[16px]'
+                        }`}
+                      >
                         {vendor.name}
                       </span>
                       {vendor.location && (
-                        <span className="block text-[13px] text-slate-400">{vendor.location}</span>
+                        <span className={`block text-slate-400 ${isSmall ? 'text-xs' : 'text-[13px]'}`}>{vendor.location}</span>
                       )}
                     </button>
                   );

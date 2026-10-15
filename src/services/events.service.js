@@ -274,11 +274,12 @@ export const patchBudgetCategoryVersion = ({
   });
 
 export const addEditEventExpense = ({
-  budgetCategoryVersionId, splitName, vendorName, qty, rate, totalExpense, attachment, date,
+  budgetCategoryVersionId, splitName, vendorId, vendorName, qty, rate, totalExpense, attachment, date,
 }) => {
   const form = new FormData();
   form.append("budgetCategoryVersionId", budgetCategoryVersionId);
   form.append("splitName", splitName);
+  form.append("vendorId", vendorId ?? "");     // from the vendor list; "" = no vendor
   form.append("vendorName", vendorName ?? "");
   form.append("qty", Number(qty) || 0);
   form.append("rate", Number(rate) || 0);

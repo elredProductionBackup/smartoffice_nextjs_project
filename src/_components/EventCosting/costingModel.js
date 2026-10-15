@@ -116,7 +116,9 @@ export function mapServerToCosting(result = []) {
       const t = exp.totalExpense != null ? num(exp.totalExpense) : q * r;
       actuals[itemId] = { qty: q, unitCost: r };
       expenseMeta[itemId] = {
-        vendorName: exp.vendorName || "",
+        // vendorDetails is looked up from vendorId; vendorName covers older rows
+        vendorId: exp.vendorDetails?.vendorId || exp.vendorId || "",
+        vendorName: exp.vendorDetails?.name || exp.vendorName || "",
         attachment: exp.attachment || "",
         budgetCategoryVersionId: catId(cat),
         splitName: s.splitName,
