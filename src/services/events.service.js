@@ -274,13 +274,14 @@ export const patchBudgetCategoryVersion = ({
   });
 
 export const addEditEventExpense = ({
-  budgetCategoryVersionId, splitName, vendorId, vendorName, qty, rate, totalExpense, attachment, date,
+  budgetCategoryVersionId, splitName, vendorId, qty, rate, totalExpense, attachment, date,
 }) => {
   const form = new FormData();
   form.append("budgetCategoryVersionId", budgetCategoryVersionId);
   form.append("splitName", splitName);
-  form.append("vendorId", vendorId ?? "");     // from the vendor list; "" = no vendor
-  form.append("vendorName", vendorName ?? "");
+  // Vendor is picked from the vendor list; only vendorId is accepted ("" = no vendor).
+  // vendorName is rejected by the API ("Extra/Invalid keys").
+  form.append("vendorId", vendorId ?? "");
   form.append("qty", Number(qty) || 0);
   form.append("rate", Number(rate) || 0);
   form.append("totalExpense", Number(totalExpense) || 0);

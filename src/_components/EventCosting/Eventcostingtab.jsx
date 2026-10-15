@@ -134,7 +134,6 @@ export function EventCostingTab({
           budgetCategoryVersionId: section.budgetCategoryVersionId ?? section.id,
           splitName: item.splitName,
           vendorId: "",
-          vendorName: "",
         };
       }
     }
@@ -149,7 +148,6 @@ export function EventCostingTab({
         budgetCategoryVersionId: meta.budgetCategoryVersionId,
         splitName: meta.splitName,
         vendorId: actual.vendorId ?? meta.vendorId ?? "",
-        vendorName: actual.vendorName ?? meta.vendorName ?? "",
         qty,
         rate,
         totalExpense: qty * rate,
@@ -336,7 +334,7 @@ export function EventCostingTab({
       .map((si) =>
         flushExpense(
           si.id,
-          { qty: si.attendees, unitCost: si.unitCost, vendorId: si.vendorId, vendorName: si.vendorName },
+          { qty: si.attendees, unitCost: si.unitCost, vendorId: si.vendorId },
           si.attachment
         )
       )
