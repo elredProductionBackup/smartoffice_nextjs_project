@@ -11,6 +11,7 @@ import StatusSelect from "./UI/StatusSelect";
 import {
   fetchEventChecklist,
   toggleEventActionable,
+  setEventActionableStatus,
   createEventActionable,
   updateEventActionable,
   removeEventActionable,
@@ -21,16 +22,23 @@ import {
   removeEventComment,
   fetchMasterConfig
 } from "@/store/events/eventsThunks";
+import { addToast } from "@/store/toastSlice";
 
 
 
 
-// TODO: persist once the backend supports a task status field
+// Values are the actionable `status` stored by the backend
 const TASK_STATUS_OPTIONS = [
-  { value: "wip", label: "WIP", dotClassName: "bg-amber-500" },
-  { value: "done", label: "Done", dotClassName: "bg-green-600" },
+  { value: "pending", label: "Select status", dotClassName: "border border-slate-300 bg-white" },
+  { value: "InProgress", label: "WIP", dotClassName: "bg-amber-500" },
+  { value: "completed", label: "Done", dotClassName: "bg-green-600" },
   { value: "notRequired", label: "Not Required", dotClassName: "bg-slate-400" },
 ];
+
+// Rows saved before the status field existed have no status: treat them as pending,
+// or completed if their box is ticked
+const getTaskStatus = (task) =>
+  task.status || (task.isCompleted === true || task.isCompleted === "true" ? "completed" : "pending");
 
 // Master checklist difficulty -> event task category / colour
 const MASTER_DIFFICULTY_CATEGORY = {
@@ -117,7 +125,8 @@ const ChecklistContent = ({ eventId }) => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [activeDifficulty, setActiveDifficulty] = useState(null);
   const [showDifficultyBar, setShowDifficultyBar] = useState(false);
-  const [taskStatus, setTaskStatus] = useState({}); // { [taskId]: "wip" | "done" | "notRequired" }
+  // Master checklist rows aren't actionables, so their status is only kept on screen
+  const [masterStatus, setMasterStatus] = useState({}); // { [masterKey]: status }
 
   // Fetch tasks for this event ONLY
   useEffect(() => {
@@ -147,10 +156,33 @@ const ChecklistContent = ({ eventId }) => {
     isLocal: false
   } : null;
 
-  const toggleCheck = (task) => {
+  const showError = (title, descrip) =>
+    dispatch(addToast({ message: { title, descrip }, type: "error" }));
+
+  const toggleCheck = async (task) => {
     const taskId = task.actionableId || task.id;
     const newCompleted = !(task.isCompleted === true || task.isCompleted === "true");
-    dispatch(toggleEventActionable({ actionableId: taskId, isCompleted: newCompleted }));
+    const result = await dispatch(toggleEventActionable({ actionableId: taskId, isCompleted: newCompleted }));
+    if (toggleEventActionable.rejected.match(result)) {
+      showError("Couldn't update task", result.payload || "Please try again.");
+    }
+  };
+
+  const changeTaskStatus = async (task, status) => {
+    const prevStatus = getTaskStatus(task);
+    if (status === prevStatus) return;
+
+    const result = await dispatch(
+      setEventActionableStatus({
+        actionableId: task.actionableId || task.id,
+        status,
+        prevStatus,
+        prevIsCompleted: task.isCompleted,
+      })
+    );
+    if (setEventActionableStatus.rejected.match(result)) {
+      showError("Couldn't update status", result.payload || "Please try again.");
+    }
   };
 
   const handleAddTask = ({ label, difficulty }) => {
@@ -320,8 +352,8 @@ const ChecklistContent = ({ eventId }) => {
 
                   {/* Status */}
                   <StatusSelect
-                    value={taskStatus[masterKey] ?? ""}
-                    onChange={(value) => setTaskStatus((prev) => ({ ...prev, [masterKey]: value }))}
+                    value={masterStatus[masterKey] ?? "pending"}
+                    onChange={(value) => setMasterStatus((prev) => ({ ...prev, [masterKey]: value }))}
                     options={TASK_STATUS_OPTIONS}
                   />
 
@@ -414,8 +446,8 @@ const ChecklistContent = ({ eventId }) => {
 
                     {/* Status */}
                     <StatusSelect
-                      value={taskStatus[taskId] ?? ""}
-                      onChange={(value) => setTaskStatus((prev) => ({ ...prev, [taskId]: value }))}
+                      value={getTaskStatus(task)}
+                      onChange={(value) => changeTaskStatus(task, value)}
                       options={TASK_STATUS_OPTIONS}
                     />
 
