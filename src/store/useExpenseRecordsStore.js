@@ -83,11 +83,13 @@ export function formExpenseToRecord(expense) {
   };
 }
 
-// API sends approvedStatus as lowercase ("approved" | "pending" | "rejected").
+// API sends approvedStatus as lowercase ("approved" | "pending" | "sent" | "rejected").
+// "sent" = approval request sent, awaiting a decision.
 const APPROVAL_STATUS_LABELS = {
   approved: "Approved",
   rejected: "Rejected",
   pending: "Pending Approval",
+  sent: "Sent",
 };
 
 function getApprovalStatusLabel(item) {
@@ -103,6 +105,8 @@ function apiExpenseToRecord(item) {
     id: item.expenseId,
     // Delete endpoint keys off budgetExpenseId; fall back to the row id.
     budgetExpenseId: item.budgetExpenseId || item.expenseId,
+    // Needed for approval reminders
+    approvalId: item.approvalId || item.approvalDetails?.approvalId || item.approvalDetails?._id || "",
     description: item.desc || "-",
     type: item.type || "-",
     event: item.eventDetails?.eventName || item.eventName || item.event || "-",
@@ -117,7 +121,9 @@ function apiExpenseToRecord(item) {
     billUrl,
     paymentStatus: item.paymentStatus || "Pending",
     status,
-    canSend: status === "Pending Approval",
+    // Send stays visible (disabled) while "Sent"; disappears once approved.
+    canSend: status === "Pending Approval" || status === "Sent",
+    isSent: status === "Sent",
     reminderCount: item.reminderCount ?? 0,
     lastReminderDate: item.lastReminderDate || "",
   };

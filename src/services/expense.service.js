@@ -276,3 +276,39 @@ export const requestEventExpenseApproval = async (payload) => {
     throw error;
   }
 };
+
+/**
+ * Send a reminder for a pending expense approval
+ *
+ * POST /smartOffice/sendExpenseApprovalReminder
+ * Body: { expenseId: string, notificationType: "whatsapp" | "email" | "both", phoneNumber?: string, email?: string }
+ *
+ * @param {Object} payload
+ * @param {string} payload.expenseId - Expense ID
+ * @param {"whatsapp"|"email"|"both"} payload.notificationType - Channel(s) to send the reminder on
+ * @param {string} [payload.phoneNumber] - Required for "whatsapp" and "both", with country code
+ * @param {string} [payload.email] - Required for "email" and "both"
+ * @returns {Promise<Object>}
+ */
+export const sendExpenseApprovalReminder = async (payload) => {
+  try {
+    const res = await api.post("/smartOffice/sendExpenseApprovalReminder", payload);
+
+    const data = res.data;
+
+    // Axios validateStatus allows all status codes — check success flag manually
+    if (data?.success === false) {
+      const err = new Error(data?.message || "Failed to send reminder");
+      err.response = {
+        status: res.status,
+        data,
+      };
+      throw err;
+    }
+
+    return data;
+  } catch (error) {
+    console.error("sendExpenseApprovalReminder API Error:", error?.response || error);
+    throw error;
+  }
+};

@@ -21,8 +21,7 @@ import { MdCurrencyRupee } from "react-icons/md";
 import { useExpenseRecordsStore } from "@/store/useExpenseRecordsStore";
 import NewExpensesPopup from "@/_components/UI/NewExpensesPopup";
 import { formatCompactAmount } from "@/utils/currency";
-import { requestEventExpenseApproval } from "@/services/expense.service";
-
+import { requestEventExpenseApproval, sendExpenseApprovalReminder } from "@/services/expense.service";
 const TABLE_COLUMNS =
   "minmax(190px,1.6fr) minmax(100px,1fr) minmax(112px,1fr) minmax(118px,1fr) minmax(120px,1fr) minmax(130px,1.1fr) minmax(96px,0.9fr) minmax(112px,1fr) minmax(140px,1.1fr) minmax(150px,1.2fr) minmax(104px,1fr) minmax(52px,0.4fr)";
 
@@ -154,6 +153,7 @@ function StatusBadge({ children, variant }) {
     approved: "bg-[#E6F4EA] text-[#137333]",
     pendingApproval: "bg-[#FEF7E0] text-[#B06000]",
     rejected: "bg-[#FEE2E2] text-[#B91C1C]",
+    sent: "bg-[#E8F0FE] text-[#1A56DB]",
   };
   return (
     <span
@@ -233,6 +233,7 @@ function PaymentStatusDropdown({ expenseId, currentStatus, onUpdate }) {
 function getStatusBadgeVariant(status) {
   if (status === "Approved") return "approved";
   if (status === "Rejected") return "rejected";
+  if (status === "Sent") return "sent";
   return "pendingApproval";
 }
 
@@ -607,8 +608,35 @@ export default function ExpenseRecordsPage() {
     setShowPopup(true);
   };
 
-  const handleSendReminder = (expenseId, channel) => {
-    console.log(`Sending reminder for ${expenseId} via ${channel}`);
+  const [sendingReminder, setSendingReminder] = useState(false);
+  const [reminderError, setReminderError] = useState("");
+
+  const closeReminderModal = () => {
+    if (sendingReminder) return;
+    setReminderModal(null);
+    setReminderError("");
+  };
+
+  const handleSendReminder = async () => {
+    if (!reminderModal || sendingReminder) return;
+    const { expense, channel } = reminderModal;
+
+    setSendingReminder(true);
+    setReminderError("");
+    try {
+      await sendExpenseApprovalReminder({
+        expenseId: expense.id,
+        notificationType: channel,
+        ...(channel !== "email" && { phoneNumber: APPROVER_CONTACT.phoneNumber }),
+        ...(channel !== "whatsapp" && { email: APPROVER_CONTACT.email }),
+      });
+      setReminderModal(null);
+      refetchExpenses(); // pick up the new reminder count
+    } catch (err) {
+      setReminderError(err?.response?.data?.message || err?.message || "Failed to send reminder. Please try again.");
+    } finally {
+      setSendingReminder(false);
+    }
   };
 
   const handleConfirmDelete = async () => {
@@ -668,6 +696,7 @@ export default function ExpenseRecordsPage() {
   const STATUS_OPTIONS = [
     { label: "All Statuses", value: "" },
     { label: "Pending Approval", value: "pending" },
+    { label: "Sent", value: "sent" },
     { label: "Approved", value: "approved" },
   ];
 
@@ -854,7 +883,7 @@ export default function ExpenseRecordsPage() {
                       <StatusBadge variant={getStatusBadgeVariant(expense.status)}>{expense.status}</StatusBadge>
                     </div>
                     <div>
-                      {expense.canSend && sentExpenseIds.has(expense.id) ? (
+                      {expense.canSend && (expense.isSent || sentExpenseIds.has(expense.id)) ? (
                         <button
                           type="button"
                           disabled
@@ -929,7 +958,7 @@ export default function ExpenseRecordsPage() {
       </div>
 
       {reminderModal && (
-        <div className="fixed inset-0 z-50 bg-black/35 flex items-center justify-center" onClick={() => setReminderModal(null)}>
+        <div className="fixed inset-0 z-50 bg-black/35 flex items-center justify-center" onClick={closeReminderModal}>
           <div
             className="bg-white rounded-2xl border border-[#E2E8F0] w-[400px] overflow-hidden shadow-xl"
             onClick={(e) => e.stopPropagation()}
@@ -951,7 +980,7 @@ export default function ExpenseRecordsPage() {
                 {reminderModal.channel === "both" && "Send via Email and WhatsApp?"}
               </p>
               <p className="text-[13px] text-[#64748B] leading-relaxed">
-                This will send a payment reminder to the vendor for{" "}
+                This will remind the approver about{" "}
                 <span className="font-semibold text-[#333333]">{reminderModal.expense.description}</span>. Confirm to proceed.
               </p>
 
@@ -962,36 +991,40 @@ export default function ExpenseRecordsPage() {
                 <span className="text-[13px] font-medium text-[#334155]">
                   {reminderModal.channel === "whatsapp" && "WhatsApp reminder"}
                   {reminderModal.channel === "email" && "Email reminder"}
+                  {reminderModal.channel === "whatsapp" && ` · ${APPROVER_CONTACT.whatsapp}`}
+                  {reminderModal.channel === "email" && ` · ${APPROVER_CONTACT.email}`}
                   {reminderModal.channel === "both" && "Email + WhatsApp reminder"}
                 </span>
               </div>
+
+              {reminderError && <p className="mt-3 text-[13px] text-[#DC2626]">{reminderError}</p>}
             </div>
 
             <div className="flex gap-2.5 px-5 pb-5">
               <button
                 type="button"
                 className="flex-1 py-2 border border-[#CBD5E1] rounded-lg text-[13px] text-[#64748B] font-medium hover:bg-[#F8FAFC] transition-colors"
-                onClick={() => setReminderModal(null)}
+                disabled={sendingReminder}
+                onClick={closeReminderModal}
               >
                 Cancel
               </button>
               <button
                 type="button"
-                className={`flex-[2] py-2 rounded-lg text-[13px] font-semibold text-white transition-colors ${
+                disabled={sendingReminder}
+                className={`flex-[2] py-2 rounded-lg text-[13px] font-semibold text-white transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${
                   reminderModal.channel === "whatsapp"
                     ? "bg-[#25D366] hover:bg-[#1ebe5e]"
                     : reminderModal.channel === "email"
                     ? "bg-[#2B7FFF] hover:bg-[#1a6fe6]"
                     : "bg-[#7c3aed] hover:bg-[#6d28d9]"
                 }`}
-                onClick={() => {
-                  handleSendReminder(reminderModal.expenseId, reminderModal.channel);
-                  setReminderModal(null);
-                }}
+                onClick={handleSendReminder}
               >
-                {reminderModal.channel === "whatsapp" && "Send via WhatsApp"}
-                {reminderModal.channel === "email" && "Send via Email"}
-                {reminderModal.channel === "both" && "Send to both"}
+                {sendingReminder && "Sending..."}
+                {!sendingReminder && reminderModal.channel === "whatsapp" && "Send via WhatsApp"}
+                {!sendingReminder && reminderModal.channel === "email" && "Send via Email"}
+                {!sendingReminder && reminderModal.channel === "both" && "Send to both"}
               </button>
             </div>
           </div>
