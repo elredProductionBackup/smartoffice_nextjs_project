@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { FiX, FiUpload, FiChevronDown, FiLoader, FiCheckCircle } from 'react-icons/fi';
 import CustomDatePicker from './CustomDatePicker';
+import VendorSelect from './VendorSelect';
 import { addEditExpense } from '@/services/expense.service';
 import { getBudgetEventReportCategory } from '@/services/finance.service';
 import { useBudgetTypeStore } from '@/store/useBudgetTypeStore';
@@ -96,7 +97,10 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
   const [totalAmount, setTotalAmount] = useState(initialData?.totalAmount ?? '');
   const [paid, setPaid] = useState(initialData?.paid ?? '');
   const [balance, setBalance] = useState(initialData?.balance ?? '');
-  const [vendorName, setVendorName] = useState(initialData?.vendor && initialData.vendor !== '-' ? initialData.vendor : '');
+  // Picked from the vendor dropdown; only vendorId is saved on the expense
+  const [vendor, setVendor] = useState(
+    initialData?.vendorId ? { vendorId: initialData.vendorId, name: initialData.vendor } : null
+  );
   const [fileName, setFileName] = useState(initialData?.bill && initialData.bill !== '-' ? initialData.bill : '');
   const [remark, setRemark] = useState(initialData?.remark ?? '');
   const [selectedFile, setSelectedFile] = useState(null);
@@ -255,8 +259,8 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
     totalAmount !== '' &&
     !isNaN(parseFloat(totalAmount)) &&
     parseFloat(totalAmount) >= 0 &&
-    remark.trim().length > 3 &&
-    vendorName.trim().length >= 2;
+    // Remark is optional; if given it needs 2+ characters
+    (remark.trim().length === 0 || remark.trim().length >= 2);
 
   const handleSave = async (e) => {
     e?.preventDefault?.();
@@ -277,7 +281,7 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
       budgetTypeId,
       totalAmount: total,
       remark,
-      vendorName,
+      vendorId: vendor?.vendorId || '',
       expenseId: initialData?.id || '',
       file: selectedFile ?? undefined,
     };
@@ -301,7 +305,8 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
       date: currentDate,
       totalAmount: total,
       remark,
-      vendorName,
+      vendorId: vendor?.vendorId || '',
+      vendorName: vendor?.name || '',
       fileName,
       file: selectedFile,
     };
@@ -434,25 +439,26 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
 
           {/* Remark Field */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-[14px] font-bold text-[#333]">Remark <span className="text-red-500">*</span></label>
+            <label className="text-[14px] font-bold text-[#333]">
+              Remark <span className="text-[12px] font-medium text-slate-400">(optional)</span>
+            </label>
             <textarea
               placeholder="Add comments or notes"
               value={remark}
               onChange={(e) => setRemark(e.target.value)}
               className="w-full resize-none border border-gray-300 rounded-[14px] px-4 py-3 text-[15px] text-slate-800 bg-white outline-none focus:border-[#1A73E8] transition-colors"
             />
+            {remark.trim().length === 1 && (
+              <p className="text-[12px] text-red-500">Remark must be at least 2 characters</p>
+            )}
           </div>
 
-          {/* Vendor Name */}
+          {/* Vendor (optional) — picked from the vendor list */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-[14px] font-bold text-[#333]">Vendor Name <span className="text-red-500">*</span></label>
-            <input
-              type="text"
-              placeholder="e.g., Office Depot Inc."
-              value={vendorName}
-              onChange={(e) => setVendorName(e.target.value)}
-              className="w-full border border-gray-300 rounded-[14px] px-4 py-3 text-[15px] text-slate-800 bg-white outline-none focus:border-[#1A73E8] transition-colors"
-            />
+            <label className="text-[14px] font-bold text-[#333]">
+              Vendor <span className="text-[12px] font-medium text-slate-400">(optional)</span>
+            </label>
+            <VendorSelect value={vendor} onChange={setVendor} disabled={saving} />
           </div>
 
           {/* Upload Bill */}

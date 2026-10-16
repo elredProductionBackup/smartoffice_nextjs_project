@@ -1,24 +1,29 @@
 "use client";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import {
+  AlertTriangle,
   Award,
   BookOpen,
   BriefcaseBusiness,
   Check,
   GraduationCap,
   Landmark,
+  LogOut,
   Receipt,
+  RotateCw,
   ShieldCheck,
+  UserX,
   Users,
   Wallet,
 } from "lucide-react";
 import useGlobalLoader from "@/store/useGlobalLoader";
-import { setAdminDetail, setSelectedRole } from "@/store/auth/authSlice";
+import { logout, setAdminDetail, setSelectedRole } from "@/store/auth/authSlice";
 import { getNetworkClusterAdminDetail } from "@/services/auth.service";
 import { FINANCE_MANAGER_HOME, LEARNING_OFFICER_HOME } from "@/utils/routeAccess";
+import RoleCardShimmer from "./Shimmer/RoleCardShimmer";
 
 const ROLES = [
   {
@@ -58,6 +63,82 @@ const GRID_COLS = {
   1: "sm:grid-cols-1 max-w-sm",
   2: "sm:grid-cols-2 max-w-2xl",
   3: "sm:grid-cols-3 max-w-4xl",
+};
+
+// Popup content for each failure case. canRetry = refetching might fix it.
+const ROLE_ERRORS = {
+  fetchFailed: {
+    icon: AlertTriangle,
+    tint: "#dc2626",
+    title: "Couldn't load your roles",
+    message: "Something went wrong while fetching your roles. Please check your connection and try again.",
+    canRetry: true,
+  },
+  sessionMissing: {
+    icon: AlertTriangle,
+    tint: "#dc2626",
+    title: "Session expired",
+    message: "We couldn't find your network or login details. Please log in again to continue.",
+    canRetry: false,
+  },
+  noRoles: {
+    icon: UserX,
+    tint: "#d97706",
+    title: "No roles assigned",
+    message: "You don't have any roles in this network yet. Please contact your network admin to get access.",
+    canRetry: false,
+  },
+};
+
+// Blocking popup shown over the shimmer when roles can't be shown
+const RoleErrorPopup = ({ type, onRetry, onLogout }) => {
+  const { icon: Icon, tint, title, message, canRetry } = ROLE_ERRORS[type];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+      <div
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="role-error-title"
+        className="w-full max-w-[480px] rounded-[28px] bg-white px-8 pt-12 pb-10 shadow-xl flex flex-col items-center text-center"
+      >
+        <div
+          className="w-20 h-20 rounded-full flex items-center justify-center"
+          style={{ backgroundColor: `${tint}14` }}
+        >
+          <Icon size={40} strokeWidth={1.75} style={{ color: tint }} />
+        </div>
+
+        <h2 id="role-error-title" className="mt-6 text-[24px] font-[700] text-[#1a1a1a]">
+          {title}
+        </h2>
+        <p className="mt-3 text-[15px] leading-6 text-gray-500">{message}</p>
+
+        <div className="mt-9 flex flex-wrap justify-center gap-4">
+          <button
+            type="button"
+            onClick={onLogout}
+            className={`flex items-center justify-center gap-2 rounded-full px-6 py-2.5 text-[16px] text-white cursor-pointer ${
+              canRetry ? "bg-[#999999]" : "bg-gradient-to-r from-[#5597ED] to-[#00449C]"
+            }`}
+          >
+            <LogOut size={18} />
+            {canRetry ? "Logout" : "Back to login"}
+          </button>
+          {canRetry && (
+            <button
+              type="button"
+              onClick={onRetry}
+              className="flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#5597ED] to-[#00449C] px-6 py-2.5 text-[16px] text-white cursor-pointer"
+            >
+              <RotateCw size={18} />
+              Try again
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 };
 
 // Stacked "card" illustration: one main tile with two tilted tiles behind it
@@ -106,37 +187,52 @@ const RoleSelection = () => {
 
   const [selectedRole, setSelected] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState(null); // null | "fetchFailed" | "sessionMissing"
 
   // Fetch the roles assigned to this user in the network
-  useEffect(() => {
+  const fetchRoles = useCallback(() => {
     const networkClusterCode =
       network?.networkClusterCode || localStorage.getItem("networkClusterCode");
     const email = user?.email || localStorage.getItem("userEmail");
     if (!networkClusterCode || !email) {
       setLoading(false);
-      setError(true);
+      setError("sessionMissing");
       return;
     }
 
+    setLoading(true);
+    setError(null);
     getNetworkClusterAdminDetail({ networkClusterCode, email })
       .then((res) => {
         if (res?.data?.success) {
           dispatch(setAdminDetail(res.data.result));
         } else {
-          setError(true);
+          setError("fetchFailed");
         }
       })
       .catch((err) => {
         console.error("Admin detail fetch error:", err);
-        setError(true);
+        setError("fetchFailed");
       })
       .finally(() => setLoading(false));
+  }, [network?.networkClusterCode, user?.email, dispatch]);
+
+  useEffect(() => {
+    fetchRoles();
   }, []);
 
   const userRoles = adminDetail?.role ?? [];
   const availableRoles = ROLES.filter((role) => userRoles.includes(role.key));
   const firstname = adminDetail?.firstname || user?.firstname;
+
+  // Error wins over any adminDetail persisted from an earlier session
+  const popupType = loading ? null : error ?? (availableRoles.length === 0 ? "noRoles" : null);
+
+  const handleLogout = () => {
+    const networkClusterCode = localStorage.getItem("networkClusterCode");
+    dispatch(logout());
+    router.replace(networkClusterCode ? `/?networkClusterCode=${networkClusterCode}` : "/");
+  };
 
   // Picking a role saves it and logs the user straight in
   const handleSelect = (roleKey) => {
@@ -179,18 +275,8 @@ const RoleSelection = () => {
           Choose your role and we&apos;ll tailor your Smart Networks workspace accordingly.
         </p>
 
-        {loading ? (
-          <div className="mt-12 w-full max-w-4xl grid grid-cols-1 sm:grid-cols-3 gap-5">
-            {[0, 1, 2].map((i) => (
-              <div key={i} className="h-[300px] rounded-2xl border border-gray-100 bg-gray-50 animate-pulse" />
-            ))}
-          </div>
-        ) : availableRoles.length === 0 ? (
-          <p className="mt-12 text-sm text-gray-500 text-center">
-            {error
-              ? "We couldn't load your roles. Please refresh the page and try again."
-              : "No roles have been assigned to you in this network. Please contact your network admin."}
-          </p>
+        {loading || popupType ? (
+          <RoleCardShimmer />
         ) : (
         <div
           role="radiogroup"
@@ -234,6 +320,10 @@ const RoleSelection = () => {
         </div>
         )}
       </main>
+
+      {popupType && (
+        <RoleErrorPopup type={popupType} onRetry={fetchRoles} onLogout={handleLogout} />
+      )}
     </div>
   );
 };

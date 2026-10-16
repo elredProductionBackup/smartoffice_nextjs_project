@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { closeEventThunk, createEventActionable, createEventComment, createEventSubTask, deleteDocument, deleteEventThunk, deleteMembersMedia, fetchBudgetCategoryVersions, fetchCollaborators, fetchDocuments, fetchEventChecklist, fetchEventDetails, fetchEventMembers, fetchEvents, fetchEventTaskSummaries, fetchMasterConfig, fetchMembersMedia, removeEventActionable, removeEventComment, removeEventSubTask, saveBudgetCategoryVersion, saveEventExpense, saveMasterConfig, toggleEventActionable, updateEventActionable, updateEventSubTask, uploadDocument, uploadMemberMedia } from "./eventsThunks";
+import { closeEventThunk, createEventActionable, createEventComment, createEventSubTask, deleteDocument, deleteEventThunk, deleteMembersMedia, fetchBudgetCategoryVersions, fetchCollaborators, fetchDocuments, fetchEventChecklist, fetchEventDetails, fetchEventMembers, fetchEvents, fetchEventTaskSummaries, fetchMasterConfig, fetchMembersMedia, removeEventActionable, removeEventComment, removeEventSubTask, saveBudgetCategoryVersion, saveEventExpense, saveMasterConfig, toggleEventActionable, setEventActionableStatus, updateEventActionable, updateEventSubTask, uploadDocument, uploadMemberMedia } from "./eventsThunks";
 import moment from "moment";
 
 const initialState = {
@@ -267,6 +267,7 @@ const eventSlice = createSlice({
               : c.priority === "mildlyDifficult"
                 ? "medium"
                 : "easy",
+          status: c.status || "",
           _id: c._id,
         }));
 
@@ -301,6 +302,7 @@ const eventSlice = createSlice({
                 : serverItem.priority === "mildlyDifficult"
                   ? "medium"
                   : "easy",
+            status: serverItem.status || "",
             _id: serverItem._id,
           };
 
@@ -613,9 +615,41 @@ const eventSlice = createSlice({
           updateSummaryInGroupedEvents(state);
         })
         .addCase(toggleEventActionable.fulfilled, (state, action) => {
-          const { actionableId, isCompleted } = action.payload;
+          const { actionableId, isCompleted, status } = action.payload;
           const item = state.eventChecklist.find((t) => t.actionableId === actionableId);
-          if (item) item.isCompleted = isCompleted;
+          if (item) {
+            item.isCompleted = isCompleted;
+            item.status = status;
+          }
+          updateSummaryInGroupedEvents(state);
+        })
+        // Status dropdown: show the new status straight away, revert if the save fails
+        .addCase(setEventActionableStatus.pending, (state, action) => {
+          const { actionableId, status } = action.meta.arg;
+          const item = state.eventChecklist.find((t) => t.actionableId === actionableId);
+          if (item) {
+            item.status = status;
+            // Done and Not Required close the task; the backend confirms on success
+            item.isCompleted = status === "completed" || status === "notRequired";
+          }
+          updateSummaryInGroupedEvents(state);
+        })
+        .addCase(setEventActionableStatus.fulfilled, (state, action) => {
+          const { actionableId, status, isCompleted } = action.payload;
+          const item = state.eventChecklist.find((t) => t.actionableId === actionableId);
+          if (item) {
+            item.status = status;
+            if (typeof isCompleted === "boolean") item.isCompleted = isCompleted;
+          }
+          updateSummaryInGroupedEvents(state);
+        })
+        .addCase(setEventActionableStatus.rejected, (state, action) => {
+          const { actionableId, prevStatus, prevIsCompleted } = action.meta.arg;
+          const item = state.eventChecklist.find((t) => t.actionableId === actionableId);
+          if (item) {
+            item.status = prevStatus;
+            item.isCompleted = prevIsCompleted;
+          }
           updateSummaryInGroupedEvents(state);
         })
         .addCase(removeEventActionable.fulfilled, (state, action) => {

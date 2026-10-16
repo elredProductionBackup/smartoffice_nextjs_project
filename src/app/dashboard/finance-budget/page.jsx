@@ -442,7 +442,7 @@ const FinanceBudgetPage = () => {
                             <div className="text-[12px] text-slate-400">
                               {expense.attachment?.length > 0 ? 'Attached' : '-'}
                             </div>
-                            <div className="text-[13px] text-slate-600">{expense.vendorName || '-'}</div>
+                            <div className="text-[13px] text-slate-600">{expense.vendorDetails?.name || '-'}</div>
                             <div className="text-[12px] text-slate-400">{expense.remark || '-'}</div>
                           </div>
                         ))

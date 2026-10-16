@@ -120,6 +120,8 @@ export const saveMasterConfig = createAsyncThunk(
               : c.difficulty === "medium"
                 ? "mildlyDifficult"
                 : "easyToDo",
+          // Backend accepts only "WIP" | "Done" | "Not Required"; omit until one is picked
+          ...(c.status ? { status: c.status } : {}),
         })),
         pointsList: pointsMaster.map((p) => ({
           pointName: p.label,
@@ -481,53 +483,46 @@ export const updateEventActionable = createAsyncThunk(
   }
 );
 
+// Ticking the box. Only these keys are sent: re-sending a past dueDateTimeStamp
+// is rejected by the backend, which blocked overdue items from being ticked.
+// Backend keeps status in sync (tick -> completed, untick -> pending).
 export const toggleEventActionable = createAsyncThunk(
   "events/toggleEventActionable",
-  async ({ actionableId, isCompleted }, { getState, rejectWithValue }) => {
+  async ({ actionableId, isCompleted }, { rejectWithValue }) => {
     try {
       const networkClusterCode = localStorage.getItem("networkClusterCode");
-      const { events } = getState();
-      const existingTask = (events?.eventChecklist || []).find(
-        (item) => item.actionableId === actionableId || item._id === actionableId || item.id === actionableId
-      );
+      const res = await addActionable({ actionableId, networkClusterCode, isCompleted });
+      if (res?.data?.success === false) throw new Error(res.data.message || "Failed to update task");
 
-      const payload = {
+      const saved = Array.isArray(res?.data?.result) ? res.data.result[0] : res?.data?.result;
+      return {
         actionableId,
-        isCompleted,
-        networkClusterCode,
+        isCompleted: saved?.isCompleted ?? isCompleted,
+        status: saved?.status ?? (isCompleted ? "completed" : "pending"),
       };
+    } catch (err) {
+      return rejectWithValue(err?.response?.data?.message || err.message);
+    }
+  }
+);
 
-      if (existingTask) {
-        if (typeof existingTask.title === "string") payload.title = existingTask.title;
-        if (typeof existingTask.category === "string") payload.category = existingTask.category;
-        if (typeof existingTask.notes === "string") payload.notes = existingTask.notes;
-        if (existingTask.dueDateTimeStamp) payload.dueDateTimeStamp = existingTask.dueDateTimeStamp;
+// Status dropdown on the Event Checklist: pending | InProgress | completed | notRequired.
+// Applied optimistically (see eventsSlice); reverted on failure using prevStatus/prevIsCompleted.
+export const setEventActionableStatus = createAsyncThunk(
+  "events/setEventActionableStatus",
+  async ({ actionableId, status }, { rejectWithValue }) => {
+    try {
+      const networkClusterCode = localStorage.getItem("networkClusterCode");
+      const res = await addActionable({ actionableId, networkClusterCode, status });
+      if (res?.data?.success === false) throw new Error(res.data.message || "Failed to update status");
 
-        if (Array.isArray(existingTask.collaborators)) {
-          payload.collaborators = existingTask.collaborators
-            .map((c) => (typeof c === "string" ? c : c?.userCode))
-            .filter(Boolean);
-        }
-
-        if (Array.isArray(existingTask.linkedEvent) && existingTask.linkedEvent.length > 0) {
-          payload.linkedEvent = existingTask.linkedEvent;
-        } else if (events?.selectedEvent?.id) {
-          payload.linkedEvent = [{ eventId: events.selectedEvent.id, name: "", url: "" }];
-        }
-      }
-
-      const res = await addActionable(payload);
-
-      if (process.env.NODE_ENV !== "production") {
-        console.log("[events] toggleEventActionable debug", {
-          actionableId,
-          isCompleted,
-          responseSuccess: res?.data?.success,
-          responseResult: res?.data?.result,
-        });
-      }
-
-      return { actionableId, isCompleted };
+      // Prefer what the backend saved (it owns the status <-> isCompleted sync)
+      const saved = Array.isArray(res?.data?.result) ? res.data.result[0] : res?.data?.result;
+      return {
+        actionableId,
+        status: saved?.status ?? status,
+        isCompleted: saved?.isCompleted,
+      };
     } catch (err) {
       return rejectWithValue(err?.response?.data?.message || err.message);
     }

@@ -86,6 +86,7 @@ export function formExpenseToRecord(expense) {
     balance: balanceAmount,
     remark: expense.remark,
     vendor: expense.vendorName?.trim() || "-",
+    vendorId: expense.vendorId || "",
     bill: expense.fileName || "-",
     billUrl: "",
     billUrls: [],
@@ -96,11 +97,13 @@ export function formExpenseToRecord(expense) {
   };
 }
 
-// API sends approvedStatus as lowercase ("approved" | "pending" | "rejected").
+// API sends approvedStatus as lowercase ("approved" | "pending" | "sent" | "rejected").
+// "sent" = approval request sent, awaiting a decision.
 const APPROVAL_STATUS_LABELS = {
   approved: "Approved",
   rejected: "Rejected",
   pending: "Pending Approval",
+  sent: "Sent",
 };
 
 function getApprovalStatusLabel(item) {
@@ -121,6 +124,8 @@ function apiExpenseToRecord(item) {
     id: item.expenseId,
     // Delete endpoint keys off budgetExpenseId; fall back to the row id.
     budgetExpenseId: item.budgetExpenseId || item.expenseId,
+    // Needed for approval reminders
+    approvalId: item.approvalId || item.approvalDetails?.approvalId || item.approvalDetails?._id || "",
     description: item.desc || "-",
     type: item.type || "-",
     event: item.eventDetails?.eventName || item.eventName || item.event || "-",
@@ -130,14 +135,15 @@ function apiExpenseToRecord(item) {
     // Keep this numeric so aggregates and deltas stay reliable.
     totalAmount: parseAmount(item.total),
     remark: item.remark || "-",
-    vendor: item.vendorName || item.vendor || "-",
-    // Bill
-    billUrl: attachments[0] || "",
-    billUrls: attachments,
-    bill: item.billFileName || (attachments.length ? getFileNameFromUrl(attachments[0]) : "-"),
+    vendor: item.vendorDetails?.name || "-",
+    vendorId: item.vendorDetails?.vendorId || "",
+    bill: item.billFileName || item.bill || billUrl?.split("/").pop() || "-",
+    billUrl,
     paymentStatus: item.paymentStatus || "Pending",
     status,
-    canSend: status === "Pending Approval",
+    // Send stays visible (disabled) while "Sent"; disappears once approved.
+    canSend: status === "Pending Approval" || status === "Sent",
+    isSent: status === "Sent",
     reminderCount: item.reminderCount ?? 0,
     lastReminderDate: item.lastReminderDate || "",
   };
@@ -286,7 +292,10 @@ export const useExpenseRecordsStore = create((set, get) => ({
         budgetTypeId: updatedFields.budgetTypeId || e.budgetTypeId || "",
         totalAmount: newAmount,
         remark: updatedFields.remark ?? e.remark,
-        vendor: updatedFields.vendorName || updatedFields.vendor || e.vendor || "-",
+        // vendorId "" means the vendor was cleared
+        ...("vendorId" in updatedFields
+          ? { vendor: updatedFields.vendorName || "-", vendorId: updatedFields.vendorId }
+          : {}),
         bill: updatedFields.fileName || updatedFields.bill || e.bill || "-",
       };
     });

@@ -25,7 +25,8 @@ export default function EventsPopups() {
     const current = [...checklistMaster];
 
     if (mode === "add") current.push(data);
-    if (mode === "edit") current[index] = data;
+    // Keep _id/status so editing the difficulty doesn't wipe the saved status
+    if (mode === "edit") current[index] = { ...current[index], ...data };
 
     dispatch(setChecklistMaster(current));
 

@@ -10,7 +10,9 @@ import api from "./axios";
  * @param {string} payload.approvalId - Approval request ID
  * @param {"approved"|"rejected"} payload.status
  * @param {string} [payload.rejectReason] - Required when rejecting
- * @returns {Promise<Object>}
+ * @returns {Promise<Object>} raw response body. The returned approval carries
+ *   vendorDetails: { vendorId, name, location, email, phone } | null — there is
+ *   no vendorName (also not on rejectedExpense when rejecting).
  */
 export const updateApprovalStatus = async (payload) => {
   try {

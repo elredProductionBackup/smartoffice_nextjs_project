@@ -28,7 +28,8 @@ export const getBudgetType = async (start = 1, offset = 10) => {
  * Query params: networkClusterCode, start, offset, type ("all"|"event"|"general"), eventId, approvedStatus
  *
  * Response result shape (one entry per expense):
- *   expenseId, desc, type, total, remark, vendorName, approvedStatus,
+ *   expenseId, desc, type, total, remark, approvedStatus,
+ *   vendorDetails: { vendorId, name, location, email, phone } | null,
  *   attachment: [], createdAt, updatedAt, eventDetails,
  *   budgetTypeDetails: { budgetType, budgetTypeId }
  *
@@ -72,8 +73,8 @@ export const getExpenses = async (filters = {}) => {
  *   portfolioId - string, must be a valid portfolio
  *   budgetTypeId- string, budget type ID from getBudgetType
  *   total       - float, min 0.00
- *   remark      - string, allow empty or min 2 chars
- *   vendorName  - string, allow empty or min 2 chars
+ *   remark      - string, optional; min 2 chars when sent
+ *   vendorId    - string, optional; "" = no vendor
  *   expenseId   - string, empty = new entry, non-empty = update
  *   attachment  - File   -> upload new file
  *               - ""     -> remove existing attachment
@@ -90,8 +91,7 @@ export const getExpenses = async (filters = {}) => {
  * @param {string}  [payload.budgetTypeId]    - Budget Type ID from getBudgetType API
  * @param {number}  payload.totalAmount       - Total amount (mapped to "total")
  * @param {string}  [payload.remark]          - Remark / notes
- * @param {string}  [payload.vendorName]      - Vendor name
- * @param {string}  [payload.vendor]          - Fallback for vendorName
+ * @param {string}  [payload.vendorId]        - Vendor from the vendor list; "" for none
  * @param {string}  [payload.expenseId]       - Expense ID for updates; empty for new
  * @param {string}  [payload.id]              - Fallback for expenseId
  * @param {File}    [payload.file]            - New file to upload
@@ -112,16 +112,17 @@ export const addEditExpense = async (payload) => {
     // eventId: only send when type is "event"
     formData.append("eventId", isEventType ? payload.eventId || payload.event || "" : "");
 
-    // Budget Type ID
-    if (payload.budgetTypeId) {
-      formData.append("budgetTypeId", payload.budgetTypeId);
-    }
+    // Budget Type ID (required)
+    formData.append("budgetTypeId", payload.budgetTypeId || "");
 
     formData.append("total", Number(payload.totalAmount) || 0);
 
     // -- Optional fields --------------------------------------------------
-    formData.append("remark", payload.remark || "");
-    formData.append("vendorName", payload.vendorName || payload.vendor || "");
+    // Remark is optional, but when sent it must be 2+ chars, so skip it when empty
+    const remark = payload.remark?.trim();
+    if (remark) formData.append("remark", remark);
+    // Vendor is picked from the vendor list; "" means no vendor
+    formData.append("vendorId", payload.vendorId || "");
 
     // expenseId: empty string = create new, non-empty = update existing
     formData.append("expenseId", payload.expenseId || payload.id || "");
@@ -140,7 +141,19 @@ export const addEditExpense = async (payload) => {
       headers: { "Content-Type": "multipart/form-data" },
     });
 
-    return res.data;
+    const data = res.data;
+
+    // Axios validateStatus allows all status codes — check success flag manually
+    if (data?.success === false) {
+      const err = new Error(data?.message || "Failed to save expense");
+      err.response = {
+        status: res.status,
+        data,
+      };
+      throw err;
+    }
+
+    return data;
   } catch (error) {
     console.error("addEditExpense API Error:", error?.response || error);
     throw error;
@@ -260,6 +273,42 @@ export const requestEventExpenseApproval = async (payload) => {
     if (!/already pending/i.test(message)) {
       console.error("requestEventExpenseApproval API Error:", error?.response || error);
     }
+    throw error;
+  }
+};
+
+/**
+ * Send a reminder for a pending expense approval
+ *
+ * POST /smartOffice/sendExpenseApprovalReminder
+ * Body: { expenseId: string, notificationType: "whatsapp" | "email" | "both", phoneNumber?: string, email?: string }
+ *
+ * @param {Object} payload
+ * @param {string} payload.expenseId - Expense ID
+ * @param {"whatsapp"|"email"|"both"} payload.notificationType - Channel(s) to send the reminder on
+ * @param {string} [payload.phoneNumber] - Required for "whatsapp" and "both", with country code
+ * @param {string} [payload.email] - Required for "email" and "both"
+ * @returns {Promise<Object>}
+ */
+export const sendExpenseApprovalReminder = async (payload) => {
+  try {
+    const res = await api.post("/smartOffice/sendExpenseApprovalReminder", payload);
+
+    const data = res.data;
+
+    // Axios validateStatus allows all status codes — check success flag manually
+    if (data?.success === false) {
+      const err = new Error(data?.message || "Failed to send reminder");
+      err.response = {
+        status: res.status,
+        data,
+      };
+      throw err;
+    }
+
+    return data;
+  } catch (error) {
+    console.error("sendExpenseApprovalReminder API Error:", error?.response || error);
     throw error;
   }
 };

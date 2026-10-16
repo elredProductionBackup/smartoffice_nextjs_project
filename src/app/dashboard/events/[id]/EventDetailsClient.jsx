@@ -365,7 +365,7 @@ export default function EventDetailsClient() {
 
       <>
         {activeTab === "attendees" &&
-          <div className="min-h-[calc(100dvh-180px)] bg-[#F2F7FF] rounded-[20px]">
+          <div className="shrink-0 min-h-[calc(100dvh-180px)] bg-[#F2F7FF] rounded-[20px]">
             <Attendees eventId={eventId} />
           </div>
         }
@@ -404,10 +404,10 @@ export default function EventDetailsClient() {
         )}
 
         {activeTab === "logistics" &&
-          <div className="min-h-[calc(100dvh-180px)] bg-[#f2f7ff] rounded-[20px] p-4">
+          <div className="shrink-0 min-h-[calc(100dvh-180px)] bg-[#f2f7ff] rounded-[20px] p-4">
             <LogisticsContent /></div>}
         {activeTab === "checklist" &&
-          <div className="min-h-[calc(100dvh-180px)] bg-[#f2f7ff] rounded-[20px] p-4" >
+          <div className="shrink-0 min-h-[calc(100dvh-180px)] bg-[#f2f7ff] rounded-[20px] p-4" >
             <ChecklistContent eventId={eventId} /></div>}
         {activeTab === "eventcosting" &&
           <div className="w-full max-w-[1600px] px-[12px]">

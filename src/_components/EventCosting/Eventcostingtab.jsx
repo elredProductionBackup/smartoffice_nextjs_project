@@ -133,7 +133,7 @@ export function EventCostingTab({
         meta = {
           budgetCategoryVersionId: section.budgetCategoryVersionId ?? section.id,
           splitName: item.splitName,
-          vendorName: "",
+          vendorId: "",
         };
       }
     }
@@ -147,7 +147,7 @@ export function EventCostingTab({
         eventId,
         budgetCategoryVersionId: meta.budgetCategoryVersionId,
         splitName: meta.splitName,
-        vendorName: actual.vendorName ?? meta.vendorName ?? "",
+        vendorId: actual.vendorId ?? meta.vendorId ?? "",
         qty,
         rate,
         totalExpense: qty * rate,
@@ -225,26 +225,26 @@ export function EventCostingTab({
   const handleAddItem = (sectionId, description) => {
     const splitName = description.trim();
     if (!splitName) return;
-    setDraft((prev) => {
-      const section = prev.sections.find((s) => s.id === sectionId);
-      if (!section || section.items.some((item) => item.splitName === splitName)) return prev;
-      const itemId = makeItemId(section.budgetCategoryVersionId, splitName);
-      const nextSections = prev.sections.map((s) =>
-        s.id === sectionId
-          ? { ...s, items: [...s.items, { id: itemId, splitName, description: splitName }] }
-          : s
-      );
-      const nextVersions = prev.versions.map((version) => ({
-        ...version,
-        values: { ...version.values, [itemId]: { qty: 0, unitCost: 0 } },
-      }));
-      flushSplit(
-        { ...section, items: [...section.items, { id: itemId, splitName }] },
-        itemId,
-        nextVersions
-      );
-      return { sections: nextSections, versions: nextVersions };
-    });
+    // Built from the current draft (not inside a setDraft updater) — the save
+    // dispatches to Redux, and dispatching from an updater runs during render.
+    const section = draft.sections.find((s) => s.id === sectionId);
+    if (!section || section.items.some((item) => item.splitName === splitName)) return;
+    const itemId = makeItemId(section.budgetCategoryVersionId, splitName);
+    const nextSections = draft.sections.map((s) =>
+      s.id === sectionId
+        ? { ...s, items: [...s.items, { id: itemId, splitName, description: splitName }] }
+        : s
+    );
+    const nextVersions = draft.versions.map((version) => ({
+      ...version,
+      values: { ...version.values, [itemId]: { qty: 0, unitCost: 0 } },
+    }));
+    setDraft({ sections: nextSections, versions: nextVersions });
+    flushSplit(
+      { ...section, items: [...section.items, { id: itemId, splitName }] },
+      itemId,
+      nextVersions
+    );
   };
 
   const handleRemoveItem = (sectionId, itemId) => {
@@ -261,6 +261,7 @@ export function EventCostingTab({
     id,
     description,
     splitName: description,
+    vendorId: "",
     vendorName: "",
     billUploaded: false,
     attendees: "",
@@ -333,7 +334,7 @@ export function EventCostingTab({
       .map((si) =>
         flushExpense(
           si.id,
-          { qty: si.attendees, unitCost: si.unitCost, vendorName: si.vendorName },
+          { qty: si.attendees, unitCost: si.unitCost, vendorId: si.vendorId },
           si.attachment
         )
       )
@@ -536,6 +537,7 @@ function seedExpenseCards(model) {
           id: it.id,
           splitName: it.splitName,
           description: it.description,
+          vendorId: meta.vendorId || "",
           vendorName: meta.vendorName || "",
           billUploaded: !!meta.attachment,
           attendees: a.qty || "",

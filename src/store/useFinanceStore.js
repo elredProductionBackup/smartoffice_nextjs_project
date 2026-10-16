@@ -43,7 +43,8 @@ export function expenseToFinanceItem(expense) {
 // Map a raw API expense record into a finance-list item.
 function apiExpenseToFinanceItem(item) {
   const isApproved = item.approvedStatus === "approved";
-  const vendorName = (item.vendorName || "").trim() || "Unknown vendor";
+  // Vendor is looked up from vendorId; null when the expense has no vendor
+  const vendorName = (item.vendorDetails?.name || "").trim() || "Unknown vendor";
   const rawDate = item.createdAt || null;
 
   return {
