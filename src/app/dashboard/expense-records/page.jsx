@@ -340,9 +340,9 @@ function RowActionsMenu({ onPick, onDelete }) {
 /* ─── Send for approval: details → confirm → success ──────────────────────── */
 // Fixed approver for now
 const APPROVER_CONTACT = {
-  email: "rayyan@elred.io",
-  phoneNumber: "+917348166329", // sent to the API
-  whatsapp: "+91 73481 66329", // display only
+  email: "nandini@elred.io",
+  phoneNumber: "+919535984798", // sent to the API
+  whatsapp: "+91 95359 84798", // display only
 };
 
 // Backend error when a request for this expense is still awaiting a decision
