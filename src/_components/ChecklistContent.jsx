@@ -29,9 +29,9 @@ import { addToast } from "@/store/toastSlice";
 
 
 
-// Values are the actionable `status` stored by the backend
+// Values are the actionable `status` stored by the backend.
+// "pending" has no option, so StatusSelect shows its placeholder (same as master checklist)
 const TASK_STATUS_OPTIONS = [
-  { value: "pending", label: "Select status", dotClassName: "border border-slate-300 bg-white" },
   { value: "InProgress", label: "WIP", dotClassName: "bg-amber-500" },
   { value: "completed", label: "Done", dotClassName: "bg-green-600" },
   { value: "notRequired", label: "Not Required", dotClassName: "bg-slate-400" },
