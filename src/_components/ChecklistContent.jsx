@@ -20,8 +20,10 @@ import {
   removeEventSubTask,
   createEventComment,
   removeEventComment,
-  fetchMasterConfig
+  fetchMasterConfig,
+  saveMasterConfig
 } from "@/store/events/eventsThunks";
+import { setChecklistMaster } from "@/store/events/eventsSlice";
 import { addToast } from "@/store/toastSlice";
 
 
@@ -33,6 +35,14 @@ const TASK_STATUS_OPTIONS = [
   { value: "InProgress", label: "WIP", dotClassName: "bg-amber-500" },
   { value: "completed", label: "Done", dotClassName: "bg-green-600" },
   { value: "notRequired", label: "Not Required", dotClassName: "bg-slate-400" },
+];
+
+// Master checklist status is saved on the master list itself (PATCH /masterList),
+// which only accepts these values
+const MASTER_STATUS_OPTIONS = [
+  { value: "WIP", label: "WIP", dotClassName: "bg-amber-500" },
+  { value: "Done", label: "Done", dotClassName: "bg-green-600" },
+  { value: "Not Required", label: "Not Required", dotClassName: "bg-slate-400" },
 ];
 
 // Rows saved before the status field existed have no status: treat them as pending,
@@ -125,8 +135,6 @@ const ChecklistContent = ({ eventId }) => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [activeDifficulty, setActiveDifficulty] = useState(null);
   const [showDifficultyBar, setShowDifficultyBar] = useState(false);
-  // Master checklist rows aren't actionables, so their status is only kept on screen
-  const [masterStatus, setMasterStatus] = useState({}); // { [masterKey]: status }
 
   // Fetch tasks for this event ONLY
   useEffect(() => {
@@ -181,6 +189,24 @@ const ChecklistContent = ({ eventId }) => {
       })
     );
     if (setEventActionableStatus.rejected.match(result)) {
+      showError("Couldn't update status", result.payload || "Please try again.");
+    }
+  };
+
+  // The whole master list is saved together: apply the new status, save, roll back on failure
+  const changeMasterStatus = async (item, status) => {
+    if (status === item.status) return;
+
+    const previous = masterList;
+    dispatch(
+      setChecklistMaster(
+        masterList.map((m) => (m === item ? { ...m, status } : m))
+      )
+    );
+
+    const result = await dispatch(saveMasterConfig());
+    if (!saveMasterConfig.fulfilled.match(result)) {
+      dispatch(setChecklistMaster(previous));
       showError("Couldn't update status", result.payload || "Please try again.");
     }
   };
@@ -352,9 +378,9 @@ const ChecklistContent = ({ eventId }) => {
 
                   {/* Status */}
                   <StatusSelect
-                    value={masterStatus[masterKey] ?? "pending"}
-                    onChange={(value) => setMasterStatus((prev) => ({ ...prev, [masterKey]: value }))}
-                    options={TASK_STATUS_OPTIONS}
+                    value={item.status}
+                    onChange={(value) => changeMasterStatus(item, value)}
+                    options={MASTER_STATUS_OPTIONS}
                   />
 
                   <span className="shrink-0 w-[200px]" />

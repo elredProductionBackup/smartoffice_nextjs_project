@@ -267,6 +267,7 @@ const eventSlice = createSlice({
               : c.priority === "mildlyDifficult"
                 ? "medium"
                 : "easy",
+          status: c.status || "",
           _id: c._id,
         }));
 
@@ -301,6 +302,7 @@ const eventSlice = createSlice({
                 : serverItem.priority === "mildlyDifficult"
                   ? "medium"
                   : "easy",
+            status: serverItem.status || "",
             _id: serverItem._id,
           };
 

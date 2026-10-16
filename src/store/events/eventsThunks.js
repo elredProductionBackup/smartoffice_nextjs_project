@@ -120,6 +120,8 @@ export const saveMasterConfig = createAsyncThunk(
               : c.difficulty === "medium"
                 ? "mildlyDifficult"
                 : "easyToDo",
+          // Backend accepts only "WIP" | "Done" | "Not Required"; omit until one is picked
+          ...(c.status ? { status: c.status } : {}),
         })),
         pointsList: pointsMaster.map((p) => ({
           pointName: p.label,
