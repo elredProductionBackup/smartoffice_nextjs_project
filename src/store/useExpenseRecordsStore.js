@@ -117,6 +117,7 @@ function apiExpenseToRecord(item) {
   const attachments = (
     Array.isArray(item.attachment) ? item.attachment : item.attachment ? [item.attachment] : []
   ).filter(Boolean);
+  const billUrl = attachments[0] || "";
 
   const status = getApprovalStatusLabel(item);
 
@@ -139,6 +140,7 @@ function apiExpenseToRecord(item) {
     vendorId: item.vendorDetails?.vendorId || "",
     bill: item.billFileName || item.bill || billUrl?.split("/").pop() || "-",
     billUrl,
+    billUrls: attachments,
     paymentStatus: item.paymentStatus || "Pending",
     status,
     // Send stays visible (disabled) while "Sent"; disappears once approved.
