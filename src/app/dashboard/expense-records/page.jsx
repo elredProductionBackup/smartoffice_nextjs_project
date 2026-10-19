@@ -611,7 +611,10 @@ export default function ExpenseRecordsPage() {
     const el = scrollRef.current;
     if (!el) return;
     const max = el.scrollWidth - el.clientWidth;
-    setEdges({ left: el.scrollLeft > 4, right: el.scrollLeft < max - 4 });
+    const left = el.scrollLeft > 4;
+    const right = el.scrollLeft < max - 4;
+    // Only re-render when an edge flag actually flips, not on every scroll frame
+    setEdges((prev) => (prev.left === left && prev.right === right ? prev : { left, right }));
   };
 
   useEffect(() => {
@@ -824,7 +827,7 @@ export default function ExpenseRecordsPage() {
                 className="grid gap-3 py-4 border-b border-[#EAEEF2] font-nunito font-bold text-[13px] text-[#64748B]"
                 style={{ gridTemplateColumns: TABLE_COLUMNS }}
               >
-                <div className={`sticky left-0 z-[4] bg-white pr-2 ${pinShadow}`}>Description</div>
+                <div className={`sticky left-0 z-[4] bg-white -my-4 py-4 pl-2 pr-2 flex items-center ${pinShadow}`}>Description</div>
                 <div>Portfolio</div>
                 <div>Date</div>
                 <div>Total Amount</div>
@@ -871,11 +874,11 @@ export default function ExpenseRecordsPage() {
                     style={{ gridTemplateColumns: TABLE_COLUMNS }}
                   >
                     <div
-                      className={`sticky left-0 z-[2] bg-white group-hover:bg-[#EEF4FF] pl-2 pr-2 truncate font-bold text-[#0B57D0] hover:underline cursor-pointer capitalize ${pinShadow}`}
+                      className={`sticky left-0 z-[2] self-stretch -my-5 py-5 flex items-center min-w-0 bg-white group-hover:bg-[#EEF4FF] pl-2 pr-2 font-bold text-[#0B57D0] cursor-pointer capitalize ${pinShadow}`}
                       title={expense.description}
                       onClick={() => handleExpenseClick(expense)}
                     >
-                      {expense.description}
+                      <span className="truncate hover:underline">{expense.description}</span>
                     </div>
                     <div className="text-[#475569]">{expense.portfolio}</div>
                     <div className="text-[#64748B]">{expense.date}</div>
