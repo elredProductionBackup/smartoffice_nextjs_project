@@ -30,16 +30,18 @@ import { addToast } from "@/store/toastSlice";
 
 
 // Values are the actionable `status` stored by the backend.
-// "pending" has no option, so StatusSelect shows its placeholder (same as master checklist)
+// "pending" is the "Select Status" option, so picking it resets the row and StatusSelect shows its placeholder
 const TASK_STATUS_OPTIONS = [
+  { value: "pending", label: "Select Status", dotClassName: "border border-slate-300", isPlaceholder: true },
   { value: "InProgress", label: "WIP", dotClassName: "bg-amber-500" },
   { value: "completed", label: "Done", dotClassName: "bg-green-600" },
   { value: "notRequired", label: "Not Required", dotClassName: "bg-slate-400" },
 ];
 
 // Master checklist status is saved on the master list itself (PATCH /masterList),
-// which only accepts these values
+// which only accepts these values ("" clears it: the status is left out of the save)
 const MASTER_STATUS_OPTIONS = [
+  { value: "", label: "Select Status", dotClassName: "border border-slate-300", isPlaceholder: true },
   { value: "WIP", label: "WIP", dotClassName: "bg-amber-500" },
   { value: "Done", label: "Done", dotClassName: "bg-green-600" },
   { value: "Not Required", label: "Not Required", dotClassName: "bg-slate-400" },
@@ -195,7 +197,7 @@ const ChecklistContent = ({ eventId }) => {
 
   // The whole master list is saved together: apply the new status, save, roll back on failure
   const changeMasterStatus = async (item, status) => {
-    if (status === item.status) return;
+    if (status === (item.status || "")) return;
 
     const previous = masterList;
     dispatch(
