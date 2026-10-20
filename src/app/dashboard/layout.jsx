@@ -266,7 +266,7 @@ const userMenu = [
 
             {tooltip && (
               <span
-                className="pointer-events-none fixed -translate-y-1/2 z-50
+                className="font-heading pointer-events-none fixed -translate-y-1/2 z-50
                 whitespace-nowrap rounded-lg bg-[#F2F7FF] border border-[#D3E3FD] px-3 py-1.5 text-[13px] font-medium text-[#333333] shadow-md"
                 style={{ top: tooltip.top, left: tooltip.left }}
               >

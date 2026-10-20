@@ -239,7 +239,7 @@ export default function EventDetailsClient() {
           <div className="flex-1 flex flex-col justify-between gap-[20px]">
             <div className="flex flex-col gap-[20px] items-start">
               <div className="flex flex-col gap-1 items-start">
-                <div className="text-[36px] font-semibold flex items-center gap-[20px]">
+                <div className="font-heading text-[36px] font-semibold flex items-center gap-[20px]">
                   <span className="maki--arrow rotate-180 inline-block cursor-pointer"
                     onClick={() => {
                       // const isPast = moment(event?.startDateTime).isBefore(moment());

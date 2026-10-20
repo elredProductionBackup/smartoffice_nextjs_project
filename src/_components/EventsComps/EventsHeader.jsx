@@ -13,7 +13,7 @@ export default function EventsHeader() {
       <div>
         {/* Title Row */}
         <div className="flex items-center gap-[20px] mb-[20px]">
-          <h2 className="text-[32px] font-semibold ">Events</h2>
+          <h2 className="font-heading text-[32px] font-semibold ">Events</h2>
         </div>
       </div>
 

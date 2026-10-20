@@ -263,7 +263,7 @@ export default function DiscussionsPage() {
 
   return (
     <div className="h-[calc(100vh-120px)] my-5 flex flex-col font-nunito">
-      <h2 className="text-[32px] leading-[136%] font-bold text-[#333333]">Discussions</h2>
+      <h2 className="font-heading text-[32px] leading-[136%] font-bold text-[#333333]">Discussions</h2>
 
       <div className="flex-1 flex gap-6 min-h-0 mt-[20px]">
         {/* Left panel — Topics */}

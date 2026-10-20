@@ -767,7 +767,7 @@ export default function ExpenseRecordsPage() {
 
       {/* Header */}
       <div className="mb-7">
-        <h1 className="font-nunito font-bold text-[32px] leading-[136%] text-[#1E293B] tracking-tight">My Expenses</h1>
+        <h1 className="font-heading font-bold text-[32px] leading-[136%] text-[#1E293B] tracking-tight">My Expenses</h1>
         <p className="font-nunito font-medium text-[17px] leading-[136%] text-[#64748B] tracking-normal mt-1">
           Track and manage all your expense submissions
         </p>

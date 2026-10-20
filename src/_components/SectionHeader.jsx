@@ -75,7 +75,7 @@ export default function SectionHeader({
   return (
     <div className="flex flex-col w-full relative">
       {/* Title */}
-      <h2 className="text-[32px] font-semibold mb-[20px]">{title}</h2>
+      <h2 className="font-heading text-[32px] font-semibold mb-[20px]">{title}</h2>
 
       {/* Tabs */}
        {tabs.length > 0 && (

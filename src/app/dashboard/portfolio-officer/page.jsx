@@ -91,7 +91,7 @@ const PortfolioOfficerPage = () => {
 
         {/* Left: name + role */}
         <div className="shrink-0">
-          <h1 className="text-[32px] font-bold text-[#1a1a2e] leading-tight">{fullName}</h1>
+          <h1 className="font-heading text-[32px] font-bold text-[#1a1a2e] leading-tight">{fullName}</h1>
           <p className="text-[15px] text-[#888] mt-1">Learning Portfolio Officer · FY 2026</p>
         </div>
 

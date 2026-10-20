@@ -71,7 +71,7 @@ const confirmLogout = () => {
                   className="w-[28px] h-[28px] rounded-full object-cover"
                 />
               )}
-              <span className="text-[16px] font-[500] text-[#333]">
+              <span className="font-heading text-[16px] font-[500] text-[#333]">
                 {user.networkClusterDetails.name}
               </span>
             </div>

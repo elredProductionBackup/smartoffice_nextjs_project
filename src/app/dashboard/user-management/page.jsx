@@ -261,7 +261,7 @@ export default function UserManagementPage() {
 
   return (
     <div className="h-[calc(100vh-120px)] my-5 flex flex-col font-nunito">
-      <h2 className="text-[32px] leading-[136%] font-bold text-[#333333]">User Management</h2>
+      <h2 className="font-heading text-[32px] leading-[136%] font-bold text-[#333333]">User Management</h2>
 
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-3 mt-5 shrink-0">

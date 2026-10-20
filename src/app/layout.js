@@ -1,4 +1,5 @@
 import { Nunito_Sans } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import "../icons.css";
 import MemberInfoPopup from "@/_components/MemberInfoPopup";
@@ -11,6 +12,13 @@ import favicon from "@/assets/logo/favicon.png";
 const nunito_sans = Nunito_Sans({
   variable: "--font-nunito-sans",
   subsets: ["latin"],
+});
+
+const mencken = localFont({
+  src: "../assets/fonts/MenckenStd.otf",
+  variable: "--font-mencken",
+  weight: "100 900",
+  display: "swap",
 });
 
 export const metadata = {
@@ -26,7 +34,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body
-        className={`${nunito_sans.variable} antialiased relative`}
+        className={`${nunito_sans.variable} ${mencken.variable} antialiased relative`}
         suppressHydrationWarning
       >
         <Providers>

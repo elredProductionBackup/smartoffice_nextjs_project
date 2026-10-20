@@ -528,7 +528,7 @@ export default function SendBulkPageClient() {
           >
             <FiArrowLeft className="text-[18px]" />
           </button>
-          <h1 className="text-[32px] font-semibold text-[#1a1a2e]">New broadcast</h1>
+          <h1 className="font-heading text-[32px] font-semibold text-[#1a1a2e]">New broadcast</h1>
         </div>
         <button
           onClick={() => router.push("/dashboard/send-bulk/reports")}

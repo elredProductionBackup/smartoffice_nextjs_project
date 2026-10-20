@@ -75,7 +75,7 @@ const MyProfilePage = () => {
           <FiArrowLeft className="text-2xl" />
         </button>
         <div>
-          <h2 className="text-[32px] leading-[136%] font-bold text-[#333333] mb-1">My Profile</h2>
+          <h2 className="font-heading text-[32px] leading-[136%] font-bold text-[#333333] mb-1">My Profile</h2>
           <p className="text-[#777777] font-medium text-[18px] leading-[136%]">Your account details</p>
         </div>
       </div>
