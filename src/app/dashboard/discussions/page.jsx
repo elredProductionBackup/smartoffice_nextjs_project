@@ -2,17 +2,23 @@
 
 import { useMemo, useState } from "react";
 import { FiMessageSquare, FiPlus, FiSearch } from "react-icons/fi";
-import NewTopicModal, { getInitials } from "./NewTopicModal";
+import NewTopicModal, { CURRENT_USER_ID, PEOPLE, getInitials } from "./NewTopicModal";
 import ChatPanel from "./ChatPanel";
+import ThreadPanel from "./ThreadPanel";
 
 const FILTERS = [
   { key: "all", label: "All" },
   { key: "approval", label: "Needs my approval" },
 ];
 
+// A topic needs my approval while any request addressed to me is still pending
+const needsMyApproval = (topic) =>
+  (topic.messages || []).some((m) => m.approval?.status === "pending" && m.approval.approverId === CURRENT_USER_ID);
+
 const AVATAR_COLORS = ["#EA580C", "#1D72E8", "#0E8FA8", "#7C3AED", "#16A34A"];
 
 function TopicItem({ topic, active, onClick }) {
+  const needsApproval = needsMyApproval(topic);
   const color = AVATAR_COLORS[(topic.title?.length || 0) % AVATAR_COLORS.length];
 
   return (
@@ -33,15 +39,15 @@ function TopicItem({ topic, active, onClick }) {
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
           <p className="font-bold text-[16px] leading-[140%] text-[#1E293B]">{topic.title}</p>
-          <span className="text-[13px] text-[#94A3B8] whitespace-nowrap mt-0.5">{topic.time}</span>
+          <span suppressHydrationWarning className="text-[13px] text-[#94A3B8] whitespace-nowrap mt-0.5">{topic.time}</span>
         </div>
         <p className={`text-[14px] truncate mt-0.5 ${topic.unread ? "font-semibold text-[#1E293B]" : "text-[#64748B]"}`}>
           {topic.lastMessage}
         </p>
 
-        {(topic.needsApproval || topic.unread > 0) && (
+        {(needsApproval || topic.unread > 0) && (
           <div className="flex items-center justify-between mt-2">
-            {topic.needsApproval ? (
+            {needsApproval ? (
               <span className="px-2.5 py-1 rounded-md bg-[#FDECD8] text-[#B45309] text-[13px] font-semibold">
                 Needs your approval
               </span>
@@ -60,12 +66,94 @@ function TopicItem({ topic, active, onClick }) {
   );
 }
 
+// Dummy topic until the discussions API exists
+const DUMMY_TOPIC_ID = "dummy-bangalore";
+
+const buildDummyTopics = () => {
+  const person = (id) => PEOPLE.find((p) => p.id === id);
+  const minutesAgo = (m) => new Date(Date.now() - m * 60 * 1000).toISOString();
+
+  return [
+    {
+      id: DUMMY_TOPIC_ID,
+      title: "Bangalore hotel advance",
+      event: "Leadership Offsite, Bangalore",
+      people: [person("u1"), person("u3"), person("u6"), person("u7")],
+      owner: "Aditi Rao",
+      time: new Date(minutesAgo(2)).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }),
+      lastMessage: "Aditi: Approval request · ₹2,500",
+      unread: 0,
+      messages: [
+        {
+          id: "m1",
+          authorId: "u1",
+          text: "Shortlisted Taj MG Road for the offsite. They need an advance to hold 12 rooms till Friday.",
+          files: [{ id: "f1", name: "Taj-MG-Road-quote.pdf", size: 214 * 1024 }],
+          approval: {
+            amount: "10000",
+            approverId: "u3",
+            approveLabel: "Approve",
+            declineLabel: "Decline",
+            notifyEmail: true,
+            notifyWhatsapp: true,
+            status: "pending",
+          },
+          reactions: { "👀": ["u6"], "👍": ["u7"] },
+          createdAt: minutesAgo(22),
+        },
+        {
+          id: "m2",
+          authorId: "u6",
+          text: "Attendee list is final at 24, so 12 twin-sharing rooms works.",
+          files: [],
+          approval: null,
+          reactions: { "✅": ["u3", "u7"] },
+          createdAt: minutesAgo(12),
+        },
+        {
+          id: "m3",
+          authorId: "u7",
+          text: "I will share the room allocation sheet by evening.",
+          files: [],
+          approval: null,
+          reactions: { "🙌": ["u6"] },
+          createdAt: minutesAgo(5),
+        },
+        {
+          id: "m4",
+          authorId: "u7",
+          text: "",
+          files: [],
+          approval: {
+            amount: "2500",
+            approverId: CURRENT_USER_ID,
+            approveLabel: "Approve",
+            declineLabel: "Decline",
+            notifyEmail: false,
+            notifyWhatsapp: false,
+            status: "pending",
+          },
+          reactions: {},
+          createdAt: minutesAgo(2),
+        },
+      ],
+    },
+  ];
+};
+
 export default function DiscussionsPage() {
-  const [topics, setTopics] = useState([]);
+  const [topics, setTopics] = useState(buildDummyTopics);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
-  const [activeTopicId, setActiveTopicId] = useState(null);
+  const [activeTopicId, setActiveTopicId] = useState(DUMMY_TOPIC_ID);
   const [isNewTopicOpen, setIsNewTopicOpen] = useState(false);
+  // Open replies thread: { messageId, draft }
+  const [thread, setThread] = useState(null);
+
+  const openTopic = (id) => {
+    setActiveTopicId(id);
+    setThread(null);
+  };
 
   // Local only until the discussions API exists
   const handleCreateTopic = ({ title, event, people }) => {
@@ -77,12 +165,11 @@ export default function DiscussionsPage() {
       owner: people[0]?.name || "",
       time: new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }),
       lastMessage: `${people.length} ${people.length === 1 ? "person" : "people"}${event ? ` · ${event}` : ""}`,
-      needsApproval: false,
       unread: 0,
       messages: [],
     };
     setTopics((prev) => [topic, ...prev]);
-    setActiveTopicId(topic.id);
+    openTopic(topic.id);
   };
 
   const handleSendMessage = (message) => {
@@ -104,17 +191,70 @@ export default function DiscussionsPage() {
     });
   };
 
+  // Toggles the current user's reaction on a message
+  const handleReact = (messageId, emoji) => {
+    setTopics((prev) =>
+      prev.map((t) => {
+        if (t.id !== activeTopicId) return t;
+        return {
+          ...t,
+          messages: t.messages.map((m) => {
+            if (m.id !== messageId) return m;
+            const users = m.reactions?.[emoji] || [];
+            const nextUsers = users.includes(CURRENT_USER_ID)
+              ? users.filter((id) => id !== CURRENT_USER_ID)
+              : [...users, CURRENT_USER_ID];
+            return { ...m, reactions: { ...m.reactions, [emoji]: nextUsers } };
+          }),
+        };
+      })
+    );
+  };
+
+  const handleDecide = (messageId, status) => {
+    setTopics((prev) =>
+      prev.map((t) =>
+        t.id !== activeTopicId
+          ? t
+          : {
+              ...t,
+              messages: t.messages.map((m) =>
+                m.id === messageId && m.approval
+                  ? { ...m, approval: { ...m.approval, status, decidedAt: new Date().toISOString() } }
+                  : m
+              ),
+            }
+      )
+    );
+  };
+
+  const handleThreadReply = (messageId, reply) => {
+    setTopics((prev) =>
+      prev.map((t) =>
+        t.id !== activeTopicId
+          ? t
+          : {
+              ...t,
+              messages: t.messages.map((m) =>
+                m.id === messageId ? { ...m, thread: [...(m.thread || []), reply] } : m
+              ),
+            }
+      )
+    );
+  };
+
   const handleUpdatePeople = (people) => {
     setTopics((prev) => prev.map((t) => (t.id === activeTopicId ? { ...t, people } : t)));
   };
 
   const activeTopic = topics.find((t) => t.id === activeTopicId);
+  const threadMessage = thread && activeTopic?.messages.find((m) => m.id === thread.messageId);
 
   const visibleTopics = useMemo(() => {
     const q = search.trim().toLowerCase();
     return topics.filter(
       (t) =>
-        (filter === "all" || t.needsApproval) &&
+        (filter === "all" || needsMyApproval(t)) &&
         (!q || t.title?.toLowerCase().includes(q) || t.lastMessage?.toLowerCase().includes(q))
     );
   }, [topics, search, filter]);
@@ -180,7 +320,7 @@ export default function DiscussionsPage() {
                   key={topic.id}
                   topic={topic}
                   active={topic.id === activeTopicId}
-                  onClick={() => setActiveTopicId(topic.id)}
+                  onClick={() => openTopic(topic.id)}
                 />
               ))
             ) : (
@@ -203,6 +343,10 @@ export default function DiscussionsPage() {
               key={activeTopic.id}
               topic={activeTopic}
               onSend={handleSendMessage}
+              onReact={handleReact}
+              onDecide={handleDecide}
+              threadMessageId={thread?.messageId}
+              onOpenThread={(messageId, draft = "") => setThread({ messageId, draft })}
               onUpdatePeople={handleUpdatePeople}
             />
           ) : (
@@ -221,6 +365,21 @@ export default function DiscussionsPage() {
             </div>
           )}
         </div>
+
+        {/* Replies side panel */}
+        {activeTopic && threadMessage && (
+          <div className="w-[340px] shrink-0 bg-[#F2F7FF] rounded-[20px] overflow-hidden">
+            <ThreadPanel
+              key={`${threadMessage.id}-${thread.draft}`}
+              topic={activeTopic}
+              message={threadMessage}
+              initialDraft={thread.draft}
+              onClose={() => setThread(null)}
+              onReply={handleThreadReply}
+              onDecide={handleDecide}
+            />
+          </div>
+        )}
       </div>
 
       {isNewTopicOpen && (
