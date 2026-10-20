@@ -47,7 +47,7 @@ const handleSaveExpense = (expense) => {
     <div className={`flex flex-col rounded-2xl bg-[#F2F7FF] px-6 py-6 min-h-[500px] ${fillHeight ? "h-full" : "max-h-[500px]"}`}>
       {/* Header */}
       <div className="flex items-center justify-between mb-5 shrink-0">
-        <h3 className="text-[20px] font-bold text-[#333]">
+        <h3 className="font-heading text-[20px] font-bold text-[#333]">
           {isFinanceManager ? "Approvals" : "Finance"}
         </h3>
         <Link

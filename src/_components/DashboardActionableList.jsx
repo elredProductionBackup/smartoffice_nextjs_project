@@ -34,7 +34,7 @@ export default function DashboardActionableList({ data = [], loading = false, fi
         <>
           {/* Header */}
           <div className="flex items-center justify-between mb-[20px]">
-            <h3 className="text-[20px] font-[700] text-[#333]">Actionable</h3>
+            <h3 className="font-heading text-[20px] font-[700] text-[#333]">Actionable</h3>
             <Link href={`/dashboard/actionable?item=all&page=1`} className="text-[14px] font-[600] text-[#0B57D0] border border-[#0B57D0] px-[14px] py-[4px] rounded-full cursor-pointer">
               {data.length ? `View all` : `Go to actionable`}
             </Link>
