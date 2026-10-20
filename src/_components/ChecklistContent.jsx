@@ -370,7 +370,7 @@ const ChecklistContent = ({ eventId }) => {
               return (
                 <div
                   key={masterKey}
-                  className="flex min-h-[80px] items-center gap-3 pb-[20px] pt-[20px] pl-2 border-b border-[#d4dff1]"
+                  className="flex min-h-[80px] items-center gap-3 pb-[20px] pt-[20px] pl-2 border-b border-[#d4dff1] last:border-b-0"
                 >
                   {/* Same columns as event rows so everything lines up */}
                   <span className="shrink-0 w-[18px]" />
@@ -420,7 +420,7 @@ const ChecklistContent = ({ eventId }) => {
                 return (
                   <div
                     key={taskId}
-                    className="flex min-h-[80px] items-start gap-3 pb-[20px] pt-[20px] pl-2 border-b border-[#d4dff1]"
+                    className="flex min-h-[80px] items-start gap-3 pb-[20px] pt-[20px] pl-2 border-b border-[#d4dff1] last:border-b-0"
                   >
                     {/* Checkbox */}
                     <div className="pt-[5px]">
