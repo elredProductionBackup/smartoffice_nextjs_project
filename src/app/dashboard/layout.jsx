@@ -91,6 +91,7 @@ import { useSelector } from "react-redux";
 import { selectIsFinanceOfficer, selectIsLearningOfficer } from "@/store/auth/authSlice";
 import { FiCheckSquare, FiDollarSign, FiHome, FiSend } from "react-icons/fi";
 import { HiOutlineChatBubbleLeftRight } from "react-icons/hi2";
+import { LuUserCog } from "react-icons/lu";
 import { FaFileInvoiceDollar } from "react-icons/fa6";
 
 export default function DashboardLayout({ children }) {
@@ -138,6 +139,11 @@ export default function DashboardLayout({ children }) {
     name: "Discussions",
     path: "/dashboard/discussions",
     icon: <HiOutlineChatBubbleLeftRight className="text-[24px]" />,
+  },
+  {
+    name: "User Management",
+    path: "/dashboard/user-management",
+    icon: <LuUserCog className="text-[23px]" />,
   },
 ];
 
