@@ -6,9 +6,12 @@ import { closeTopEventsModal } from "@/store/events/eventsUiSlice";
 import MasterChecklistModal from "./MasterChecklistModal";
 import ChecklistFormModal from "./ChecklistFormModal";
 // import { useEffect, useState } from "react";
+import { useState } from "react";
+import SuccessPopup from "@/_components/ConfirmationPopups/SuccessPopup";
 import PointSystemModal from "./PointSystemModal";
 import { saveMasterConfig } from "@/store/events/eventsThunks";
 import { setChecklistMaster } from "@/store/events/eventsSlice";
+import { addToast } from "@/store/toastSlice";
 
 // Other pages share the modal stack, so only render the types handled here
 const HANDLED_TYPES = ["MASTER_CHECKLIST", "CHECKLIST_FORM", "POINT_SYSTEM"];
@@ -20,6 +23,7 @@ export default function EventsPopups() {
     (state) => state.eventsUi.modalStack
   );
   const checklistMaster = useSelector((state) => state.events.checklistMaster);
+  const [success, setSuccess] = useState(null); // { title, message } after a save
 
   const handleSubmit = async (data, mode, index) => {
     const current = [...checklistMaster];
@@ -34,15 +38,42 @@ export default function EventsPopups() {
 
     if (saveMasterConfig.fulfilled.match(res)) {
       dispatch(closeTopEventsModal());
+      setSuccess({
+        title: mode === "add" ? "Item added" : "Item updated",
+        message: `"${data.label}" has been ${mode === "add" ? "added to" : "updated in"} the master checklist.`,
+      });
+    } else {
+      dispatch(setChecklistMaster(checklistMaster)); // roll back the unsaved change
+      dispatch(
+        addToast({
+          message: {
+            title: mode === "add" ? "Couldn't add item" : "Couldn't update item",
+            descrip: res.payload || "Please try again.",
+          },
+          type: "error",
+        })
+      );
     }
   };
 
 
 
-  if (!modalStack.length) return null;
+  // Sits above the master checklist modal (z-index 100+)
+  const successPopup = (
+    <SuccessPopup
+      isOpen={!!success}
+      title={success?.title}
+      message={success?.message}
+      onClose={() => setSuccess(null)}
+      zIndex={1000}
+    />
+  );
+
+  if (!modalStack.length) return successPopup;
 
   return (
     <>
+      {successPopup}
       {modalStack.map((modal, index) => {
         if (!HANDLED_TYPES.includes(modal.type)) return null;
 

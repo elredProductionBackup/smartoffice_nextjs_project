@@ -2,6 +2,12 @@ import { createSlice } from "@reduxjs/toolkit";
 import { closeEventThunk, createEventActionable, createEventComment, createEventSubTask, deleteDocument, deleteEventThunk, deleteMembersMedia, fetchBudgetCategoryVersions, fetchCollaborators, fetchDocuments, fetchEventChecklist, fetchEventDetails, fetchEventMembers, fetchEvents, fetchEventTaskSummaries, fetchMasterConfig, fetchMembersMedia, removeEventActionable, removeEventComment, removeEventSubTask, saveBudgetCategoryVersion, saveEventExpense, saveMasterConfig, toggleEventActionable, setEventActionableStatus, updateEventActionable, updateEventSubTask, uploadDocument, uploadMemberMedia } from "./eventsThunks";
 import moment from "moment";
 
+// Master checklist is always kept in alphabetical order by label
+const sortChecklist = (list) =>
+  [...list].sort((a, b) =>
+    (a.label || "").localeCompare(b.label || "", undefined, { sensitivity: "base" })
+  );
+
 const initialState = {
   groupedEvents: [],
   rawEvents: [],
@@ -194,7 +200,7 @@ const eventSlice = createSlice({
     },
     resetEventsState: () => initialState,
     setChecklistMaster(state, action) {
-      state.checklistMaster = action.payload;
+      state.checklistMaster = sortChecklist(action.payload);
     },
     setPointsMaster(state, action) {
       state.pointsMaster = action.payload;
@@ -270,6 +276,7 @@ const eventSlice = createSlice({
           status: c.status || "",
           _id: c._id,
         }));
+        state.checklistMaster = sortChecklist(state.checklistMaster);
 
         state.pointsMaster = pointsList.map((p) => ({
           label: p.pointName,
@@ -313,8 +320,10 @@ const eventSlice = createSlice({
           }
         });
 
-        state.checklistMaster = state.checklistMaster.filter((local) =>
-          serverChecklist.some((s) => s._id === local._id)
+        state.checklistMaster = sortChecklist(
+          state.checklistMaster.filter((local) =>
+            serverChecklist.some((s) => s._id === local._id)
+          )
         );
 
         serverPoints.forEach((p) => {
