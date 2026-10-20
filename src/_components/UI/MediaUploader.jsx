@@ -1,6 +1,7 @@
 "use client";
 import { openEventsModal } from "@/store/events/eventsUiSlice";
 import Image from "next/image";
+import { Download } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -64,6 +65,22 @@ export default function MediaUploader({
         },
       })
     );
+  };
+
+  // Opens the original file (the PDF itself, not its preview image) in a new tab
+  const openFile = (item) => {
+    if (item.fileURL) window.open(item.fileURL, "_blank", "noopener,noreferrer");
+  };
+
+  // Goes through our own /api/download route, which forces a real download
+  // (the storage blocks browser fetches, and <a download> is ignored cross-origin)
+  const downloadFile = (item) => {
+    if (!item.fileURL) return;
+    const link = document.createElement("a");
+    link.href = `/api/download?fileUrl=${encodeURIComponent(item.fileURL)}`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
   };
 
   const displayList = [
@@ -140,7 +157,11 @@ export default function MediaUploader({
             return (
               <div
                 key={item._id || item.fileURL}
-                className="relative aspect-square rounded-[16px] overflow-hidden bg-[#F2F4F7] group"
+                role="link"
+                tabIndex={0}
+                onClick={() => openFile(item)}
+                onKeyDown={(e) => e.key === "Enter" && openFile(item)}
+                className="relative aspect-square rounded-[16px] overflow-hidden bg-[#F2F4F7] group cursor-pointer"
               >
                 <Image
                   src={src}
@@ -149,12 +170,28 @@ export default function MediaUploader({
                   className="object-cover"
                 />
 
-                <button
-                  onClick={() => handleDelete(item)}
-                  className="absolute bottom-[12px] right-[12px] w-[30px] h-[30px] rounded-[9px] bg-[#8080804D] text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition backdrop-blur-[3.7px] cursor-pointer"
-                >
-                  <span className="fluent--delete-12-filled"></span>
-                </button>
+                <div className="absolute bottom-[12px] right-[12px] flex gap-[8px] opacity-0 group-hover:opacity-100 transition">
+                  <button
+                    title="Download"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      downloadFile(item);
+                    }}
+                    className="w-[30px] h-[30px] rounded-[9px] bg-[#8080804D] text-white flex items-center justify-center backdrop-blur-[3.7px] cursor-pointer"
+                  >
+                    <Download size={16} />
+                  </button>
+                  <button
+                    title="Delete"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(item);
+                    }}
+                    className="w-[30px] h-[30px] rounded-[9px] bg-[#8080804D] text-white flex items-center justify-center backdrop-blur-[3.7px] cursor-pointer"
+                  >
+                    <span className="fluent--delete-12-filled"></span>
+                  </button>
+                </div>
               </div>
             );
           })}
