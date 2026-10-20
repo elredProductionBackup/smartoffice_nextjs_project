@@ -3,11 +3,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { HiEllipsisVertical, HiOutlineTrash } from "react-icons/hi2";
+import { HiEllipsisVertical, HiOutlinePencilSquare, HiOutlineTrash } from "react-icons/hi2";
 import MembersTableShimmer from "@/_components/Shimmer/MembersTableShimmer";
 
 // Three-dot menu at the end of a row. Opens upwards near the bottom of the list.
-const RowMenu = ({ onDelete, openUp }) => {
+const RowMenu = ({ onEdit, onDelete, openUp }) => {
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
 
@@ -21,7 +21,7 @@ const RowMenu = ({ onDelete, openUp }) => {
   }, [open]);
 
   return (
-    <div className="relative ml-auto" ref={menuRef}>
+    <div className="relative ml-auto" ref={menuRef} onClick={(e) => e.stopPropagation()}>
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
@@ -38,6 +38,19 @@ const RowMenu = ({ onDelete, openUp }) => {
           }`}
           style={{ boxShadow: "0px 4px 4px 0px #99999940" }}
         >
+          {onEdit && (
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                onEdit();
+              }}
+              className="w-full flex items-center gap-3 rounded-[8px] px-2 py-2 text-[18px] font-medium text-[#333] hover:bg-[#F2F7FF] cursor-pointer"
+            >
+              <HiOutlinePencilSquare className="text-2xl" />
+              Edit
+            </button>
+          )}
           <button
             type="button"
             onClick={() => {
@@ -65,7 +78,9 @@ export default function AlliancesTable({
   error = false,
   onRetry = () => {},
   lastRowRef,
+  onEdit, // (item) => void; adds Edit to the row menu
   onDelete, // (item) => void; the row menu only shows when this is passed
+  onRowClick, // (item) => void; opens the details popup
 }) {
   const isSearching = search?.length >= 3;
   const isEmpty = data.length === 0;
@@ -140,8 +155,9 @@ export default function AlliancesTable({
           <div
             key={item.id}
             ref={index === data.length - 1 ? lastRowRef : undefined}
+            onClick={() => onRowClick?.(item)}
             className={`
-              flex flex-1 items-center py-[20px] px-[30px]
+              flex flex-1 items-center py-[20px] px-[30px] ${onRowClick ? "cursor-pointer" : ""}
               bg-[#F2F7FF] transition-all duration-200
               hover:bg-[#E7F0FF]
               hover:shadow-[0px_4px_4px_0px_#C7C7C740]
@@ -162,7 +178,7 @@ export default function AlliancesTable({
             </div>
 
             {/* RIGHT - Action Icons */}
-            <div className="flex flex-1 items-center gap-4 text-[#666666]">
+            <div className="flex flex-1 items-center gap-4 text-[#666666]" onClick={(e) => e.stopPropagation()}>
               <Link
                 href={`https://wa.me/${item.phone?.replace(/[^0-9]/g, "")}`}
                 target="_blank"
@@ -191,6 +207,7 @@ export default function AlliancesTable({
 
               {onDelete && (
                 <RowMenu
+                  onEdit={onEdit && (() => onEdit(item))}
                   onDelete={() => onDelete(item)}
                   openUp={data.length > 3 && index >= data.length - 2}
                 />

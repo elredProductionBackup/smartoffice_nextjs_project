@@ -2,21 +2,26 @@ import React, { useEffect, useState } from "react";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_REGEX = /^\+?[0-9]{7,15}$/; // checked after spaces/dashes are stripped
+const LINKEDIN_REGEX = /^https:\/\/([a-z]{2,3}\.)?linkedin\.com\/\S+$/i; // checked after https:// is added
 
 // Strips spaces and dashes so "+91 99999-99999" is sent as "+919999999999"
 const normalizePhone = (value) => value.replace(/[\s-]/g, "");
 
+// Adds https:// so "linkedin.com/in/jane" is sent as "https://linkedin.com/in/jane"
+const normalizeUrl = (value) => (/^https?:\/\//i.test(value) ? value.replace(/^http:/i, "https:") : `https://${value}`);
+
 // Field options: required (default true), minLength, maxLength
-const AddAllianceModal = ({ isOpen, onClose, onDone, title, fields = [] }) => {
-  const emptyForm = () => Object.fromEntries(fields.map((f) => [f.key, ""]));
-  const [form, setForm] = useState(emptyForm);
+// initialValues prefills the form (used when editing)
+const AddAllianceModal = ({ isOpen, onClose, onDone, title, fields = [], initialValues }) => {
+  const initialForm = () => Object.fromEntries(fields.map((f) => [f.key, initialValues?.[f.key] ?? ""]));
+  const [form, setForm] = useState(initialForm);
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
   const [submitError, setSubmitError] = useState("");
 
   useEffect(() => {
     if (isOpen) {
-      setForm(emptyForm());
+      setForm(initialForm());
       setErrors({});
       setSaving(false);
       setSubmitError("");
@@ -46,6 +51,8 @@ const AddAllianceModal = ({ isOpen, onClose, onDone, title, fields = [] }) => {
         next[key] = "Enter a valid email";
       } else if (type === "tel" && !PHONE_REGEX.test(normalizePhone(value))) {
         next[key] = "Enter a valid phone number (7–15 digits)";
+      } else if (type === "linkedin" && !LINKEDIN_REGEX.test(normalizeUrl(value))) {
+        next[key] = "Enter a valid LinkedIn URL";
       }
     });
     setErrors(next);
@@ -61,6 +68,7 @@ const AddAllianceModal = ({ isOpen, onClose, onDone, title, fields = [] }) => {
         const value = form[key]?.trim() ?? "";
         if (type === "tel") return [key, normalizePhone(value)];
         if (type === "email") return [key, value.toLowerCase()];
+        if (type === "linkedin") return [key, value && normalizeUrl(value)];
         return [key, value];
       })
     );
@@ -84,7 +92,7 @@ const AddAllianceModal = ({ isOpen, onClose, onDone, title, fields = [] }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-[2px]">
-      <div className="bg-white rounded-[28px] w-[500px] p-10 shadow-xl relative animate-in fade-in zoom-in duration-200">
+      <div className="bg-white rounded-[28px] w-[500px] max-h-[90vh] overflow-y-auto p-10 shadow-xl relative animate-in fade-in zoom-in duration-200">
         {/* Header */}
         <div className="mb-[20px]">
           <h2 className="text-[24px] font-bold text-[#333]">{title}</h2>
@@ -98,7 +106,7 @@ const AddAllianceModal = ({ isOpen, onClose, onDone, title, fields = [] }) => {
                 {required && <span className="ml-0.5 text-red-500">*</span>}
               </label>
               <input
-                type={type}
+                type={type === "linkedin" ? "url" : type}
                 placeholder={placeholder}
                 maxLength={maxLength}
                 disabled={saving}

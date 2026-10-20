@@ -275,13 +275,18 @@ const ChecklistContent = ({ eventId }) => {
 
           {/* ===========task completion Progress bar=================== */}
           {(() => {
+            // Counts both the event's own tasks and the master checklist items for a category
             const countFor = (p) => {
               const filteredTasks = taskList.filter((t) => t.category === p);
+              const filteredMaster = masterList.filter(
+                (item) => MASTER_DIFFICULTY_CATEGORY[item.difficulty] === p
+              );
               return {
-                total: filteredTasks.length,
-                done: filteredTasks.filter(
-                  (t) => t.isCompleted === true || t.isCompleted === "true"
-                ).length,
+                total: filteredTasks.length + filteredMaster.length,
+                done:
+                  filteredTasks.filter(
+                    (t) => t.isCompleted === true || t.isCompleted === "true" || t.status === "completed"
+                  ).length + filteredMaster.filter((item) => item.status === "Done").length,
               };
             };
             return (

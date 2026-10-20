@@ -30,7 +30,7 @@ function formatCurrency(amount) {
   return `₹${formatCompactAmount(amount)}`;
 }
 
-const PAYMENT_STATUS_OPTIONS = ["Paid", "Pending", "Overdue"];
+const PAYMENT_STATUS_OPTIONS = ["Paid", "Pending", "Overdue", "Rejected"];
 
 /* ─── Shared: anchor a fixed popover to a trigger, escape all overflow ───── */
 function usePopover(open, setOpen, { width = 176, height = 150, align = "left" } = {}) {
@@ -151,6 +151,7 @@ function StatusBadge({ children, variant }) {
     paid: "bg-[#E6F4EA] text-[#137333]",
     pending: "bg-[#FEF7E0] text-[#B06000]",
     overdue: "bg-[#FEE2E2] text-[#B91C1C]",
+    paymentRejected: "bg-[#F1F5F9] text-[#475569]",
     approved: "bg-[#E6F4EA] text-[#137333]",
     pendingApproval: "bg-[#FEF7E0] text-[#B06000]",
     rejected: "bg-[#FEE2E2] text-[#B91C1C]",
@@ -168,15 +169,16 @@ function StatusBadge({ children, variant }) {
 function getPaymentBadgeVariant(status) {
   if (status === "Paid") return "paid";
   if (status === "Overdue") return "overdue";
+  if (status === "Rejected") return "paymentRejected";
   return "pending";
 }
 
-const PAYMENT_DOT = { Paid: "#16A34A", Pending: "#D97706", Overdue: "#DC2626" };
+const PAYMENT_DOT = { Paid: "#16A34A", Pending: "#D97706", Overdue: "#DC2626", Rejected: "#64748B" };
 
 /* ─── Payment status: portal popover (never clipped by the table) ────────── */
 function PaymentStatusDropdown({ expenseId, currentStatus, onUpdate }) {
   const [open, setOpen] = useState(false);
-  const { btnRef, menuRef, pos } = usePopover(open, setOpen, { width: 180, height: 150 });
+  const { btnRef, menuRef, pos } = usePopover(open, setOpen, { width: 180, height: 190 });
   const variant = getPaymentBadgeVariant(currentStatus);
 
   return (
@@ -190,6 +192,8 @@ function PaymentStatusDropdown({ expenseId, currentStatus, onUpdate }) {
             ? "bg-[#E6F4EA] text-[#137333]"
             : variant === "overdue"
             ? "bg-[#FEE2E2] text-[#B91C1C]"
+            : variant === "paymentRejected"
+            ? "bg-[#F1F5F9] text-[#475569]"
             : "bg-[#FEF7E0] text-[#B06000]"
         }`}
       >

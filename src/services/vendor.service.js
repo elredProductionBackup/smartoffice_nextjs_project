@@ -59,11 +59,14 @@ export const getVendors = async ({ searchBy = "name", searchKey = "", start = 0,
  */
 export const addEditVendor = async ({ vendorId = "", name, location, email, phone }) => {
   try {
-    // Optional fields are only sent when filled in
+    // On create, optional fields are only sent when filled in.
+    // On update they're always sent so a cleared field ("") is removed.
     const body = { vendorId, name };
-    if (location) body.location = location;
-    if (email) body.email = email;
-    if (phone) body.phone = phone;
+    const optional = { location, email, phone };
+    Object.entries(optional).forEach(([key, value]) => {
+      if (vendorId) body[key] = value ?? "";
+      else if (value) body[key] = value;
+    });
 
     const res = await api.patch("/smartOffice/addEditVendor", body);
 

@@ -10,9 +10,9 @@ export default function ChecklistFormModal({ mode, item, index, onSubmit, onClos
   );
 
   const handleSubmit = () => {
-    if (!label || !difficulty) return;
+    if (!label.trim() || !difficulty) return;
     onSubmit(
-      { label, difficulty },
+      { label: label.trim(), difficulty },
       mode,
       index
     );
@@ -32,12 +32,10 @@ export default function ChecklistFormModal({ mode, item, index, onSubmit, onClos
   difficulty !== original.difficulty;
 
   const isFormInvalid =
-  !difficulty || (mode === "add" && !label) || (mode === "edit" && !isChanged);
+  !difficulty || !label.trim() || (mode === "edit" && !isChanged);
 
   return (
     <div className="w-[520px] bg-white rounded-[14px] shadow-xl p-[40px] flex flex-col gap-[20px]">
-        {mode === 'add' &&
-        <>
         <h3 className="text-[24px] font-[700]">
             {mode === "add" ? "Add new item" : "Update item"}
         </h3>
@@ -48,11 +46,9 @@ export default function ChecklistFormModal({ mode, item, index, onSubmit, onClos
             placeholder="Enter name"
             className="border border-[#CCCCCC] rounded-[8px] px-[20px] py-[10px] outline-none"
         />
-        </>
-    }
 
     <div className="flex flex-col gap-[14px]">
-    <p className={`${mode === 'add'? 'text-[18px]':'text-[24px]'}  font-[700]`}>
+    <p className="text-[18px] font-[700]">
         Choose difficulty level
     </p>
 

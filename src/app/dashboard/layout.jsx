@@ -85,11 +85,12 @@ import alliancesLogo from "@/assets/logo/la_handshake.svg";
 import Image from "next/image";
 import Header from "@/_components/Header";
 import useGlobalLoader from "@/store/useGlobalLoader";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import ProtectedRoute from "@/_components/ProtectedRoute";
 import { useSelector } from "react-redux";
 import { selectIsFinanceOfficer, selectIsLearningOfficer } from "@/store/auth/authSlice";
-import { FiCheckSquare, FiDollarSign, FiHome, FiMessageCircle } from "react-icons/fi";
+import { FiCheckSquare, FiDollarSign, FiHome, FiSend } from "react-icons/fi";
+import { HiOutlineChatBubbleLeftRight } from "react-icons/hi2";
 import { FaFileInvoiceDollar } from "react-icons/fa6";
 
 export default function DashboardLayout({ children }) {
@@ -100,9 +101,18 @@ export default function DashboardLayout({ children }) {
   const isFinanceManager = useSelector(selectIsFinanceOfficer);
   const isLearningOfficer = useSelector(selectIsLearningOfficer);
 
+  // Tooltip is fixed-positioned so the scrollable sidebar doesn't clip it
+  const [tooltip, setTooltip] = useState(null);
+
   useEffect(() => {
     hideLoader();
   }, []);
+
+  const showTooltip = (e, name) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setTooltip({ name, top: rect.top + rect.height / 2, left: rect.right + 12 });
+  };
+  const hideTooltip = () => setTooltip(null);
 
   function removeAllParams(url) {
     return url.split("?")[0];
@@ -124,6 +134,11 @@ export default function DashboardLayout({ children }) {
     logo: memberLogo,
   },
   { name: "Vendor/Resources", path: "/dashboard/alliances?tab=vendors", logo: alliancesLogo },
+  {
+    name: "Discussions",
+    path: "/dashboard/discussions",
+    icon: <HiOutlineChatBubbleLeftRight className="text-[24px]" />,
+  },
 ];
 
 const userMenu = [
@@ -134,6 +149,11 @@ const userMenu = [
     path: "/dashboard/expense-records",
     icon: <FaFileInvoiceDollar className="text-[22px]" />,
   },
+  {
+    name: "Discussions",
+    path: "/dashboard/discussions",
+    icon: <HiOutlineChatBubbleLeftRight className="text-[24px]" />,
+  },
 ];
 
 
@@ -142,6 +162,7 @@ const userMenu = [
     { name: "Actionable", path: "/dashboard/actionable",        logo: actionableLogo },
     { name: "Events",     path: "/dashboard/events",            logo: eventsLogo },
     { name: "Vendor/Resources",  path: "/dashboard/alliances?tab=vendors", logo: alliancesLogo },
+    { name: "Discussions", path: "/dashboard/discussions", icon: <HiOutlineChatBubbleLeftRight className="text-[24px]" /> },
   ];
 
   const financeManagerMenu = [
@@ -161,6 +182,7 @@ const userMenu = [
       path: "/dashboard/approvals",
       icon: <FiCheckSquare className="text-[22px]" />,
     },
+    { name: "Discussions", path: "/dashboard/discussions", icon: <HiOutlineChatBubbleLeftRight className="text-[24px]" /> },
   ];
 
   const menu = isLearningOfficer
@@ -186,17 +208,22 @@ const userMenu = [
         {/* Main */}
         <div className="flex flex-1 overflow-hidden" style={{ maxHeight: "calc(100vh - 80px)" }}>
           <div className="p-5 flex-shrink-0">
-            <div className="w-21 bg-[#F2F7FF] h-full p-5 rounded-2xl">
-              <ul className="space-y-10">
+            <div
+              className="w-21 bg-[#F2F7FF] h-full p-5 rounded-2xl overflow-y-auto overflow-x-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              onScroll={hideTooltip}
+            >
+              <ul className="flex flex-col justify-between gap-5 min-h-full">
                 {menu.map((item) => {
                     const basePath = removeAllParams(item.path);
                     const active = item.exact
                       ? pathname === basePath
                       : pathname === basePath || pathname.startsWith(`${basePath}/`);
                   return (
-                    <li key={item.path} className="relative group">
+                    <li key={item.path}>
                       <Link
                         href={item.path}
+                        onMouseEnter={(e) => showTooltip(e, item.name)}
+                        onMouseLeave={hideTooltip}
                         className={`h-11 w-11 flex items-center justify-center rounded-md transition
                         ${
                           active
@@ -208,23 +235,15 @@ const userMenu = [
                           ? item.icon
                           : <Image src={item.logo} alt={item.name} />}
                       </Link>
-
-                      <span
-                        className="pointer-events-none absolute left-[calc(100%+12px)] top-1/2 -translate-y-1/2 z-50
-                        whitespace-nowrap rounded-lg bg-[#F2F7FF] border border-[#D3E3FD] px-3 py-1.5 text-[13px] font-medium text-[#333333]
-                        opacity-0 scale-95 origin-left shadow-md transition-all duration-150
-                        group-hover:opacity-100 group-hover:scale-100"
-                      >
-                        {item.name}
-                        <span className="absolute right-full top-1/2 -translate-y-1/2 h-2.5 w-2.5 rotate-45 bg-[#F2F7FF] border-l border-b border-[#D3E3FD] -mr-[5px]" />
-                      </span>
                     </li>
                   );
                 })}
                 {!isFinanceManager && !isLearningOfficer && (
-                <li className="relative group">
+                <li>
                   <Link
                     href="/dashboard/send-bulk"
+                    onMouseEnter={(e) => showTooltip(e, "Send Bulk")}
+                    onMouseLeave={hideTooltip}
                     className={`h-11 w-11 flex items-center justify-center rounded-md transition
                     ${
                       pathname.startsWith("/dashboard/send-bulk")
@@ -232,22 +251,23 @@ const userMenu = [
                         : "hover:bg-blue-100"
                     }`}
                   >
-                    <FiMessageCircle className="text-[22px]" />
+                    <FiSend className="text-[22px]" />
                   </Link>
-
-                  <span
-                    className="pointer-events-none absolute left-[calc(100%+12px)] top-1/2 -translate-y-1/2 z-50
-                    whitespace-nowrap rounded-lg bg-[#F2F7FF] border border-[#D3E3FD] px-3 py-1.5 text-[13px] font-medium text-[#333333]
-                    opacity-0 scale-95 origin-left shadow-md transition-all duration-150
-                    group-hover:opacity-100 group-hover:scale-100"
-                  >
-                    Send Bulk
-                    <span className="absolute right-full top-1/2 -translate-y-1/2 h-2.5 w-2.5 rotate-45 bg-[#F2F7FF] border-l border-b border-[#D3E3FD] -mr-[5px]" />
-                  </span>
                 </li>
                 )}
               </ul>
             </div>
+
+            {tooltip && (
+              <span
+                className="pointer-events-none fixed -translate-y-1/2 z-50
+                whitespace-nowrap rounded-lg bg-[#F2F7FF] border border-[#D3E3FD] px-3 py-1.5 text-[13px] font-medium text-[#333333] shadow-md"
+                style={{ top: tooltip.top, left: tooltip.left }}
+              >
+                {tooltip.name}
+                <span className="absolute right-full top-1/2 -translate-y-1/2 h-2.5 w-2.5 rotate-45 bg-[#F2F7FF] border-l border-b border-[#D3E3FD] -mr-[5px]" />
+              </span>
+            )}
           </div>
 
           {/* Nested Page */}

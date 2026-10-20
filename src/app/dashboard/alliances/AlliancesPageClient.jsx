@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import SectionHeader from "@/_components/SectionHeader";
 import AlliancesTable from "@/_components/Tables/AlliancesTable";
 import AddAllianceModal from "@/_components/AddAllianceModal";
+import AllianceDetailsModal from "@/_components/AllianceDetailsModal";
 import SuccessPopup from "@/_components/ConfirmationPopups/SuccessPopup";
 import ConfirmPopup from "@/_components/ConfirmationPopups/ConfirmPopup";
 import useInfiniteScrollObserver from "@/hooks/useInfiniteScroll";
@@ -30,7 +31,7 @@ const TAB_CONFIG = {
       { key: "phone", label: "Phone", placeholder: "Enter phone number", type: "tel", required: false },
     ],
     fetchList: getVendors,
-    save: (values) => addEditVendor({ vendorId: "", ...values }),
+    save: (values, id = "") => addEditVendor({ ...values, vendorId: id }),
     remove: deleteVendor,
     deleteWarning: "Any expenses, event costing lines and approvals linked to this vendor will no longer show a vendor.",
     // deleteVendor returns how many linked records lost the vendor
@@ -49,15 +50,17 @@ const TAB_CONFIG = {
     modalTitle: "Add Resource",
     subtitleKey: "organization",
     subtitleLabel: "Company/University",
+    showLinkedin: true,
     searchBy: { Name: "name", "Company/University": "organization" },
     fields: [
       { key: "name", label: "Resource name", placeholder: "Enter resource name", minLength: 2, maxLength: 100 },
       { key: "organization", label: "Company/University", placeholder: "Enter company or university", required: false, maxLength: 150 },
       { key: "email", label: "Email", placeholder: "Enter email", type: "email", required: false },
       { key: "phone", label: "Phone", placeholder: "Enter phone number", type: "tel", required: false },
+      { key: "linkedInUrl", label: "LinkedIn URL", placeholder: "Enter LinkedIn profile URL", type: "linkedin", required: false, maxLength: 300 },
     ],
     fetchList: getResources,
-    save: (values) => addEditResource({ resourceId: "", ...values }),
+    save: (values, id = "") => addEditResource({ ...values, resourceId: id }),
     remove: deleteResource,
     deleteWarning: "This resource will be removed from your list.",
     deleteSuccess: (item) => ({ message: `${item.name} has been deleted.` }),
@@ -72,7 +75,9 @@ export default function AlliancesPageClient() {
 
   const [search, setSearch] = useState("");
   const [searchBy, setSearchBy] = useState("Name");
-  const [isAddOpen, setIsAddOpen] = useState(false);
+  // Add/edit popup; editingItem is the row being edited (null when adding)
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
 
   // List for the active tab
   const [items, setItems] = useState([]);
@@ -85,6 +90,9 @@ export default function AlliancesPageClient() {
   // Success popup after adding or deleting: { title, message, stats? } | null
   const [success, setSuccess] = useState(null);
 
+  // Row whose details popup is open
+  const [selectedItem, setSelectedItem] = useState(null);
+
   // Row waiting for delete confirmation
   const [itemToDelete, setItemToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
@@ -93,6 +101,7 @@ export default function AlliancesPageClient() {
   // Each tab has its own search fields
   useEffect(() => {
     setSearchBy("Name");
+    setSelectedItem(null);
   }, [tab]);
 
   const fetchItems = useCallback(
@@ -139,16 +148,46 @@ export default function AlliancesPageClient() {
   });
 
   const rows = useMemo(
-    () => items.map((item) => ({ ...item, subtitle: item[config.subtitleKey] })),
+    () =>
+      items
+        .map((item) => ({ ...item, subtitle: item[config.subtitleKey] }))
+        // A–Z by name; only sorts the pages loaded so far
+        .sort((a, b) => (a.name ?? "").localeCompare(b.name ?? "", undefined, { sensitivity: "base" })),
     [items, config]
   );
 
+  const openAdd = () => {
+    setEditingItem(null);
+    setIsFormOpen(true);
+  };
+
+  const openEdit = (item) => {
+    setEditingItem(item);
+    setIsFormOpen(true);
+  };
+
   // Errors are thrown back to the popup so it can show them and stay open
-  const handleAdd = async (values) => {
+  const handleSave = async (values) => {
+    const label = config.modalTitle.replace("Add ", "");
+
+    if (editingItem) {
+      const saved = await config.save(values, editingItem.id);
+      // Update the row in place so the list keeps its scroll position
+      setItems((prev) =>
+        prev.map((item) =>
+          item.id === editingItem.id ? { ...item, ...values, ...(saved || {}), id: item.id } : item
+        )
+      );
+      setIsFormOpen(false);
+      setEditingItem(null);
+      setSuccess({ title: `${label} updated`, message: `${values.name} has been updated.` });
+      return;
+    }
+
     await config.save(values);
-    setIsAddOpen(false);
+    setIsFormOpen(false);
     setSuccess({
-      title: `${config.modalTitle.replace("Add ", "")} added`,
+      title: `${label} added`,
       message: `${values.name} has been added to your ${tab}.`,
     });
     fetchItems(true); // list is newest first, so the new row shows on top
@@ -196,7 +235,7 @@ export default function AlliancesPageClient() {
         searchBy={searchBy}
         setSearchBy={setSearchBy}
         searchByOptions={Object.keys(config.searchBy)}
-        onAdd={() => setIsAddOpen(true)}
+        onAdd={openAdd}
       />
       <div className="flex-1 flex flex-col min-h-0">
         <AlliancesTable
@@ -209,16 +248,31 @@ export default function AlliancesPageClient() {
           error={error}
           onRetry={() => fetchItems(items.length === 0)}
           lastRowRef={lastRowRef}
+          onEdit={openEdit}
           onDelete={openDeleteConfirm}
+          onRowClick={setSelectedItem}
         />
       </div>
 
+      {selectedItem && (
+        <AllianceDetailsModal
+          item={selectedItem}
+          subtitleLabel={config.subtitleLabel}
+          showLinkedin={config.showLinkedin}
+          onClose={() => setSelectedItem(null)}
+        />
+      )}
+
       <AddAllianceModal
-        isOpen={isAddOpen}
-        onClose={() => setIsAddOpen(false)}
-        onDone={handleAdd}
-        title={config.modalTitle}
+        isOpen={isFormOpen}
+        onClose={() => {
+          setIsFormOpen(false);
+          setEditingItem(null);
+        }}
+        onDone={handleSave}
+        title={editingItem ? config.modalTitle.replace("Add", "Edit") : config.modalTitle}
         fields={config.fields}
+        initialValues={editingItem}
       />
 
       <ConfirmPopup

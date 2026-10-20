@@ -48,7 +48,7 @@ export const getResources = async ({ searchBy = "name", searchKey = "", start = 
  * Create or update a resource
  *
  * PATCH /smartOffice/addEditResource
- * Body: { resourceId, name, organization?, email?, phone? }
+ * Body: { resourceId, name, organization?, email?, phone?, linkedInUrl? }
  * resourceId "" creates a new resource; an id updates that resource.
  * organization is the "Company/University" field.
  *
@@ -58,15 +58,19 @@ export const getResources = async ({ searchBy = "name", searchKey = "", start = 
  * @param {string} [payload.organization] - ≤ 150 chars
  * @param {string} [payload.email]
  * @param {string} [payload.phone]        - 7–15 digits, optional leading +
+ * @param {string} [payload.linkedInUrl]  - https://…linkedin.com/… URL
  * @returns {Promise<Object>} the saved resource
  */
-export const addEditResource = async ({ resourceId = "", name, organization, email, phone }) => {
+export const addEditResource = async ({ resourceId = "", name, organization, email, phone, linkedInUrl }) => {
   try {
-    // Optional fields are only sent when filled in
+    // On create, optional fields are only sent when filled in.
+    // On update they're always sent so a cleared field ("") is removed.
     const body = { resourceId, name };
-    if (organization) body.organization = organization;
-    if (email) body.email = email;
-    if (phone) body.phone = phone;
+    const optional = { organization, email, phone, linkedInUrl };
+    Object.entries(optional).forEach(([key, value]) => {
+      if (resourceId) body[key] = value ?? "";
+      else if (value) body[key] = value;
+    });
 
     const res = await api.patch("/smartOffice/addEditResource", body);
     const data = throwIfFailed(res, "Failed to save resource");
