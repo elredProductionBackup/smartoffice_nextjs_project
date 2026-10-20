@@ -42,12 +42,13 @@ export default function ProfilePage() {
           <h2 className="text-[32px] font-semibold">Dashboard</h2>
         </div>
 
-      <div className="dashboard-items grid grid-cols-2 gap-4 flex-1 w-full ">
+      <div className="dashboard-items grid grid-cols-2 gap-4 flex-1 min-h-0 w-full pb-[20px]">
         <DashboardActionableList
           data={items}
           loading={loading}
+          fillHeight
         />
-        <DashboardFinanceList />
+        <DashboardFinanceList fillHeight />
       </div>
     </div>
   );
