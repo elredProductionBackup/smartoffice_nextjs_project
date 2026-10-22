@@ -373,6 +373,8 @@ const eventSlice = createSlice({
 .addCase(fetchEventMembers.rejected, (state, action) => {
   const { eventId } = action.meta.arg;
   state.membersLoading[eventId] = false;
+  // Done trying, so the attendees tab stops showing its loader
+  state.membersFetched[eventId] = true;
 })
       .addCase(fetchEventDetails.pending , (state,action) => {
           const { eventId } = action.meta.arg;
