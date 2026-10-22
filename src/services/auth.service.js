@@ -46,6 +46,13 @@ export const updateNetworkClusterAdminActivation = ({ userCode, isActivate }) =>
 export const resendNetworkClusterAdminInvite = ({ userCode }) =>
   api.post("/smartOffice/resendNetworkClusterAdminInvite", { userCode });
 
+/**
+ * DELETE /smartOffice/removeNetworkClusterAdmin
+ * Body: { userCode } — removes the user from the network (used to cancel a pending invite)
+ */
+export const removeNetworkClusterAdmin = ({ userCode }) =>
+  api.delete("/smartOffice/removeNetworkClusterAdmin", { data: { userCode } });
+
 export const getAllNetworkClusterAdminDetails =({ networkClusterCode, role }) =>
   api.get("/smartOffice/getAllNetworkClusterAdminDetails", {
     params: { networkClusterCode, ...(role && { role }) },

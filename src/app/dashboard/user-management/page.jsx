@@ -17,6 +17,7 @@ import {
 import { AVATAR_COLORS, PORTFOLIO_INITIALS, ROLES, STATUS } from "./constants";
 import {
   getAllNetworkClusterAdminDetails,
+  removeNetworkClusterAdmin,
   resendNetworkClusterAdminInvite,
   updateNetworkClusterAdminActivation,
 } from "@/services/auth.service";
@@ -209,6 +210,8 @@ export default function UserManagementPage() {
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [inviteSuccess, setInviteSuccess] = useState(null); // invite payload, for the success popup
   const [deactivateUserId, setDeactivateUserId] = useState(null); // waiting on the confirm popup
+  const [cancelInviteUserId, setCancelInviteUserId] = useState(null); // waiting on the confirm popup
+  const [cancellingInvite, setCancellingInvite] = useState(false);
   const [activationPending, setActivationPending] = useState(false);
   const [detailsUserId, setDetailsUserId] = useState(null);
   useEffect(() => {
@@ -224,6 +227,7 @@ export default function UserManagementPage() {
   const roleUser = users.find((u) => u.id === roleUserId);
   const detailsUser = users.find((u) => u.id === detailsUserId);
   const deactivateUser = users.find((u) => u.id === deactivateUserId);
+  const cancelInviteUser = users.find((u) => u.id === cancelInviteUserId);
 
   // Admin only — send everyone else back to the dashboard
   useEffect(() => {
@@ -276,6 +280,29 @@ export default function UserManagementPage() {
   }, [users, search, roleFilter]);
 
   // Flips the row straight away, then rolls back if the API refuses
+  // Row only disappears once the backend confirms the removal
+  const cancelInvite = async (target) => {
+    setCancellingInvite(true);
+    try {
+      const res = await removeNetworkClusterAdmin({ userCode: target.id });
+      if (!res?.data?.success) throw new Error(res?.data?.message || "Request failed");
+      removeUser(target.id);
+      dispatch(addToast({
+        message: { title: "Invite cancelled", descrip: `${target.name}'s invite has been withdrawn.` },
+        type: "success",
+      }));
+    } catch (err) {
+      console.error("Cancel invite error:", err);
+      dispatch(addToast({
+        message: { title: "Couldn't cancel invite", descrip: err.message || "Please try again." },
+        type: "error",
+      }));
+    } finally {
+      setCancellingInvite(false);
+      setCancelInviteUserId(null);
+    }
+  };
+
   const resendInvite = async (target) => {
     try {
       const res = await resendNetworkClusterAdminInvite({ userCode: target.id });
@@ -487,7 +514,7 @@ export default function UserManagementPage() {
                           u.status === "invited"
                             ? [
                                 { label: "Resend invite", icon: FiSend, onClick: () => resendInvite(u) },
-                                { label: "Cancel invite", icon: FiXCircle, danger: true, onClick: () => removeUser(u.id) },
+                                { label: "Cancel invite", icon: FiXCircle, danger: true, onClick: () => setCancelInviteUserId(u.id) },
                               ]
                             : [
                                 { label: "Edit", icon: FiEdit2, onClick: () => {} },
@@ -545,9 +572,22 @@ export default function UserManagementPage() {
         />
       )}
 
+      {cancelInviteUser && (
+        <EventActionConfirmModal
+          title={`Cancel ${cancelInviteUser.name}'s invite?`}
+          message="They'll be removed from the network and the invite will be withdrawn."
+          confirmText="Yes, cancel"
+          cancelText="Keep"
+          isLoading={cancellingInvite}
+          onConfirm={() => cancelInvite(cancelInviteUser)}
+          onCancel={() => !cancellingInvite && setCancelInviteUserId(null)}
+        />
+      )}
+
       {deactivateUser && (
         <EventActionConfirmModal
           title={`Deactivate ${deactivateUser.name}?`}
+          message="They won't be able to sign in until you activate them again."
           confirmText="Deactivate"
           cancelText="Cancel"
           isLoading={activationPending}
