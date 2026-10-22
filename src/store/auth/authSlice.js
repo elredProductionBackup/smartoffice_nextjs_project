@@ -56,7 +56,7 @@ const authSlice = createSlice({
       localStorage.setItem("adminDetail", JSON.stringify(action.payload));
     },
 
-    // Role picked on the role selection screen ("admin" | "financeOfficer" | "learningOfficer")
+    // Role picked on the role selection screen ("admin" | "financeOfficer" | "portfolioOfficer")
     setSelectedRole(state, action) {
       state.selectedRole = action.payload;
 
@@ -84,5 +84,5 @@ export const { setAuth, setAdminDetail, setSelectedRole, logout } = authSlice.ac
 
 export const selectIsAdminRole = (state) => state.auth.selectedRole === "admin";
 export const selectIsFinanceOfficer = (state) => state.auth.selectedRole === "financeOfficer";
-export const selectIsLearningOfficer = (state) => state.auth.selectedRole === "learningOfficer";
+export const selectIsLearningOfficer = (state) => state.auth.selectedRole === "portfolioOfficer";
 export default authSlice.reducer;

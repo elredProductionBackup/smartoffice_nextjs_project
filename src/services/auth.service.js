@@ -12,7 +12,7 @@ export const logout = () => api.post("/auth/logout");
  * GET /smartOffice/getNetworkClusterAdminDetail
  * Query params: networkClusterCode, email
  * result: { userCode, firstname, lastname, phone, email, companyName,
- *           title: [{ _id, value }], dpURL, role: ["admin", "financeOfficer", "learningOfficer"] }
+ *           title: [{ _id, value }], dpURL, role: ["admin", "financeOfficer", "portfolioOfficer"] }
  */
 export const getNetworkClusterAdminDetail = ({ networkClusterCode, email }) =>
   api.get("/smartOffice/getNetworkClusterAdminDetail", {

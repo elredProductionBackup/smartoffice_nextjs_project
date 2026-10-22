@@ -43,8 +43,8 @@ const ROLES = [
     tint: "#059669",
   },
   {
-    key: "learningOfficer",
-    title: "Learning Officer",
+    key: "portfolioOfficer",
+    title: "Portfolio Officer",
     description: "Plan learning programs, track sessions & grow your network's skills.",
     icon: GraduationCap,
     sideIcons: [BookOpen, Award],
@@ -55,7 +55,7 @@ const ROLES = [
 // Where each role lands after picking it
 const ROLE_HOME = {
   financeOfficer: FINANCE_MANAGER_HOME,
-  learningOfficer: LEARNING_OFFICER_HOME,
+  portfolioOfficer: LEARNING_OFFICER_HOME,
 };
 
 // Keep the cards centred whatever number of roles the user has
