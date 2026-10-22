@@ -18,7 +18,7 @@ export async function POST(req) {
   if (!validSignature(publicUrl(req), params, req.headers.get("x-twilio-signature"))) {
     return new Response("Invalid signature", { status: 401 });
   }
-  if (!acceptMessage(params.MessageSid)) return emptyTwiml();
+  if (!(await acceptMessage(params.MessageSid))) return emptyTwiml();
 
   const send = (body) => sendText(params.From, body);
   // Reply asynchronously; OpenAI + backend calls can exceed Twilio's 15s webhook timeout

@@ -9,16 +9,61 @@ const DEFAULT_TIMEZONE = "Asia/Kolkata";
 const digits = (s = "") => s.replace(/\D/g, "");
 const NOT_LINKED = "This number isn't linked to a SmartOffice account.";
 
-// ponytail: in-memory chat state, lost on restart and not shared across instances; move to Redis/DB for production
-const store = (globalThis.__waAssistant ??= { sessions: new Map(), seen: new Set() });
+/* ---------- Chat state: Upstash Redis (REST) when configured, else process memory ---------- */
+// Serverless instances don't share memory, so "Reply YES" / "Which one?" need a shared store in production.
+// Env names match the Vercel Marketplace Upstash integration (KV_*) or Upstash's own (UPSTASH_REDIS_REST_*).
+const REDIS_URL = env.KV_REST_API_URL || env.UPSTASH_REDIS_REST_URL;
+const REDIS_TOKEN = env.KV_REST_API_TOKEN || env.UPSTASH_REDIS_REST_TOKEN;
+const SESSION_TTL = 60 * 60 * 24; // forget a chat after a day of silence
+const SEEN_TTL = 60 * 60 * 24; // providers retry for well under a day
 
-/** False for duplicate deliveries (Meta and Twilio retry). */
-export function acceptMessage(id) {
-  if (store.seen.has(id)) return false;
-  store.seen.add(id);
-  if (store.seen.size > 1000) store.seen.delete(store.seen.values().next().value);
-  return true;
+const memory = (globalThis.__waAssistant ??= { sessions: new Map(), seen: new Set() });
+
+async function redis(...command) {
+  const res = await fetch(REDIS_URL, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${REDIS_TOKEN}` },
+    body: JSON.stringify(command),
+  });
+  const data = await res.json();
+  if (!res.ok || data.error) throw new Error(`Redis: ${data.error || res.status}`);
+  return data.result;
 }
+
+// Redis down must not take the bot down: log and fall back to this instance's memory
+async function withFallback(viaRedis, viaMemory) {
+  if (!REDIS_URL || !REDIS_TOKEN) return viaMemory();
+  try {
+    return await viaRedis();
+  } catch (err) {
+    console.warn("Redis unavailable, using memory:", err.message);
+    return viaMemory();
+  }
+}
+
+/** False for duplicate deliveries (Meta, Twilio and Infobip retry). */
+export const acceptMessage = (id) =>
+  withFallback(
+    async () => (await redis("SET", `wa:seen:${id}`, "1", "NX", "EX", SEEN_TTL)) === "OK",
+    () => {
+      if (memory.seen.has(id)) return false;
+      memory.seen.add(id);
+      if (memory.seen.size > 1000) memory.seen.delete(memory.seen.values().next().value);
+      return true;
+    }
+  );
+
+const loadSession = (from) =>
+  withFallback(
+    async () => JSON.parse((await redis("GET", `wa:session:${from}`)) || "null"),
+    () => memory.sessions.get(from)
+  );
+
+const saveSession = (from, session) =>
+  withFallback(
+    () => redis("SET", `wa:session:${from}`, JSON.stringify(session), "EX", SESSION_TTL),
+    () => memory.sessions.set(from, session)
+  );
 
 /* ---------- Who is writing: service APIs ---------- */
 const serviceHeaders = () => ({ [env.SMARTOFFICE_SERVICE_HEADER || "X-Service-Key"]: env.SMARTOFFICE_SERVICE_KEY });
@@ -46,11 +91,12 @@ export async function handleText({ from, text, prefix = "", send }) {
   const isAdmin = auth?.userType?.toLowerCase() === "admin"; // same check as the Actionable page
   const timezone = user.timezone || DEFAULT_TIMEZONE;
 
-  const session = store.sessions.get(from) ?? { history: [], pending: null };
-  store.sessions.set(from, session);
+  const session = (await loadSession(from)) ?? { history: [], pending: null };
   const ops = serverOps(user.networkClusterCode, auth.accessToken);
-  const reply = (content) => {
+  // Every path ends here, after resolveAndRun may have set session.pending, so this is the one save point
+  const reply = async (content) => {
     session.history = [...session.history, { role: "assistant", content }].slice(-10);
+    await saveSession(from, session);
     return send(prefix + content);
   };
 

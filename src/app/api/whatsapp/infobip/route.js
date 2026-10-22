@@ -25,7 +25,7 @@ export async function POST(req) {
     // Infobip sends either the classic WhatsApp shape ({ from, message }) or the Messages API shape
     // (renderer MO_MESSAGES_API_JSON: { sender, content: [...] }); normalise both
     const msg = raw && { messageId: raw.messageId, from: raw.from ?? raw.sender, message: raw.message ?? raw.content?.[0] };
-    if (!msg?.messageId || !msg.from || !acceptMessage(msg.messageId)) continue;
+    if (!msg?.messageId || !msg.from || !(await acceptMessage(msg.messageId))) continue;
     const send = (body) => sendText(msg.from, body);
     // Answer Infobip right away; OpenAI + backend calls take a few seconds
     after(() =>

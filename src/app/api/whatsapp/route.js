@@ -29,7 +29,7 @@ export async function POST(req) {
 
   // Status updates (sent/delivered/read) have no message
   const msg = JSON.parse(raw).entry?.[0]?.changes?.[0]?.value?.messages?.[0];
-  if (!msg || !acceptMessage(msg.id)) return NextResponse.json({ ok: true });
+  if (!msg || !(await acceptMessage(msg.id))) return NextResponse.json({ ok: true });
 
   const send = (body) => sendText(msg.from, body);
   // Answer Meta right away; OpenAI + backend calls can take longer than its timeout
