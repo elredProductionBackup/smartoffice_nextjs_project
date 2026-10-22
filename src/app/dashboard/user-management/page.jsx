@@ -15,7 +15,11 @@ import {
   FiXCircle,
 } from "react-icons/fi";
 import { AVATAR_COLORS, PORTFOLIO_INITIALS, ROLES, STATUS } from "./constants";
-import { getAllNetworkClusterAdminDetails, updateNetworkClusterAdminActivation } from "@/services/auth.service";
+import {
+  getAllNetworkClusterAdminDetails,
+  resendNetworkClusterAdminInvite,
+  updateNetworkClusterAdminActivation,
+} from "@/services/auth.service";
 import { addToast } from "@/store/toastSlice";
 import EventActionConfirmModal from "@/_components/EventsComps/EventActionConfirmModal";
 import ChangeRoleModal from "./ChangeRoleModal";
@@ -37,8 +41,10 @@ const API_ROLE_MAP = {
 // isActivate: false means the account is switched off, whatever `status` says; otherwise use "Active" etc.
 const toStatus = (u) => {
   if (u.isActivate === false) return "deactivated";
-  const key = String(u.status || "").toLowerCase();
-  return STATUS[key] ? key : "active";
+  const key = String(u.status || "").toLowerCase().trim();
+  if (STATUS[key]) return key;
+  // Not-yet-joined users may come back as "Pending", "Invite pending", etc.
+  return key.includes("pending") || key.includes("invite") ? "invited" : "active";
 };
 
 // Some firstnames already include the surname (e.g. "Vignesh Nagamani" + "Nagamani")
@@ -270,6 +276,23 @@ export default function UserManagementPage() {
   }, [users, search, roleFilter]);
 
   // Flips the row straight away, then rolls back if the API refuses
+  const resendInvite = async (target) => {
+    try {
+      const res = await resendNetworkClusterAdminInvite({ userCode: target.id });
+      if (!res?.data?.success) throw new Error(res?.data?.message || "Request failed");
+      dispatch(addToast({
+        message: { title: "Invite resent", descrip: `We've emailed ${target.email} again.` },
+        type: "success",
+      }));
+    } catch (err) {
+      console.error("Resend invite error:", err);
+      dispatch(addToast({
+        message: { title: "Couldn't resend invite", descrip: err.message || "Please try again." },
+        type: "error",
+      }));
+    }
+  };
+
   const setActivation = async (target, isActivate) => {
     const previous = target.status;
     updateUser(target.id, { status: isActivate ? "active" : "deactivated" });
@@ -463,7 +486,7 @@ export default function UserManagementPage() {
                         items={
                           u.status === "invited"
                             ? [
-                                { label: "Resend invite", icon: FiSend, onClick: () => {} },
+                                { label: "Resend invite", icon: FiSend, onClick: () => resendInvite(u) },
                                 { label: "Cancel invite", icon: FiXCircle, danger: true, onClick: () => removeUser(u.id) },
                               ]
                             : [

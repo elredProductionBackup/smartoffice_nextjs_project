@@ -39,6 +39,13 @@ export const addNetworkClusterAdmin = (adminDetails) =>
 export const updateNetworkClusterAdminActivation = ({ userCode, isActivate }) =>
   api.patch("/smartOffice/updateNetworkClusterAdminActivation", { userCode, isActivate });
 
+/**
+ * POST /smartOffice/resendNetworkClusterAdminInvite
+ * Body: { userCode } — emails the invite again to someone who hasn't joined yet
+ */
+export const resendNetworkClusterAdminInvite = ({ userCode }) =>
+  api.post("/smartOffice/resendNetworkClusterAdminInvite", { userCode });
+
 export const getAllNetworkClusterAdminDetails =({ networkClusterCode, role }) =>
   api.get("/smartOffice/getAllNetworkClusterAdminDetails", {
     params: { networkClusterCode, ...(role && { role }) },
