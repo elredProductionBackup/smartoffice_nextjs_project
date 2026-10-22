@@ -4,10 +4,13 @@ import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import moment from "moment";
 import { FiMessageCircle, FiMic, FiSend, FiX } from "react-icons/fi";
-import { DESTRUCTIVE, confirmText, findActionables, needsTarget, runCall } from "@/utils/assistant/commands";
+import { DESTRUCTIVE, allowedFor, confirmText, findActionables, needsTarget, runCall } from "@/utils/assistant/commands";
 import { clientOps } from "./assistantActions";
+import { refreshActionables } from "@/store/actionable/actionableUiSlice";
 
 const MAX_RECORD_MS = 60_000;
+const POLL_MS = 30_000;
+const MAX_SAVED = 20;
 
 const GREETING = {
   role: "assistant",
@@ -35,6 +38,41 @@ export default function AssistantWidget() {
     return () => recorderRef.current?.state === "recording" && recorderRef.current.stop();
   }, []);
 
+  // Changes made on WhatsApp happen server-side: poll while the tab is visible, and refresh when it regains focus.
+  // ponytail: 30s polling; switch to SSE/websockets if changes must show instantly
+  useEffect(() => {
+    const refresh = () => document.visibilityState === "visible" && dispatch(refreshActionables());
+    const timer = setInterval(refresh, POLL_MS);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", refresh);
+    };
+  }, [dispatch]);
+
+  // Chat survives refresh: last MAX_SAVED messages per user in localStorage (per-browser only)
+  const storageKey = `assistantChat:${user?._id || user?.email || "me"}`;
+  const [loadedKey, setLoadedKey] = useState(null);
+
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(storageKey));
+      setMessages(Array.isArray(saved) && saved.length ? saved : [GREETING]);
+    } catch {
+      setMessages([GREETING]);
+    }
+    setLoadedKey(storageKey);
+  }, [storageKey]);
+
+  useEffect(() => {
+    if (loadedKey !== storageKey) return; // don't overwrite before this user's saved chat is loaded
+    // Pending Confirm / "Which one?" buttons hold stale task data after a reload, so save them as resolved
+    const toSave = messages.slice(-MAX_SAVED).map(({ options, confirm, ...m }) => (options || confirm ? { ...m, resolved: true } : m));
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(toSave));
+    } catch {}
+  }, [messages, storageKey, loadedKey]);
+
   useEffect(() => {
     listRef.current?.scrollTo(0, listRef.current.scrollHeight);
   }, [messages, open]);
@@ -54,12 +92,16 @@ export default function AssistantWidget() {
   const execute = async (call, item) => {
     try {
       push({ role: "assistant", content: await runCall(call, item, clientOps(dispatch, user)) });
+      dispatch(refreshActionables()); // thunks only patch items already loaded; refetch so every list shows the change
     } catch (err) {
       push({ role: "assistant", content: err.message, error: true });
     }
   };
 
   const handleCall = async (call, item) => {
+    if (!allowedFor(call.name, user?.userType?.toLowerCase() === "admin")) {
+      return push({ role: "assistant", content: "Only admins can change actionables. You can view them and add comments." });
+    }
     if (needsTarget(call.name) && !item) {
       const matches = await findActionables(call.args.query || "", clientOps(dispatch, user));
       if (!matches.length) return push({ role: "assistant", content: `No actionable matching "${call.args.query}".` });
@@ -70,7 +112,7 @@ export default function AssistantWidget() {
     }
 
     if (DESTRUCTIVE.has(call.name)) {
-      return push({ role: "assistant", content: confirmText(call, item), confirm: { call, item } });
+      return push({ role: "assistant", content: await confirmText(call, item, clientOps(dispatch, user)), confirm: { call, item } });
     }
 
     await execute(call, item);

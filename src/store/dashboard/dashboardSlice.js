@@ -14,8 +14,8 @@ const dashboardSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
-      .addCase(fetchDashboardActionables.pending, (state) => {
-        state.loading = true;
+      .addCase(fetchDashboardActionables.pending, (state, action) => {
+        if (!action.meta.arg?.silent) state.loading = true; // silent = background refresh, no shimmer
       })
       .addCase(fetchDashboardActionables.fulfilled, (state, action) => {
         state.loading = false;

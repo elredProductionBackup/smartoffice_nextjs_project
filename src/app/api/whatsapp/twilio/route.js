@@ -5,6 +5,9 @@ import { acceptMessage, handleText } from "@/utils/assistant/whatsappBot";
 
 // Twilio WhatsApp webhook (sandbox for testing). Same bot as /api/whatsapp, different transport.
 
+// Vercel: keep the function alive for the after() work (OpenAI + backend calls)
+export const maxDuration = 60;
+
 const env = process.env;
 const FROM = env.TWILIO_WHATSAPP_FROM || "whatsapp:+14155238886"; // Twilio sandbox number
 const basicAuth = () => "Basic " + Buffer.from(`${env.TWILIO_ACCOUNT_SID}:${env.TWILIO_AUTH_TOKEN}`).toString("base64");
@@ -15,7 +18,7 @@ export async function POST(req) {
   if (!validSignature(publicUrl(req), params, req.headers.get("x-twilio-signature"))) {
     return new Response("Invalid signature", { status: 401 });
   }
-  if (!acceptMessage(params.MessageSid, params.From)) return emptyTwiml();
+  if (!acceptMessage(params.MessageSid)) return emptyTwiml();
 
   const send = (body) => sendText(params.From, body);
   // Reply asynchronously; OpenAI + backend calls can exceed Twilio's 15s webhook timeout

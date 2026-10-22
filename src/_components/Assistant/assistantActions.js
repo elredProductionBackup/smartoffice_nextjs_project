@@ -1,4 +1,4 @@
-import { getActionables } from "@/services/actionable.service";
+import { getActionables, getComments } from "@/services/actionable.service";
 import {
   createActionable,
   toggleActionable,
@@ -9,6 +9,7 @@ import {
   updateSubTask,
   removeSubTask,
   createComment,
+  removeComment,
 } from "@/store/actionable/actionableThunks";
 
 const clusterCode = () => localStorage.getItem("networkClusterCode");
@@ -48,5 +49,12 @@ export const clientOps = (dispatch, user) => {
     removeSubtask: (item, sub) => run(removeSubTask({ actionableId: item.actionableId, subTaskId: sub._id })),
     comment: (item, comment) =>
       run(createComment({ tempId: `temp-comment-${Date.now()}`, actionableId: item.actionableId, comment, user })),
+    listComments: async (item) => {
+      // ponytail: first 50 comments only; page through if actionables get longer threads
+      const res = await getComments({ networkClusterCode: clusterCode(), actionableId: item.actionableId, offset: 50 });
+      if (res.data?.success === false) throw new Error(res.data.message || "Failed to load comments");
+      return res.data?.result?.[0]?.comments || [];
+    },
+    removeComment: (item, comment) => run(removeComment({ actionableId: item.actionableId, commentId: comment._id })),
   };
 };

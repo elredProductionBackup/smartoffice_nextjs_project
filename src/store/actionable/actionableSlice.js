@@ -51,8 +51,8 @@ const actionableSlice = createSlice({
   extraReducers: (builder) => {
     builder
       /* FETCH ACTIONABLES */
-      .addCase(fetchActionables.pending, (state) => {
-        state.loading = true;
+      .addCase(fetchActionables.pending, (state, action) => {
+        if (!action.meta.arg?.silent) state.loading = true; // silent = background refresh, no shimmer
       })
       .addCase(fetchActionables.fulfilled, (state, action) => {
         state.loading = false;

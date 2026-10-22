@@ -3,8 +3,12 @@ import moment from "moment";
 // Shared by the web widget and the WhatsApp webhook. Each passes its own `ops`
 // (Redux thunks in the browser, direct API calls on the server).
 
-export const DESTRUCTIVE = new Set(["delete_actionable", "delete_subtask"]);
-export const needsTarget = (name) => !["create_actionable", "list_actionables"].includes(name);
+export const DESTRUCTIVE = new Set(["delete_actionable", "delete_subtask", "delete_comment"]);
+// Same rule as the Actionable page (canEditOrDelete = isAdmin): non-admins can only view and comment
+const NON_ADMIN_ALLOWED = new Set(["list_actionables", "show_actionable", "add_comment"]);
+export const allowedFor = (name, isAdmin) => isAdmin || NON_ADMIN_ALLOWED.has(name);
+
+export const needsTarget =(name) => !["create_actionable", "list_actionables"].includes(name);
 
 const norm = (s = "") => s.trim().toLowerCase();
 const isDate = (d) => moment(d, "YYYY-MM-DD", true).isValid();
@@ -26,19 +30,43 @@ export async function findActionables(query, ops) {
   return exact.length ? exact : list;
 }
 
-const findSubtask = (item, q) => {
-  const subs = item.subTask || [];
-  const exact = subs.filter((s) => norm(s.title) === norm(q));
-  const partial = subs.filter((s) => norm(s.title).includes(norm(q)));
+// One match by text (exact wins over partial), else a readable error
+const findOne = (list, text, q, kind, item) => {
+  const exact = list.filter((x) => norm(text(x)) === norm(q));
+  const partial = list.filter((x) => norm(text(x)).includes(norm(q)));
   const hits = exact.length ? exact : partial;
   if (hits.length !== 1) {
-    throw new Error(hits.length ? `Several subtasks match "${q}", be more specific.` : `No subtask matching "${q}" in "${item.title}".`);
+    throw new Error(hits.length ? `Several ${kind}s match "${q}", be more specific.` : `No ${kind} matching "${q}" in "${item.title}".`);
   }
   return hits[0];
 };
 
-export const confirmText = ({ name, args }, item) =>
-  `Delete ${name === "delete_subtask" ? `subtask "${args.subtaskQuery}" from "${item.title}"` : `"${item.title}"`}?`;
+const findSubtask = (item, q) => findOne(item.subTask || [], (s) => s.title, q, "subtask", item);
+
+// Resolved once before the confirmation and pinned on args, so YES deletes exactly what was shown
+const pickComment = async (item, args, ops) => {
+  if (args.commentId) return { _id: args.commentId, comment: args.commentText };
+  const list = await ops.listComments(item);
+  if (!list.length) throw new Error(`"${item.title}" has no comments.`);
+  if (args.which) {
+    const byNewest = [...list].sort((a, b) => (Date.parse(b.createdAt) || 0) - (Date.parse(a.createdAt) || 0));
+    return args.which === "oldest" ? byNewest.at(-1) : byNewest[0];
+  }
+  return findOne(list, (c) => c.comment, args.commentQuery || "", "comment", item);
+};
+
+/** Confirmation prompt for a DESTRUCTIVE call. Resolves the exact subtask/comment first; throws if none matches. */
+export async function confirmText(call, item, ops) {
+  if (call.name === "delete_subtask") {
+    return `Delete subtask "${findSubtask(item, call.args.subtaskQuery).title}" from "${item.title}"?`;
+  }
+  if (call.name === "delete_comment") {
+    const c = await pickComment(item, call.args, ops);
+    Object.assign(call.args, { commentId: c._id, commentText: c.comment });
+    return `Delete comment "${c.comment}" from "${item.title}"?`;
+  }
+  return `Delete "${item.title}"?`;
+}
 
 const errText = (err) => err?.message || (typeof err === "string" ? err : "Request failed");
 
@@ -119,6 +147,12 @@ export async function runCall({ name, args }, item, ops) {
         if (!args.comment?.trim()) throw new Error("Comment is empty.");
         await ops.comment(item, args.comment.trim());
         return `Commented on "${item.title}".`;
+
+      case "delete_comment": {
+        const comment = await pickComment(item, args, ops);
+        await ops.removeComment(item, comment);
+        return `Deleted comment "${comment.comment}".`;
+      }
 
       default:
         throw new Error("Unsupported command.");

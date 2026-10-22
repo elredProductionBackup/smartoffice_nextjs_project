@@ -6,6 +6,9 @@ import { acceptMessage, handleText } from "@/utils/assistant/whatsappBot";
 // WhatsApp Cloud API (Meta) webhook for the actionable assistant.
 
 const GRAPH = "https://graph.facebook.com/v25.0";
+// Vercel: keep the function alive for the after() work (OpenAI + backend calls)
+export const maxDuration = 60;
+
 const env = process.env;
 
 /* ---------- Meta webhook verification (GET) ---------- */
@@ -26,7 +29,7 @@ export async function POST(req) {
 
   // Status updates (sent/delivered/read) have no message
   const msg = JSON.parse(raw).entry?.[0]?.changes?.[0]?.value?.messages?.[0];
-  if (!msg || !acceptMessage(msg.id, msg.from)) return NextResponse.json({ ok: true });
+  if (!msg || !acceptMessage(msg.id)) return NextResponse.json({ ok: true });
 
   const send = (body) => sendText(msg.from, body);
   // Answer Meta right away; OpenAI + backend calls can take longer than its timeout

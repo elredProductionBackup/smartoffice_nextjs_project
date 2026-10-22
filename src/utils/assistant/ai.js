@@ -26,6 +26,16 @@ const TOOLS = [
   fn("set_subtask_completed", "Mark a subtask done or not done", { query: parentQuery, subtaskQuery: { type: "string" }, completed: { type: "boolean" } }),
   fn("delete_subtask", "Delete a subtask", { query: parentQuery, subtaskQuery: { type: "string" } }),
   fn("add_comment", "Add a comment to an actionable", { query, comment: { type: "string" } }),
+  fn(
+    "delete_comment",
+    'Delete a comment from an actionable. Use "which" for "last/latest/newest" or "first/oldest" comment, else commentQuery',
+    {
+      query: parentQuery,
+      commentQuery: { type: "string", description: "Words from the comment's text" },
+      which: { type: "string", enum: ["latest", "oldest"] },
+    },
+    ["query"]
+  ),
   fn("show_actionable", "Show one actionable's details: status, due date, notes and its subtasks", { query }),
   fn("list_actionables", "List actionable titles (no subtasks or details)", { filter: { type: "string", enum: ["today", "past", "all"] }, search: { type: "string" } }, ["filter"]),
 ];
@@ -46,6 +56,7 @@ export async function interpret({ messages = [], now, timezone }) {
   const system = `You help the user manage their "actionables" (to-do items) in SmartOffice.
 Current local time: ${now} (${timezone}). Resolve relative dates ("tomorrow", "next Friday") against it.
 Call exactly one tool when the user asks for an action.
+For deletes, call the tool directly: the app shows its own confirmation. Never ask the user to confirm yourself.
 "query" holds only the words of the actionable's title, never the command verb or connecting words (for "delete review budget" or "under review budget add...", query is "review budget").
 If the request is unclear, ask a short clarifying question without calling a tool.
 If it is unrelated to actionables, say in one sentence that you only help with actionables.`;

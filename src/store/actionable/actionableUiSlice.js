@@ -5,6 +5,8 @@ const initialState = {
     type: null,
     taskId: null,
   },
+  // Bumped when actionables may have changed elsewhere (assistant, WhatsApp); lists refetch silently on change
+  refreshKey: 0,
 };
 
 const actionableUiSlice = createSlice({
@@ -20,8 +22,11 @@ const actionableUiSlice = createSlice({
       state.modal.type = null;
       state.modal.taskId = null;
     },
+    refreshActionables: (state) => {
+      state.refreshKey += 1;
+    },
   },
 });
 
-export const { openModal, closeModal } = actionableUiSlice.actions;
+export const { openModal, closeModal, refreshActionables } = actionableUiSlice.actions;
 export default actionableUiSlice.reducer;
