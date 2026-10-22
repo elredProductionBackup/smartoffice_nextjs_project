@@ -18,3 +18,13 @@ export const getNetworkClusterAdminDetail = ({ networkClusterCode, email }) =>
   api.get("/smartOffice/getNetworkClusterAdminDetail", {
     params: { networkClusterCode, email },
   });
+
+/**
+ * GET /smartOffice/getAllNetworkClusterAdminDetails
+ * Query params: networkClusterCode, role (optional: "admin" | "financeOfficer" | "portfolioOfficer")
+ * Lists every admin-side user in the network, filtered to one role when `role` is passed. Needs the login token.
+ */
+export const getAllNetworkClusterAdminDetails = ({ networkClusterCode, role }) =>
+  api.get("/smartOffice/getAllNetworkClusterAdminDetails", {
+    params: { networkClusterCode, ...(role && { role }) },
+  });

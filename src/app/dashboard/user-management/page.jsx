@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import {
@@ -13,28 +13,52 @@ import {
   FiUserX,
   FiXCircle,
 } from "react-icons/fi";
-import { PORTFOLIO_INITIALS, ROLES, STATUS } from "./constants";
+import { AVATAR_COLORS, PORTFOLIO_INITIALS, ROLES, STATUS } from "./constants";
+import { getAllNetworkClusterAdminDetails } from "@/services/auth.service";
 import ChangeRoleModal from "./ChangeRoleModal";
 import InviteUserModal from "./InviteUserModal";
 import UserDetailsModal from "./UserDetailsModal";
 import RowMenu from "@/_components/UI/RowMenu";
 
-// Dummy users until the user management API is wired in
-const CURRENT_USER_ID = "u1";
+// API role keys -> keys used by ROLES on this page
+const API_ROLE_MAP = {
+  admin: "admin",
+  financeOfficer: "finance",
+  portfolioOfficer: "portfolio",
+  learningOfficer: "portfolio",
+  collaborator: "collaborator",
+};
 
-const DUMMY_USERS = [
-  { id: "u1", name: "Nandini Handa", email: "nandini@prive.network", roles: ["admin"], portfolios: [], whatsapp: "+91 98100 11223", status: "active", openApprovals: 1, color: "#1D72E8" },
-  { id: "u7", name: "Aditi Rao", email: "aditi@prive.network", roles: ["portfolio"], portfolios: ["Learning", "Retreat"], whatsapp: "+91 98860 23419", status: "active", openApprovals: 0, color: "#EA580C" },
-  { id: "u8", name: "Karan Shah", email: "karan@prive.network", roles: ["portfolio"], portfolios: ["Engagement"], whatsapp: "+91 98190 66204", status: "active", openApprovals: 0, color: "#4F46E5" },
-  { id: "u6", name: "Meezan", email: "meezan@prive.network", roles: ["portfolio"], portfolios: ["Learning", "Forum"], whatsapp: "+91 97110 55021", status: "active", openApprovals: 0, color: "#0E8FA8" },
-  { id: "u4", name: "Priya Nair", email: "priya@prive.network", roles: ["finance"], portfolios: [], whatsapp: "+91 98450 77310", status: "active", openApprovals: 1, color: "#DB2777" },
-  { id: "u2", name: "Rahul Mehta", email: "rahul@prive.network", roles: ["admin", "finance"], portfolios: [], whatsapp: "+91 98200 44510", status: "active", openApprovals: 0, color: "#16A34A" },
-  { id: "u3", name: "SG", email: "sg@prive.network", roles: ["finance"], portfolios: [], whatsapp: "+91 99300 18822", status: "active", openApprovals: 2, color: "#7C3AED" },
-  { id: "u9", name: "Sneha Kapoor", email: "sneha@prive.network", roles: ["portfolio"], portfolios: ["Membership", "Spouse Partner Forum"], whatsapp: "+91 98710 90433", status: "active", openApprovals: 0, color: "#0D9488" },
-  { id: "u10", name: "Vikram Joshi", email: "vikram@prive.network", roles: ["portfolio"], portfolios: ["Governance"], whatsapp: "", status: "active", openApprovals: 0, color: "#B45309" },
-  { id: "u12", name: "Kabir Malhotra", email: "kabir@prive.network", roles: ["collaborator"], portfolios: [], whatsapp: "+91 99870 31245", status: "active", openApprovals: 0, color: "#0891B2" },
-  { id: "u11", name: "Ananya Iyer", email: "ananya@prive.network", roles: ["finance"], portfolios: [], whatsapp: "", status: "invited", openApprovals: 0, color: "#BE123C" },
-];
+// Shapes one getAllNetworkClusterAdminDetails result into the row this page renders
+// API sends "Active" etc.; isActivate: false means the account is switched off
+const toStatus = (u) => {
+  const key = String(u.status || "").toLowerCase();
+  if (STATUS[key]) return key;
+  return u.isActivate === false ? "deactivated" : "active";
+};
+
+// Some firstnames already include the surname (e.g. "Vignesh Nagamani" + "Nagamani")
+const toName = (first = "", last = "") => {
+  const f = first.trim();
+  const l = last.trim();
+  return l && !f.toLowerCase().endsWith(l.toLowerCase()) ? `${f} ${l}` : f;
+};
+
+const toUser = (u, index) => {
+  const name = toName(u.firstname ?? u.firstName, u.lastname ?? u.lastName);
+  const roles = [...new Set((u.role || u.roles || []).map((r) => API_ROLE_MAP[r]).filter(Boolean))];
+  return {
+    id: u.userCode || u._id || u.email,
+    name: name || u.email || "No name",
+    email: u.email || "",
+    roles,
+    portfolios: u.portfolios || [],
+    whatsapp: u.phone || u.phoneNumber || "",
+    status: toStatus(u),
+    openApprovals: u.openApprovals ?? 0,
+    color: AVATAR_COLORS[index % AVATAR_COLORS.length],
+  };
+};
 
 const getInitials = (name = "") =>
   name
@@ -156,7 +180,11 @@ export default function UserManagementPage() {
   const { user } = useSelector((state) => state.auth);
   const isAdmin = user?.userType?.toLowerCase() === "admin";
 
-  const [users, setUsers] = useState(DUMMY_USERS);
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const networkClusterCode = user?.networkClusterDetails?.networkClusterCode;
+  const isMeUser = (u) => !!user?.email && u.email.toLowerCase() === user.email.toLowerCase();
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [roleUserId, setRoleUserId] = useState(null);
@@ -169,6 +197,36 @@ export default function UserManagementPage() {
   useEffect(() => {
     if (user && !isAdmin) router.replace("/dashboard/profile");
   }, [user, isAdmin, router]);
+
+  // State only changes once the request settles; retryUsers resets the loader first
+  const fetchUsers = useCallback(() => {
+    const code = networkClusterCode || localStorage.getItem("networkClusterCode");
+    const request = code
+      ? getAllNetworkClusterAdminDetails({ networkClusterCode: code })
+      : Promise.reject(new Error("No network cluster code"));
+    request
+      .then((res) => {
+        if (!res?.data?.success) throw new Error(res?.data?.message || "Request failed");
+        const result = res.data.result;
+        const list = Array.isArray(result) ? result : result?.list || result?.users || [];
+        setUsers(list.map(toUser));
+      })
+      .catch((err) => {
+        console.error("User list fetch error:", err);
+        setLoadError(true);
+      })
+      .finally(() => setLoading(false));
+  }, [networkClusterCode]);
+
+  useEffect(() => {
+    if (isAdmin) fetchUsers();
+  }, [isAdmin, fetchUsers]);
+
+  const retryUsers = () => {
+    setLoading(true);
+    setLoadError(false);
+    fetchUsers();
+  };
 
   const counts = useMemo(() => {
     const c = { all: users.length };
@@ -253,15 +311,30 @@ export default function UserManagementPage() {
             </tr>
           </thead>
           <tbody>
-            {visibleUsers.length === 0 ? (
+            {loading ? (
               <tr>
                 <td colSpan={5} className="text-center py-16 text-[15px] text-[#777777]">
-                  No users match your search.
+                  Loading users...
+                </td>
+              </tr>
+            ) : loadError ? (
+              <tr>
+                <td colSpan={5} className="text-center py-16 text-[15px] text-[#777777]">
+                  Couldn&apos;t load users.{" "}
+                  <button type="button" onClick={retryUsers} className="font-bold text-[#0B57D0] hover:underline cursor-pointer">
+                    Try again
+                  </button>
+                </td>
+              </tr>
+            ) : visibleUsers.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="text-center py-16 text-[15px] text-[#777777]">
+                  {users.length === 0 ? "No users in this network yet." : "No users match your search."}
                 </td>
               </tr>
             ) : (
               visibleUsers.map((u, i) => {
-                const isMe = u.id === CURRENT_USER_ID;
+                const isMe = isMeUser(u);
                 const status = STATUS[u.status];
                 return (
                   <tr
@@ -376,7 +449,7 @@ export default function UserManagementPage() {
       {detailsUser && (
         <UserDetailsModal
           user={detailsUser}
-          isMe={detailsUser.id === CURRENT_USER_ID}
+          isMe={isMeUser(detailsUser)}
           onClose={() => setDetailsUserId(null)}
         />
       )}
