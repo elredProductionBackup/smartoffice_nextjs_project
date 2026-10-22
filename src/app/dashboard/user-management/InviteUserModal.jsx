@@ -132,7 +132,8 @@ export default function InviteUserModal({ users, onClose, onInvite }) {
     try {
       const res = await addNetworkClusterAdmin([details]);
       if (!res?.data?.success) throw new Error(res?.data?.message || "Couldn't send the invite.");
-      onInvite(details);
+      // result[0] says whether this created someone new (isNewAdmin) or updated an existing user
+      onInvite({ ...details, ...res.data.result?.[0] });
       onClose();
     } catch (err) {
       console.error("Invite user error:", err);

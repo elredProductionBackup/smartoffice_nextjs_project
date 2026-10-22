@@ -535,8 +535,13 @@ export default function UserManagementPage() {
 
       <SuccessPopup
         isOpen={!!inviteSuccess}
-        title="Invite sent"
-        message={inviteSuccess && `${inviteSuccess.fullName} will get an email at ${inviteSuccess.email} to join the network.`}
+        title={inviteSuccess?.isNewAdmin === false ? "User updated" : "Invite sent"}
+        message={
+          inviteSuccess &&
+          (inviteSuccess.isNewAdmin === false
+            ? `${inviteSuccess.fullName} was already in the network, so their roles have been updated.`
+            : `${inviteSuccess.fullName} will get an email at ${inviteSuccess.email} to join the network.`)
+        }
         onClose={() => setInviteSuccess(null)}
       />
     </div>
