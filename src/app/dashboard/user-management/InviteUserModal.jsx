@@ -1,10 +1,27 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { FiCheck, FiX } from "react-icons/fi";
-import { AVATAR_COLORS, PORTFOLIOS, ROLES } from "./constants";
+import { ROLES } from "./constants";
+import { addNetworkClusterAdmin } from "@/services/auth.service";
+import { fetchBudgetTypes } from "@/store/events/budgetChecklist/budgetThunks";
+
+// Page role keys -> API role keys; Collaborator has no API role yet, so it isn't offered here
+const API_ROLES = { admin: "admin", finance: "financeOfficer", portfolio: "portfolioOfficer" };
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// The API needs a country code; numbers typed without one are treated as Indian (+91) for now.
+// "98765 43210" / "098765 43210" / "919876543210" / "+91 98765 43210" -> "+919876543210"; a bare "+91" counts as empty
+const toApiPhone = (value) => {
+  const raw = value.trim();
+  const digits = raw.replace(/\D/g, "");
+  if (!digits || digits === "91") return "";
+  if (raw.startsWith("+")) return `+${digits}`;
+  if (digits.length === 12 && digits.startsWith("91")) return `+${digits}`;
+  return `+91${digits.replace(/^0+/, "")}`;
+};
 
 function Checkbox({ checked }) {
   return (
@@ -20,12 +37,21 @@ function Checkbox({ checked }) {
 
 // Mounted only while open, so the form starts empty each time
 export default function InviteUserModal({ users, onClose, onInvite }) {
+  const dispatch = useDispatch();
+  // Portfolios are the network's budget types: [{ budgetTypeId, budgetType }]
+  const { budgetTypes, loadingTypes } = useSelector((state) => state.budget);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [whatsapp, setWhatsapp] = useState("");
+  const [whatsapp, setWhatsapp] = useState("+91 ");
   const [roles, setRoles] = useState([]);
   const [portfolios, setPortfolios] = useState([]);
   const [emailTouched, setEmailTouched] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState("");
+
+  useEffect(() => {
+    if (!budgetTypes?.length) dispatch(fetchBudgetTypes());
+  }, [budgetTypes?.length, dispatch]);
 
   useEffect(() => {
     const onKey = (e) => e.key === "Escape" && onClose();
@@ -36,10 +62,17 @@ export default function InviteUserModal({ users, onClose, onInvite }) {
   const toggle = (list, setList, value) =>
     setList(list.includes(value) ? list.filter((v) => v !== value) : [...list, value]);
 
-  // Who already covers each portfolio, e.g. "With Meezan, Aditi"
+  // Who already covers each portfolio, e.g. "With Meezan, Aditi".
+  // User portfolios may come back as ids, names or objects, so match on any of them
+  const holdsPortfolio = (u, p) =>
+    u.portfolios.some((x) =>
+      [x, x?.budgetTypeId, x?.portfolioId, x?._id, x?.budgetType, x?.name].some(
+        (v) => v && (v === p.budgetTypeId || v === p.budgetType)
+      )
+    );
   const officersFor = (p) =>
     users
-      .filter((u) => u.status !== "deactivated" && u.roles.includes("portfolio") && u.portfolios.includes(p))
+      .filter((u) => u.status !== "deactivated" && u.roles.includes("portfolio") && holdsPortfolio(u, p))
       .map((u) => u.name.split(" ")[0]);
 
   const isPortfolio = roles.includes("portfolio");
@@ -64,27 +97,49 @@ export default function InviteUserModal({ users, onClose, onInvite }) {
         ? "Someone with this email is already on the team."
         : "";
 
-  const canSend =
-    name.trim() &&
-    trimmedEmail &&
-    !emailError &&
-    roles.length > 0 &&
-    (!isPortfolio || portfolios.length > 0);
+  // A taken email is shown straight away; a badly formatted one waits until the field loses focus
+  const showEmailError = !!emailError && (emailTouched || emailTaken);
 
-  const handleSend = () => {
-    if (!canSend) return;
-    onInvite({
-      id: `u-${Date.now()}`,
-      name: name.trim(),
+  // First thing still stopping the invite, shown in the footer so the disabled button explains itself
+  const blocker = !name.trim()
+    ? "Enter their full name."
+    : !trimmedEmail
+      ? "Enter their work email."
+      : emailError
+        ? emailError
+        : roles.length === 0
+          ? "Pick at least one role."
+          : isPortfolio && portfolios.length === 0
+            ? "Pick at least one portfolio for the Portfolio Officer role."
+            : "";
+  const hasStarted = name.trim() || trimmedEmail || roles.length > 0;
+
+  const canSend = !blocker;
+
+  const handleSend = async () => {
+    if (!canSend || sending) return;
+    const phone = toApiPhone(whatsapp);
+    const details = {
+      fullName: name.trim().replace(/\s+/g, " "),
       email: trimmedEmail,
-      whatsapp: whatsapp.trim().replace(/^\+91\s*$/, ""),
-      roles,
-      portfolios: isPortfolio ? portfolios : [],
-      status: "invited",
-      openApprovals: 0,
-      color: AVATAR_COLORS[users.length % AVATAR_COLORS.length],
-    });
-    onClose();
+      ...(phone && { phone }),
+      role: roles.map((r) => API_ROLES[r]),
+      portfolioIds: isPortfolio ? portfolios : [],
+    };
+
+    setSending(true);
+    setSendError("");
+    try {
+      const res = await addNetworkClusterAdmin([details]);
+      if (!res?.data?.success) throw new Error(res?.data?.message || "Couldn't send the invite.");
+      onInvite(details);
+      onClose();
+    } catch (err) {
+      console.error("Invite user error:", err);
+      setSendError(err.message || "Couldn't send the invite. Please try again.");
+    } finally {
+      setSending(false);
+    }
   };
 
   const inputClass =
@@ -135,9 +190,9 @@ export default function InviteUserModal({ users, onClose, onInvite }) {
                 onChange={(e) => setEmail(e.target.value)}
                 onBlur={() => setEmailTouched(true)}
                 placeholder="name@prive.network"
-                className={`${inputClass} ${emailTouched && emailError ? "border-[#DC2626] focus:border-[#DC2626]" : ""}`}
+                className={`${inputClass} ${showEmailError ? "border-[#DC2626] focus:border-[#DC2626]" : ""}`}
               />
-              {emailTouched && emailError && <p className="text-[13px] text-[#DC2626] mt-1">{emailError}</p>}
+              {showEmailError && <p className="text-[13px] text-[#DC2626] mt-1">{emailError}</p>}
             </label>
           </div>
 
@@ -162,7 +217,7 @@ export default function InviteUserModal({ users, onClose, onInvite }) {
             Roles <span className="font-normal text-[#94A3B8]">(pick one or more)</span>
           </span>
           <div className="space-y-2.5">
-            {Object.entries(ROLES).map(([key, role]) => {
+            {Object.entries(ROLES).filter(([key]) => API_ROLES[key]).map(([key, role]) => {
               const isOn = roles.includes(key);
               return (
                 <button
@@ -194,20 +249,23 @@ export default function InviteUserModal({ users, onClose, onInvite }) {
             {!isPortfolio && <span className="font-normal text-[#94A3B8]">(for Portfolio Officers)</span>}
           </span>
               <div className={`grid grid-cols-3 gap-2.5 transition ${isPortfolio ? "" : "opacity-60"}`}>
-                {PORTFOLIOS.map((p) => {
-                  const isOn = portfolios.includes(p);
+                {loadingTypes && !budgetTypes?.length && (
+                  <p className={`${hintClass} col-span-3`}>Loading portfolios...</p>
+                )}
+                {budgetTypes?.map((p) => {
+                  const isOn = portfolios.includes(p.budgetTypeId);
                   const officers = officersFor(p);
                   return (
                     <button
-                      key={p}
+                      key={p.budgetTypeId}
                       type="button"
-                      onClick={() => togglePortfolio(p)}
+                      onClick={() => togglePortfolio(p.budgetTypeId)}
                       className={`flex items-start justify-between gap-3 px-4 py-3 rounded-xl border text-left transition cursor-pointer ${
                         isOn ? "border-[#2BA597] bg-[#ECF8F5]" : "border-[#E2E8F0] hover:border-[#B6CFF5]"
                       }`}
                     >
                       <span className="min-w-0">
-                        <span className="block text-[16px] font-semibold text-[#1E293B]">{p}</span>
+                        <span className="block text-[16px] font-semibold text-[#1E293B] capitalize">{p.budgetType}</span>
                         <span className="block text-[14px] text-[#94A3B8]">
                           {officers.length ? `With ${officers.join(", ")}` : "No officer yet"}
                         </span>
@@ -228,7 +286,13 @@ export default function InviteUserModal({ users, onClose, onInvite }) {
 
         {/* Footer */}
         <div className="flex items-center justify-between gap-4 px-8 py-4 border-t border-[#E2E8F0] shrink-0">
-          <span className="text-[15px] text-[#64748B]">They&apos;ll get an email invite to join Prive Network.</span>
+          {sendError ? (
+            <span role="alert" className="text-[15px] font-semibold text-[#DC2626]">{sendError}</span>
+          ) : blocker && hasStarted ? (
+            <span aria-live="polite" className="text-[15px] font-semibold text-[#B45309]">{blocker}</span>
+          ) : (
+            <span className="text-[15px] text-[#64748B]">They&apos;ll get an email invite to join Prive Network.</span>
+          )}
           <div className="flex items-center gap-3 shrink-0">
             <button
               type="button"
@@ -240,10 +304,10 @@ export default function InviteUserModal({ users, onClose, onInvite }) {
             <button
               type="button"
               onClick={handleSend}
-              disabled={!canSend}
+              disabled={!canSend || sending}
               className="h-11 px-6 rounded-full bg-[#1D72E8] text-white text-[16px] font-bold hover:bg-[#0B57D0] transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Send invite
+              {sending ? "Sending..." : "Send invite"}
             </button>
           </div>
         </div>

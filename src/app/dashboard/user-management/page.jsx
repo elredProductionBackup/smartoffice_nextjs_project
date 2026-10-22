@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchBudgetTypes } from "@/store/events/budgetChecklist/budgetThunks";
 import {
   FiEdit2,
   FiSearch,
@@ -14,9 +15,12 @@ import {
   FiXCircle,
 } from "react-icons/fi";
 import { AVATAR_COLORS, PORTFOLIO_INITIALS, ROLES, STATUS } from "./constants";
-import { getAllNetworkClusterAdminDetails } from "@/services/auth.service";
+import { getAllNetworkClusterAdminDetails, updateNetworkClusterAdminActivation } from "@/services/auth.service";
+import { addToast } from "@/store/toastSlice";
+import EventActionConfirmModal from "@/_components/EventsComps/EventActionConfirmModal";
 import ChangeRoleModal from "./ChangeRoleModal";
 import InviteUserModal from "./InviteUserModal";
+import SuccessPopup from "@/_components/ConfirmationPopups/SuccessPopup";
 import UserDetailsModal from "./UserDetailsModal";
 import RowMenu from "@/_components/UI/RowMenu";
 
@@ -30,11 +34,11 @@ const API_ROLE_MAP = {
 };
 
 // Shapes one getAllNetworkClusterAdminDetails result into the row this page renders
-// API sends "Active" etc.; isActivate: false means the account is switched off
+// isActivate: false means the account is switched off, whatever `status` says; otherwise use "Active" etc.
 const toStatus = (u) => {
+  if (u.isActivate === false) return "deactivated";
   const key = String(u.status || "").toLowerCase();
-  if (STATUS[key]) return key;
-  return u.isActivate === false ? "deactivated" : "active";
+  return STATUS[key] ? key : "active";
 };
 
 // Some firstnames already include the surname (e.g. "Vignesh Nagamani" + "Nagamani")
@@ -44,6 +48,12 @@ const toName = (first = "", last = "") => {
   return l && !f.toLowerCase().endsWith(l.toLowerCase()) ? `${f} ${l}` : f;
 };
 
+// API portfolios may be names, budgetTypeIds or objects; keep one string per portfolio (ids are named later)
+const portfolioKey = (p) =>
+  typeof p === "string"
+    ? p
+    : p?.budgetType || p?.portfolioName || p?.name || p?.budgetTypeId || p?.portfolioId || p?._id || "";
+
 const toUser = (u, index) => {
   const name = toName(u.firstname ?? u.firstName, u.lastname ?? u.lastName);
   const roles = [...new Set((u.role || u.roles || []).map((r) => API_ROLE_MAP[r]).filter(Boolean))];
@@ -52,7 +62,7 @@ const toUser = (u, index) => {
     name: name || u.email || "No name",
     email: u.email || "",
     roles,
-    portfolios: u.portfolios || [],
+    portfolios: (u.portfolios || []).map(portfolioKey).filter(Boolean),
     whatsapp: u.phone || u.phoneNumber || "",
     status: toStatus(u),
     openApprovals: u.openApprovals ?? 0,
@@ -74,8 +84,8 @@ const roleBadges = (user) =>
     r === "portfolio" && user.portfolios.length
       ? user.portfolios.map((p) => ({
           key: `portfolio-${p}`,
-          initials: PORTFOLIO_INITIALS[p] || p[0],
-          label: `${p} Officer`,
+          initials: PORTFOLIO_INITIALS[p] || String(p).charAt(0).toUpperCase() || "P",
+          label: `${String(p).charAt(0).toUpperCase()}${String(p).slice(1)} Officer`,
           className: ROLES.portfolio.className,
           dot: ROLES.portfolio.dot,
         }))
@@ -180,7 +190,9 @@ export default function UserManagementPage() {
   const { user } = useSelector((state) => state.auth);
   const isAdmin = user?.userType?.toLowerCase() === "admin";
 
-  const [users, setUsers] = useState([]);
+  const dispatch = useDispatch();
+  const { budgetTypes } = useSelector((state) => state.budget);
+  const [rawUsers, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const networkClusterCode = user?.networkClusterDetails?.networkClusterCode;
@@ -189,9 +201,23 @@ export default function UserManagementPage() {
   const [roleFilter, setRoleFilter] = useState("all");
   const [roleUserId, setRoleUserId] = useState(null);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
+  const [inviteSuccess, setInviteSuccess] = useState(null); // invite payload, for the success popup
+  const [deactivateUserId, setDeactivateUserId] = useState(null); // waiting on the confirm popup
+  const [activationPending, setActivationPending] = useState(false);
   const [detailsUserId, setDetailsUserId] = useState(null);
+  useEffect(() => {
+    if (!budgetTypes?.length) dispatch(fetchBudgetTypes());
+  }, [budgetTypes?.length, dispatch]);
+
+  // Swap portfolio ids for their budget type names once those have loaded
+  const users = useMemo(() => {
+    const nameById = Object.fromEntries((budgetTypes || []).map((t) => [t.budgetTypeId, t.budgetType]));
+    return rawUsers.map((u) => ({ ...u, portfolios: u.portfolios.map((p) => nameById[p] || p) }));
+  }, [rawUsers, budgetTypes]);
+
   const roleUser = users.find((u) => u.id === roleUserId);
   const detailsUser = users.find((u) => u.id === detailsUserId);
+  const deactivateUser = users.find((u) => u.id === deactivateUserId);
 
   // Admin only — send everyone else back to the dashboard
   useEffect(() => {
@@ -242,6 +268,37 @@ export default function UserManagementPage() {
         (!q || u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q))
     );
   }, [users, search, roleFilter]);
+
+  // Flips the row straight away, then rolls back if the API refuses
+  const setActivation = async (target, isActivate) => {
+    const previous = target.status;
+    updateUser(target.id, { status: isActivate ? "active" : "deactivated" });
+    setActivationPending(true);
+    try {
+      const res = await updateNetworkClusterAdminActivation({ userCode: target.id, isActivate });
+      if (!res?.data?.success) throw new Error(res?.data?.message || "Request failed");
+      dispatch(addToast({
+        message: {
+          title: isActivate ? "User activated" : "User deactivated",
+          descrip: isActivate ? `${target.name} can use Smart Networks again.` : `${target.name} can no longer sign in.`,
+        },
+        type: "success",
+      }));
+    } catch (err) {
+      console.error("Activation update error:", err);
+      updateUser(target.id, { status: previous });
+      dispatch(addToast({
+        message: {
+          title: isActivate ? "Couldn't activate user" : "Couldn't deactivate user",
+          descrip: err.message || "Please try again.",
+        },
+        type: "error",
+      }));
+    } finally {
+      setActivationPending(false);
+      setDeactivateUserId(null);
+    }
+  };
 
   const updateUser = (id, patch) => setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, ...patch } : u)));
   const removeUser = (id) => setUsers((prev) => prev.filter((u) => u.id !== id));
@@ -419,12 +476,12 @@ export default function UserManagementPage() {
                                         label: "Deactivate",
                                         icon: FiUserX,
                                         danger: true,
-                                        onClick: () => updateUser(u.id, { status: "deactivated" }),
+                                        onClick: () => setDeactivateUserId(u.id),
                                       }
                                     : {
                                         label: "Activate",
                                         icon: FiUserCheck,
-                                        onClick: () => updateUser(u.id, { status: "active" }),
+                                        onClick: () => setActivation(u, true),
                                       }),
                               ].filter(Boolean)
                         }
@@ -442,7 +499,10 @@ export default function UserManagementPage() {
         <InviteUserModal
           users={users}
           onClose={() => setIsInviteOpen(false)}
-          onInvite={(newUser) => setUsers((prev) => [...prev, newUser])}
+          onInvite={(invited) => {
+            fetchUsers();
+            setInviteSuccess(invited);
+          }}
         />
       )}
 
@@ -461,6 +521,24 @@ export default function UserManagementPage() {
           onSave={(patch) => updateUser(roleUser.id, patch)}
         />
       )}
+
+      {deactivateUser && (
+        <EventActionConfirmModal
+          title={`Deactivate ${deactivateUser.name}?`}
+          confirmText="Deactivate"
+          cancelText="Cancel"
+          isLoading={activationPending}
+          onConfirm={() => setActivation(deactivateUser, false)}
+          onCancel={() => !activationPending && setDeactivateUserId(null)}
+        />
+      )}
+
+      <SuccessPopup
+        isOpen={!!inviteSuccess}
+        title="Invite sent"
+        message={inviteSuccess && `${inviteSuccess.fullName} will get an email at ${inviteSuccess.email} to join the network.`}
+        onClose={() => setInviteSuccess(null)}
+      />
     </div>
   );
 }
