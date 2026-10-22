@@ -29,10 +29,13 @@ export async function POST(req) {
     const send = (body) => sendText(msg.from, body);
     // Answer Infobip right away; OpenAI + backend calls take a few seconds
     after(() =>
-      handleMessage(msg, send).catch(async (err) => {
-        console.error("Infobip WhatsApp handler error:", err);
-        await send(err.message || "Something went wrong.").catch(() => {});
-      })
+      // Blue ticks + "typing…" first, so the user sees the message was picked up while the reply is prepared
+      Promise.all([markRead(msg.messageId), showTyping(msg.from)])
+        .then(() => handleMessage(msg, send))
+        .catch(async (err) => {
+          console.error("Infobip WhatsApp handler error:", err);
+          await send(err.message || "Something went wrong.").catch(() => {});
+        })
     );
   }
   return NextResponse.json({ ok: true });
@@ -62,6 +65,35 @@ async function handleMessage(msg, send) {
   const heard = await transcribe(audio, `voice.${ext}`);
   if (!heard) return send("Didn't catch that, try again.");
   return handleText({ from: msg.from, text: heard, prefix: `🎤 "${heard}"\n\n`, send });
+}
+
+// Never throws: a failed read receipt must not stop the reply
+async function markRead(messageId) {
+  try {
+    const res = await fetch(`${base()}/whatsapp/1/senders/${env.INFOBIP_WHATSAPP_SENDER}/message/${encodeURIComponent(messageId)}/read`, {
+      method: "POST",
+      headers: authHeader(),
+    });
+    if (!res.ok) console.warn("Infobip mark-as-read failed:", res.status, await res.text());
+  } catch (err) {
+    console.warn("Infobip mark-as-read failed:", err);
+  }
+}
+
+// "typing…" bubble; WhatsApp hides it when the reply arrives or after 25s. Never throws, like markRead.
+async function showTyping(to) {
+  try {
+    const res = await fetch(`${base()}/whatsapp/1/events`, {
+      method: "POST",
+      headers: { ...authHeader(), "Content-Type": "application/json" },
+      body: JSON.stringify({
+        events: [{ sender: env.INFOBIP_WHATSAPP_SENDER, destinations: [{ to }], content: { type: "TYPING_INDICATOR" } }],
+      }),
+    });
+    if (!res.ok) console.warn("Infobip typing indicator failed:", res.status, await res.text());
+  } catch (err) {
+    console.warn("Infobip typing indicator failed:", err);
+  }
 }
 
 async function sendText(to, body) {
