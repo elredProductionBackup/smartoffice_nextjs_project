@@ -199,6 +199,9 @@ const userMenu = [
         ? adminMenu
         : userMenu;
 
+  const showSendBulk = !isFinanceManager && !isLearningOfficer;
+  const sidebarCount = menu.length + (showSendBulk ? 1 : 0);
+
     // { name: "Vendors", path: "/dashboard/vendors?tab=hotels", logo: vendorsLogo },
     // { name: "Resources", path: "/dashboard/resources", logo: resourcesLogo },
     // { name: "Archive", path: "/dashboard/archive", logo: archiveLogo },
@@ -218,7 +221,11 @@ const userMenu = [
               className="w-21 bg-[#F2F7FF] h-full p-5 rounded-2xl overflow-y-auto overflow-x-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
               onScroll={hideTooltip}
             >
-              <ul className="flex flex-col justify-between gap-5 min-h-full">
+              {/* Spread items over the rail, but cap gaps at 40px so short menus don't over-stretch */}
+              <ul
+                className="flex flex-col justify-between gap-5"
+                style={{ minHeight: `min(100%, ${sidebarCount * 44 + (sidebarCount - 1) * 40}px)` }}
+              >
                 {menu.map((item) => {
                     const basePath = removeAllParams(item.path);
                     const active = item.exact
@@ -244,7 +251,7 @@ const userMenu = [
                     </li>
                   );
                 })}
-                {!isFinanceManager && !isLearningOfficer && (
+                {showSendBulk && (
                 <li>
                   <Link
                     href="/dashboard/send-bulk"
