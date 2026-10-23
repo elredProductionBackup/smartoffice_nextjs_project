@@ -3,7 +3,7 @@
 const MODEL = process.env.OPENAI_MODEL || "gpt-5-mini";
 // gpt-5 models reason before answering (~4s); extracting a title and date needs almost none (~1s)
 const REASONING = MODEL.startsWith("gpt-5") ? { reasoning_effort: process.env.OPENAI_REASONING_EFFORT || "minimal" } : {};
-const STT_MODEL = process.env.OPENAI_STT_MODEL || "gpt-4o-mini-transcribe";
+const STT_MODEL = process.env.OPENAI_STT_MODEL || "gpt-4o-transcribe"; // full model: more accurate than mini, especially on Indian accents
 
 // The assistant only adds actionables: one tool
 const CREATE_TOOL = {
@@ -94,6 +94,7 @@ export async function transcribe(audio, filename) {
   form.append("file", audio, filename);
   form.append("model", STT_MODEL);
   form.append("language", "en");
+  form.append("prompt", "A short spoken to-do item in English, often with a day or time, e.g. \"Call Rahul tomorrow at 10am about the hotel booking.\"");
 
   const res = await fetch("https://api.openai.com/v1/audio/transcriptions", {
     method: "POST",
