@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Trash2 } from "lucide-react";
+import { FiSearch } from "react-icons/fi";
 import ButtonComp from "./ButtonComp";
 import AddTask from "./AddTask";
 import { useDispatch, useSelector } from "react-redux";
@@ -137,6 +138,7 @@ const ChecklistContent = ({ eventId }) => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [activeDifficulty, setActiveDifficulty] = useState(null);
   const [showDifficultyBar, setShowDifficultyBar] = useState(false);
+  const [search, setSearch] = useState("");
 
   // Fetch tasks for this event ONLY
   useEffect(() => {
@@ -150,12 +152,23 @@ const ChecklistContent = ({ eventId }) => {
     dispatch(fetchMasterConfig());
   }, [dispatch]);
 
+  // Search matches master item labels, and event task titles or their subtask titles
+  const query = search.trim().toLowerCase();
+  const matchesSearch = (text) => !query || (text || "").toLowerCase().includes(query);
+
   const visibleMasterList = masterList.filter(
-    (item) => !activeDifficulty || MASTER_DIFFICULTY_CATEGORY[item.difficulty] === activeDifficulty
+    (item) =>
+      (!activeDifficulty || MASTER_DIFFICULTY_CATEGORY[item.difficulty] === activeDifficulty) &&
+      matchesSearch(item.label)
   );
   const visibleTaskList = taskList.filter(
-    (task) => !activeDifficulty || task.category === activeDifficulty
+    (task) =>
+      (!activeDifficulty || task.category === activeDifficulty) &&
+      (matchesSearch(task.title) || task.subTask?.some((st) => matchesSearch(st.title)))
   );
+  const noSearchResults =
+    !!query && (masterList.length > 0 || taskList.length > 0) &&
+    visibleMasterList.length === 0 && visibleTaskList.length === 0;
 
   const selectedTaskForModal = taskList.find(
     (t) => t.id === modal.taskId || t.actionableId === modal.taskId
@@ -273,6 +286,16 @@ const ChecklistContent = ({ eventId }) => {
             >
               <img src="/image/Plus-Icon.svg" alt="plus" />
             </button>
+            {/* =============== Search ================ */}
+            <div className="relative w-[300px] max-w-full">
+              <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8] text-[16px]" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search checklist"
+                className="w-full h-10 pl-10 pr-4 rounded-xl bg-white border border-[#E2E8F0] text-[15px] text-[#1E293B] placeholder:text-[#94A3B8] outline-none focus:border-[#0B57D0] transition"
+              />
+            </div>
           </div>
 
           {/* ===========task completion Progress bar=================== */}
@@ -571,8 +594,15 @@ const ChecklistContent = ({ eventId }) => {
         </div>
       )}
 
+      {/* =============== Search – no matches ================  */}
+      {noSearchResults && (
+        <div className="text-center text-gray-500 text-[16px] py-8">
+          No checklist items match &quot;{search.trim()}&quot;
+        </div>
+      )}
+
       {/* =============== Event List – empty condition ================  */}
-      {taskList.length === 0 && masterList.length > 0 && !loading && (
+      {taskList.length === 0 && masterList.length > 0 && !loading && !query && (
         <div className="text-center text-gray-500 text-[16px] py-8">
           No event specific items yet
         </div>
