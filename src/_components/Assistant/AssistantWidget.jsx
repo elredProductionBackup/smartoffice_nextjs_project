@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import moment from "moment";
 import { FiMessageCircle, FiMic, FiSend, FiX } from "react-icons/fi";
-import { DESTRUCTIVE, allowedFor, confirmText, findActionables, needsTarget, runCall } from "@/utils/assistant/commands";
-import { clientOps } from "./assistantActions";
+import { ADMIN_ONLY, createFromCall } from "@/utils/assistant/commands";
+import { clientCreate } from "./assistantActions";
 import { refreshActionables } from "@/store/actionable/actionableUiSlice";
 
 const MAX_RECORD_MS = 60_000;
@@ -15,7 +15,7 @@ const MAX_SAVED = 20;
 const GREETING = {
   role: "assistant",
   content:
-    'Hi! Tell me what to do with your actionables, e.g. "Add call vendor tomorrow" or "Mark call vendor done". Voice recordings are transcribed by OpenAI.',
+    'Hi! Type or say a task and I\'ll add it to your actionables, e.g. "Call vendor tomorrow at 5pm". Voice recordings are transcribed by OpenAI.',
 };
 
 export default function AssistantWidget() {
@@ -66,10 +66,8 @@ export default function AssistantWidget() {
 
   useEffect(() => {
     if (loadedKey !== storageKey) return; // don't overwrite before this user's saved chat is loaded
-    // Pending Confirm / "Which one?" buttons hold stale task data after a reload, so save them as resolved
-    const toSave = messages.slice(-MAX_SAVED).map(({ options, confirm, ...m }) => (options || confirm ? { ...m, resolved: true } : m));
     try {
-      localStorage.setItem(storageKey, JSON.stringify(toSave));
+      localStorage.setItem(storageKey, JSON.stringify(messages.slice(-MAX_SAVED)));
     } catch {}
   }, [messages, storageKey, loadedKey]);
 
@@ -86,36 +84,12 @@ export default function AssistantWidget() {
   }, [open]);
 
   const push = (msg) => setMessages((prev) => [...prev, msg]);
-  const resolve = (index) =>
-    setMessages((prev) => prev.map((m, i) => (i === index ? { ...m, resolved: true } : m)));
+  const isAdmin = user?.userType?.toLowerCase() === "admin"; // same rule as the Actionable page
 
-  const execute = async (call, item) => {
-    try {
-      push({ role: "assistant", content: await runCall(call, item, clientOps(dispatch, user)) });
-      dispatch(refreshActionables()); // thunks only patch items already loaded; refetch so every list shows the change
-    } catch (err) {
-      push({ role: "assistant", content: err.message, error: true });
-    }
-  };
-
-  const handleCall = async (call, item) => {
-    if (!allowedFor(call.name, user?.userType?.toLowerCase() === "admin")) {
-      return push({ role: "assistant", content: "Only admins can change actionables. You can view them and add comments." });
-    }
-    if (needsTarget(call.name) && !item) {
-      const matches = await findActionables(call.args.query || "", clientOps(dispatch, user));
-      if (!matches.length) return push({ role: "assistant", content: `No actionable matching "${call.args.query}".` });
-      if (matches.length > 1) {
-        return push({ role: "assistant", content: "Which one?", options: matches.slice(0, 5), call });
-      }
-      item = matches[0];
-    }
-
-    if (DESTRUCTIVE.has(call.name)) {
-      return push({ role: "assistant", content: await confirmText(call, item, clientOps(dispatch, user)), confirm: { call, item } });
-    }
-
-    await execute(call, item);
+  const addActionable = async (call) => {
+    if (!isAdmin) return push({ role: "assistant", content: ADMIN_ONLY });
+    push({ role: "assistant", content: await createFromCall(call, clientCreate(dispatch)) });
+    dispatch(refreshActionables()); // the thunk only patches the list already loaded; refetch so every list shows it
   };
 
   const step = async (fn) => {
@@ -133,7 +107,6 @@ export default function AssistantWidget() {
     const content = text.trim();
     if (!content) return;
     setInput("");
-    const history = [...messages, { role: "user", content }];
     push({ role: "user", content });
 
     const res = await fetch("/api/assistant", {
@@ -143,14 +116,14 @@ export default function AssistantWidget() {
         Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
       },
       body: JSON.stringify({
-        messages: history.map(({ role, content }) => ({ role, content })),
-        now: moment().format("dddd, YYYY-MM-DD HH:mm"),
+        text: content,
+        now: moment().format("dddd, YYYY-MM-DD HH:mm [UTC]Z"), // offset lets the model write due times in the user's zone
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Assistant unavailable.");
-    if (data.call) await handleCall(data.call);
+    if (data.call) await addActionable(data.call);
     else push({ role: "assistant", content: data.reply });
   };
 
@@ -231,48 +204,6 @@ export default function AssistantWidget() {
                 }`}
               >
                 {m.content}
-
-                {m.options && !m.resolved && (
-                  <div className="mt-2 flex flex-col gap-1">
-                    {m.options.map((item) => (
-                      <button
-                        key={item.actionableId}
-                        disabled={busy}
-                        onClick={() => {
-                          resolve(i);
-                          step(() => handleCall(m.call, item));
-                        }}
-                        className="cursor-pointer rounded-lg border border-[#D3E3FD] px-2 py-1 text-left hover:bg-[#F2F7FF]"
-                      >
-                        {item.title}
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                {m.confirm && !m.resolved && (
-                  <div className="mt-2 flex gap-2">
-                    <button
-                      disabled={busy}
-                      onClick={() => {
-                        resolve(i);
-                        step(() => execute(m.confirm.call, m.confirm.item));
-                      }}
-                      className="cursor-pointer rounded-full bg-red-600 px-3 py-1 text-white"
-                    >
-                      Confirm
-                    </button>
-                    <button
-                      onClick={() => {
-                        resolve(i);
-                        push({ role: "assistant", content: "Cancelled." });
-                      }}
-                      className="cursor-pointer rounded-full bg-[#999] px-3 py-1 text-white"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                )}
               </div>
             ))}
             {busy && <div className="self-start text-[13px] text-[#666]">Working…</div>}
@@ -289,8 +220,8 @@ export default function AssistantWidget() {
               ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder={listening ? "Recording… tap mic to send" : "Type or speak a command"}
-              aria-label="Command"
+              placeholder={listening ? "Recording… tap mic to send" : "Type or say a task"}
+              aria-label="Task"
               maxLength={1000}
               className="flex-1 rounded-full bg-[#F4F5F7] px-4 py-2 text-[14px] outline-none"
             />
@@ -299,7 +230,7 @@ export default function AssistantWidget() {
                 type="button"
                 onClick={toggleVoice}
                 disabled={busy && !listening}
-                aria-label={listening ? "Stop recording" : "Speak a command"}
+                aria-label={listening ? "Stop recording" : "Say a task"}
                 aria-pressed={listening}
                 className={`flex h-9 w-9 cursor-pointer items-center justify-center rounded-full ${
                   listening ? "animate-pulse bg-red-500 text-white" : "bg-[#F4F5F7] text-[#0B57D0]"
