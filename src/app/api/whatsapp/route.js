@@ -56,7 +56,7 @@ async function handleMessage(msg, send) {
 
   const text = await transcribeVoiceNote(msg.audio.id);
   if (!text) return send("Didn't catch that, try again.");
-  return handleText({ from: msg.from, text, prefix: `🎤 "${text}"\n\n`, send });
+  return handleText({ from: msg.from, text, prefix: `TASK: "${text}"\n\n`, send });
 }
 
 /* ---------- WhatsApp Graph API ---------- */

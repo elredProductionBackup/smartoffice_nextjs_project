@@ -20,15 +20,11 @@ export function toDueStamp(due) {
   return m.utc().format("YYYY-MM-DDTHH:mm:ss.SSS[Z]");
 }
 
-// Shown in the user's own offset, as they said it
-const formatDue = (due) =>
-  isDateOnly(due) ? moment(due).format("DD MMM YYYY") : moment.parseZone(due).format("DD MMM YYYY, h:mm A");
-
 /** Creates one actionable from the model's create_actionable call via `create(fields)`. Returns the reply text. */
 export async function createFromCall({ args = {} }, create) {
   const title = args.title?.trim().slice(0, 1000);
   if (!title) throw new Error("Couldn't find a task in that message.");
   const dueDateTimeStamp = toDueStamp(args.due);
   await create({ title, notes: "", dueDateTimeStamp }); // everything the user said goes in the title, never notes
-  return `Added "${title}"${dueDateTimeStamp ? `, due ${formatDue(args.due)}` : ""}.`;
+  return "Added ✅";
 }

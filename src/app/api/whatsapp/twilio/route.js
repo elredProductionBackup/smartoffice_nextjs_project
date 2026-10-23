@@ -60,7 +60,7 @@ async function handleMessage(params, send) {
   if (!res.ok) throw new Error(`Couldn't download voice note (${res.status})`);
   const text = await transcribe(await res.blob(), `voice.${audioType.split(";")[0].split("/")[1]}`);
   if (!text) return send("Didn't catch that, try again.");
-  return handleText({ from: params.From, text, prefix: `🎤 "${text}"\n\n`, send });
+  return handleText({ from: params.From, text, prefix: `TASK: "${text}"\n\n`, send });
 }
 
 async function sendText(to, body) {

@@ -64,7 +64,7 @@ async function handleMessage(msg, send) {
   const ext = (audio.type || "audio/ogg").split(";")[0].split("/")[1] || "ogg";
   const heard = await transcribe(audio, `voice.${ext}`);
   if (!heard) return send("Didn't catch that, try again.");
-  return handleText({ from: msg.from, text: heard, prefix: `🎤 "${heard}"\n\n`, send });
+  return handleText({ from: msg.from, text: heard, prefix: `TASK: "${heard}"\n\n`, send });
 }
 
 // Never throws: a failed read receipt must not stop the reply
