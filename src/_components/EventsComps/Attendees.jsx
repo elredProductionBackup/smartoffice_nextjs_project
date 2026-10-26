@@ -6,7 +6,7 @@ import { UserSearch } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { selectIsFinanceOfficer } from "@/store/auth/authSlice";
 import { fetchEventMembers } from "@/store/events/eventsThunks";
-import { addOfflineAttendees, updateEventAttendance } from "@/services/events.service";
+import { addOfflineAttendees, removeEventAttendees, updateEventAttendance } from "@/services/events.service";
 import { openEventsModal } from "@/store/events/eventsUiSlice";
 import { addToast } from "@/store/toastSlice";
 import { formatMember } from "@/utils/formatMember";
@@ -15,6 +15,7 @@ import { useDebounce } from "@/hooks/useDebounce";
 import Pagination from "../UI/Pagination";
 import RowMenu from "../UI/RowMenu";
 import SuccessPopup from "../ConfirmationPopups/SuccessPopup";
+import ConfirmPopup from "../ConfirmationPopups/ConfirmPopup";
 import AddAttendeeModal from "./AddAttendeeModal";
 import UploadSheetModal from "./UploadSheetModal";
 import SheetImportModal from "./SheetImportModal";
@@ -37,6 +38,11 @@ const APP_FILTERS = [
 const SHEET_BATCH = 1000; // addOfflineAttendees row limit per call
 
 const ATTENDANCE_FROM_API = { attended: "yes", notAttended: "no", notMarked: "none" };
+// Members who registered themselves in the app can't be removed from Smart Office
+const isSelfRegistered = (m) => m.registrationSource === "app";
+
+const nameOfMember = (m) => `${m?.firstName || ""} ${m?.lastName || ""}`.trim() || "Attendee";
+
 // What updateEventAttendance stores; "" clears it back to Not marked
 const ATTENDANCE_TO_API = { yes: "attended", no: "notAttended", none: "" };
 
@@ -140,7 +146,7 @@ function toRow(m) {
 
 // Per-event browser copy of attendee changes; storage can be blocked, so never let it throw
 // edited holds field overrides for attendees that came from the API
-const EMPTY_LOCAL = { added: [], removed: [], edited: {} };
+const EMPTY_LOCAL = { added: [], edited: {} };
 const storageKey = (eventId) => `eventAttendees:${eventId}`;
 
 function loadLocal(eventId) {
@@ -209,6 +215,9 @@ const Attendees = ({ eventId }) => {
   const [local, setLocal] = useState(() => loadLocal(eventId));
   // Attendance picked but not yet confirmed by a refetch, so the pill changes straight away
   const [pendingAttendance, setPendingAttendance] = useState({});
+  // Attendees waiting on the remove confirmation: { members, error }
+  const [removing, setRemoving] = useState(null);
+  const [removeLoading, setRemoveLoading] = useState(false);
 
   useEffect(() => saveLocal(eventId, local), [eventId, local]);
 
@@ -217,7 +226,6 @@ const Attendees = ({ eventId }) => {
     () =>
       [...(filtersActive || currentPage > 1 ? [] : local.added), ...(membersMap[eventId] || [])]
         .map(toRow)
-        .filter((m) => !local.removed.includes(m.id))
         .map((m) => (local.edited[m.id] ? { ...m, ...local.edited[m.id] } : m)),
     [local, membersMap, eventId, filtersActive, currentPage]
   );
@@ -267,6 +275,8 @@ const Attendees = ({ eventId }) => {
   const visibleIds = visibleMembers.map((m) => m.id);
   const selectedVisible = visibleIds.filter((id) => selected.includes(id));
   const allSelected = visibleIds.length > 0 && selectedVisible.length === visibleIds.length;
+  // Ticked rows the bulk Remove can act on (app self-registrations are left out)
+  const selectedRemovable = visibleMembers.filter((m) => selected.includes(m.id) && !isSelfRegistered(m));
 
   const toggleRow = (id) =>
     setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
@@ -394,14 +404,61 @@ const Attendees = ({ eventId }) => {
     setSuccess({ title: "Changes saved", message: `${values.name}'s details have been updated.` });
   };
 
-  const removeAttendee = (member) => {
-    setLocal((prev) => ({
-      ...prev,
-      added: prev.added.filter((m) => m.userCode !== member.id),
-      removed: member.id.startsWith("local-") ? prev.removed : [...prev.removed, member.id],
-    }));
-    setSelected((prev) => prev.filter((id) => id !== member.id));
+  // Runs after the confirm popup. Browser-only rows (local-…) are dropped here; the rest go to the API,
+  // which reports any it couldn't remove (e.g. app self-registrations) in failed[]
+  const confirmRemove = async () => {
+    const { members } = removing;
+    const localIds = members.filter((m) => m.id.startsWith("local-")).map((m) => m.id);
+    const attendeeIds = members.filter((m) => !m.id.startsWith("local-")).map((m) => m.id);
+
+    let res = { removedCount: 0, failed: [] };
+    if (attendeeIds.length) {
+      setRemoveLoading(true);
+      try {
+        res = await removeEventAttendees({ eventId, attendeeIds });
+      } catch (err) {
+        setRemoving((prev) => ({ ...prev, error: err.message || "Couldn't remove. Please try again." }));
+        return;
+      } finally {
+        setRemoveLoading(false);
+      }
+    }
+
+    if (localIds.length) {
+      setLocal((prev) => ({ ...prev, added: prev.added.filter((m) => !localIds.includes(m.userCode)) }));
+    }
+
+    const failedIds = (res.failed || []).map((f) => f.attendeeId);
+    const removedIds = members.map((m) => m.id).filter((id) => !failedIds.includes(id));
+    setSelected((prev) => prev.filter((id) => !removedIds.includes(id)));
+    setRemoving(null);
+    if (attendeeIds.length) loadAttendees();
+
+    const removedCount = (res.removedCount || 0) + localIds.length;
+    const failed = res.failed || [];
+    if (failed.length) {
+      const nameOf = (id) => nameOfMember(members.find((x) => x.id === id));
+      dispatch(addToast({
+        message: {
+          title: removedCount ? `Removed ${removedCount}, kept ${failed.length}` : "Couldn't remove",
+          descrip: failed.map((f) => `${nameOf(f.attendeeId)}: ${f.reason}`).join(" · "),
+        },
+        type: "error",
+      }));
+    } else {
+      dispatch(addToast({
+        message: {
+          title: removedCount === 1 ? "Attendee removed" : "Attendees removed",
+          descrip: removedCount === 1
+            ? `${nameOfMember(members[0])} has been removed from this event.`
+            : `${removedCount} attendees have been removed from this event.`,
+        },
+        type: "success",
+      }));
+    }
   };
+
+  const askRemove = (members) => setRemoving({ members, error: "" });
 
   const copyToClipboard = async (text, what) => {
     try {
@@ -496,6 +553,20 @@ const Attendees = ({ eventId }) => {
           onImported={handleImported}
         />
       )}
+      <ConfirmPopup
+        isOpen={!!removing}
+        title={removing?.members.length === 1 ? "Remove attendee?" : `Remove ${removing?.members.length} attendees?`}
+        message={
+          removing?.members.length === 1
+            ? `${nameOfMember(removing.members[0])} will be taken off this event's attendee list.`
+            : "They'll be taken off this event's attendee list."
+        }
+        confirmText="Remove"
+        isLoading={removeLoading}
+        error={removing?.error}
+        onConfirm={confirmRemove}
+        onCancel={() => setRemoving(null)}
+      />
       <SuccessPopup
         isOpen={!!success}
         title={success?.title}
@@ -608,6 +679,16 @@ const Attendees = ({ eventId }) => {
           <button type="button" onClick={() => markAttendance(selectedVisible, "no")} className={chipClass(false)}>
             Mark didn&apos;t attend
           </button>
+          {selectedRemovable.length > 0 && (
+            <button
+              type="button"
+              onClick={() => askRemove(selectedRemovable)}
+              className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-full border border-[#FECACA] bg-white text-[14px] font-bold text-[#B91C1C] hover:bg-[#FEF2F2] transition cursor-pointer"
+            >
+              <FiTrash2 className="text-[14px]" />
+              Remove{selectedRemovable.length < selectedVisible.length ? ` ${selectedRemovable.length}` : ""}
+            </button>
+          )}
           <button
             type="button"
             onClick={() => setSelected([])}
@@ -774,7 +855,15 @@ const Attendees = ({ eventId }) => {
                                 disabled: !member.email,
                                 onClick: () => copyToClipboard(member.email, "Email"),
                               },
-                              { label: "Remove", icon: FiTrash2, danger: true, divider: true, onClick: () => removeAttendee(member) },
+                              {
+                                // Self-registered app members can only leave from the app
+                                label: isSelfRegistered(member) ? "Registered in app" : "Remove",
+                                icon: FiTrash2,
+                                danger: true,
+                                divider: true,
+                                disabled: isSelfRegistered(member),
+                                onClick: () => askRemove([member]),
+                              },
                             ]}
                           />
                         </div>

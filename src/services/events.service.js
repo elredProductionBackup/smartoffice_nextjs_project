@@ -110,6 +110,18 @@
     return res.data?.result?.[0] || {};
   };
 
+  // Remove attendees Smart Office added (pending or joined). App self-registrations
+  // (registrationSource "app") can't be removed and come back in failed[] ({ attendeeId, reason }).
+  export const removeEventAttendees = async ({ eventId, attendeeIds }) => {
+    const res = await api.delete("/smartOffice/removeEventAttendees", { data: { eventId, attendeeIds } });
+
+    // Axios validateStatus allows all status codes — check success flag manually
+    if (res.data?.success === false) {
+      throw new Error(res.data?.message || "Failed to remove attendees");
+    }
+    return res.data?.result?.[0] || {};
+  };
+
   // Get Members Media List
   export const getMembersMedia = ({
     eventId,
