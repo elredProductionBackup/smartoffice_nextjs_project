@@ -237,7 +237,7 @@ export default function EventDetailsClient() {
   }
 
   return (
-    <div className="h-[calc(100vh-80px)] flex flex-col gap-[20px] overflow-y-auto relative pb-[20px] focus:outline-none" ref={containerRef}>
+    <div className="h-[calc(100vh-80px)] flex flex-col gap-[20px] overflow-y-auto overflow-x-hidden relative pb-[20px] focus:outline-none" ref={containerRef}>
 
       <div className="bg-white rounded-2xl pt-6 pb-4 w-full relative z-[15] flex gap-[36px] items-stretch">
         {/* Cover */}
@@ -351,7 +351,7 @@ export default function EventDetailsClient() {
                   <div className="w-[44px] h-[44px] shrink-0 rounded-full bg-[#F3F4F6] text-[#6B7280] grid place-items-center text-[18px] font-medium">{event?.resource?.resourceName?.[0]?.toUpperCase()}</div>
                 }
                 <div className="min-w-0">
-                  <p className="text-[18px] font-medium text-[#111] leading-[26px]">{event?.resource?.resourceName}</p>
+                  <p className="font-heading text-[18px] font-medium text-[#111] leading-[26px]">{event?.resource?.resourceName}</p>
                   <p className="text-[15px] text-[#9CA3AF] leading-[22px] line-clamp-1">
                     Speaker{event?.resource?.resourceDescription && ` · ${event.resource.resourceDescription}`}
                   </p>
@@ -389,7 +389,7 @@ export default function EventDetailsClient() {
 
       <>
         {activeTab === "attendees" &&
-          <div className="shrink-0 min-h-[calc(100dvh-180px)] bg-[#F2F7FF] rounded-[20px]">
+          <div className="shrink-0 min-h-[calc(100dvh-180px)] bg-white">
             <Attendees eventId={eventId} />
           </div>
         }

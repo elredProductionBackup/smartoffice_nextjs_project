@@ -193,16 +193,16 @@ const AddAttendeeModal = ({ onClose, onSubmit, initialValues }) => {
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5 border-t border-[#E2E8F0] px-6 pt-3.5 pb-5">
-            <span className={`mr-auto min-w-0 text-sm font-bold ${formError ? "text-[#DC2626]" : "text-[#137A45]"}`}>
-              {formError || message}
-            </span>
             <button
               type="button"
               onClick={onClose}
-              className="rounded-full px-3 py-1.5 font-bold text-[#475569] hover:bg-[#F1F5F9] hover:text-[#1E293B] cursor-pointer"
+              className="-ml-3 rounded-full px-3 py-1.5 font-bold text-[#475569] hover:bg-[#F1F5F9] hover:text-[#1E293B] cursor-pointer"
             >
               Cancel
             </button>
+            <span className={`mr-auto min-w-0 text-sm font-bold ${formError ? "text-[#DC2626]" : "text-[#137A45]"}`}>
+              {formError || message}
+            </span>
             {!isEdit && (
               <button
                 type="submit"

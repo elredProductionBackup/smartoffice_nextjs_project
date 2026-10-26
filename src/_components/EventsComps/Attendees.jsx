@@ -1,8 +1,8 @@
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FiCheck, FiCopy, FiEdit2, FiMinus, FiPlus, FiSearch, FiTrash2, FiUpload } from "react-icons/fi";
+import { FiCheck, FiCopy, FiEdit2, FiMail, FiMinus, FiPlus, FiSearch, FiTrash2, FiUpload } from "react-icons/fi";
 import { FaWhatsapp } from "react-icons/fa";
-import { UserSearch } from "lucide-react";
+import { Check, CircleCheck, CircleDashed, CircleX, ListFilter, UserSearch, X } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { selectIsFinanceOfficer } from "@/store/auth/authSlice";
 import { fetchEventMembers } from "@/store/events/eventsThunks";
@@ -24,7 +24,7 @@ import ConfirmPopup from "../ConfirmationPopups/ConfirmPopup";
 import AddAttendeeModal from "./AddAttendeeModal";
 import UploadSheetModal from "./UploadSheetModal";
 import SheetImportModal from "./SheetImportModal";
-import AttendanceSelect, { ATTENDANCE } from "./AttendanceSelect";
+import AttendanceSelect, { ATTENDANCE, AttendanceBadge } from "./AttendanceSelect";
 
 // `api` is the attendanceStatus / appStatus value getEventAttendees filters on
 const FILTERS = [
@@ -34,11 +34,12 @@ const FILTERS = [
   { key: "none", label: "Not marked", api: "notMarked" },
 ];
 
-const APP_FILTERS = [
-  { key: "joined", label: "Joined" },
-  { key: "pending", label: "Pending" },
-  { key: "deregistered", label: "Deregistered" },
-];
+// appStatus values from getEventAttendees; deregistered means the attendee was deactivated
+const APP_STATUS = {
+  joined: { label: "Joined", hint: "Linked to an app account", dot: "bg-[#147BFF]", halo: "bg-[#147BFF]/20" },
+  pending: { label: "Pending", hint: "Not on the app yet", dot: "bg-[#F59E0B]", halo: "bg-[#F59E0B]/25" },
+  deregistered: { label: "Deactivated", hint: "Deactivated · no longer active", dot: "bg-[#9CA3AF]", halo: "bg-[#9CA3AF]/25" },
+};
 
 const SHEET_BATCH = 1000; // addOfflineAttendees row limit per call
 
@@ -50,11 +51,6 @@ const nameOfMember = (m) => `${m?.firstName || ""} ${m?.lastName || ""}`.trim() 
 
 // What updateEventAttendance stores; "" clears it back to Not marked
 const ATTENDANCE_TO_API = { yes: "attended", no: "notAttended", none: "" };
-
-const APP_STATUS_BADGE = {
-  pending: { label: "Pending", className: "bg-[#FEF7E0] text-[#B06000]" },
-  deregistered: { label: "Deregistered", className: "bg-[#F1F5F9] text-[#475569]" },
-};
 
 // addOfflineAttendees accepts a 10-digit mobile or E.164, so drop spaces/dashes and keep a leading +.
 // Sheets often have numbers without +91: "9876543210" stays as is, "919876543210" gets a +,
@@ -105,19 +101,24 @@ function normalizeCounts(raw = {}) {
   };
 }
 
-const chipClass = (active) =>
-  `inline-flex items-center gap-1.5 h-8 px-3.5 rounded-full border text-[14px] font-bold transition cursor-pointer ${
-    active
-      ? "bg-[#D3E3FD] border-[#B6CFF5] text-[#0B57D0]"
-      : "bg-white border-[#E2E8F0] text-[#475569] hover:border-[#B6CFF5]"
-  }`;
+// Same palette as the event header above the tabs
+const primaryBtn =
+  "inline-flex items-center gap-2 h-10 px-4 rounded-full bg-[#147BFF] text-white text-[14px] font-semibold hover:bg-[#0F6AE0] transition-colors cursor-pointer";
+const secondaryBtn =
+  "inline-flex items-center gap-2 h-10 px-4 rounded-full border border-[#E5E7EB] bg-white text-[#111] text-[14px] font-semibold hover:bg-[#F7F8FA] transition-colors cursor-pointer";
+const eyebrow = "text-[12px] font-medium uppercase tracking-[1.5px] text-[#9CA3AF]";
+const bulkBtn =
+  "inline-flex items-center gap-2 h-9 px-3.5 rounded-full text-[14px] font-semibold hover:bg-white/10 transition-colors cursor-pointer";
 
-const outlineBtn =
-  "inline-flex items-center gap-1.5 h-9 px-4 rounded-full border border-[#0B57D0] bg-white text-[#0B57D0] text-[14px] font-bold hover:bg-[#D3E3FD]/50 transition cursor-pointer";
-const fillBtn =
-  "inline-flex items-center gap-1.5 h-9 px-4 rounded-full bg-[#1D72E8] text-white text-[14px] font-bold hover:bg-[#0B57D0] transition cursor-pointer";
-const contactBtn =
-  "w-10 h-10 bg-[#E6EBF2] rounded-full flex items-center justify-center shrink-0 transition";
+// Soft background / text pairs for initials, picked from the name so a person keeps their colour
+const AVATAR_TONES = [
+  ["#EEF5FF", "#0B5FD9"],
+  ["#ECFDF3", "#15803D"],
+  ["#FFF6E5", "#B45309"],
+  ["#F5F0FF", "#6D28D9"],
+  ["#FFF0F3", "#BE123C"],
+  ["#EAF8FA", "#0E7490"],
+];
 
 const getInitials = (name = "") =>
   name
@@ -180,12 +181,206 @@ function Checkbox({ checked, indeterminate, onChange, label }) {
         e.stopPropagation();
         onChange();
       }}
-      className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 transition cursor-pointer ${
-        checked || indeterminate ? "bg-[#1D72E8] border-[#1D72E8] text-white" : "border-[#94A3B8] bg-white"
+      className={`w-[18px] h-[18px] rounded-[5px] border flex items-center justify-center shrink-0 transition cursor-pointer ${
+        checked || indeterminate ? "bg-[#147BFF] border-[#147BFF] text-white" : "border-[#D1D5DB] bg-white hover:border-[#9CA3AF]"
       }`}
     >
-      {indeterminate ? <FiMinus className="text-[13px]" /> : checked && <FiCheck className="text-[13px]" />}
+      {indeterminate ? <FiMinus className="text-[12px]" /> : checked && <FiCheck className="text-[12px]" />}
     </button>
+  );
+}
+
+function Avatar({ src, name }) {
+  if (src) {
+    return <Image src={src} alt="" width={40} height={40} className="w-10 h-10 rounded-full object-cover shrink-0" />;
+  }
+  const hash = [...name].reduce((h, c) => h + c.charCodeAt(0), 0);
+  const [bg, fg] = AVATAR_TONES[hash % AVATAR_TONES.length];
+  return (
+    <div
+      aria-hidden
+      className="w-10 h-10 rounded-full grid place-items-center shrink-0 text-[14px] font-semibold"
+      style={{ background: bg, color: fg }}
+    >
+      {getInitials(name)}
+    </div>
+  );
+}
+
+// Small ringed dot next to the name for the exceptions (pending, deactivated); joined shows nothing.
+// Hover or keyboard focus shows what it means.
+function AppStatusDot({ status }) {
+  const s = APP_STATUS[status];
+  if (!s || status === "joined") return null;
+  return (
+    <span
+      tabIndex={0}
+      aria-label={s.hint}
+      className="group/tip relative inline-grid place-items-center shrink-0 w-4 h-4 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-[#147BFF]/30 cursor-default"
+    >
+      <span aria-hidden className={`grid place-items-center w-3 h-3 rounded-full ${s.halo}`}>
+        <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
+      </span>
+      <span
+        role="tooltip"
+        className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-md bg-[#111] px-2.5 py-1.5 text-[12px] font-medium text-white opacity-0 shadow-[0_4px_12px_rgba(17,17,17,0.2)] transition duration-150 group-hover/tip:translate-y-0 group-hover/tip:opacity-100 group-focus-visible/tip:translate-y-0 group-focus-visible/tip:opacity-100"
+      >
+        {s.hint}
+        <span aria-hidden className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-[#111]" />
+      </span>
+    </span>
+  );
+}
+
+function Segmented({ label, options, value, onChange }) {
+  return (
+    <div role="radiogroup" aria-label={label} className="inline-flex items-center gap-0.5 rounded-full bg-[#F3F4F6] p-1">
+      {options.map((o) => {
+        const active = o.key === value;
+        return (
+          <button
+            key={o.key}
+            type="button"
+            role="radio"
+            aria-checked={active}
+            onClick={() => onChange(o.key)}
+            className={`inline-flex items-center gap-1.5 h-8 px-3.5 rounded-full text-[14px] whitespace-nowrap transition cursor-pointer ${
+              active ? "bg-white text-[#111] font-semibold shadow-[0_1px_2px_rgba(17,17,17,0.08)]" : "text-[#6B7280] hover:text-[#111]"
+            }`}
+          >
+            {o.label}
+            <span className={active ? "text-[#147BFF]" : "text-[#9CA3AF]"}>{o.count}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function AppStatusFilter({ value, onChange, counts }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const current = APP_STATUS[value];
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e) => !ref.current?.contains(e.target) && setOpen(false);
+    const onKey = (e) => e.key === "Escape" && setOpen(false);
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  const options = [{ key: "", label: "Any app status" }, ...Object.entries(APP_STATUS).map(([key, s]) => ({ key, ...s }))];
+
+  // Icon-only trigger: blue with a status-coloured dot while a filter is applied.
+  // The tooltip and menu are pinned to the right edge so they never widen the page.
+  const tooltip = current ? `App status: ${current.label}` : "Filter by app status";
+
+  return (
+    <div ref={ref} className="group/tip relative">
+      <button
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={tooltip}
+        onClick={() => setOpen((o) => !o)}
+        className={`relative grid place-items-center w-10 h-10 rounded-full border transition-colors cursor-pointer ${
+          value || open
+            ? "border-[#147BFF] bg-[#EEF5FF] text-[#147BFF]"
+            : "border-[#E5E7EB] bg-white text-[#374151] hover:bg-[#F7F8FA]"
+        }`}
+      >
+        <ListFilter size={18} />
+        {current && (
+          <span className={`absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full ring-2 ring-white ${current.dot}`} />
+        )}
+      </button>
+
+      {!open && (
+        <span
+          role="tooltip"
+          className="pointer-events-none absolute top-full right-0 z-30 mt-2 -translate-y-1 whitespace-nowrap rounded-md bg-[#111] px-2.5 py-1.5 text-[12px] font-medium text-white opacity-0 shadow-[0_4px_12px_rgba(17,17,17,0.2)] transition duration-150 group-hover/tip:translate-y-0 group-hover/tip:opacity-100 group-has-[:focus-visible]/tip:translate-y-0 group-has-[:focus-visible]/tip:opacity-100"
+        >
+          {tooltip}
+          <span aria-hidden className="absolute bottom-full right-4 border-4 border-transparent border-b-[#111]" />
+        </span>
+      )}
+
+      {open && (
+        <div
+          role="listbox"
+          aria-label="App status"
+          className="absolute right-0 top-full z-30 mt-1.5 w-[250px] rounded-xl border border-[#F0F1F3] bg-white p-1.5 shadow-[0_8px_24px_rgba(17,17,17,0.10)]"
+        >
+          {options.map((o) => (
+            <button
+              key={o.key || "any"}
+              type="button"
+              role="option"
+              aria-selected={value === o.key}
+              onClick={() => {
+                onChange(o.key);
+                setOpen(false);
+              }}
+              className="w-full flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[14px] hover:bg-[#F7F8FA] transition-colors cursor-pointer"
+            >
+              <span className={`w-2 h-2 rounded-full shrink-0 ${o.dot || ""}`} />
+              <span className="flex-1 min-w-0">
+                <span className="block font-medium text-[#111]">{o.label}</span>
+                {o.hint && <span className="block text-[12px] text-[#9CA3AF]">{o.hint}</span>}
+              </span>
+              {o.key && <span className="text-[13px] text-[#9CA3AF]">{counts[o.key]}</span>}
+              <Check size={16} className={`shrink-0 text-[#147BFF] ${value === o.key ? "" : "invisible"}`} />
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Round icon button; the label shows as a tooltip below on hover/focus and is read by screen readers.
+// align="end" pins the tooltip to the button's right edge: a hidden tooltip still counts towards the
+// page width, so a centred one on the last button would make the page scroll sideways.
+function IconAction({ label, onClick, className, align = "center", children }) {
+  const place = align === "end" ? "right-0" : "left-1/2 -translate-x-1/2";
+  const arrow = align === "end" ? "right-4" : "left-1/2 -translate-x-1/2";
+  return (
+    <span className="group/tip relative inline-flex">
+      <button type="button" aria-label={label} onClick={onClick} className={`${className} w-10 px-0! justify-center`}>
+        {children}
+      </button>
+      <span
+        role="tooltip"
+        className={`pointer-events-none absolute top-full z-30 mt-2 -translate-y-1 whitespace-nowrap rounded-md bg-[#111] px-2.5 py-1.5 text-[12px] font-medium text-white opacity-0 shadow-[0_4px_12px_rgba(17,17,17,0.2)] transition duration-150 group-hover/tip:translate-y-0 group-hover/tip:opacity-100 group-has-[:focus-visible]/tip:translate-y-0 group-has-[:focus-visible]/tip:opacity-100 ${place}`}
+      >
+        {label}
+        <span aria-hidden className={`absolute bottom-full border-4 border-transparent border-b-[#111] ${arrow}`} />
+      </span>
+    </span>
+  );
+}
+
+function TableSkeleton() {
+  return (
+    <div className="rounded-2xl border border-[#F0F1F3] overflow-hidden" aria-hidden>
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div key={i} className="flex items-center gap-4 px-5 py-4 border-b border-[#F5F6F8] last:border-0 animate-pulse">
+          <div className="w-10 h-10 rounded-full bg-[#F3F4F6]" />
+          <div className="flex-1 space-y-2">
+            <div className="h-3 w-40 rounded bg-[#F3F4F6]" />
+            <div className="h-2.5 w-24 rounded bg-[#F7F8FA]" />
+          </div>
+          <div className="h-3 w-28 rounded bg-[#F3F4F6]" />
+          <div className="h-3 w-36 rounded bg-[#F3F4F6]" />
+          <div className="h-8 w-36 rounded-full bg-[#F3F4F6]" />
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -320,8 +515,11 @@ const Attendees = ({ eventId }) => {
       setSelected((prev) => prev.filter((id) => !attendeeIds.includes(id)));
       dispatch(addToast({
         message: {
-          title: "Attendance updated",
-          descrip: `${attendeeIds.length} attendees marked as ${ATTENDANCE[value].label.toLowerCase()}.`,
+          title: value === "none" ? "Attendance cleared" : "Attendance updated",
+          descrip:
+            value === "none"
+              ? `${attendeeIds.length} attendees are back to not marked.`
+              : `${attendeeIds.length} attendees marked as ${ATTENDANCE[value].label.toLowerCase()}.`,
         },
         type: "success",
       }));
@@ -598,43 +796,61 @@ const Attendees = ({ eventId }) => {
     </>
   );
 
+  const canEdit = !isFinanceManager;
+  const clearFilters = () => {
+    setSearch("");
+    setFilter("all");
+    setAppFilter("");
+  };
+
+  // Icon-only versions for the toolbar; the empty state keeps the labelled buttons below
+  const toolbarActions = canEdit && (
+    <div className="flex items-center gap-2">
+      <IconAction label="Upload sheet" onClick={() => setShowUploadModal(true)} className={secondaryBtn}>
+        <FiUpload className="text-[17px]" />
+      </IconAction>
+      <IconAction label="Add attendee" align="end" onClick={() => setShowAddModal(true)} className={primaryBtn}>
+        <FiPlus className="text-[18px]" />
+      </IconAction>
+    </div>
+  );
+
+  const actions = canEdit && (
+    <div className="flex items-center gap-2.5">
+      <button type="button" onClick={() => setShowUploadModal(true)} className={secondaryBtn}>
+        <FiUpload className="text-[16px]" />
+        Upload sheet
+      </button>
+      <button type="button" onClick={() => setShowAddModal(true)} className={primaryBtn}>
+        <FiPlus className="text-[16px]" />
+        Add attendee
+      </button>
+    </div>
+  );
+
   // Also covers the server render, so browser-only attendees never cause a hydration mismatch
   if (!isMembersFetched) {
-    return <div className="p-10 text-center">Loading attendees...</div>;
+    return (
+      <div className="flex flex-col gap-5 py-6 font-nunito" aria-busy="true">
+        <TableSkeleton />
+      </div>
+    );
   }
 
-  // Nobody added yet: header + call to action instead of the table
+  // Nobody added yet: call to action instead of the table
   if (isMembersFetched && !filtersActive && membersList.length === 0) {
     return (
-      <div className="flex flex-col h-full min-h-[inherit] rounded-[20px] overflow-hidden">
-        <div className="flex items-center justify-between py-[16px] px-[30px] font-bold text-lg text-[#333333]">
-          <div>Name / Title</div>
-          {!isFinanceManager && <div>Actions</div>}
-        </div>
-
-        <div className="flex-1 flex flex-col justify-center items-center text-center px-5 py-10">
-          <div className="h-[90px] w-[90px] rounded-full bg-[#D3E3FD] text-[#0B57D0] grid place-items-center mb-[22px]">
-            <UserSearch size={40} strokeWidth={2} />
+      <div className="flex flex-col gap-5 py-6 font-nunito">
+        <div className="flex flex-col items-center justify-center text-center rounded-2xl border border-dashed border-[#E5E7EB] px-6 py-16">
+          <div className="w-16 h-16 rounded-full bg-[#EEF5FF] text-[#147BFF] grid place-items-center">
+            <UserSearch size={28} strokeWidth={1.75} />
           </div>
-
-          <h2 className="mb-2 text-2xl font-semibold text-[#333333]">No attendees yet</h2>
-
-          <p className="max-w-[440px] text-[15px] leading-normal text-[#666666]">
-            Add people one at a time, or upload a sheet with everyone&apos;s details.
+          <h3 className="mt-5 font-heading text-[24px] font-semibold text-[#111]">No attendees yet</h3>
+          <p className="mt-2 max-w-[460px] text-[15px] leading-[24px] text-[#6B7280]">
+            Add people one at a time, or upload a sheet with everyone&apos;s details. On published events, anyone
+            whose mobile matches an app account is linked automatically.
           </p>
-
-          {!isFinanceManager && (
-            <div className="mt-[22px] flex flex-wrap justify-center gap-2.5">
-              <button type="button" onClick={() => setShowUploadModal(true)} className={outlineBtn}>
-                <FiUpload className="text-[16px]" />
-                Upload sheet
-              </button>
-              <button type="button" onClick={() => setShowAddModal(true)} className={fillBtn}>
-                <FiPlus className="text-[16px]" />
-                Add attendee
-              </button>
-            </div>
-          )}
+          {canEdit && <div className="mt-6">{actions}</div>}
         </div>
         {addModal}
       </div>
@@ -642,97 +858,73 @@ const Attendees = ({ eventId }) => {
   }
 
   return (
-    <div className="flex flex-col h-full min-h-[inherit] p-5 font-nunito">
-      {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-3 shrink-0">
-        <div className="relative w-[300px] max-w-full">
-          <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8] text-[16px]" />
+    <div className="flex flex-col gap-5 py-6 font-nunito">
+      {/* Toolbar: search on the left, filters and actions on the right */}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative w-[280px] max-w-full">
+          <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] text-[16px]" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search attendees"
-            className="w-full h-10 pl-10 pr-4 rounded-xl bg-white border border-[#E2E8F0] text-[15px] text-[#1E293B] placeholder:text-[#94A3B8] outline-none focus:border-[#0B57D0] transition"
+            placeholder="Search name, company or number"
+            aria-label="Search attendees"
+            className="w-full h-10 pl-10 pr-9 rounded-full bg-[#F7F8FA] border border-transparent text-[14px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:bg-white focus:border-[#147BFF] transition"
           />
-        </div>
-
-        {FILTERS.map((f) => (
-          <button key={f.key} type="button" onClick={() => setFilter(f.key)} className={chipClass(filter === f.key)}>
-            {f.label} <span className="font-semibold opacity-60">{f.key === "all" ? allCount : counts[f.key]}</span>
-          </button>
-        ))}
-
-        <span className="h-6 w-px bg-[#E2E8F0]" aria-hidden />
-
-        {/* App status; clicking the active chip clears it */}
-        {APP_FILTERS.map((f) => (
-          <button
-            key={f.key}
-            type="button"
-            onClick={() => setAppFilter((cur) => (cur === f.key ? "" : f.key))}
-            className={chipClass(appFilter === f.key)}
-          >
-            {f.label} <span className="font-semibold opacity-60">{counts[f.key]}</span>
-          </button>
-        ))}
-
-        {!isFinanceManager && (
-          <div className="ml-auto flex items-center gap-2.5">
-            <button type="button" onClick={() => setShowUploadModal(true)} className={outlineBtn}>
-              <FiUpload className="text-[16px]" />
-              Upload sheet
-            </button>
-            <button type="button" onClick={() => setShowAddModal(true)} className={fillBtn}>
-              <FiPlus className="text-[16px]" />
-              Add attendee
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Bulk actions for the ticked rows */}
-      {!isFinanceManager && selectedVisible.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2 mt-4 px-4 py-2 rounded-xl bg-white border border-[#B6CFF5] shrink-0">
-          <span className="mr-2 text-[14px] font-bold text-[#0B57D0]">{selectedVisible.length} selected</span>
-          <button type="button" onClick={() => markAttendance(selectedVisible, "yes")} className={chipClass(false)}>
-            Mark attended
-          </button>
-          <button type="button" onClick={() => markAttendance(selectedVisible, "no")} className={chipClass(false)}>
-            Mark didn&apos;t attend
-          </button>
-          {selectedRemovable.length > 0 && (
+          {search && (
             <button
               type="button"
-              onClick={() => askRemove(selectedRemovable)}
-              className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-full border border-[#FECACA] bg-white text-[14px] font-bold text-[#B91C1C] hover:bg-[#FEF2F2] transition cursor-pointer"
+              aria-label="Clear search"
+              onClick={() => setSearch("")}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 w-6 h-6 grid place-items-center rounded-full text-[#9CA3AF] hover:bg-[#EEF0F3] hover:text-[#111] cursor-pointer"
             >
-              <FiTrash2 className="text-[14px]" />
-              Remove{selectedRemovable.length < selectedVisible.length ? ` ${selectedRemovable.length}` : ""}
+              <X size={14} />
             </button>
           )}
+        </div>
+
+        {filtersActive && (
           <button
             type="button"
-            onClick={() => setSelected([])}
-            className="ml-auto text-[14px] font-bold text-[#475569] hover:text-[#1E293B] cursor-pointer"
+            onClick={clearFilters}
+            className="text-[14px] font-medium text-[#147BFF] hover:underline underline-offset-4 cursor-pointer"
           >
-            Clear
+            Clear filters
           </button>
+        )}
+
+        <div className="ml-auto flex flex-wrap items-center gap-3">
+          <Segmented
+            label="Attendance"
+            options={FILTERS.map((f) => ({ key: f.key, label: f.label, count: f.key === "all" ? allCount : counts[f.key] }))}
+            value={filter}
+            onChange={setFilter}
+          />
+          <AppStatusFilter value={appFilter} onChange={setAppFilter} counts={counts} />
+          {toolbarActions && (
+            <>
+              <span className="mx-1 h-6 w-px bg-[#E5E7EB]" aria-hidden />
+              {toolbarActions}
+            </>
+          )}
         </div>
-      )}
+      </div>
 
       {/* Table */}
-      <div className="flex-1 min-h-0 mt-4 rounded-[20px] border border-[#E2E8F0] overflow-auto bg-white">
-        <table className="w-full min-w-[900px] table-fixed border-collapse">
+      <div className="rounded-2xl border border-[#F0F1F3] bg-white overflow-x-auto">
+        <table className="w-full min-w-[920px] table-fixed border-collapse">
           <colgroup>
-            {!isFinanceManager && <col className="w-[56px]" />}
-            <col className="w-[38%]" />
+            {/* Attendee, company and contact split the remaining width equally */}
+            {canEdit && <col className="w-[52px]" />}
             <col />
-            <col className="w-[200px]" />
-            {!isFinanceManager && <col className="w-[170px]" />}
+            <col />
+            <col />
+            <col className="w-[190px]" />
+            {canEdit && <col className="w-[60px]" />}
           </colgroup>
-          <thead className="sticky top-0 z-10 bg-[#F2F7FF]">
-            <tr className="text-left text-[15px] font-bold text-[#475569]">
-              {!isFinanceManager && (
-                <th className="pl-6 py-4">
+          <thead>
+            <tr className="border-b border-[#F0F1F3] text-left text-[12px] uppercase tracking-[1.2px] text-[#6B7280]">
+              {canEdit && (
+                <th className="pl-5 py-3.5 font-bold">
                   <Checkbox
                     checked={allSelected}
                     indeterminate={!allSelected && selectedVisible.length > 0}
@@ -741,17 +933,31 @@ const Attendees = ({ eventId }) => {
                   />
                 </th>
               )}
-              <th className={`${isFinanceManager ? "px-6" : "px-4"} py-4 font-bold`}>Name / Title</th>
-              <th className="px-4 py-4 font-bold">Company</th>
-              <th className="px-4 py-4 font-bold">Attendance</th>
-              {!isFinanceManager && <th className="px-4 py-4 font-bold">Actions</th>}
+              <th className={`${canEdit ? "px-3" : "pl-5 pr-3"} py-3.5 font-bold`}>Attendee</th>
+              <th className="px-3 py-3.5 font-bold">Company</th>
+              <th className="px-3 py-3.5 font-bold">Contact</th>
+              <th className="px-3 py-3.5 font-bold">Attendance</th>
+              {canEdit && (
+                <th className="py-3.5">
+                  <span className="sr-only">Actions</span>
+                </th>
+              )}
             </tr>
           </thead>
           <tbody>
             {visibleMembers.length === 0 ? (
               <tr>
-                <td colSpan={5} className="text-center py-16 text-[15px] text-[#777777]">
-                  No attendees match your search or filters.
+                <td colSpan={6} className="py-16">
+                  <div className="flex flex-col items-center text-center">
+                    <div className="w-12 h-12 rounded-full bg-[#F3F4F6] grid place-items-center text-[#9CA3AF]">
+                      <FiSearch className="text-[20px]" />
+                    </div>
+                    <p className="mt-3 text-[16px] font-semibold text-[#111]">No one matches</p>
+                    <p className="mt-1 text-[14px] text-[#6B7280]">Try another name or number, or clear the filters.</p>
+                    <button type="button" onClick={clearFilters} className={`${secondaryBtn} mt-4`}>
+                      Clear filters
+                    </button>
+                  </div>
                 </td>
               </tr>
             ) : (
@@ -760,107 +966,88 @@ const Attendees = ({ eventId }) => {
                 const fullName = `${member.firstName || ""} ${member.lastName || ""}`.trim() || "No Name";
                 const titles = formatTitles(member.title);
                 const status = statusOf(member);
-                const statusInfo = ATTENDANCE[status];
                 const phoneDigits = (member.phoneNumber || "").replace(/\D/g, "");
                 const isSelected = selected.includes(id);
+                const isDeactivated = member.appStatus === "deregistered";
+                const openUp = i >= visibleMembers.length - 2 && visibleMembers.length > 3;
 
                 return (
                   <tr
                     key={id || i}
                     onClick={() => openDetails(member)}
-                    className={`border-t border-[#E2E8F0] transition cursor-pointer ${
-                      isSelected ? "bg-[#F2F7FF]" : "hover:bg-[#FAFCFF]"
+                    className={`border-b border-[#F5F6F8] last:border-0 transition-colors cursor-pointer ${
+                      isSelected ? "bg-[#F5F9FF]" : "hover:bg-[#FAFAFB]"
                     }`}
                   >
-                    {!isFinanceManager && (
-                      <td className="pl-6 py-4">
+                    {canEdit && (
+                      <td className="pl-5 py-3.5">
                         <Checkbox checked={isSelected} onChange={() => toggleRow(id)} label={`Select ${fullName}`} />
                       </td>
                     )}
 
-                    <td className={`${isFinanceManager ? "px-6" : "px-4"} py-4`}>
-                      <div className="flex items-center gap-3.5">
-                        {member.dpURL ? (
-                          <Image
-                            src={member.dpURL}
-                            alt={fullName}
-                            width={44}
-                            height={44}
-                            className="w-11 h-11 rounded-full object-cover border border-[#D4DFF1] shrink-0"
-                          />
-                        ) : (
-                          <div className="w-11 h-11 rounded-full bg-[#1D72E8] text-white text-[14px] font-bold flex items-center justify-center shrink-0">
-                            {getInitials(fullName)}
-                          </div>
-                        )}
+                    <td className={`${canEdit ? "px-3" : "pl-5 pr-3"} py-3.5`}>
+                      <div className="flex items-center gap-3 min-w-0">
+                        {/* Deactivated attendees fade back */}
+                        <div className={isDeactivated ? "opacity-50 grayscale" : ""}>
+                          <Avatar src={member.dpURL} name={fullName} />
+                        </div>
                         <div className="min-w-0">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <p className="truncate text-[17px] font-semibold text-[#1E293B]">{fullName}</p>
-                            {APP_STATUS_BADGE[member.appStatus] && (
-                              <span
-                                className={`shrink-0 px-2 py-0.5 rounded-md text-[12px] font-semibold ${APP_STATUS_BADGE[member.appStatus].className}`}
-                              >
-                                {APP_STATUS_BADGE[member.appStatus].label}
-                              </span>
-                            )}
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <p className={`truncate text-[15px] font-semibold ${isDeactivated ? "text-[#9CA3AF]" : "text-[#111]"}`}>
+                              {fullName}
+                            </p>
+                            <AppStatusDot status={member.appStatus} />
                           </div>
-                          {titles && <p className="truncate mt-0.5 text-[13px] text-[#94A3B8]">{titles}</p>}
+                          {titles && <p className="truncate text-[13px] text-[#9CA3AF]">{titles}</p>}
                         </div>
                       </div>
                     </td>
 
-                    <td className="px-4 py-4 text-[15px] truncate">
-                      {member.companyName ? (
-                        <span className="text-[#1E293B]">{member.companyName}</span>
+                    <td className="px-3 py-3.5 text-[14px] text-[#374151] truncate">
+                      {member.companyName || <span className="text-[#D1D5DB]">—</span>}
+                    </td>
+
+                    <td className="px-3 py-3.5" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex flex-col gap-1 min-w-0 text-[13px]">
+                        {member.phoneNumber && (
+                          <a
+                            href={phoneDigits ? `https://wa.me/${phoneDigits}` : undefined}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title="Open in WhatsApp"
+                            className="inline-flex items-center gap-1.5 w-fit max-w-full text-[#374151] hover:text-[#16A34A] transition-colors"
+                          >
+                            <FaWhatsapp className="shrink-0 text-[14px] opacity-60" />
+                            <span className="truncate">{member.phoneNumber}</span>
+                          </a>
+                        )}
+                        {member.email && (
+                          <a
+                            href={`mailto:${member.email}`}
+                            title="Send email"
+                            className="inline-flex items-center gap-1.5 w-fit max-w-full text-[#374151] hover:text-[#147BFF] transition-colors"
+                          >
+                            <FiMail className="shrink-0 text-[14px] opacity-60" />
+                            <span className="truncate">{member.email}</span>
+                          </a>
+                        )}
+                        {!member.phoneNumber && !member.email && <span className="text-[#D1D5DB]">—</span>}
+                      </div>
+                    </td>
+
+                    <td className="px-3 py-3.5" onClick={(e) => e.stopPropagation()}>
+                      {canEdit ? (
+                        <AttendanceSelect value={status} onChange={(value) => markAttendance([id], value)} openUp={openUp} />
                       ) : (
-                        <span className="text-[#94A3B8]">—</span>
+                        <AttendanceBadge value={status} />
                       )}
                     </td>
 
-                    <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
-                      {isFinanceManager ? (
-                        <span className={`inline-flex items-center gap-2 h-9 px-3 rounded-full border text-[14px] font-bold ${statusInfo.pill}`}>
-                          <statusInfo.icon size={16} strokeWidth={2.25} className={statusInfo.iconColor} />
-                          {statusInfo.label}
-                        </span>
-                      ) : (
-                        <AttendanceSelect
-                          value={status}
-                          onChange={(value) => markAttendance([id], value)}
-                          openUp={i >= visibleMembers.length - 2 && visibleMembers.length > 3}
-                        />
-                      )}
-                    </td>
-
-                    {!isFinanceManager && (
-                      <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center gap-3">
-                          {phoneDigits ? (
-                            <a
-                              href={`https://wa.me/${phoneDigits}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              title={member.phoneNumber}
-                              className={`${contactBtn} text-[#333333] hover:text-[#16A34A]`}
-                            >
-                              <FaWhatsapp className="text-[20px]" />
-                            </a>
-                          ) : (
-                            <span title="No WhatsApp number" className={`${contactBtn} text-[#333333] opacity-40 cursor-not-allowed`}>
-                              <FaWhatsapp className="text-[20px]" />
-                            </span>
-                          )}
-                          {member.email ? (
-                            <a href={`mailto:${member.email}`} title={member.email} className={contactBtn}>
-                              <span className="oui--email"></span>
-                            </a>
-                          ) : (
-                            <span title="No email" className={`${contactBtn} opacity-40 cursor-not-allowed`}>
-                              <span className="oui--email"></span>
-                            </span>
-                          )}
+                    {canEdit && (
+                      <td className="pr-4 py-3.5" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex justify-end">
                           <RowMenu
-                            openUp={i >= visibleMembers.length - 2 && visibleMembers.length > 3}
+                            openUp={openUp}
                             items={[
                               {
                                 // Joined attendees' details come from their app profile
@@ -903,11 +1090,48 @@ const Attendees = ({ eventId }) => {
         </table>
       </div>
 
-      <Pagination
-        total={membersTotal}
-        currentPage={currentPage}
-        perPage={10}
-      />
+      <Pagination total={membersTotal} currentPage={currentPage} perPage={10} className="bg-white! px-1! pb-2!" />
+
+      {/* Bulk actions for the ticked rows, floating above the table */}
+      {canEdit && selectedVisible.length > 0 && (
+        <div
+          role="toolbar"
+          aria-label="Bulk actions"
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1 rounded-full bg-[#111] pl-5 pr-2 py-2 text-white shadow-[0_12px_32px_rgba(17,17,17,0.25)]"
+        >
+          <span className="mr-2 text-[14px] font-semibold whitespace-nowrap">{selectedVisible.length} selected</span>
+          <span className="mx-1 h-5 w-px bg-white/20" aria-hidden />
+          <button type="button" onClick={() => markAttendance(selectedVisible, "yes")} className={bulkBtn}>
+            <CircleCheck size={16} className="text-[#4ADE80]" />
+            Attended
+          </button>
+          <button type="button" onClick={() => markAttendance(selectedVisible, "no")} className={bulkBtn}>
+            <CircleX size={16} className="text-[#F87171]" />
+            Didn&apos;t attend
+          </button>
+          <button type="button" onClick={() => markAttendance(selectedVisible, "none")} className={bulkBtn}>
+            <CircleDashed size={16} className="text-white/60" />
+            Clear
+          </button>
+          {selectedRemovable.length > 0 && (
+            <>
+              <span className="mx-1 h-5 w-px bg-white/20" aria-hidden />
+              <button type="button" onClick={() => askRemove(selectedRemovable)} className={`${bulkBtn} text-[#FCA5A5]`}>
+                <FiTrash2 className="text-[15px]" />
+                Remove{selectedRemovable.length < selectedVisible.length ? ` ${selectedRemovable.length}` : ""}
+              </button>
+            </>
+          )}
+          <button
+            type="button"
+            onClick={() => setSelected([])}
+            aria-label="Clear selection"
+            className="ml-1 w-9 h-9 grid place-items-center rounded-full hover:bg-white/10 transition-colors cursor-pointer"
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
 
       {addModal}
     </div>
