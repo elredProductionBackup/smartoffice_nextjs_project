@@ -122,6 +122,20 @@
     return res.data?.result?.[0] || {};
   };
 
+  // Edit a pending or deregistered attendee; send attendeeId plus only the changed fields
+  // (name, companyName, title, phoneNumber, email). Joined attendees can't be edited.
+  // A pending row whose new mobile matches an app account joins on save (published events only):
+  // the result then has appStatus "joined" and matchedProfileName.
+  export const updateOfflineAttendee = async ({ attendeeId, ...changes }) => {
+    const res = await api.patch("/smartOffice/updateOfflineAttendee", { attendeeId, ...changes });
+
+    // Axios validateStatus allows all status codes — check success flag manually
+    if (res.data?.success === false) {
+      throw new Error(res.data?.message || "Failed to update attendee");
+    }
+    return res.data?.result?.[0] || {};
+  };
+
   // Get Members Media List
   export const getMembersMedia = ({
     eventId,

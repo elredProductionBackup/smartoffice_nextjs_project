@@ -6,7 +6,12 @@ import { UserSearch } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { selectIsFinanceOfficer } from "@/store/auth/authSlice";
 import { fetchEventMembers } from "@/store/events/eventsThunks";
-import { addOfflineAttendees, removeEventAttendees, updateEventAttendance } from "@/services/events.service";
+import {
+  addOfflineAttendees,
+  removeEventAttendees,
+  updateEventAttendance,
+  updateOfflineAttendee,
+} from "@/services/events.service";
 import { openEventsModal } from "@/store/events/eventsUiSlice";
 import { addToast } from "@/store/toastSlice";
 import { formatMember } from "@/utils/formatMember";
@@ -145,8 +150,8 @@ function toRow(m) {
 }
 
 // Per-event browser copy of attendee changes; storage can be blocked, so never let it throw
-// edited holds field overrides for attendees that came from the API
-const EMPTY_LOCAL = { added: [], edited: {} };
+// Only attendees added before the add API existed are kept here
+const EMPTY_LOCAL = { added: [] };
 const storageKey = (eventId) => `eventAttendees:${eventId}`;
 
 function loadLocal(eventId) {
@@ -225,8 +230,7 @@ const Attendees = ({ eventId }) => {
   const membersList = useMemo(
     () =>
       [...(filtersActive || currentPage > 1 ? [] : local.added), ...(membersMap[eventId] || [])]
-        .map(toRow)
-        .map((m) => (local.edited[m.id] ? { ...m, ...local.edited[m.id] } : m)),
+        .map(toRow),
     [local, membersMap, eventId, filtersActive, currentPage]
   );
   const isMembersFetched = membersFetched[eventId];
@@ -365,43 +369,59 @@ const Attendees = ({ eventId }) => {
     return `Added ${values.name}${linked}`;
   };
 
-  // Saves edits to an existing attendee (browser-only until there's an edit API)
-  const saveAttendee = (values, existing) => {
-    const digits = (s = "") => s.replace(/\D/g, "");
-    const dup = membersList.find(
-      (m) =>
-        m.id !== existing?.id &&
-        ((values.email && m.email?.toLowerCase() === values.email.toLowerCase()) ||
-        (values.whatsapp && digits(m.phoneNumber) === digits(values.whatsapp)))
-    );
-    if (dup) {
-      const what = values.email && dup.email?.toLowerCase() === values.email.toLowerCase() ? "This email" : "This WhatsApp number";
-      const dupName = `${dup.firstName || ""} ${dup.lastName || ""}`.trim();
-      dispatch(addToast({
-        message: { title: "Already on the list", descrip: `${what} already belongs to ${dupName}.` },
-        type: "error",
-      }));
-      throw new Error("Duplicate attendee");
+  // Saves edits to a pending or deregistered attendee, sending only the fields that changed.
+  // Throwing keeps the modal open; an error with `field` shows under that input.
+  const saveAttendee = async (values, existing) => {
+    const id = existing.id;
+
+    // Rows only stored in this browser (local-…) aren't on the server
+    if (id.startsWith("local-")) {
+      const [firstName, ...rest] = values.name.split(" ");
+      const fields = {
+        firstName,
+        lastName: rest.join(" "),
+        title: values.designation ? [{ value: values.designation }] : [],
+        companyName: values.company,
+        phoneNumber: values.whatsapp,
+        email: values.email,
+      };
+      setLocal((prev) => ({ ...prev, added: prev.added.map((m) => (m.userCode === id ? { ...m, ...fields } : m)) }));
+      setSuccess({ title: "Changes saved", message: `${values.name}'s details have been updated.` });
+      return;
     }
 
-    // Same shape as the event members API so the table treats both alike
-    const [firstName, ...rest] = values.name.split(" ");
-    const fields = {
-      firstName,
-      lastName: rest.join(" "),
-      title: values.designation ? [{ value: values.designation }] : [],
-      companyName: values.company,
-      phoneNumber: values.whatsapp,
-      email: values.email,
-    };
+    // Compare in API form so "98765 43210" vs "9876543210" doesn't count as a change.
+    // A cleared optional field is sent as "" so the API clears it.
+    const before = toFormValues(existing);
+    const toApi = { name: "name", company: "companyName", designation: "title", whatsapp: "phoneNumber", email: "email" };
+    const changes = {};
+    Object.entries(toApi).forEach(([key, apiKey]) => {
+      const next = key === "whatsapp" ? toApiPhone(values[key]) : values[key];
+      const prev = key === "whatsapp" ? toApiPhone(before[key]) : before[key];
+      if (next !== prev) changes[apiKey] = next;
+    });
 
-    const id = existing.id;
-    setLocal((prev) =>
-      id.startsWith("local-")
-        ? { ...prev, added: prev.added.map((m) => (m.userCode === id ? { ...m, ...fields } : m)) }
-        : { ...prev, edited: { ...prev.edited, [id]: fields } }
-    );
-    setSuccess({ title: "Changes saved", message: `${values.name}'s details have been updated.` });
+    if (!Object.keys(changes).length) return; // nothing changed; the modal just closes
+
+    let res;
+    try {
+      res = await updateOfflineAttendee({ attendeeId: id, ...changes });
+    } catch (err) {
+      const e = new Error(err.message || "Couldn't save the changes.");
+      e.field = fieldForReason(err.message);
+      throw e;
+    }
+
+    loadAttendees();
+
+    // A pending row whose new mobile belongs to an app account joins on save
+    const joined = res.appStatus === "joined" && res.matchedProfileName;
+    setSuccess({
+      title: joined ? "Saved and linked" : "Changes saved",
+      message: joined
+        ? `${values.name} is now linked to ${res.matchedProfileName}'s app profile and has joined.`
+        : `${values.name}'s details have been updated.`,
+    });
   };
 
   // Runs after the confirm popup. Browser-only rows (local-…) are dropped here; the rest go to the API,
@@ -842,7 +862,13 @@ const Attendees = ({ eventId }) => {
                           <RowMenu
                             openUp={i >= visibleMembers.length - 2 && visibleMembers.length > 3}
                             items={[
-                              { label: "Edit details", icon: FiEdit2, onClick: () => setEditing(member) },
+                              {
+                                // Joined attendees' details come from their app profile
+                                label: member.appStatus === "joined" ? "Edit in app profile" : "Edit details",
+                                icon: FiEdit2,
+                                disabled: member.appStatus === "joined",
+                                onClick: () => setEditing(member),
+                              },
                               {
                                 label: "Copy WhatsApp number",
                                 icon: FiCopy,
