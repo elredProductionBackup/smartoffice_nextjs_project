@@ -384,7 +384,8 @@ export default function EventDetailsClient() {
       </div>
 
       <div className="bg-white sticky z-10 top-0 pt-[20px]">
-        <ActionableTabs tabs={eventTabs} defaultTab="attendees" />
+        {/* Mencken ships in one weight only, so no bold (it would be faux-bolded) */}
+        <ActionableTabs tabs={eventTabs} defaultTab="attendees" labelClassName="font-heading font-normal" />
       </div>
 
       <>

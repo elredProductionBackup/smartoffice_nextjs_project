@@ -9,6 +9,8 @@ export default function ActionableTabs({
   events= false,
   allowAdd = false,
   onAddClick,
+  // Overrides the label font, e.g. "font-heading font-normal" for Mencken on event details
+  labelClassName = "font-[700]",
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -49,7 +51,7 @@ export default function ActionableTabs({
           onClick={() => handleTabChange(tab.value)}
           className={`tab-item relative
             px-[20px] py-[5px] cursor-pointer 
-            text-[20px] font-[700] transition
+            text-[20px] ${labelClassName} transition
             ${activeTab === tab.value ? "bordered text-[#0B57D0] " : ""}`}
         >
           {tab.label}
