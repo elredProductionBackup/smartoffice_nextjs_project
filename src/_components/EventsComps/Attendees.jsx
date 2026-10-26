@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { FiCheck, FiCopy, FiEdit2, FiMail, FiMinus, FiPlus, FiSearch, FiTrash2, FiUpload } from "react-icons/fi";
 import { FaWhatsapp } from "react-icons/fa";
 import { Check, CircleCheck, CircleDashed, CircleX, ListFilter, UserSearch, X } from "lucide-react";
@@ -232,24 +232,68 @@ function AppStatusDot({ status }) {
   );
 }
 
+// One white pill slides and resizes to the selected option. Every option keeps the same font
+// weight so widths don't jump mid-slide; the selected one is marked by colour and the pill.
 function Segmented({ label, options, value, onChange }) {
+  const trackRef = useRef(null);
+  const buttonRefs = useRef({});
+  const [pill, setPill] = useState(null); // { left, width }
+  const [animate, setAnimate] = useState(false);
+
+  useLayoutEffect(() => {
+    const measure = () => {
+      const btn = buttonRefs.current[value];
+      if (!btn) return;
+      const next = { left: btn.offsetLeft, width: btn.offsetWidth };
+      // Keep the same object when nothing moved, or every re-measure would re-render again
+      setPill((prev) => (prev && prev.left === next.left && prev.width === next.width ? prev : next));
+    };
+    measure();
+    // Counts and web fonts change button widths after the first paint
+    const ro = new ResizeObserver(measure);
+    if (trackRef.current) ro.observe(trackRef.current);
+    return () => ro.disconnect();
+    // Re-measure when the selection or the counts change (options is rebuilt each render, so key on content)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value, options.map((o) => `${o.key}:${o.count}`).join("|")]);
+
+  // Place the pill instantly on mount, then animate later moves
+  useEffect(() => {
+    if (pill && !animate) requestAnimationFrame(() => setAnimate(true));
+  }, [pill, animate]);
+
   return (
-    <div role="radiogroup" aria-label={label} className="inline-flex items-center gap-0.5 rounded-full bg-[#F3F4F6] p-1">
+    <div
+      ref={trackRef}
+      role="radiogroup"
+      aria-label={label}
+      className="relative inline-flex items-center gap-0.5 rounded-full bg-[#F3F4F6] p-1"
+    >
+      {pill && (
+        <span
+          aria-hidden
+          className={`absolute top-1 bottom-1 rounded-full bg-white shadow-[0_1px_3px_rgba(17,17,17,0.10)] motion-reduce:transition-none ${
+            animate ? "transition-[left,width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]" : ""
+          }`}
+          style={{ left: pill.left, width: pill.width }}
+        />
+      )}
       {options.map((o) => {
         const active = o.key === value;
         return (
           <button
             key={o.key}
+            ref={(el) => (buttonRefs.current[o.key] = el)}
             type="button"
             role="radio"
             aria-checked={active}
             onClick={() => onChange(o.key)}
-            className={`inline-flex items-center gap-1.5 h-8 px-3.5 rounded-full text-[14px] whitespace-nowrap transition cursor-pointer ${
-              active ? "bg-white text-[#111] font-semibold shadow-[0_1px_2px_rgba(17,17,17,0.08)]" : "text-[#6B7280] hover:text-[#111]"
+            className={`relative z-[1] inline-flex items-center gap-1.5 h-8 px-3.5 rounded-full text-[14px] font-semibold whitespace-nowrap transition-colors duration-200 cursor-pointer ${
+              active ? "text-[#111]" : "text-[#6B7280] hover:text-[#111]"
             }`}
           >
             {o.label}
-            <span className={active ? "text-[#147BFF]" : "text-[#9CA3AF]"}>{o.count}</span>
+            <span className={`transition-colors duration-200 ${active ? "text-[#147BFF]" : "text-[#9CA3AF]"}`}>{o.count}</span>
           </button>
         );
       })}
@@ -365,21 +409,66 @@ function IconAction({ label, onClick, className, align = "center", children }) {
   );
 }
 
-function TableSkeleton() {
-  return (
-    <div className="rounded-2xl border border-[#F0F1F3] overflow-hidden" aria-hidden>
-      {Array.from({ length: 6 }).map((_, i) => (
-        <div key={i} className="flex items-center gap-4 px-5 py-4 border-b border-[#F5F6F8] last:border-0 animate-pulse">
-          <div className="w-10 h-10 rounded-full bg-[#F3F4F6]" />
-          <div className="flex-1 space-y-2">
-            <div className="h-3 w-40 rounded bg-[#F3F4F6]" />
-            <div className="h-2.5 w-24 rounded bg-[#F7F8FA]" />
+// Placeholder block with a light sweeping highlight (the .shimmer keyframes live in globals.css)
+const Bone = ({ className = "" }) => <div className={`shimmer rounded ${className}`} />;
+
+// Rows laid out like the real table cells, shown while a search/filter/page change is loading.
+// Widths vary per row so it doesn't read as a solid block.
+const SHIMMER_WIDTHS = [
+  ["w-36", "w-24", "w-28", "w-32"],
+  ["w-28", "w-20", "w-32", "w-40"],
+  ["w-40", "w-28", "w-24", "w-36"],
+  ["w-32", "w-16", "w-28", "w-32"],
+  ["w-24", "w-24", "w-36", "w-28"],
+];
+
+function ShimmerRows({ canEdit }) {
+  return SHIMMER_WIDTHS.map(([name, title, company, email], i) => (
+    <tr key={i} aria-hidden className="border-b border-[#F5F6F8] last:border-0">
+      {canEdit && (
+        <td className="pl-5 py-3.5">
+          <Bone className="w-[18px] h-[18px] rounded-[5px]" />
+        </td>
+      )}
+      <td className={`${canEdit ? "px-3" : "pl-5 pr-3"} py-3.5`}>
+        <div className="flex items-center gap-3">
+          <Bone className="w-10 h-10 rounded-full shrink-0" />
+          <div className="space-y-2">
+            <Bone className={`h-3.5 ${name}`} />
+            <Bone className={`h-3 ${title}`} />
           </div>
-          <div className="h-3 w-28 rounded bg-[#F3F4F6]" />
-          <div className="h-3 w-36 rounded bg-[#F3F4F6]" />
-          <div className="h-8 w-36 rounded-full bg-[#F3F4F6]" />
         </div>
-      ))}
+      </td>
+      <td className="px-3 py-3.5">
+        <Bone className={`h-3.5 ${company}`} />
+      </td>
+      <td className="px-3 py-3.5">
+        <div className="space-y-2">
+          <Bone className="h-3 w-28" />
+          <Bone className={`h-3 ${email}`} />
+        </div>
+      </td>
+      <td className="px-3 py-3.5">
+        <Bone className="h-8 w-32 rounded-lg" />
+      </td>
+      {canEdit && (
+        <td className="pr-4 py-3.5">
+          <Bone className="ml-auto w-1.5 h-5 rounded-full" />
+        </td>
+      )}
+    </tr>
+  ));
+}
+
+// First load: the table frame with shimmer rows
+function TableSkeleton({ canEdit }) {
+  return (
+    <div className="rounded-2xl border border-[#F0F1F3] bg-white overflow-hidden" aria-hidden>
+      <table className="w-full table-fixed border-collapse">
+        <tbody>
+          <ShimmerRows canEdit={canEdit} />
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -430,9 +519,18 @@ const Attendees = ({ eventId }) => {
   );
   const isMembersFetched = membersFetched[eventId];
 
+  // Which page/search/filters the rows on screen belong to. Until the fetch for the current
+  // combination lands, the table shows shimmer rows instead of the previous filter's rows
+  // (otherwise switching to "All" from an empty filter flashes the "No attendees yet" screen).
+  const queryKey = `${currentPage}|${debouncedSearch}|${filter}|${appFilter}`;
+  const latestQueryRef = useRef(queryKey);
+  const [loadedQuery, setLoadedQuery] = useState(null);
+  const isSwitching = loadedQuery !== queryKey;
+
   const loadAttendees = useCallback(() => {
     if (!eventId) return;
 
+    latestQueryRef.current = queryKey;
     return dispatch(
       fetchEventMembers({
         eventId,
@@ -442,8 +540,12 @@ const Attendees = ({ eventId }) => {
         attendanceStatus: FILTERS.find((f) => f.key === filter)?.api || "",
         appStatus: appFilter,
       })
-    );
-  }, [dispatch, eventId, currentPage, debouncedSearch, filter, appFilter]);
+    ).then((action) => {
+      // Ignore answers to a filter the user has already moved away from
+      if (latestQueryRef.current === queryKey) setLoadedQuery(queryKey);
+      return action;
+    });
+  }, [dispatch, eventId, currentPage, debouncedSearch, filter, appFilter, queryKey]);
 
   useEffect(() => {
     loadAttendees();
@@ -832,13 +934,14 @@ const Attendees = ({ eventId }) => {
   if (!isMembersFetched) {
     return (
       <div className="flex flex-col gap-5 py-6 font-nunito" aria-busy="true">
-        <TableSkeleton />
+        <TableSkeleton canEdit={canEdit} />
       </div>
     );
   }
 
   // Nobody added yet: call to action instead of the table
-  if (isMembersFetched && !filtersActive && membersList.length === 0) {
+  // Only once the unfiltered list has actually come back empty, never mid-switch
+  if (isMembersFetched && !isSwitching && !filtersActive && membersList.length === 0) {
     return (
       <div className="flex flex-col gap-5 py-6 font-nunito">
         <div className="flex flex-col items-center justify-center text-center rounded-2xl border border-dashed border-[#E5E7EB] px-6 py-16">
@@ -944,8 +1047,10 @@ const Attendees = ({ eventId }) => {
               )}
             </tr>
           </thead>
-          <tbody>
-            {visibleMembers.length === 0 ? (
+          <tbody aria-busy={isSwitching}>
+            {isSwitching ? (
+              <ShimmerRows canEdit={canEdit} />
+            ) : visibleMembers.length === 0 ? (
               <tr>
                 <td colSpan={6} className="py-16">
                   <div className="flex flex-col items-center text-center">

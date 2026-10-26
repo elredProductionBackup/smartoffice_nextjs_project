@@ -45,6 +45,8 @@ const initialState = {
   membersTotal: {},
   membersCounts: {},
   membersPage: {},
+  // Latest attendee request per event; older answers that land late are ignored
+  membersRequestId: {},
 
   membersMediaMap: {},
   membersMediaUploadingCount: {},
@@ -349,6 +351,7 @@ const eventSlice = createSlice({
 // Attendees
 .addCase(fetchEventMembers.pending, (state, action) => {
   const { eventId, page } = action.meta.arg;
+  state.membersRequestId[eventId] = action.meta.requestId;
 
   if (page === 1) {
     state.membersLoading[eventId] = true;
@@ -357,6 +360,9 @@ const eventSlice = createSlice({
 
 .addCase(fetchEventMembers.fulfilled, (state, action) => {
   const { eventId, list, total, counts, page } = action.payload;
+
+  // A newer search/filter request is in flight; don't let this older answer overwrite it
+  if (state.membersRequestId[eventId] !== action.meta.requestId) return;
 
   state.membersLoading[eventId] = false;
 

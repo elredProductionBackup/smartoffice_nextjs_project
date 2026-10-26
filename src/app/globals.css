@@ -119,3 +119,17 @@ input[type=number] {
     transform: rotate(360deg);
   }
 }
+
+/* Loading placeholder with a light sweep, e.g. attendee table rows */
+@keyframes shimmer {
+  from { background-position: 150% 0; }
+  to { background-position: -50% 0; }
+}
+.shimmer {
+  background: linear-gradient(90deg, #F3F4F6 30%, #E8EAED 50%, #F3F4F6 70%);
+  background-size: 300% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .shimmer { animation: none; }
+}
