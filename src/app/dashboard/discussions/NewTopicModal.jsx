@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { FiCalendar, FiSearch, FiX } from "react-icons/fi";
 import { Avatar, useMe, useOutsideClick, usePortfolioNames } from "./DiscussionShared";
+import { PeopleSkeleton } from "./DiscussionSkeletons";
 import {
   createTopic,
   fetchDiscussionPeople,
@@ -105,7 +106,8 @@ export default function NewTopicModal({ topic, onClose, onCreated }) {
   const dispatch = useDispatch();
   const me = useMe();
   const people = useSelector((s) => s.discussions.people);
-  const peopleLoading = useSelector((s) => s.discussions.peopleLoading);
+  const peopleFetched = useSelector((s) => s.discussions.peopleFetched);
+  const peopleError = useSelector((s) => s.discussions.peopleError);
   const usersMap = useSelector((s) => s.discussions.usersMap);
   const portfolioNames = usePortfolioNames();
 
@@ -270,15 +272,23 @@ export default function NewTopicModal({ topic, onClose, onCreated }) {
                 </button>
                 {GROUPS.map((g) => (
                   <button key={g.key} type="button" onClick={() => setGroupFilter(g.key)} className={chipClass(groupFilter === g.key)}>
-                    {g.chip || g.label} ({groupCounts[g.key]})
+                    {g.chip || g.label}
+                    {peopleFetched && ` (${groupCounts[g.key]})`}
                   </button>
                 ))}
               </div>
             </div>
 
             <div className="flex-1 min-h-0 overflow-y-auto max-h-[300px]">
-              {peopleLoading && !active.length ? (
-                <p className="text-center text-[14px] text-[#777777] py-8">Loading people…</p>
+              {peopleError && !peopleFetched ? (
+                <div className="text-center py-8">
+                  <p className="text-[14px] text-[#777777]">People did not load.</p>
+                  <button type="button" onClick={() => dispatch(fetchDiscussionPeople())} className="mt-1 text-[14px] font-bold text-[#0B57D0] hover:underline cursor-pointer">
+                    Try again
+                  </button>
+                </div>
+              ) : !peopleFetched ? (
+                <PeopleSkeleton />
               ) : visibleGroups.length === 0 ? (
                 <p className="text-center text-[14px] text-[#777777] py-8">No people found</p>
               ) : (

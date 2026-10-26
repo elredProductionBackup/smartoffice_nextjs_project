@@ -14,9 +14,11 @@ import {
   SendState,
   TypingLine,
   useAttachments,
+  useConfirmDialog,
   useMe,
   useTypingSignal,
 } from "./DiscussionShared";
+import { Bone, RepliesSkeleton } from "./DiscussionSkeletons";
 import { closeThread } from "@/store/discussions/discussionsSlice";
 import { deleteMessage, editMessage, fetchReplies, sendReply } from "@/store/discussions/discussionsThunks";
 import { emitTyping } from "@/store/discussions/discussionsLive";
@@ -28,14 +30,19 @@ const ReplyRow = memo(function ReplyRow({ id }) {
   const author = useSelector((s) => (r?.by ? s.discussions.usersMap[r.by] : null));
   const me = useMe();
   const [editing, setEditing] = useState(false);
+  const [askConfirm, confirmDialog] = useConfirmDialog();
   if (!r) return null;
   if (r.kind === "note") return <NoteLine message={r} />;
 
   const isMine = r.by === me;
   const live = !r.tempId && !r.deleted;
-  const remove = () => {
-    if (window.confirm("Delete this reply?")) dispatch(deleteMessage({ messageId: id, parentId: r.parentId }));
-  };
+  const remove = () =>
+    askConfirm({
+      title: "Delete this reply?",
+      message: "It will be removed for everyone in this thread.",
+      confirmText: "Delete",
+      onConfirm: () => dispatch(deleteMessage({ messageId: id, parentId: r.parentId })).unwrap(),
+    });
   const save = (text) => {
     dispatch(editMessage({ messageId: id, text, isReply: true, prevText: r.text, prevEdited: r.edited }));
     setEditing(false);
@@ -43,6 +50,7 @@ const ReplyRow = memo(function ReplyRow({ id }) {
 
   return (
     <div className={`group relative flex gap-2.5 rounded-xl px-1.5 py-1 -mx-1.5 hover:bg-white/60 ${r.pending ? "opacity-70" : ""}`}>
+      {confirmDialog}
       {live && !editing && (
         <MessageToolbar
           message={r}
@@ -91,7 +99,6 @@ export default function ThreadPanel({ messageId, initialDraft = "" }) {
   const topic = useSelector((s) => (parent ? s.discussions.topicsMap[parent.topicId] : null));
   const author = useSelector((s) => (parent?.by ? s.discussions.usersMap[parent.by] : null));
   const ids = useSelector((s) => s.discussions.replyIds[messageId]);
-  const loading = useSelector((s) => s.discussions.repliesLoading[messageId]);
   const fetched = useSelector((s) => s.discussions.repliesFetched[messageId]);
 
   const [text, setText] = useState(initialDraft);
@@ -189,17 +196,25 @@ export default function ThreadPanel({ messageId, initialDraft = "" }) {
         </div>
 
         <div className="flex items-center gap-3 my-5">
-          <span className="text-[14px] font-bold text-[#94A3B8] whitespace-nowrap">
-            {loading && !ids ? "Loading replies…" : count ? `${count} ${count === 1 ? "reply" : "replies"}` : "No replies yet"}
-          </span>
+          {!ids ? (
+            <Bone className="h-3.5 w-16 rounded-md" />
+          ) : (
+            <span className="text-[14px] font-bold text-[#94A3B8] whitespace-nowrap">
+              {count ? `${count} ${count === 1 ? "reply" : "replies"}` : "No replies yet"}
+            </span>
+          )}
           <div className="flex-1 h-px bg-[#DCE5F3]" />
         </div>
 
-        <div className="space-y-3">
-          {(ids || []).map((id) => (
-            <ReplyRow key={id} id={id} />
-          ))}
-        </div>
+        {!ids ? (
+          <RepliesSkeleton />
+        ) : (
+          <div className="space-y-3">
+            {ids.map((id) => (
+              <ReplyRow key={id} id={id} />
+            ))}
+          </div>
+        )}
       </div>
 
       {!parent.deleted && (

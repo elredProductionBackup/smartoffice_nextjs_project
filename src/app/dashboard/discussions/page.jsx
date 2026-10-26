@@ -7,6 +7,7 @@ import NewTopicModal from "./NewTopicModal";
 import ChatPanel from "./ChatPanel";
 import ThreadPanel from "./ThreadPanel";
 import { PersonAvatar, useMe } from "./DiscussionShared";
+import { ChatSkeleton, TopicListSkeleton } from "./DiscussionSkeletons";
 import {
   clearDiscussionError,
   clearDiscussionNotice,
@@ -83,7 +84,6 @@ const STATUS_DOT = {
   connecting: { color: "bg-[#CA8A04]", label: "Connecting…" },
   disconnected: { color: "bg-[#CA8A04]", label: "Reconnecting…" },
   error: { color: "bg-[#94A3B8]", label: "Offline, refreshing every 15s" },
-  idle: { color: "bg-[#94A3B8]", label: "Offline, refreshing every 15s" },
 };
 
 export default function DiscussionsPage() {
@@ -95,8 +95,8 @@ export default function DiscussionsPage() {
   const topicIds = useSelector((s) => s.discussions.topicIds);
   const activeTopicId = useSelector((s) => s.discussions.activeTopicId);
   const hasActiveTopic = useSelector((s) => Boolean(s.discussions.topicsMap[s.discussions.activeTopicId]));
-  const topicsLoading = useSelector((s) => s.discussions.topicsLoading);
   const topicsFetched = useSelector((s) => s.discussions.topicsFetched);
+  const topicsError = useSelector((s) => s.discussions.topicsError);
   const socketStatus = useSelector((s) => s.discussions.socketStatus);
   const thread = useSelector((s) => s.discussions.thread);
   const lastError = useSelector((s) => s.discussions.lastError);
@@ -173,16 +173,19 @@ export default function DiscussionsPage() {
 
   const isFiltered = search.trim() || filter !== "all";
   const approvalCount = useMemo(() => topics.filter((t) => t.needsMyApproval).length, [topics]);
-  const status = STATUS_DOT[socketStatus] || STATUS_DOT.idle;
+  // "idle" is the moment before the socket starts, so nothing is shown rather than a false "Offline"
+  const status = STATUS_DOT[socketStatus];
 
   return (
     <div className="h-[calc(100vh-120px)] my-5 flex flex-col font-nunito">
       <div className="flex items-center gap-4">
         <h2 className="font-heading text-[32px] leading-[136%] font-bold text-[#333333]">Discussions</h2>
-        {/* <span className="inline-flex items-center gap-2 text-[13px] font-semibold text-[#64748B]" title="Live updates">
-          <span className={`w-2 h-2 rounded-full ${status.color}`} />
-          {status.label}
-        </span> */}
+        {/* {status && (
+          <span className="inline-flex items-center gap-2 text-[13px] font-semibold text-[#64748B]" title="Live updates">
+            <span className={`w-2 h-2 rounded-full ${status.color}`} />
+            {status.label}
+          </span>
+        )} */}
       </div>
 
       <div className="flex-1 flex gap-6 min-h-0 mt-[20px]">
@@ -232,8 +235,21 @@ export default function DiscussionsPage() {
           </div>
 
           <div className="flex-1 min-h-0 overflow-y-auto px-3 pb-3 space-y-1">
-            {topicsLoading && !topics.length ? (
-              <p className="text-center text-[14px] text-[#94A3B8] py-10">Loading topics…</p>
+            {/* Skeleton until the first answer: before it, "no topics" would be a guess */}
+            {!topicsFetched ? (
+              <TopicListSkeleton />
+            ) : topicsError && !topics.length ? (
+              <div className="h-full flex flex-col items-center justify-center text-center px-6">
+                <p className="text-[#333333] font-bold text-[16px]">Topics did not load</p>
+                <p className="text-[#777777] text-[14px] mt-1">{topicsError}</p>
+                <button
+                  type="button"
+                  onClick={() => dispatch(fetchTopics())}
+                  className="mt-4 h-9 px-4 rounded-full bg-[#1D72E8] text-white text-[14px] font-bold hover:bg-[#0B57D0] transition cursor-pointer"
+                >
+                  Try again
+                </button>
+              </div>
             ) : visibleTopics.length > 0 ? (
               visibleTopics.map((topic) => (
                 <TopicItem key={topic.id} topic={topic} active={topic.id === activeTopicId} onOpen={handleOpen} />
@@ -253,6 +269,9 @@ export default function DiscussionsPage() {
         <div className="flex-1 min-w-0 bg-[#F2F7FF] rounded-[20px] overflow-hidden">
           {hasActiveTopic ? (
             <ChatPanel key={activeTopicId} topicId={activeTopicId} />
+          ) : !topicsFetched || (topics.length > 0 && !topicsError) ? (
+            // Still loading, or the first topic is about to open
+            <ChatSkeleton />
           ) : (
             <div className="h-full flex flex-col items-center justify-center text-center">
               <div className="w-[64px] h-[64px] rounded-2xl bg-white text-[#0B57D0] flex items-center justify-center mb-4">

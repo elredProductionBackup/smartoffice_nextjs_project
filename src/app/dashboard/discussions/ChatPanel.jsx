@@ -18,6 +18,7 @@ import {
 } from "react-icons/fi";
 import { FaWhatsapp } from "react-icons/fa";
 import NewTopicModal from "./NewTopicModal";
+import { Bone, MessagesSkeleton } from "./DiscussionSkeletons";
 import {
   ApprovalCard,
   Avatar,
@@ -34,6 +35,7 @@ import {
   useMe,
   useOutsideClick,
   usePortfolioNames,
+  useConfirmDialog,
   useTypingSignal,
 } from "./DiscussionShared";
 import { openThread } from "@/store/discussions/discussionsSlice";
@@ -56,6 +58,7 @@ function TopicHeader({ topic }) {
   const online = useSelector((s) => s.discussions.online[topic.id]);
   const [menuOpen, setMenuOpen] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [askConfirm, confirmDialog] = useConfirmDialog();
   const menuRef = useRef(null);
   const closeMenu = useCallback(() => setMenuOpen(false), []);
   useOutsideClick(menuRef, menuOpen, closeMenu);
@@ -68,15 +71,16 @@ function TopicHeader({ topic }) {
     .join(" · ");
   const isCreator = topic.createdBy === me;
 
-  const confirmThen = async (question, thunk) => {
+  // Leaving and deleting both drop the topic's socket room once the server agrees
+  const confirmThen = (dialog, thunk) => {
     setMenuOpen(false);
-    if (!window.confirm(question)) return;
-    try {
-      await dispatch(thunk).unwrap();
-      dispatch(leaveTopicRoom(topic.id));
-    } catch {
-      /* shown in the banner */
-    }
+    askConfirm({
+      ...dialog,
+      onConfirm: async () => {
+        await dispatch(thunk).unwrap();
+        dispatch(leaveTopicRoom(topic.id));
+      },
+    });
   };
 
   const menuItem = "w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left text-[15px] font-semibold transition cursor-pointer";
@@ -90,6 +94,11 @@ function TopicHeader({ topic }) {
 
       <div className="flex items-center gap-3 shrink-0">
         <div className="flex -space-x-2">
+          {/* The topics list only has a count; members arrive with the topic details */}
+          {!topic.members.length &&
+            Array.from({ length: Math.min(count || 3, 4) }, (_, i) => (
+              <Bone key={i} className="w-9 h-9 rounded-full ring-2 ring-[#F2F7FF]" />
+            ))}
           {topic.members.slice(0, 4).map((code) => (
             <PersonAvatar key={code} code={code} online={code !== me && onlineSet.has(code)} className="w-9 h-9 text-[12px] ring-2 ring-[#F2F7FF]" />
           ))}
@@ -132,7 +141,17 @@ function TopicHeader({ topic }) {
               </button>
               <button
                 type="button"
-                onClick={() => confirmThen(`Leave "${topic.title}"? You will stop getting its messages.`, leaveTopic({ topicId: topic.id }))}
+                onClick={() =>
+                  confirmThen(
+                    {
+                      title: `Leave “${topic.title}”?`,
+                      message: "You will stop getting its messages. Anyone in the topic can add you back.",
+                      confirmText: "Leave topic",
+                      cancelText: "Stay",
+                    },
+                    leaveTopic({ topicId: topic.id })
+                  )
+                }
                 className={`${menuItem} text-[#1E293B] hover:bg-[#F8FAFC]`}
               >
                 <FiLogOut className="text-[16px]" /> Leave topic
@@ -140,7 +159,16 @@ function TopicHeader({ topic }) {
               {isCreator && (
                 <button
                   type="button"
-                  onClick={() => confirmThen(`Delete "${topic.title}" for everyone? This cannot be undone.`, deleteTopic({ topicId: topic.id }))}
+                  onClick={() =>
+                    confirmThen(
+                      {
+                        title: `Delete “${topic.title}”?`,
+                        message: "The topic, its messages and files will be removed for everyone. This cannot be undone.",
+                        confirmText: "Delete topic",
+                      },
+                      deleteTopic({ topicId: topic.id })
+                    )
+                  }
                   className={`${menuItem} text-[#B91C1C] hover:bg-[#FEF2F2]`}
                 >
                   <FiTrash2 className="text-[16px]" /> Delete topic
@@ -152,6 +180,7 @@ function TopicHeader({ topic }) {
       </div>
 
       {editing && <NewTopicModal topic={topic} onClose={() => setEditing(false)} />}
+      {confirmDialog}
     </div>
   );
 }
@@ -166,6 +195,7 @@ const MessageRow = memo(function MessageRow({ id, prevId, highlighted }) {
   const me = useMe();
   const portfolioNames = usePortfolioNames();
   const [editing, setEditing] = useState(false);
+  const [askConfirm, confirmDialog] = useConfirmDialog();
   if (!m) return null;
 
   const day = formatDay(m.createdAt);
@@ -184,9 +214,16 @@ const MessageRow = memo(function MessageRow({ id, prevId, highlighted }) {
   const live = !m.tempId && !m.deleted;
   const hasCards = m.files.length > 0 || m.ask;
   const openReplies = (draft) => dispatch(openThread({ messageId: id, draft }));
-  const remove = () => {
-    if (window.confirm("Delete this message for everyone?")) dispatch(deleteMessage({ messageId: id }));
-  };
+  const remove = () =>
+    askConfirm({
+      title: "Delete this message?",
+      message:
+        m.replyCount > 0
+          ? "It will be removed for everyone. Its replies stay in the thread."
+          : "It will be removed for everyone in this topic.",
+      confirmText: "Delete",
+      onConfirm: () => dispatch(deleteMessage({ messageId: id })).unwrap(),
+    });
   const save = (text) => {
     dispatch(editMessage({ messageId: id, text, prevText: m.text, prevEdited: m.edited }));
     setEditing(false);
@@ -254,6 +291,7 @@ const MessageRow = memo(function MessageRow({ id, prevId, highlighted }) {
   if (isMine) {
     return (
       <div id={`msg-${id}`}>
+        {confirmDialog}
         {divider}
         <div className="flex flex-col items-end">
           <div className="group relative max-w-[60%] min-w-[200px]">
@@ -268,6 +306,7 @@ const MessageRow = memo(function MessageRow({ id, prevId, highlighted }) {
 
   return (
     <div id={`msg-${id}`}>
+      {confirmDialog}
       {divider}
       <div className="flex gap-3">
         <Avatar person={author || { userCode: m.by, name: "" }} />
@@ -346,7 +385,7 @@ function MessageList({ topicId }) {
       </div>
     );
   } else if (!ids) {
-    content = <p className="h-full flex items-center justify-center text-[15px] text-[#94A3B8]">Loading messages…</p>;
+    content = <MessagesSkeleton />;
   } else if (!ids.length) {
     content = (
       <div className="h-full flex flex-col items-center justify-center text-center">
@@ -357,7 +396,15 @@ function MessageList({ topicId }) {
   } else {
     content = (
       <div className="space-y-5">
-        {loading === "older" && <p className="text-center text-[13px] text-[#94A3B8]">Loading earlier messages…</p>}
+        {loading === "older" && (
+          <div role="status" aria-label="Loading earlier messages" className="flex gap-3">
+            <Bone className="w-9 h-9 rounded-full shrink-0" />
+            <div className="space-y-2">
+              <Bone className="h-3.5 w-28 rounded-md" />
+              <Bone className="h-12 w-[260px] rounded-2xl" />
+            </div>
+          </div>
+        )}
         {ids.map((id, i) => (
           <MessageRow key={id} id={id} prevId={i ? ids[i - 1] : null} highlighted={id === threadId} />
         ))}

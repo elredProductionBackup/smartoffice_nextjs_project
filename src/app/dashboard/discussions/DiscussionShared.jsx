@@ -6,6 +6,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { FiCornerUpLeft, FiDownload, FiEdit2, FiExternalLink, FiMail, FiTrash2, FiX } from "react-icons/fi";
 import { FaWhatsapp } from "react-icons/fa";
 import { MdOutlineAddReaction } from "react-icons/md";
+import EventActionConfirmModal from "@/_components/EventsComps/EventActionConfirmModal";
 import { openThread } from "@/store/discussions/discussionsSlice";
 import {
   cancelApproval,
@@ -38,6 +39,47 @@ export const useMe = () => useSelector((s) => s.discussions.myUserCode);
 export function usePortfolioNames() {
   const types = useSelector((s) => s.budget?.budgetTypes);
   return useMemo(() => Object.fromEntries((types || []).map((t) => [t.budgetTypeId, t.budgetType])), [types]);
+}
+
+// The app's own confirmation popup (same one User Management uses), instead of window.confirm.
+// ask({ title, message, confirmText, cancelText, onConfirm }) opens it. onConfirm may return a
+// promise: the popup shows its loader until it settles, then closes. Failures surface in the page banner.
+export function useConfirmDialog() {
+  const [request, setRequest] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const ask = useCallback((next) => setRequest(next), []);
+
+  const cancel = () => !busy && setRequest(null);
+  const confirm = async () => {
+    setBusy(true);
+    try {
+      await request.onConfirm();
+    } catch {
+      /* shown in the banner */
+    } finally {
+      setBusy(false);
+      setRequest(null);
+    }
+  };
+
+  // Rendered into <body> so a message bubble or panel can never clip or stack above it
+  const dialog =
+    request && typeof document !== "undefined"
+      ? createPortal(
+          <EventActionConfirmModal
+            title={request.title}
+            message={request.message}
+            confirmText={request.confirmText || "Delete"}
+            cancelText={request.cancelText || "Cancel"}
+            isLoading={busy}
+            onConfirm={confirm}
+            onCancel={cancel}
+          />,
+          document.body
+        )
+      : null;
+
+  return [ask, dialog];
 }
 
 export function useOutsideClick(ref, active, onOutside) {

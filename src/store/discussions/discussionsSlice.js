@@ -45,6 +45,7 @@ const initialState = {
   topicIds: [], // newest activity first
   topicsLoading: false,
   topicsFetched: false,
+  topicsError: null,
   activeTopicId: null,
 
   // Messages and replies share one map keyed by id; the lists below hold ids only
@@ -65,6 +66,7 @@ const initialState = {
   people: [], // admins for the pickers
   peopleLoading: false,
   peopleFetched: false,
+  peopleError: null,
 
   eventOptions: [],
   eventOptionsLoading: false,
@@ -359,11 +361,15 @@ const discussionsSlice = createSlice({
     builder
       /* Topics */
       .addCase(fetchTopics.pending, (state, { meta }) => {
-        if (!meta.arg?.silent) state.topicsLoading = true;
+        if (!meta.arg?.silent) {
+          state.topicsLoading = true;
+          state.topicsError = null;
+        }
       })
       .addCase(fetchTopics.fulfilled, (state, { payload }) => {
         state.topicsLoading = false;
         state.topicsFetched = true;
+        state.topicsError = null;
         if (payload.complete) {
           const keep = new Set(payload.list.map(topicIdOf));
           state.topicIds.filter((id) => !keep.has(id)).forEach((id) => removeTopic(state, id));
@@ -371,8 +377,10 @@ const discussionsSlice = createSlice({
         payload.list.forEach((t) => upsertTopic(state, t, false));
         sortTopics(state);
       })
-      .addCase(fetchTopics.rejected, (state) => {
+      .addCase(fetchTopics.rejected, (state, { meta, payload }) => {
         state.topicsLoading = false;
+        // A background refresh failing should not replace a list that is already showing
+        if (!state.topicsFetched || !meta.arg?.silent) state.topicsError = payload || "Topics did not load";
         state.topicsFetched = true;
       })
       .addCase(fetchTopicDetails.fulfilled, (state, { payload }) => {
@@ -517,6 +525,7 @@ const discussionsSlice = createSlice({
       /* Pickers */
       .addCase(fetchDiscussionPeople.pending, (state) => {
         state.peopleLoading = true;
+        state.peopleError = null;
       })
       .addCase(fetchDiscussionPeople.fulfilled, (state, { payload }) => {
         state.peopleLoading = false;
@@ -530,8 +539,9 @@ const discussionsSlice = createSlice({
           state.usersMap[p.userCode] = { ...state.usersMap[p.userCode], ...p };
         });
       })
-      .addCase(fetchDiscussionPeople.rejected, (state) => {
+      .addCase(fetchDiscussionPeople.rejected, (state, { payload }) => {
         state.peopleLoading = false;
+        state.peopleError = payload || "People did not load";
       })
       .addCase(fetchEventOptions.pending, (state, { meta }) => {
         state.eventOptionsLoading = true;
