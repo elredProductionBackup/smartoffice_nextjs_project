@@ -62,18 +62,52 @@
     return api.patch("/smartOffice/masterList", payload);
   };
 
-  export const getEventMembers = ({
+  // App members and pending offline attendees in one list.
+  // attendanceStatus: attended | notAttended | notMarked; appStatus: joined | pending | deregistered
+  // Counts in the response ignore search and filters.
+  export const getEventAttendees = ({
     eventId,
     start = 1,
     offset = 10,
+    search = "",
+    attendanceStatus = "",
+    appStatus = "",
   }) => {
-    return api.get("/smartOffice/getEventsMembersList", {
+    // The API rejects empty filter values, so leave unset ones out (axios drops undefined params)
+    return api.get("/smartOffice/getEventAttendees", {
       params: {
         eventId,
         start,
         offset,
+        search: search || undefined,
+        attendanceStatus: attendanceStatus || undefined,
+        appStatus: appStatus || undefined,
       },
     });
+  };
+
+  // Add one attendee (popup) or every mapped sheet row, up to 1000 per call. Only name is required.
+  // Bad rows come back in failed[] ({ index, name, reason }) while good rows are still saved;
+  // rows whose mobile matches an app account come back in joined[] with matchedProfileName.
+  export const addOfflineAttendees = async ({ eventId, attendees }) => {
+    const res = await api.post("/smartOffice/addOfflineAttendees", { eventId, attendees });
+
+    // Axios validateStatus allows all status codes — check success flag manually
+    if (res.data?.success === false) {
+      throw new Error(res.data?.message || "Failed to add attendees");
+    }
+    return res.data?.result?.[0] || {};
+  };
+
+  // Mark one or many attendees (app members or pending) — attendanceStatus: attended | notAttended | "" (clear)
+  export const updateEventAttendance = async ({ eventId, attendeeIds, attendanceStatus }) => {
+    const res = await api.patch("/smartOffice/updateEventAttendance", { eventId, attendeeIds, attendanceStatus });
+
+    // Axios validateStatus allows all status codes — check success flag manually
+    if (res.data?.success === false) {
+      throw new Error(res.data?.message || "Failed to update attendance");
+    }
+    return res.data?.result?.[0] || {};
   };
 
   // Get Members Media List

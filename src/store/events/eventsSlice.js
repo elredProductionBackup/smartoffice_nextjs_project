@@ -43,6 +43,7 @@ const initialState = {
   membersFetched: {},
   membersLoading: {},
   membersTotal: {},
+  membersCounts: {},
   membersPage: {},
 
   membersMediaMap: {},
@@ -355,7 +356,7 @@ const eventSlice = createSlice({
 })
 
 .addCase(fetchEventMembers.fulfilled, (state, action) => {
-  const { eventId, list, total, page } = action.payload;
+  const { eventId, list, total, counts, page } = action.payload;
 
   state.membersLoading[eventId] = false;
 
@@ -367,6 +368,7 @@ const eventSlice = createSlice({
 
   state.membersPage[eventId] = page;
   state.membersTotal[eventId] = total;
+  state.membersCounts[eventId] = counts;
   state.membersFetched[eventId] = true;
 })
 

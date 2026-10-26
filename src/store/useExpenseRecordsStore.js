@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import api from "@/services/axios";
+import { updateExpensePaymentStatus } from "@/services/expense.service";
 import moment from "moment";
 
 function formatExpenseDate(date) {
@@ -111,6 +112,19 @@ function getApprovalStatusLabel(item) {
   return APPROVAL_STATUS_LABELS[raw] || "Pending Approval";
 }
 
+// API sends paymentStatus as lowercase ("pending" | "paid" | "overdue" | "rejected").
+const PAYMENT_STATUS_LABELS = {
+  paid: "Paid",
+  pending: "Pending",
+  overdue: "Overdue",
+  rejected: "Rejected",
+};
+
+function getPaymentStatusLabel(item) {
+  const raw = String(item.paymentStatus || "").toLowerCase();
+  return PAYMENT_STATUS_LABELS[raw] || "Pending";
+}
+
 // Map a raw API expense record into the shape the table expects.
 function apiExpenseToRecord(item) {
   // API sends attachment as an array of URLs (may be empty).
@@ -141,12 +155,12 @@ function apiExpenseToRecord(item) {
     bill: item.billFileName || item.bill || billUrl?.split("/").pop() || "-",
     billUrl,
     billUrls: attachments,
-    paymentStatus: item.paymentStatus || "Pending",
+    paymentStatus: getPaymentStatusLabel(item),
     status,
     // Send stays visible (disabled) while "Sent"; disappears once approved.
     canSend: status === "Pending Approval" || status === "Sent",
     isSent: status === "Sent",
-    reminderCount: item.reminderCount ?? 0,
+    reminderCount: Number(item.reminderCount) || 0,
     lastReminderDate: item.lastReminderDate || "",
   };
 }
@@ -311,21 +325,39 @@ export const useExpenseRecordsStore = create((set, get) => ({
     }));
   },
 
-  updatePaymentStatus: (id, paymentStatus) => {
-    let matchedExpense = null;
-    const expenses = get().expenses.map((e) => {
-      if (e.id === id) {
-        matchedExpense = { ...e, paymentStatus };
-        return matchedExpense;
-      }
-      return e;
-    });
-    set({ expenses });
+  /**
+   * Update an expense's payment status.
+   * Optimistically updates the row, then rolls back if the server rejects it.
+   */
+  updatePaymentStatus: async (id, paymentStatus) => {
+    const target = get().expenses.find((e) => String(e.id) === String(id));
+    if (!target) return { success: false, message: "Expense not found" };
 
-    if (matchedExpense) {
-      api
-        .patch("/smartOffice/expense", { id, paymentStatus })
-        .catch((err) => console.error("Failed to sync payment status to server:", err));
+    const previousStatus = target.paymentStatus;
+    if (previousStatus === paymentStatus) return { success: true };
+
+    const setStatus = (status) =>
+      set((state) => ({
+        expenses: state.expenses.map((e) =>
+          String(e.id) === String(id) ? { ...e, paymentStatus: status } : e
+        ),
+      }));
+
+    setStatus(paymentStatus);
+
+    try {
+      // API expects lowercase ("paid" | "pending" | "overdue" | "rejected").
+      const data = await updateExpensePaymentStatus({
+        expenseId: id,
+        paymentStatus: paymentStatus.toLowerCase(),
+      });
+      return { success: true, message: data?.message || "Payment status updated" };
+    } catch (err) {
+      setStatus(previousStatus);
+      return {
+        success: false,
+        message: err?.response?.data?.message || err.message || "Failed to update payment status",
+      };
     }
   },
 

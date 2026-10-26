@@ -1,28 +1,98 @@
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FiCheck, FiCopy, FiEdit2, FiMinus, FiPlus, FiSearch, FiTrash2, FiUpload } from "react-icons/fi";
 import { FaWhatsapp } from "react-icons/fa";
 import { UserSearch } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { selectIsFinanceOfficer } from "@/store/auth/authSlice";
 import { fetchEventMembers } from "@/store/events/eventsThunks";
+import { addOfflineAttendees, updateEventAttendance } from "@/services/events.service";
 import { openEventsModal } from "@/store/events/eventsUiSlice";
 import { addToast } from "@/store/toastSlice";
 import { formatMember } from "@/utils/formatMember";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useDebounce } from "@/hooks/useDebounce";
 import Pagination from "../UI/Pagination";
 import RowMenu from "../UI/RowMenu";
 import SuccessPopup from "../ConfirmationPopups/SuccessPopup";
 import AddAttendeeModal from "./AddAttendeeModal";
 import UploadSheetModal from "./UploadSheetModal";
+import SheetImportModal from "./SheetImportModal";
 import AttendanceSelect, { ATTENDANCE } from "./AttendanceSelect";
 
+// `api` is the attendanceStatus / appStatus value getEventAttendees filters on
 const FILTERS = [
-  { key: "all", label: "All" },
-  { key: "yes", label: "Attended" },
-  { key: "no", label: "Didn't attend" },
-  { key: "none", label: "Not marked" },
+  { key: "all", label: "All", api: "" },
+  { key: "yes", label: "Attended", api: "attended" },
+  { key: "no", label: "Didn't attend", api: "notAttended" },
+  { key: "none", label: "Not marked", api: "notMarked" },
 ];
+
+const APP_FILTERS = [
+  { key: "joined", label: "Joined" },
+  { key: "pending", label: "Pending" },
+  { key: "deregistered", label: "Deregistered" },
+];
+
+const SHEET_BATCH = 1000; // addOfflineAttendees row limit per call
+
+const ATTENDANCE_FROM_API = { attended: "yes", notAttended: "no", notMarked: "none" };
+// What updateEventAttendance stores; "" clears it back to Not marked
+const ATTENDANCE_TO_API = { yes: "attended", no: "notAttended", none: "" };
+
+const APP_STATUS_BADGE = {
+  pending: { label: "Pending", className: "bg-[#FEF7E0] text-[#B06000]" },
+  deregistered: { label: "Deregistered", className: "bg-[#F1F5F9] text-[#475569]" },
+};
+
+// addOfflineAttendees accepts a 10-digit mobile or E.164, so drop spaces/dashes and keep a leading +.
+// Sheets often have numbers without +91: "9876543210" stays as is, "919876543210" gets a +,
+// the domestic trunk 0 ("09876543210") is dropped and the international 00 ("0091…") becomes +.
+function toApiPhone(value = "") {
+  const d = value.replace(/\D/g, "");
+  if (!d) return "";
+  if (value.trim().startsWith("+")) return `+${d}`;
+  if (d.startsWith("00")) return `+${d.slice(2)}`;
+  if (d.length === 11 && d.startsWith("0")) return d.slice(1);
+  return d.length > 10 ? `+${d}` : d;
+}
+
+// Popup form values → one attendees[] item; empty optional fields are left out
+function toApiAttendee(values) {
+  const item = {
+    name: values.name,
+    companyName: values.company,
+    title: values.designation,
+    phoneNumber: toApiPhone(values.whatsapp),
+    email: values.email,
+  };
+  return Object.fromEntries(Object.entries(item).filter(([, v]) => v));
+}
+
+// Which popup field a failed[] reason belongs to, so the error shows under it
+function fieldForReason(reason = "") {
+  const r = reason.toLowerCase();
+  if (r.startsWith("name")) return "name";
+  if (r.startsWith("email")) return "email";
+  if (r.includes("phone")) return "whatsapp";
+  return null;
+}
+
+// Counts may come flat or grouped under attendanceStatus / appStatus
+function normalizeCounts(raw = {}) {
+  const att = raw.attendanceStatus || raw.attendance || raw;
+  const app = raw.appStatus || raw.app || raw;
+  const num = (v) => Number(v) || 0;
+  return {
+    all: num(raw.all ?? raw.total ?? raw.totalCount),
+    yes: num(att.attended),
+    no: num(att.notAttended),
+    none: num(att.notMarked),
+    joined: num(app.joined),
+    pending: num(app.pending),
+    deregistered: num(app.deregistered),
+  };
+}
 
 const chipClass = (active) =>
   `inline-flex items-center gap-1.5 h-8 px-3.5 rounded-full border text-[14px] font-bold transition cursor-pointer ${
@@ -54,9 +124,23 @@ function formatTitles(titles) {
   return vals.length <= 2 ? vals.join(" | ") : `${vals.slice(0, 2).join(" | ")} | +${vals.length - 2}`;
 }
 
+// getEventAttendees sends `name` and a plain-string `title`, and pending (offline) attendees have no
+// userCode, so rows are keyed by attendeeId. Reshape into the firstName/lastName/title[] form the
+// table and member popup already use.
+function toRow(m) {
+  const [first = "", ...rest] = (m.name || "").trim().split(" ");
+  return {
+    ...m,
+    id: m.attendeeId || m.userCode,
+    firstName: m.firstName ?? first,
+    lastName: m.lastName ?? rest.join(" "),
+    title: Array.isArray(m.title) ? m.title : m.title ? [{ value: m.title }] : [],
+  };
+}
+
 // Per-event browser copy of attendee changes; storage can be blocked, so never let it throw
 // edited holds field overrides for attendees that came from the API
-const EMPTY_LOCAL = { added: [], removed: [], edited: {}, attendance: {} };
+const EMPTY_LOCAL = { added: [], removed: [], edited: {} };
 const storageKey = (eventId) => `eventAttendees:${eventId}`;
 
 function loadLocal(eventId) {
@@ -96,11 +180,13 @@ function Checkbox({ checked, indeterminate, onChange, label }) {
 
 const Attendees = ({ eventId }) => {
   const dispatch = useDispatch();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const currentPage = Number(searchParams.get("page")) || 1;
   const membersTotal = useSelector(
     (state) => state.events.membersTotal[eventId] || 0
   );
+  const apiCounts = useSelector((state) => state.events.membersCounts[eventId]);
 
   const {
     membersMap,
@@ -110,58 +196,75 @@ const Attendees = ({ eventId }) => {
   const isFinanceManager = useSelector(selectIsFinanceOfficer);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [sheetFile, setSheetFile] = useState(null); // picked sheet, open in the column matching step
   const [editing, setEditing] = useState(null);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
+  const [appFilter, setAppFilter] = useState(""); // "" = any app status
+  const debouncedSearch = useDebounce(search.trim());
+  const filtersActive = !!debouncedSearch || filter !== "all" || !!appFilter;
   const [selected, setSelected] = useState([]);
   const [success, setSuccess] = useState(null); // { title, message } after a save
-  // Added attendees, removals and attendance live in the browser until the attendee APIs exist
+  // Edits and removals live in the browser until the attendee APIs exist
   const [local, setLocal] = useState(() => loadLocal(eventId));
-  const attendance = local.attendance;
+  // Attendance picked but not yet confirmed by a refetch, so the pill changes straight away
+  const [pendingAttendance, setPendingAttendance] = useState({});
 
   useEffect(() => saveLocal(eventId, local), [eventId, local]);
 
+  // Search and filters run on the server; browser-only additions show on the unfiltered first page
   const membersList = useMemo(
     () =>
-      [...local.added, ...(membersMap[eventId] || [])]
-        .filter((m) => !local.removed.includes(m.userCode))
-        .map((m) => (local.edited[m.userCode] ? { ...m, ...local.edited[m.userCode] } : m)),
-    [local, membersMap, eventId]
+      [...(filtersActive || currentPage > 1 ? [] : local.added), ...(membersMap[eventId] || [])]
+        .map(toRow)
+        .filter((m) => !local.removed.includes(m.id))
+        .map((m) => (local.edited[m.id] ? { ...m, ...local.edited[m.id] } : m)),
+    [local, membersMap, eventId, filtersActive, currentPage]
   );
   const isMembersFetched = membersFetched[eventId];
 
-  useEffect(() => {
+  const loadAttendees = useCallback(() => {
     if (!eventId) return;
 
-    dispatch(
+    return dispatch(
       fetchEventMembers({
         eventId,
         page: currentPage,
         limit: 10,
+        search: debouncedSearch,
+        attendanceStatus: FILTERS.find((f) => f.key === filter)?.api || "",
+        appStatus: appFilter,
       })
     );
-  }, [eventId, currentPage]);
+  }, [dispatch, eventId, currentPage, debouncedSearch, filter, appFilter]);
 
-  const statusOf = (m) => attendance[m.userCode] || "none";
+  useEffect(() => {
+    loadAttendees();
+  }, [loadAttendees]);
 
-  const counts = useMemo(() => {
-    const c = { all: membersList.length, yes: 0, no: 0, none: 0 };
-    membersList.forEach((m) => c[attendance[m.userCode] || "none"]++);
-    return c;
-  }, [membersList, attendance]);
+  // A new search or filter starts back on page 1
+  const isFirstRender = useRef(true);
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    if (!searchParams.get("page")) return;
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("page");
+    router.replace(`?${params.toString()}`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearch, filter, appFilter]);
 
-  const visibleMembers = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return membersList.filter((m) => {
-      if (filter !== "all" && (attendance[m.userCode] || "none") !== filter) return false;
-      if (!q) return true;
-      return [m.firstName, m.lastName, m.companyName, m.email, m.phoneNumber]
-        .filter(Boolean)
-        .some((v) => String(v).toLowerCase().includes(q));
-    });
-  }, [membersList, attendance, search, filter]);
+  const statusOf = (m) => pendingAttendance[m.id] || ATTENDANCE_FROM_API[m.attendanceStatus] || "none";
 
-  const visibleIds = visibleMembers.map((m) => m.userCode);
+  // Counts come from the API and ignore search/filters
+  const counts = useMemo(() => normalizeCounts(apiCounts), [apiCounts]);
+  const allCount = counts.all || (filtersActive ? 0 : membersTotal);
+
+  const visibleMembers = membersList;
+
+  const visibleIds = visibleMembers.map((m) => m.id);
   const selectedVisible = visibleIds.filter((id) => selected.includes(id));
   const allSelected = visibleIds.length > 0 && selectedVisible.length === visibleIds.length;
 
@@ -172,20 +275,92 @@ const Attendees = ({ eventId }) => {
       allSelected ? prev.filter((id) => !visibleIds.includes(id)) : [...new Set([...prev, ...visibleIds])]
     );
 
-  const markAttendance = (ids, value) =>
-    setLocal((prev) => {
-      const next = { ...prev.attendance };
-      ids.forEach((id) => (value === "none" ? delete next[id] : (next[id] = value)));
-      return { ...prev, attendance: next };
-    });
+  // The dropdown sends one id, the bulk bar every selected one. The pill updates at once; a refetch
+  // then brings the saved status and fresh chip counts, and a failure puts the old status back.
+  const markAttendance = async (ids, value) => {
+    // Rows only stored in this browser (local-…) don't exist on the server
+    const attendeeIds = ids.filter((id) => !String(id).startsWith("local-"));
+    if (!attendeeIds.length) return;
 
-  // Adds a new attendee, or saves edits when `existing` is passed.
-  // "Save and add another" skips the popup; the modal shows its own "Added …" line instead
-  const saveAttendee = (values, existing, { addAnother } = {}) => {
+    const clearPending = () =>
+      setPendingAttendance((prev) => {
+        const next = { ...prev };
+        attendeeIds.forEach((id) => delete next[id]);
+        return next;
+      });
+
+    setPendingAttendance((prev) => ({ ...prev, ...Object.fromEntries(attendeeIds.map((id) => [id, value])) }));
+
+    try {
+      await updateEventAttendance({ eventId, attendeeIds, attendanceStatus: ATTENDANCE_TO_API[value] });
+    } catch (err) {
+      clearPending();
+      dispatch(addToast({
+        message: { title: "Couldn't update attendance", descrip: err.message || "Please try again." },
+        type: "error",
+      }));
+      return;
+    }
+
+    if (attendeeIds.length > 1) {
+      setSelected((prev) => prev.filter((id) => !attendeeIds.includes(id)));
+      dispatch(addToast({
+        message: {
+          title: "Attendance updated",
+          descrip: `${attendeeIds.length} attendees marked as ${ATTENDANCE[value].label.toLowerCase()}.`,
+        },
+        type: "success",
+      }));
+    }
+
+    await loadAttendees();
+    clearPending();
+  };
+
+  // Adds a new attendee through the API. Returns the modal's "Added …" line; throwing keeps the modal
+  // open, and an error with `field` shows under that input.
+  // "Save and add another" skips the popup; the modal shows the returned line instead
+  const addAttendee = async (values, { addAnother } = {}) => {
+    let res;
+    try {
+      res = await addOfflineAttendees({ eventId, attendees: [toApiAttendee(values)] });
+    } catch (err) {
+      dispatch(addToast({
+        message: { title: "Couldn't add attendee", descrip: err.message || "Please try again." },
+        type: "error",
+      }));
+      throw err;
+    }
+
+    const failed = res.failed?.[0];
+    if (failed) {
+      const err = new Error(failed.reason || "Couldn't add this attendee.");
+      err.field = fieldForReason(failed.reason);
+      throw err;
+    }
+
+    loadAttendees();
+
+    // A matched mobile links the row to an app account; show who, so a mistyped number is easy to spot
+    const joined = res.joined?.[0];
+    const linked = joined ? ` → linked to ${joined.matchedProfileName}` : "";
+    if (!addAnother) {
+      setSuccess({
+        title: "Attendee added",
+        message: joined
+          ? `${values.name} has been added and linked to ${joined.matchedProfileName}'s app profile.`
+          : `${values.name} has been added to this event.`,
+      });
+    }
+    return `Added ${values.name}${linked}`;
+  };
+
+  // Saves edits to an existing attendee (browser-only until there's an edit API)
+  const saveAttendee = (values, existing) => {
     const digits = (s = "") => s.replace(/\D/g, "");
     const dup = membersList.find(
       (m) =>
-        m.userCode !== existing?.userCode &&
+        m.id !== existing?.id &&
         ((values.email && m.email?.toLowerCase() === values.email.toLowerCase()) ||
         (values.whatsapp && digits(m.phoneNumber) === digits(values.whatsapp)))
     );
@@ -210,30 +385,22 @@ const Attendees = ({ eventId }) => {
       email: values.email,
     };
 
-    if (existing) {
-      const id = existing.userCode;
-      setLocal((prev) =>
-        id.startsWith("local-")
-          ? { ...prev, added: prev.added.map((m) => (m.userCode === id ? { ...m, ...fields } : m)) }
-          : { ...prev, edited: { ...prev.edited, [id]: fields } }
-      );
-      setSuccess({ title: "Changes saved", message: `${values.name}'s details have been updated.` });
-      return;
-    }
-
-    setLocal((prev) => ({ ...prev, added: [{ userCode: `local-${Date.now()}`, ...fields }, ...prev.added] }));
-    if (!addAnother) {
-      setSuccess({ title: "Attendee added", message: `${values.name} has been added to this event.` });
-    }
+    const id = existing.id;
+    setLocal((prev) =>
+      id.startsWith("local-")
+        ? { ...prev, added: prev.added.map((m) => (m.userCode === id ? { ...m, ...fields } : m)) }
+        : { ...prev, edited: { ...prev.edited, [id]: fields } }
+    );
+    setSuccess({ title: "Changes saved", message: `${values.name}'s details have been updated.` });
   };
 
   const removeAttendee = (member) => {
     setLocal((prev) => ({
       ...prev,
-      added: prev.added.filter((m) => m.userCode !== member.userCode),
-      removed: member.userCode.startsWith("local-") ? prev.removed : [...prev.removed, member.userCode],
+      added: prev.added.filter((m) => m.userCode !== member.id),
+      removed: member.id.startsWith("local-") ? prev.removed : [...prev.removed, member.id],
     }));
-    setSelected((prev) => prev.filter((id) => id !== member.userCode));
+    setSelected((prev) => prev.filter((id) => id !== member.id));
   };
 
   const copyToClipboard = async (text, what) => {
@@ -257,8 +424,48 @@ const Attendees = ({ eventId }) => {
     dispatch(openEventsModal({ type: "ATTENDEE_POPUP", payload: formatMember(member) }));
 
   const handleSheet = (file) => {
-    // TODO: hand the file to the column mapping step once it's built
     setShowUploadModal(false);
+    setSheetFile(file);
+  };
+
+  // Sends every mapped sheet row, up to 1000 per call, and merges the results.
+  // index in joined[]/failed[] is shifted back to the position in `items`.
+  const importAttendees = async (items) => {
+    const total = { addedCount: 0, joined: [], failed: [] };
+    try {
+      for (let start = 0; start < items.length; start += SHEET_BATCH) {
+        const res = await addOfflineAttendees({
+          eventId,
+          attendees: items.slice(start, start + SHEET_BATCH).map(toApiAttendee),
+        });
+        total.addedCount += res.addedCount || 0;
+        total.joined.push(...(res.joined || []).map((j) => ({ ...j, index: j.index + start })));
+        total.failed.push(...(res.failed || []).map((f) => ({ ...f, index: f.index + start })));
+      }
+    } finally {
+      // Earlier batches may have saved even if a later one failed
+      loadAttendees();
+    }
+    return total;
+  };
+
+  // Success popup once a sheet import saves anything. A clean import also closes the import window;
+  // with linked or skipped rows the summary stays underneath so they can be reviewed after OK.
+  const handleImported = ({ addedCount, joined, failed }) => {
+    if (!addedCount) return;
+    const needsReview = joined.length > 0 || failed.length > 0;
+    if (!needsReview) setSheetFile(null);
+    setSuccess({
+      title: "Attendees added",
+      message: needsReview
+        ? `${addedCount} ${addedCount === 1 ? "attendee was" : "attendees were"} added. Check the linked and skipped rows next.`
+        : `All ${addedCount} ${addedCount === 1 ? "attendee was" : "attendees were"} added to this event.`,
+      stats: [
+        { label: "Added", value: addedCount },
+        ...(joined.length ? [{ label: "Linked to app profiles", value: joined.length }] : []),
+        ...(failed.length ? [{ label: "Skipped", value: failed.length }] : []),
+      ],
+    });
   };
 
   const addModal = (
@@ -266,7 +473,7 @@ const Attendees = ({ eventId }) => {
       {showAddModal && (
         <AddAttendeeModal
           onClose={() => setShowAddModal(false)}
-          onSubmit={(values, opts) => saveAttendee(values, null, opts)}
+          onSubmit={addAttendee}
         />
       )}
       {editing && (
@@ -277,10 +484,23 @@ const Attendees = ({ eventId }) => {
         />
       )}
       {showUploadModal && <UploadSheetModal onClose={() => setShowUploadModal(false)} onSelect={handleSheet} />}
+      {sheetFile && (
+        <SheetImportModal
+          file={sheetFile}
+          onClose={() => setSheetFile(null)}
+          onBack={() => {
+            setSheetFile(null);
+            setShowUploadModal(true);
+          }}
+          onImport={importAttendees}
+          onImported={handleImported}
+        />
+      )}
       <SuccessPopup
         isOpen={!!success}
         title={success?.title}
         message={success?.message}
+        stats={success?.stats}
         onClose={() => setSuccess(null)}
         zIndex={300}
       />
@@ -293,7 +513,7 @@ const Attendees = ({ eventId }) => {
   }
 
   // Nobody added yet: header + call to action instead of the table
-  if (isMembersFetched && membersList.length === 0) {
+  if (isMembersFetched && !filtersActive && membersList.length === 0) {
     return (
       <div className="flex flex-col h-full min-h-[inherit] rounded-[20px] overflow-hidden">
         <div className="flex items-center justify-between py-[16px] px-[30px] font-bold text-lg text-[#333333]">
@@ -346,6 +566,20 @@ const Attendees = ({ eventId }) => {
 
         {FILTERS.map((f) => (
           <button key={f.key} type="button" onClick={() => setFilter(f.key)} className={chipClass(filter === f.key)}>
+            {f.label} <span className="font-semibold opacity-60">{f.key === "all" ? allCount : counts[f.key]}</span>
+          </button>
+        ))}
+
+        <span className="h-6 w-px bg-[#E2E8F0]" aria-hidden />
+
+        {/* App status; clicking the active chip clears it */}
+        {APP_FILTERS.map((f) => (
+          <button
+            key={f.key}
+            type="button"
+            onClick={() => setAppFilter((cur) => (cur === f.key ? "" : f.key))}
+            className={chipClass(appFilter === f.key)}
+          >
             {f.label} <span className="font-semibold opacity-60">{counts[f.key]}</span>
           </button>
         ))}
@@ -416,12 +650,12 @@ const Attendees = ({ eventId }) => {
             {visibleMembers.length === 0 ? (
               <tr>
                 <td colSpan={5} className="text-center py-16 text-[15px] text-[#777777]">
-                  No attendees match your search.
+                  No attendees match your search or filters.
                 </td>
               </tr>
             ) : (
               visibleMembers.map((member, i) => {
-                const id = member.userCode;
+                const id = member.id;
                 const fullName = `${member.firstName || ""} ${member.lastName || ""}`.trim() || "No Name";
                 const titles = formatTitles(member.title);
                 const status = statusOf(member);
@@ -459,7 +693,16 @@ const Attendees = ({ eventId }) => {
                           </div>
                         )}
                         <div className="min-w-0">
-                          <p className="truncate text-[17px] font-semibold text-[#1E293B]">{fullName}</p>
+                          <div className="flex items-center gap-2 min-w-0">
+                            <p className="truncate text-[17px] font-semibold text-[#1E293B]">{fullName}</p>
+                            {APP_STATUS_BADGE[member.appStatus] && (
+                              <span
+                                className={`shrink-0 px-2 py-0.5 rounded-md text-[12px] font-semibold ${APP_STATUS_BADGE[member.appStatus].className}`}
+                              >
+                                {APP_STATUS_BADGE[member.appStatus].label}
+                              </span>
+                            )}
+                          </div>
                           {titles && <p className="truncate mt-0.5 text-[13px] text-[#94A3B8]">{titles}</p>}
                         </div>
                       </div>

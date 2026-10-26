@@ -44,13 +44,16 @@ const Field = ({ id, label, required, optional, error, inputRef, ...inputProps }
   </div>
 );
 
-// onSubmit(values) may return a promise; reject it to keep the modal open.
+// onSubmit(values) may return a promise; reject it to keep the modal open. A rejection with
+// `field` shows its message under that input, otherwise in the footer. A resolved string
+// replaces the default "Added …" line after "Save and add another".
 // Passing initialValues switches the modal to editing an existing attendee.
 const AddAttendeeModal = ({ onClose, onSubmit, initialValues }) => {
   const isEdit = !!initialValues;
   const [values, setValues] = useState(() => ({ ...EMPTY, ...initialValues }));
   const [errors, setErrors] = useState({});
   const [message, setMessage] = useState("");
+  const [formError, setFormError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const refs = { name: useRef(null), whatsapp: useRef(null), email: useRef(null) };
 
@@ -66,6 +69,7 @@ const AddAttendeeModal = ({ onClose, onSubmit, initialValues }) => {
     setValues((prev) => ({ ...prev, [name]: value }));
     setErrors((prev) => ({ ...prev, [name]: undefined }));
     setMessage("");
+    setFormError("");
   };
 
   const handleSubmit = async (e) => {
@@ -79,17 +83,24 @@ const AddAttendeeModal = ({ onClose, onSubmit, initialValues }) => {
     if (firstBad) return refs[firstBad].current?.focus();
 
     setSubmitting(true);
+    setFormError("");
     try {
-      await onSubmit?.(data, { addAnother });
+      const note = await onSubmit?.(data, { addAnother });
       if (addAnother) {
         setValues(EMPTY);
-        setMessage(`Added ${data.name}`);
+        setMessage(typeof note === "string" ? note : `Added ${data.name}`);
         refs.name.current?.focus();
       } else {
         onClose();
       }
     } catch (err) {
       console.error("Add attendee error:", err);
+      if (err?.field && refs[err.field]) {
+        setErrors({ [err.field]: err.message });
+        refs[err.field].current?.focus();
+      } else if (err?.message && err.message !== "Duplicate attendee") {
+        setFormError(err.message);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -182,7 +193,9 @@ const AddAttendeeModal = ({ onClose, onSubmit, initialValues }) => {
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5 border-t border-[#E2E8F0] px-6 pt-3.5 pb-5">
-            <span className="mr-auto min-w-0 text-sm font-bold text-[#137A45]">{message}</span>
+            <span className={`mr-auto min-w-0 text-sm font-bold ${formError ? "text-[#DC2626]" : "text-[#137A45]"}`}>
+              {formError || message}
+            </span>
             <button
               type="button"
               onClick={onClose}
