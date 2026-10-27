@@ -48,6 +48,7 @@ export default function EventsPageClient() {
         tabs={EVENT_TABS}
         defaultTab="upcomming"
         events={true}
+        labelClassName="font-heading font-normal"
       />
 
       <div className="flex-1 flex flex-col min-h-0 bg-[#F2F7FF] pt-[30px] mt-[20px] rounded-[20px] overflow-hidden">

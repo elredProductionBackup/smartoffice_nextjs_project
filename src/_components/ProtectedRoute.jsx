@@ -92,11 +92,14 @@ export default function ProtectedRoute({ children }) {
     pathname.startsWith(route)
   );
 
-  if (ready && !isAdmin && !isFinanceManager && !isLearningOfficer && isAdminRoute) {
+  // Logged out (e.g. right after logout) — show the loader while redirecting, never the 404
+  const isLoggedIn = isAuthenticated && !!selectedRole;
+
+  if (ready && isLoggedIn && !isAdmin && !isFinanceManager && !isLearningOfficer && isAdminRoute) {
     notFound();
   }
 
-  if (!ready || isFinanceManagerBlocked || isLearningOfficerBlocked || isAdminBlocked) {
+  if (!ready || !isLoggedIn || isFinanceManagerBlocked || isLearningOfficerBlocked || isAdminBlocked) {
     return (
       <div className="h-screen flex items-center justify-center">
         Loading...
