@@ -18,6 +18,14 @@ const joinName = (first = "", last = "") => {
   return l && !f.toLowerCase().endsWith(l.toLowerCase()) ? `${f} ${l}` : f;
 };
 
+// Payloads can carry an already-doubled name ("Vignesh Nagamani Nagamani"): drop a word repeated right after itself
+const tidyName = (name = "") =>
+  String(name)
+    .trim()
+    .split(/\s+/)
+    .filter((w, i, all) => i === 0 || w.toLowerCase() !== all[i - 1].toLowerCase())
+    .join(" ");
+
 const toStatus = (u) => {
   if (u.isActivate === false) return "deactivated";
   const key = String(u.status || "").toLowerCase().trim();
@@ -34,7 +42,7 @@ export function normalizeUser(u) {
   if (!isObj(u) || !u.userCode) return null;
   const out = { userCode: u.userCode };
   const first = u.firstname ?? u.firstName ?? "";
-  const name = u.name || u.fullName || joinName(first, u.lastname ?? u.lastName);
+  const name = tidyName(u.name || u.fullName || joinName(first, u.lastname ?? u.lastName));
   if (name) {
     out.name = name;
     out.firstname = String(first).trim().split(" ")[0] || name.split(" ")[0];

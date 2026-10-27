@@ -74,7 +74,7 @@ const ReplyRow = memo(function ReplyRow({ id }) {
             <InlineEditor initial={r.text} onSave={save} onCancel={() => setEditing(false)} />
           </div>
         ) : (
-          r.text && <p className="text-[15px] leading-[155%] text-[#1E293B] whitespace-pre-wrap break-words mt-0.5">{r.text}</p>
+          r.text && <p className="text-[15px] leading-[155%] text-[#1E293B] whitespace-pre-wrap break-words [overflow-wrap:anywhere] mt-0.5">{r.text}</p>
         )}
         {r.files.length > 0 && (
           <div className="space-y-2 mt-2">
@@ -171,7 +171,7 @@ export default function ThreadPanel({ messageId, initialDraft = "" }) {
         </button>
       </div>
 
-      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-4 py-4">
+      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4 py-4">
         {/* Original message */}
         <div className="bg-[#E6EEFC] rounded-2xl p-3">
           <div className="flex items-center gap-2.5 mb-3">
@@ -183,10 +183,10 @@ export default function ThreadPanel({ messageId, initialDraft = "" }) {
               {formatDay(parent.createdAt)}, {formatTime(parent.createdAt)}
             </span>
           </div>
-          <div className="bg-white rounded-xl p-1 space-y-2">
+          <div className="bg-white rounded-xl p-1 space-y-2 min-w-0">
             {parent.deleted && <p className="px-3 py-2 text-[15px] italic text-[#94A3B8]">This message was deleted</p>}
             {parent.text && (
-              <p className="px-3 pt-2 text-[15px] leading-[160%] text-[#1E293B] whitespace-pre-wrap break-words">{parent.text}</p>
+              <p className="px-3 pt-2 text-[15px] leading-[160%] text-[#1E293B] whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{parent.text}</p>
             )}
             {parent.files.map((f, i) => (
               <FileCard key={`${f.url}-${i}`} file={f} />

@@ -248,9 +248,9 @@ export default function NewTopicModal({ topic, onClose, onCreated }) {
           <span className="block text-[14px] font-semibold text-[#64748B] mt-5 mb-2 shrink-0">People</span>
           <div className="flex flex-wrap gap-2 mb-3 shrink-0 max-h-[88px] overflow-y-auto">
             {selectedPeople.map((p) => (
-              <span key={p.userCode} className="inline-flex items-center gap-1.5 h-8 pl-1 pr-3 rounded-full bg-[#EAF1FE] text-[#0B57D0] text-[14px] font-bold">
+              <span key={p.userCode} className="inline-flex items-center gap-1.5 max-w-full h-8 pl-1 pr-3 rounded-full bg-[#EAF1FE] text-[#0B57D0] text-[14px] font-bold">
                 <Avatar person={p} className="w-6 h-6 text-[10px]" />
-                {p.userCode === me ? "You" : p.name}
+                <span className="truncate">{p.userCode === me ? "You" : p.name}</span>
                 {p.userCode !== me && (
                   <button type="button" onClick={() => toggle(p.userCode)} className="ml-0.5 text-[#0B57D0]/70 hover:text-[#0B57D0] cursor-pointer">
                     <FiX className="text-[13px]" />

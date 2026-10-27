@@ -51,7 +51,7 @@ const TopicItem = memo(function TopicItem({ topic, active, onOpen }) {
 
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
-          <p className="font-bold text-[16px] leading-[140%] text-[#1E293B] truncate">{topic.title}</p>
+          <p className="min-w-0 font-bold text-[16px] leading-[140%] text-[#1E293B] truncate">{topic.title}</p>
           <span suppressHydrationWarning className="text-[13px] text-[#94A3B8] whitespace-nowrap mt-0.5">
             {formatListTime(topic.lastActivityAt)}
           </span>

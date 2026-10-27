@@ -147,11 +147,12 @@ export function useAttachments() {
   return { items, add, remove, clear, problem };
 }
 
-export function Avatar({ person, className = "w-9 h-9 text-[12px]", online = false }) {
+// dotRing should match the surface behind the avatar so the dot looks cut out of it
+export function Avatar({ person, className = "w-9 h-9 text-[12px]", online = false, dotRing = "ring-[#F2F7FF]", style }) {
   const [broken, setBroken] = useState(false);
   const showImage = person?.dpURL && !broken;
   return (
-    <div className={`relative rounded-full shrink-0 ${className}`}>
+    <div className={`relative rounded-full shrink-0 ${className}`} style={style}>
       {showImage ? (
         <img src={person.dpURL} alt="" className="w-full h-full rounded-full object-cover" onError={() => setBroken(true)} />
       ) : (
@@ -163,10 +164,26 @@ export function Avatar({ person, className = "w-9 h-9 text-[12px]", online = fal
         </div>
       )}
       {online && (
-        <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-[#16A34A] ring-2 ring-[#F2F7FF]" />
+        <span
+          aria-hidden="true"
+          className={`absolute bottom-0 right-0 z-10 w-[11px] h-[11px] rounded-full bg-[#16A34A] ring-2 ${dotRing}`}
+        />
       )}
     </div>
   );
+}
+
+// Everyone the socket reports online in any of my topic rooms, plus me while connected.
+// One set for the whole page, so a person is never online in one topic and offline in another.
+export function useOnlineSet() {
+  const online = useSelector((s) => s.discussions.online);
+  const connected = useSelector((s) => s.discussions.socketStatus === "connected");
+  const me = useMe();
+  return useMemo(() => {
+    const set = new Set(Object.values(online).flat());
+    if (connected && me) set.add(me);
+    return set;
+  }, [online, connected, me]);
 }
 
 export function PersonAvatar({ code, ...rest }) {
@@ -250,6 +267,20 @@ function ImageLightbox({ file, size, onClose }) {
   );
 }
 
+// Long names shorten in the middle of the name, never the extension: "463301abf06fbe…929.png"
+function FileName({ name = "" }) {
+  const dot = name.lastIndexOf(".");
+  const hasExt = dot > 0 && name.length - dot <= 6;
+  const base = hasExt ? name.slice(0, dot) : name;
+  const ext = hasExt ? name.slice(dot) : "";
+  return (
+    <p title={name} className="flex min-w-0 text-[15px] font-bold text-[#1E293B]">
+      <span className="truncate">{base}</span>
+      {ext && <span className="shrink-0">{ext}</span>}
+    </p>
+  );
+}
+
 export function FileCard({ file }) {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [thumbBroken, setThumbBroken] = useState(false);
@@ -274,15 +305,17 @@ export function FileCard({ file }) {
   const body = (
     <>
       {icon}
-      <div className="min-w-0">
-        <p className="text-[15px] font-bold text-[#1E293B] truncate">{file.name}</p>
+      <div className="min-w-0 flex-1">
+        <FileName name={file.name} />
         <p className="text-[13px] text-[#94A3B8]">
           {ext} file{size ? `, ${size}` : ""}
         </p>
       </div>
     </>
   );
-  const cardClass = "flex items-center gap-3 bg-white rounded-xl p-2.5 pr-5 max-w-[380px] text-left hover:shadow-sm transition";
+  // w-full + min-w-0: the card fits whatever holds it (bubble or replies panel) instead of the name's length
+  const cardClass =
+    "flex items-center gap-3 w-full min-w-0 max-w-[380px] bg-white rounded-xl p-2.5 pr-4 text-left hover:shadow-sm transition";
 
   // Images open in the popup; other files still open in a new tab
   if (isImage) {
@@ -481,7 +514,9 @@ export const ApprovalCard = memo(function ApprovalCard({ message, compact = fals
           {formatDay(ask.decidedAt)}, {formatTime(ask.decidedAt)}
         </p>
       )}
-      {!pending && ask.decisionReason && <p className="text-[14px] text-[#475569] mt-1.5">“{ask.decisionReason}”</p>}
+      {!pending && ask.decisionReason && (
+        <p className="text-[14px] text-[#475569] mt-1.5 [overflow-wrap:anywhere]">“{ask.decisionReason}”</p>
+      )}
 
       {actions}
 
@@ -502,7 +537,7 @@ export const ApprovalCard = memo(function ApprovalCard({ message, compact = fals
 export function NoteLine({ message }) {
   const usersMap = useSelector((s) => s.discussions.usersMap);
   const me = useMe();
-  return <p className="text-center text-[13px] text-[#94A3B8] px-4">{noteText(message, usersMap, me)}</p>;
+  return <p className="text-center text-[13px] text-[#94A3B8] px-4 [overflow-wrap:anywhere]">{noteText(message, usersMap, me)}</p>;
 }
 
 export const ReactionChips = memo(function ReactionChips({ message, small = false }) {

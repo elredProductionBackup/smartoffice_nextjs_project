@@ -36,6 +36,7 @@ import {
   useOutsideClick,
   usePortfolioNames,
   useConfirmDialog,
+  useOnlineSet,
   useTypingSignal,
 } from "./DiscussionShared";
 import { openThread } from "@/store/discussions/discussionsSlice";
@@ -50,12 +51,140 @@ import {
 import { emitTyping, leaveTopicRoom } from "@/store/discussions/discussionsLive";
 import { FILE_ACCEPT, formatDay, formatTime, newTempId, roleLabel } from "@/store/discussions/discussionsUtils";
 
+/* ─── Who's online ─────────────────────────────────────── */
+
+const STACK_SIZE = 4;
+
+function PresenceRow({ code, isOnline, me, portfolioNames }) {
+  const person = useSelector((s) => s.discussions.usersMap[code]);
+  return (
+    <li className="flex items-center gap-3 px-4 py-2">
+      <Avatar person={person || { userCode: code, name: "" }} online={isOnline} dotRing="ring-white" className="w-8 h-8 text-[11px]" />
+      <div className="flex-1 min-w-0">
+        <p className="text-[14px] font-semibold text-[#1E293B] truncate">
+          {person?.name || "Former member"}
+          {code === me && <span className="font-normal text-[#64748B]"> (you)</span>}
+        </p>
+        <p title={roleLabel(person, portfolioNames)} className="text-[12px] text-[#64748B] truncate">
+          {roleLabel(person, portfolioNames)}
+        </p>
+      </div>
+    </li>
+  );
+}
+
+// Avatar stack in the topic header; click it to see who is online right now
+function PresenceStack({ topic }) {
+  const me = useMe();
+  const online = useOnlineSet();
+  const connected = useSelector((s) => s.discussions.socketStatus === "connected");
+  const portfolioNames = usePortfolioNames();
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const close = useCallback(() => setOpen(false), []);
+  useOutsideClick(ref, open, close);
+
+  // Online people first so their dots are in view (you after the others), then everyone offline
+  const ordered = useMemo(() => {
+    const rank = (c) => (online.has(c) ? (c === me ? 1 : 0) : c === me ? 3 : 2);
+    return [...topic.members].sort((a, b) => rank(a) - rank(b));
+  }, [topic.members, online, me]);
+
+  const count = topic.members.length || topic.memberCount || 0;
+  const onlineList = ordered.filter((c) => online.has(c));
+  const offlineList = ordered.filter((c) => !online.has(c));
+  // Same number everywhere: the subtitle, this button and "Online now" all count you too
+  const onlineCount = onlineList.length;
+  const shown = ordered.slice(0, STACK_SIZE);
+
+  // The topics list only has a count; members arrive with the topic details
+  if (!topic.members.length) {
+    return (
+      <div className="flex -space-x-2">
+        {Array.from({ length: Math.min(count || 3, STACK_SIZE) }, (_, i) => (
+          <Bone key={i} className="w-9 h-9 rounded-full ring-2 ring-[#F2F7FF]" />
+        ))}
+      </div>
+    );
+  }
+
+  const section = (label, codes, isOnline, empty) => (
+    <div className="py-1">
+      <p className="px-4 pt-2 pb-1 text-[12px] font-bold text-[#64748B]">
+        {label} · {codes.length}
+      </p>
+      {codes.length ? (
+        <ul>
+          {codes.map((c) => (
+            <PresenceRow key={c} code={c} isOnline={isOnline} me={me} portfolioNames={portfolioNames} />
+          ))}
+        </ul>
+      ) : (
+        <p className="px-4 py-2 text-[13px] text-[#94A3B8]">{empty}</p>
+      )}
+    </div>
+  );
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-haspopup="dialog"
+        aria-label={`People in this topic: ${count}, ${onlineCount} online`}
+        title="See who is online"
+        className="flex items-center -space-x-2 rounded-full p-0.5 transition hover:bg-white focus-visible:outline-2 focus-visible:outline-[#0B57D0] cursor-pointer"
+      >
+        {shown.map((code, i) => (
+          // Each avatar sits above the one to its right, so its dot is never covered
+          <PersonAvatar
+            key={code}
+            code={code}
+            online={online.has(code)}
+            style={{ zIndex: shown.length - i }}
+            className="w-9 h-9 text-[12px] ring-2 ring-[#F2F7FF]"
+          />
+        ))}
+        {count > STACK_SIZE && (
+          <span className="relative w-9 h-9 rounded-full bg-[#E2E8F0] text-[#475569] text-[12px] font-bold flex items-center justify-center ring-2 ring-[#F2F7FF]">
+            +{count - STACK_SIZE}
+          </span>
+        )}
+      </button>
+
+      {open && (
+        <div
+          role="dialog"
+          aria-label="Who is online"
+          className="absolute right-0 top-full mt-2 z-30 w-[300px] max-h-[380px] overflow-y-auto bg-white rounded-2xl border border-[#E2E8F0] shadow-[0_8px_24px_rgba(15,23,42,0.12)] py-1"
+        >
+          {connected ? (
+            <>
+              {section("Online now", onlineList, true, "Nobody is online right now.")}
+              <div className="mx-4 h-px bg-[#F1F5F9]" />
+              {section("Offline", offlineList, false, "Everyone is online.")}
+            </>
+          ) : (
+            <>
+              <p className="mx-4 mt-3 mb-1 px-3 py-2 rounded-lg bg-[#FEF9C3] text-[13px] text-[#854D0E]">
+                Live updates are reconnecting, so who is online is not known right now.
+              </p>
+              {section("People", ordered, false, "")}
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ─── Header ───────────────────────────────────────────── */
 
 function TopicHeader({ topic }) {
   const dispatch = useDispatch();
   const me = useMe();
-  const online = useSelector((s) => s.discussions.online[topic.id]);
+  const onlineSet = useOnlineSet();
   const [menuOpen, setMenuOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [askConfirm, confirmDialog] = useConfirmDialog();
@@ -63,10 +192,9 @@ function TopicHeader({ topic }) {
   const closeMenu = useCallback(() => setMenuOpen(false), []);
   useOutsideClick(menuRef, menuOpen, closeMenu);
 
-  const onlineSet = useMemo(() => new Set(online || []), [online]);
-  const othersOnline = topic.members.filter((c) => c !== me && onlineSet.has(c)).length;
+  const onlineCount = topic.members.filter((c) => onlineSet.has(c)).length;
   const count = topic.members.length || topic.memberCount || 0;
-  const subtitle = [topic.eventName, `${count} ${count === 1 ? "person" : "people"}`, othersOnline ? `${othersOnline} online` : ""]
+  const subtitle = [topic.eventName, `${count} ${count === 1 ? "person" : "people"}`, onlineCount ? `${onlineCount} online` : ""]
     .filter(Boolean)
     .join(" · ");
   const isCreator = topic.createdBy === me;
@@ -93,21 +221,7 @@ function TopicHeader({ topic }) {
       </div>
 
       <div className="flex items-center gap-3 shrink-0">
-        <div className="flex -space-x-2">
-          {/* The topics list only has a count; members arrive with the topic details */}
-          {!topic.members.length &&
-            Array.from({ length: Math.min(count || 3, 4) }, (_, i) => (
-              <Bone key={i} className="w-9 h-9 rounded-full ring-2 ring-[#F2F7FF]" />
-            ))}
-          {topic.members.slice(0, 4).map((code) => (
-            <PersonAvatar key={code} code={code} online={code !== me && onlineSet.has(code)} className="w-9 h-9 text-[12px] ring-2 ring-[#F2F7FF]" />
-          ))}
-          {count > 4 && (
-            <div className="w-9 h-9 rounded-full bg-[#E2E8F0] text-[#475569] text-[12px] font-bold flex items-center justify-center ring-2 ring-[#F2F7FF]">
-              +{count - 4}
-            </div>
-          )}
-        </div>
+        <PresenceStack topic={topic} />
 
         <button
           type="button"
@@ -244,7 +358,9 @@ const MessageRow = memo(function MessageRow({ id, prevId, highlighted }) {
       ) : editing ? (
         <InlineEditor initial={m.text} onSave={save} onCancel={() => setEditing(false)} />
       ) : (
-        m.text && <p className="text-[16px] leading-[160%] text-[#1E293B] whitespace-pre-wrap break-words">{m.text}</p>
+        m.text && (
+          <p className="text-[16px] leading-[160%] text-[#1E293B] whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{m.text}</p>
+        )
       )}
       {!m.deleted && m.files.map((f, i) => <FileCard key={`${f.url}-${i}`} file={f} />)}
       {!m.deleted && m.ask && <ApprovalCard message={m} tinted={!isMine} />}
