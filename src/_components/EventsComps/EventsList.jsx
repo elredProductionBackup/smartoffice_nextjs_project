@@ -42,7 +42,7 @@ export default function EventsList({
       <div
         className={`bg-[#F2F7FF] sticky top-0
         grid grid-cols-[140px_1fr] gap-[22px]
-        text-[18px] font-[700] text-[#333333]
+        text-[18px] font-heading font-normal text-[#333333]
         pb-[20px] z-[10]`}
       >
         <div>Date</div>
@@ -171,7 +171,7 @@ export default function EventsList({
                       ) : (
                         <div className="h-[50px] w-[50px] rounded-full bg-[#ccc]" />
                       )}
-                      <span className="text-[20px] font-[600] line-clamp-2">
+                      <span className="text-[20px] font-heading font-normal line-clamp-2">
                         {event.name}
                       </span>
                     </div>
