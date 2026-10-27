@@ -509,7 +509,6 @@ export default function UserManagementPage() {
 
                     <td className="pl-2 pr-5 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                       <RowMenu
-                        openUp={i >= visibleUsers.length - 2 && visibleUsers.length > 3}
                         items={
                           u.status === "invited"
                             ? [

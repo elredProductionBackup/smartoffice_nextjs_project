@@ -1074,7 +1074,6 @@ const Attendees = ({ eventId }) => {
                 const phoneDigits = (member.phoneNumber || "").replace(/\D/g, "");
                 const isSelected = selected.includes(id);
                 const isDeactivated = member.appStatus === "deregistered";
-                const openUp = i >= visibleMembers.length - 2 && visibleMembers.length > 3;
 
                 return (
                   <tr
@@ -1142,7 +1141,7 @@ const Attendees = ({ eventId }) => {
 
                     <td className="px-3 py-3.5" onClick={(e) => e.stopPropagation()}>
                       {canEdit ? (
-                        <AttendanceSelect value={status} onChange={(value) => markAttendance([id], value)} openUp={openUp} />
+                        <AttendanceSelect value={status} onChange={(value) => markAttendance([id], value)} />
                       ) : (
                         <AttendanceBadge value={status} />
                       )}
@@ -1152,7 +1151,6 @@ const Attendees = ({ eventId }) => {
                       <td className="pr-4 py-3.5" onClick={(e) => e.stopPropagation()}>
                         <div className="flex justify-end">
                           <RowMenu
-                            openUp={openUp}
                             items={[
                               {
                                 // Joined attendees' details come from their app profile
