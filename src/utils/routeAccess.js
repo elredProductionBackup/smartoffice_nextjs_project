@@ -41,6 +41,8 @@ const LEARNING_OFFICER_ROUTES = [
   "/dashboard/my-profile",
   "/dashboard/actionable",
   "/dashboard/events",
+  "/dashboard/alliances",
+  "/dashboard/discussions",
 ];
 
 export const LEARNING_OFFICER_HOME = "/dashboard/portfolio-officer";

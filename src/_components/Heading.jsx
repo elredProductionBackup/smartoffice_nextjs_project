@@ -2,7 +2,7 @@ import React from 'react'
 
 const Heading = ({title, margin}) => {
   return (
-    <div className={`text-5xl font-semibold text-[#333333] ${margin}`}>{title}</div>
+    <div className={`font-heading text-5xl font-semibold text-[#333333] ${margin}`}>{title}</div>
   )
 }
 

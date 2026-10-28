@@ -312,3 +312,37 @@ export const sendExpenseApprovalReminder = async (payload) => {
     throw error;
   }
 };
+
+/**
+ * Update the payment status of an expense
+ *
+ * PATCH /smartOffice/updateExpensePaymentStatus
+ * Body: { expenseId: string, paymentStatus: "paid" | "pending" | "overdue" | "rejected" }
+ *
+ * @param {Object} payload
+ * @param {string} payload.expenseId - Expense ID
+ * @param {"paid"|"pending"|"overdue"|"rejected"} payload.paymentStatus
+ * @returns {Promise<Object>}
+ */
+export const updateExpensePaymentStatus = async (payload) => {
+  try {
+    const res = await api.patch("/smartOffice/updateExpensePaymentStatus", payload);
+
+    const data = res.data;
+
+    // Axios validateStatus allows all status codes — check success flag manually
+    if (data?.success === false) {
+      const err = new Error(data?.message || "Failed to update payment status");
+      err.response = {
+        status: res.status,
+        data,
+      };
+      throw err;
+    }
+
+    return data;
+  } catch (error) {
+    console.error("updateExpensePaymentStatus API Error:", error?.response || error);
+    throw error;
+  }
+};

@@ -1,6 +1,6 @@
 // redux/events/eventThunks.js
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { addDocument, addEditEventExpense, addMemberMedia, closeEvent, deleteEvents, deleteMemberMedia, deleteMyDocument, getBudgetCategoryVersions, getEventDetails, getEventMembers, getEventsList, getMasterList, getMembersMedia, getMyDocuments, patchBudgetCategoryVersion, updateMasterList,  } from "@/services/events.service";
+import { addDocument, addEditEventExpense, addMemberMedia, closeEvent, deleteEvents, deleteMemberMedia, deleteMyDocument, getBudgetCategoryVersions, getEventDetails, getEventAttendees, getEventsList, getMasterList, getMembersMedia, getMyDocuments, patchBudgetCategoryVersion, updateMasterList,  } from "@/services/events.service";
 
 import { addActionable, addComment, addSubTask, deleteActionable, deleteComment, deleteSubTask, getActionables, getCollaborators } from "@/services/actionable.service";
 
@@ -143,23 +143,27 @@ export const saveMasterConfig = createAsyncThunk(
 export const fetchEventMembers = createAsyncThunk(
   "events/fetchEventMembers",
   async (
-    { eventId, page = 1, limit = 10, searchKey = "", searchBy = "all" },
+    { eventId, page = 1, limit = 10, search = "", attendanceStatus = "", appStatus = "" },
     { rejectWithValue }
   ) => {
     try {
       const start = (page - 1) * limit + 1;
       const offset = limit;
 
-      const res = await getEventMembers({
+      const res = await getEventAttendees({
         eventId,
         start,
         offset,
+        search,
+        attendanceStatus,
+        appStatus,
       });
 
       return {
         eventId,
         list: res.data?.result || [],
-        total: res.data?.totalCount || 0,
+        total: res.data?.totalCount ?? res.data?.total ?? 0,
+        counts: res.data?.counts || {},
         page,
         limit,
       };

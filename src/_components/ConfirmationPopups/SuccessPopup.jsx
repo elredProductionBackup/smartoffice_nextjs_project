@@ -2,11 +2,16 @@ import { CheckCircle2 } from "lucide-react";
 
 // Shown after something is saved, e.g. "Vendor added".
 // stats: optional [{ label, value }] rows shown under the message.
-const SuccessPopup = ({ isOpen, title, message, stats = [], onClose }) => {
+// zIndex: raise it when the popup opens on top of another modal.
+const SuccessPopup = ({ isOpen, title, message, stats = [], onClose, zIndex = 50 }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={onClose}>
+    <div
+      className="fixed inset-0 flex items-center justify-center bg-black/40 px-4"
+      style={{ zIndex }}
+      onClick={onClose}
+    >
       <div
         role="dialog"
         aria-modal="true"

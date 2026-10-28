@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import DashboardActionableShimmer from "./Shimmer/DashboardActionableShimmer";
 
-export default function DashboardActionableList({ data = [], loading = false, }) {
+export default function DashboardActionableList({ data = [], loading = false, fillHeight = false }) {
   // if (!Array.isArray(data)) {
   //   console.error("DashboardActionableList expected array, got:", data);
   //   return null;
@@ -24,7 +24,8 @@ export default function DashboardActionableList({ data = [], loading = false, })
 };
 
   return (
-    <div className="flex flex-col rounded-2xl bg-[#F2F7FF] px-6 py-6 min-h-[500px] max-h-[500px] ">
+    // fillHeight: stretch to the parent's height (min 500px) instead of a fixed 500px box
+    <div className={`flex flex-col rounded-2xl bg-[#F2F7FF] px-6 py-6 min-h-[500px] ${fillHeight ? "h-full" : "max-h-[500px]"}`}>
 
       {/* SHIMMER */}
       {loading ?
@@ -33,14 +34,14 @@ export default function DashboardActionableList({ data = [], loading = false, })
         <>
           {/* Header */}
           <div className="flex items-center justify-between mb-[20px]">
-            <h3 className="text-[20px] font-[700] text-[#333]">Actionable</h3>
+            <h3 className="font-heading text-[20px] font-[700] text-[#333]">Actionable</h3>
             <Link href={`/dashboard/actionable?item=all&page=1`} className="text-[14px] font-[600] text-[#0B57D0] border border-[#0B57D0] px-[14px] py-[4px] rounded-full cursor-pointer">
               {data.length ? `View all` : `Go to actionable`}
             </Link>
           </div>
 
           {/* List */}
-          <div className="flex-1 flex flex-col gap-4 overflow-y-auto min-mh-0">
+          <div className="flex-1 flex flex-col gap-4 overflow-y-auto min-h-0">
             {data.length === 0 && (
               <div className="flex-1 flex flex-col gap-[10px] items-center justify-center">
                 <div className="h-[60px] w-[60px] bg-[#D3E3FD] rounded-full mb-[10px] grid place-items-center">

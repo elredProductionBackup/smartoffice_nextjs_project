@@ -169,7 +169,7 @@ useEffect(() => {
         />
 
         <div  className="flex-1 max-w-[500px] ">
-          <div className="mb-[30px] text-[36px] font-[600] flex items-center gap-[20px]">
+          <div className="font-heading mb-[30px] text-[36px] font-[600] flex items-center gap-[20px]">
            <span className="maki--arrow rotate-180 inline-block cursor-pointer" onClick={()=>router.back()}></span> {isEditMode && !form?.isDraft?'Update':'Create'} event</div>
             <div className="w-full flex flex-col gap-[30px]" >
 

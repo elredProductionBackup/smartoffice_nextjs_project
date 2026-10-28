@@ -80,7 +80,7 @@ function EventDetailContent() {
             >
               <FaArrowLeft size={28} />
             </button>
-            <h1 className="font-nunito font-bold text-[32px] leading-[136%] text-[#333333] tracking-normal">
+            <h1 className="font-heading font-bold text-[32px] leading-[136%] text-[#333333] tracking-normal">
               {event.title}
             </h1>
           </div>

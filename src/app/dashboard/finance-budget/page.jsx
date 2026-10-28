@@ -206,7 +206,7 @@ const FinanceBudgetPage = () => {
         </div>
 
         <div className="flex items-end justify-between">
-          <h1 className="text-white text-[34px] font-bold m-0 leading-none">
+          <h1 className="font-heading text-white text-[34px] font-bold m-0 leading-none">
             Budget Management
           </h1>
 

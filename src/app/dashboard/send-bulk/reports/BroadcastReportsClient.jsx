@@ -563,7 +563,7 @@ export default function BroadcastReportsClient() {
             <FiArrowLeft className="text-[18px]" />
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-[#1a1a2e]">Broadcast reports</h1>
+            <h1 className="font-heading text-2xl font-bold text-[#1a1a2e]">Broadcast reports</h1>
             <p className="text-[13px] text-[#888]">Everyone you&apos;ve messaged on WhatsApp and email, and where each message stands</p>
           </div>
         </div>

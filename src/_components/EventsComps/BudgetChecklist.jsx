@@ -461,7 +461,7 @@ useEffect(() => {
           className="maki--arrow rotate-180 cursor-pointer"
           onClick={() => router.back()}
         />
-        <h2 className="text-[32px] font-semibold">
+        <h2 className="font-heading text-[32px] font-semibold">
           Budget Checklist
         </h2>
       </div>

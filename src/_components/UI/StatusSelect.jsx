@@ -4,11 +4,12 @@ import { useEffect, useRef, useState } from "react";
 import { Check, ChevronDown } from "lucide-react";
 
 // shadcn-style select: trigger button + popover list.
-// options: [{ value, label, dotClassName }]
+// options: [{ value, label, dotClassName, isPlaceholder }]
+// An isPlaceholder option resets the value; the trigger then shows the placeholder text
 export default function StatusSelect({ value, onChange, options, placeholder = "Select status" }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
-  const selected = options.find((o) => o.value === value);
+  const selected = options.find((o) => o.value === value && !o.isPlaceholder);
 
   useEffect(() => {
     if (!open) return;
@@ -53,7 +54,7 @@ export default function StatusSelect({ value, onChange, options, placeholder = "
           className="absolute right-0 top-[calc(100%+4px)] z-20 w-full min-w-[160px] rounded-md border border-[#E4E4E7] bg-white p-1 shadow-md"
         >
           {options.map((o) => {
-            const isSelected = o.value === value;
+            const isSelected = o.value === value || (o.isPlaceholder && !selected);
             return (
               <li
                 key={o.value}
@@ -63,7 +64,7 @@ export default function StatusSelect({ value, onChange, options, placeholder = "
                   onChange(o.value);
                   setOpen(false);
                 }}
-                className="flex items-center justify-between gap-2 rounded-sm px-2 py-1.5 text-[14px] text-[#09090B] cursor-pointer select-none hover:bg-[#F4F4F5]"
+                className={`flex items-center justify-between gap-2 rounded-sm px-2 py-1.5 text-[14px] ${o.isPlaceholder ? "text-[#71717A]" : "text-[#09090B]"} cursor-pointer select-none hover:bg-[#F4F4F5]`}
               >
                 <span className="flex items-center gap-2">
                   <span className={`h-2 w-2 rounded-full ${o.dotClassName}`} />

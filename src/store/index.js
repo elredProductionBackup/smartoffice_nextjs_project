@@ -8,17 +8,19 @@ import eventUiReducer from "./events/eventsUiSlice";
 import dashboardReducer from "./dashboard/dashboardSlice";
 import authReducer from "./auth/authSlice";
 import toastReducer from "./toastSlice";
+import discussionsReducer from "./discussions/discussionsSlice";
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
     actionable: actionableReducer,
     actionableUi: actionableUiReducer,
-    events:eventSlice,
+    events: eventSlice,
     // eventCostingSlice:eventCostingSlice,
     eventsUi: eventUiReducer,
-    dashboard:dashboardReducer,
+    dashboard: dashboardReducer,
     toast: toastReducer,
-    budget:budgetReducer
+    budget: budgetReducer,
+    discussions: discussionsReducer,
   },
 });

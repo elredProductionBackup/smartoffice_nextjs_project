@@ -43,8 +43,8 @@ const ROLES = [
     tint: "#059669",
   },
   {
-    key: "learningOfficer",
-    title: "Learning Officer",
+    key: "portfolioOfficer",
+    title: "Portfolio Officer",
     description: "Plan learning programs, track sessions & grow your network's skills.",
     icon: GraduationCap,
     sideIcons: [BookOpen, Award],
@@ -55,7 +55,7 @@ const ROLES = [
 // Where each role lands after picking it
 const ROLE_HOME = {
   financeOfficer: FINANCE_MANAGER_HOME,
-  learningOfficer: LEARNING_OFFICER_HOME,
+  portfolioOfficer: LEARNING_OFFICER_HOME,
 };
 
 // Keep the cards centred whatever number of roles the user has
@@ -264,11 +264,11 @@ const RoleSelection = () => {
                 {network.name.charAt(0).toUpperCase()}
               </div>
             )}
-            <span className="text-sm font-medium text-[#333]">{network.name}</span>
+            <span className="font-heading text-sm font-medium text-[#333]">{network.name}</span>
           </div>
         )}
 
-        <h1 className="text-2xl sm:text-3xl font-semibold text-[#1a1a1a] text-center">
+        <h1 className="font-heading text-2xl sm:text-3xl font-semibold text-[#1a1a1a] text-center">
           How would you like to continue{firstname ? `, ${firstname}` : ""}?
         </h1>
         <p className="mt-2 text-sm sm:text-base text-gray-500 text-center">

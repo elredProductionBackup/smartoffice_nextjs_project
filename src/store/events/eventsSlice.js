@@ -2,6 +2,12 @@ import { createSlice } from "@reduxjs/toolkit";
 import { closeEventThunk, createEventActionable, createEventComment, createEventSubTask, deleteDocument, deleteEventThunk, deleteMembersMedia, fetchBudgetCategoryVersions, fetchCollaborators, fetchDocuments, fetchEventChecklist, fetchEventDetails, fetchEventMembers, fetchEvents, fetchEventTaskSummaries, fetchMasterConfig, fetchMembersMedia, removeEventActionable, removeEventComment, removeEventSubTask, saveBudgetCategoryVersion, saveEventExpense, saveMasterConfig, toggleEventActionable, setEventActionableStatus, updateEventActionable, updateEventSubTask, uploadDocument, uploadMemberMedia } from "./eventsThunks";
 import moment from "moment";
 
+// Master checklist is always kept in alphabetical order by label
+const sortChecklist = (list) =>
+  [...list].sort((a, b) =>
+    (a.label || "").localeCompare(b.label || "", undefined, { sensitivity: "base" })
+  );
+
 const initialState = {
   groupedEvents: [],
   rawEvents: [],
@@ -37,7 +43,10 @@ const initialState = {
   membersFetched: {},
   membersLoading: {},
   membersTotal: {},
+  membersCounts: {},
   membersPage: {},
+  // Latest attendee request per event; older answers that land late are ignored
+  membersRequestId: {},
 
   membersMediaMap: {},
   membersMediaUploadingCount: {},
@@ -194,7 +203,7 @@ const eventSlice = createSlice({
     },
     resetEventsState: () => initialState,
     setChecklistMaster(state, action) {
-      state.checklistMaster = action.payload;
+      state.checklistMaster = sortChecklist(action.payload);
     },
     setPointsMaster(state, action) {
       state.pointsMaster = action.payload;
@@ -270,6 +279,7 @@ const eventSlice = createSlice({
           status: c.status || "",
           _id: c._id,
         }));
+        state.checklistMaster = sortChecklist(state.checklistMaster);
 
         state.pointsMaster = pointsList.map((p) => ({
           label: p.pointName,
@@ -313,8 +323,10 @@ const eventSlice = createSlice({
           }
         });
 
-        state.checklistMaster = state.checklistMaster.filter((local) =>
-          serverChecklist.some((s) => s._id === local._id)
+        state.checklistMaster = sortChecklist(
+          state.checklistMaster.filter((local) =>
+            serverChecklist.some((s) => s._id === local._id)
+          )
         );
 
         serverPoints.forEach((p) => {
@@ -339,6 +351,7 @@ const eventSlice = createSlice({
 // Attendees
 .addCase(fetchEventMembers.pending, (state, action) => {
   const { eventId, page } = action.meta.arg;
+  state.membersRequestId[eventId] = action.meta.requestId;
 
   if (page === 1) {
     state.membersLoading[eventId] = true;
@@ -346,7 +359,10 @@ const eventSlice = createSlice({
 })
 
 .addCase(fetchEventMembers.fulfilled, (state, action) => {
-  const { eventId, list, total, page } = action.payload;
+  const { eventId, list, total, counts, page } = action.payload;
+
+  // A newer search/filter request is in flight; don't let this older answer overwrite it
+  if (state.membersRequestId[eventId] !== action.meta.requestId) return;
 
   state.membersLoading[eventId] = false;
 
@@ -358,12 +374,15 @@ const eventSlice = createSlice({
 
   state.membersPage[eventId] = page;
   state.membersTotal[eventId] = total;
+  state.membersCounts[eventId] = counts;
   state.membersFetched[eventId] = true;
 })
 
 .addCase(fetchEventMembers.rejected, (state, action) => {
   const { eventId } = action.meta.arg;
   state.membersLoading[eventId] = false;
+  // Done trying, so the attendees tab stops showing its loader
+  state.membersFetched[eventId] = true;
 })
       .addCase(fetchEventDetails.pending , (state,action) => {
           const { eventId } = action.meta.arg;

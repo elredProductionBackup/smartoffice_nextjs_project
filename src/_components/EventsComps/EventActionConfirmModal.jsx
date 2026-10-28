@@ -1,38 +1,51 @@
 import React from "react";
 
-const EventActionConfirmModal = ({ 
-  title, 
-  onConfirm, 
-  onCancel, 
-  confirmText = "Complete", 
+// Yes/no confirmation. message is an optional line under the title.
+const EventActionConfirmModal = ({
+  title,
+  message,
+  onConfirm,
+  onCancel,
+  confirmText = "Complete",
   cancelText = "No",
-  isLoading = false 
+  isLoading = false
 }) => {
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40" onClick={onCancel}>
-      <div 
-        className="bg-white shadow-xl flex flex-col items-center justify-center gap-[40px] relative w-[480px] h-[250px] rounded-[40px] opacity-100"
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 px-4" onClick={onCancel}>
+      <div
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="confirm-modal-title"
+        className="bg-white shadow-xl flex flex-col items-center relative w-full max-w-[480px] rounded-[32px] px-10 pt-11 pb-10"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="px-[40px] font-[700] text-[24px] leading-[100%] tracking-[0%] text-center text-[#333] font-['Nunito_Sans']">
+        <h2
+          id="confirm-modal-title"
+          className="font-[700] text-[24px] leading-[130%] text-center text-[#333] font-['Nunito_Sans']"
+        >
           {title}
         </h2>
 
-        <div className="flex gap-[30px]">
-          <button 
+        {message && (
+          <p className="mt-3 text-[15px] leading-6 text-center text-[#666666] font-nunito">{message}</p>
+        )}
+
+        <div className="mt-9 flex gap-4 w-full max-w-[340px]">
+          <button
             onClick={onCancel}
-            className="cursor-pointer transition-all hover:opacity-90 flex items-center justify-center text-white w-[150px] rounded-[40px] bg-[#999999] font-nunito font-medium text-[20px] leading-[100%] tracking-[-0.02em]"
+            disabled={isLoading}
+            className="flex-1 h-12 cursor-pointer transition-all hover:opacity-90 flex items-center justify-center text-white rounded-[40px] bg-[#999999] font-nunito font-medium text-[18px] tracking-[-0.02em] disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {cancelText}
           </button>
 
-          <button 
+          <button
             onClick={onConfirm}
             disabled={isLoading}
-            className="cursor-pointer transition-all hover:opacity-90 flex items-center justify-center text-white bg-gradient-to-r from-[#5597ED] to-[#00449C] w-[150px] px-5 py-2 rounded-[40px] font-nunito font-medium text-[20px] leading-[100%] tracking-[-0.02em]"
+            className="flex-1 h-12 cursor-pointer transition-all hover:opacity-90 flex items-center justify-center text-white bg-gradient-to-r from-[#5597ED] to-[#00449C] rounded-[40px] font-nunito font-medium text-[18px] tracking-[-0.02em] disabled:cursor-not-allowed"
           >
             {isLoading ? (
-              <div className="w-[24px] h-[24px] border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <div className="w-[22px] h-[22px] border-2 border-white border-t-transparent rounded-full animate-spin" />
             ) : (
               confirmText
             )}

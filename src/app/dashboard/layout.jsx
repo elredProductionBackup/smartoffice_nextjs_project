@@ -91,6 +91,7 @@ import { useSelector } from "react-redux";
 import { selectIsFinanceOfficer, selectIsLearningOfficer } from "@/store/auth/authSlice";
 import { FiCheckSquare, FiDollarSign, FiHome, FiSend } from "react-icons/fi";
 import { HiOutlineChatBubbleLeftRight } from "react-icons/hi2";
+import { LuUserCog } from "react-icons/lu";
 import { FaFileInvoiceDollar } from "react-icons/fa6";
 import AssistantWidget from "@/_components/Assistant/AssistantWidget";
 
@@ -139,6 +140,11 @@ export default function DashboardLayout({ children }) {
     name: "Discussions",
     path: "/dashboard/discussions",
     icon: <HiOutlineChatBubbleLeftRight className="text-[24px]" />,
+  },
+  {
+    name: "User Management",
+    path: "/dashboard/user-management",
+    icon: <LuUserCog className="text-[23px]" />,
   },
 ];
 
@@ -194,6 +200,9 @@ const userMenu = [
         ? adminMenu
         : userMenu;
 
+  const showSendBulk = !isFinanceManager && !isLearningOfficer;
+  const sidebarCount = menu.length + (showSendBulk ? 1 : 0);
+
     // { name: "Vendors", path: "/dashboard/vendors?tab=hotels", logo: vendorsLogo },
     // { name: "Resources", path: "/dashboard/resources", logo: resourcesLogo },
     // { name: "Archive", path: "/dashboard/archive", logo: archiveLogo },
@@ -213,7 +222,11 @@ const userMenu = [
               className="w-21 bg-[#F2F7FF] h-full p-5 rounded-2xl overflow-y-auto overflow-x-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
               onScroll={hideTooltip}
             >
-              <ul className="flex flex-col justify-between gap-5 min-h-full">
+              {/* Spread items over the rail, but cap gaps at 40px so short menus don't over-stretch */}
+              <ul
+                className="flex flex-col justify-between gap-5"
+                style={{ minHeight: `min(100%, ${sidebarCount * 44 + (sidebarCount - 1) * 40}px)` }}
+              >
                 {menu.map((item) => {
                     const basePath = removeAllParams(item.path);
                     const active = item.exact
@@ -239,7 +252,7 @@ const userMenu = [
                     </li>
                   );
                 })}
-                {!isFinanceManager && !isLearningOfficer && (
+                {showSendBulk && (
                 <li>
                   <Link
                     href="/dashboard/send-bulk"
@@ -261,7 +274,7 @@ const userMenu = [
 
             {tooltip && (
               <span
-                className="pointer-events-none fixed -translate-y-1/2 z-50
+                className="font-heading pointer-events-none fixed -translate-y-1/2 z-50
                 whitespace-nowrap rounded-lg bg-[#F2F7FF] border border-[#D3E3FD] px-3 py-1.5 text-[13px] font-medium text-[#333333] shadow-md"
                 style={{ top: tooltip.top, left: tooltip.left }}
               >

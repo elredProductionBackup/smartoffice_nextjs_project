@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { HiEllipsisVertical, HiOutlineTrash } from "react-icons/hi2";
+import { HiArrowLeft, HiEllipsisVertical, HiOutlineTrash } from "react-icons/hi2";
 import { closeEventThunk, deleteEventThunk, fetchDocuments, fetchEventDetails, fetchMembersMedia, uploadDocument, uploadMemberMedia } from "@/store/events/eventsThunks";
 import { useParams, useSearchParams } from "next/navigation";
 // import { UPCOMING_EVENTS, PAST_EVENTS, DRAFT_EVENTS } from "@/assets/helpers/sampleEvents";
@@ -186,9 +186,9 @@ export default function EventDetailsClient() {
   const end = moment(event?.endDateTime).local();
   const isPast = moment(event?.startDateTime).isBefore(moment());
 
-  const dateRange = `${start.format("ddd DD MMM YYYY")} - ${end.format(
-    "ddd DD MMM YYYY"
-  )}`;
+  const dateRange = start.isSame(end, "day")
+    ? start.format("ddd, DD MMM YYYY")
+    : `${start.format("ddd, DD MMM")} - ${end.format("ddd, DD MMM YYYY")}`;
 
   const timeRange =
     start && end
@@ -198,6 +198,26 @@ export default function EventDetailsClient() {
       : "";
 
   // ================= ACTIONS =================
+  const handleBack = () => {
+    const from = searchParams.get("from");
+
+    if (from === "finance-budget" || from === "finance" || from === "portfolio-officer") {
+      router.push(`/dashboard/${from}`);
+    } else if (isFinanceManager) {
+      router.push("/dashboard/finance-budget");
+    } else if (isPast) {
+      router.push("/dashboard/events?tab=past");
+    } else {
+      router.push("/dashboard/events?tab=upcomming");
+    }
+  };
+
+  const eventMeta = [
+    { label: "Venue", icon: "material-symbols--location-on", value: event?.eventLocation },
+    { label: "Date", icon: "ic--round-date-range", value: dateRange },
+    { label: "Time", icon: "icon-park-outline--time", value: timeRange },
+  ];
+
   const handleCloseEvent = async () => {
     try {
       setClosing(true);
@@ -217,155 +237,160 @@ export default function EventDetailsClient() {
   }
 
   return (
-    <div className="h-[calc(100vh-80px)] flex flex-col gap-[20px] overflow-y-auto relative pb-[20px] focus:outline-none" ref={containerRef}>
+    <div className="h-[calc(100vh-80px)] flex flex-col gap-[20px] overflow-y-auto overflow-x-hidden relative pb-[20px] focus:outline-none" ref={containerRef}>
 
-      <div className="bg-white rounded-2xl pt-6 flex justify-between gap-[105px] w-full relative z-[15]">
-        <div className="flex-1 flex gap-[40px]">
-          <div className="w-[250px] min-h-[320px] relative rounded-[20px] overflow-hidden flex justify-center items-center">
-            <Image
-              src={
-                isValidImage(event?.eventImage)
-                  ? event.eventImage
-                  : "/logo/no-image.svg"
-              }
-              alt={event?.eventName || "event"}
-              fill
-              className={`bg-[#0002] ${isValidImage(event?.eventImage)
-                ? "object-cover"
-                : "object-contain max-h-[60%] grid place-items-center"}`}
-            />
-          </div>
-
-          <div className="flex-1 flex flex-col justify-between gap-[20px]">
-            <div className="flex flex-col gap-[20px] items-start">
-              <div className="flex flex-col gap-1 items-start">
-                <div className="text-[36px] font-semibold flex items-center gap-[20px]">
-                  <span className="maki--arrow rotate-180 inline-block cursor-pointer"
-                    onClick={() => {
-                      // const isPast = moment(event?.startDateTime).isBefore(moment());
-
-                      const from = searchParams.get("from");
-
-                      if (from === "finance-budget" || from === "finance" || from === "portfolio-officer") {
-                        router.push(`/dashboard/${from}`);
-                      } else if (isFinanceManager) {
-                        router.push("/dashboard/finance-budget");
-                      } else if (isPast) {
-                        router.push("/dashboard/events?tab=past");
-                      } else {
-                        router.push("/dashboard/events?tab=upcomming");
-                      }
-                    }}></span> {event?.eventName}</div>
-                {budgetTypeName && (
-                  <span className="text-[14px] font-bold text-[#5597ED] bg-[#5597ED]/10 px-3 py-[2px] rounded-full ml-[52px] tracking-[1px]">
-                    {budgetTypeName}
-                  </span>
-                )}
-              </div>
-              <p className="text-[18px] leading-[27px] w-[70%]">
-                {event?.eventDescription}
-              </p>
-
-              <div className="w-full flex flex-wrap justify-between font-medium text-[#333]">
-                <div className="flex gap-[8px] items-center"><span className="material-symbols--location-on"></span>{event?.eventLocation}</div>
-                <div className="flex gap-[8px] items-center"><span className="ic--round-date-range"></span>{dateRange}</div>
-                <div className="flex gap-[8px] items-center"><span className="icon-park-outline--time"></span>{timeRange}</div>
-              </div>
-            </div>
-
-            {event?.resource?.resourceName &&
-              <div className="flex flex-col gap-[4px]">
-                <div className="font-semibold text-[#999999]">Speaker</div>
-                <div className="flex gap-[8px] items-center">
-                  {event?.resource?.uploadResourceImageUrl ?
-                    <div className="h-[32px]  w-[32px]">
-                      <Image src={event.resource.uploadResourceImageUrl} alt="speaker image" className="object-cover h-full rounded-full" width={500} height={500} />
-                    </div>
-                    :
-                    <div className="h-[32px] w-[32px] bg-[#ccc] rounded-full grid place-items-center text-[18px]">{event?.resource?.resourceName?.split("")[0]}</div>
-                  }
-                  <p className="font-medium text-[20px] text-black">{event?.resource?.resourceName}</p>
-                </div>
-                <div className="text-[18px] leading-[24px] pt-[6px] w-[70%]">{event?.resource?.resourceDescription}</div>
-              </div>
+      <div className="bg-white rounded-2xl pt-6 pb-4 w-full relative z-[15] flex gap-[36px] items-stretch">
+        {/* Cover */}
+        <div className="w-[240px] shrink-0 min-h-[320px] relative rounded-[16px] overflow-hidden bg-[#F5F6F8]">
+          <Image
+            src={
+              isValidImage(event?.eventImage)
+                ? event.eventImage
+                : "/logo/no-image.svg"
             }
-          </div>
+            alt={event?.eventName || "event"}
+            fill
+            className={isValidImage(event?.eventImage)
+              ? "object-cover"
+              : "object-contain p-14 opacity-60"}
+          />
         </div>
 
-        <div className="flex flex-col items-end justify-between pb-4">
-                    <div className="relative" ref={menuRef}>
-            {isFinanceManager ? null : !isPast ? (
-              <button
-                onClick={() => setShowMenu(!showMenu)}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
-              >
-                <HiEllipsisVertical className="text-3xl text-[#333]" />
-              </button>
-            ) : (
-              <button
-                onClick={() =>
-                  dispatch(openEventsModal({ type: "CONFIRM_DELETE_EVENT", payload: { eventId } }))
-                }
-                className="flex items-center gap-2 px-3 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors text-sm cursor-pointer"
-              >
-                <HiOutlineTrash className="text-lg" />
-                Delete event
-              </button>
-            )}
+        <div className="flex-1 min-w-0 flex flex-col gap-[24px]">
+          {/* Top bar */}
+          <div className="flex items-center justify-between gap-4">
+            <button
+              type="button"
+              onClick={handleBack}
+              aria-label="Go back"
+              className="shrink-0 w-[32px] h-[32px] -ml-[6px] grid place-items-center rounded-full text-[#111] hover:bg-[#F3F4F6] transition-colors cursor-pointer"
+            >
+              <HiArrowLeft className="w-[20px] h-[20px]" />
+            </button>
 
-            {showMenu && !isFinanceManager && (
-              <EventsMenu
-                isPast={isPast}
-                onEdit={() => {
-                  setShowMenu(false);
-                  router.push(`/dashboard/events/create?id=${eventId}`);
-                }}
-                onCancel={() => {
-                  setShowMenu(false);
-                  dispatch(openEventsModal({ type: "CONFIRM_CANCEL_EVENT", payload: { eventId } }));
-                }}
-                onComplete={() => {
-                  setShowMenu(false);
-                  dispatch(openEventsModal({ type: "CONFIRM_COMPLETE_EVENT", payload: { eventId } }));
-                }}
-                onDelete={() => {
-                  setShowMenu(false);
-                  dispatch(openEventsModal({ type: "CONFIRM_DELETE_EVENT", payload: { eventId } }));
-                }}
-              />
+            <div className="relative shrink-0" ref={menuRef}>
+              {isFinanceManager ? null : !isPast ? (
+                <button
+                  onClick={() => setShowMenu(!showMenu)}
+                  className="w-[32px] h-[32px] grid place-items-center rounded-full hover:bg-[#F3F4F6] transition-colors cursor-pointer"
+                >
+                  <HiEllipsisVertical className="text-[20px] text-[#111]" />
+                </button>
+              ) : (
+                <button
+                  onClick={() =>
+                    dispatch(openEventsModal({ type: "CONFIRM_DELETE_EVENT", payload: { eventId } }))
+                  }
+                  className="flex items-center gap-2 px-3 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors text-sm cursor-pointer"
+                >
+                  <HiOutlineTrash className="text-lg" />
+                  Delete event
+                </button>
+              )}
+
+              {showMenu && !isFinanceManager && (
+                <EventsMenu
+                  isPast={isPast}
+                  onEdit={() => {
+                    setShowMenu(false);
+                    router.push(`/dashboard/events/create?id=${eventId}`);
+                  }}
+                  onCancel={() => {
+                    setShowMenu(false);
+                    dispatch(openEventsModal({ type: "CONFIRM_CANCEL_EVENT", payload: { eventId } }));
+                  }}
+                  onComplete={() => {
+                    setShowMenu(false);
+                    dispatch(openEventsModal({ type: "CONFIRM_COMPLETE_EVENT", payload: { eventId } }));
+                  }}
+                  onDelete={() => {
+                    setShowMenu(false);
+                    dispatch(openEventsModal({ type: "CONFIRM_DELETE_EVENT", payload: { eventId } }));
+                  }}
+                />
+              )}
+            </div>
+          </div>
+
+          {/* Title & description */}
+          <div className="flex flex-col gap-[10px]">
+            <div className="flex items-center gap-[8px] text-[12px] font-medium uppercase tracking-[1.5px] text-[#9CA3AF]">
+              {budgetTypeName && <span className="text-[#147BFF]">{budgetTypeName}</span>}
+              {budgetTypeName && <span>·</span>}
+              <span>{isPast ? "Past" : "Upcoming"}</span>
+            </div>
+
+            <h1 className="font-heading text-[32px] leading-[1.25] font-semibold text-[#111]">
+              {event?.eventName}
+            </h1>
+
+            {event?.eventDescription && (
+              <p className="text-[16px] leading-[26px] text-[#6B7280]">
+                {event.eventDescription}
+              </p>
             )}
           </div>
 
-          <div className="flex flex-col items-end gap-4">
-            {event?.additionalNotes && (
-              <div className="relative inline-block group">
-                <div className="text-[#147BFF] font-bold underline cursor-pointer text-right">
-                  Additional note
-                </div>
-                <div className="absolute right-0 top-full w-[380px] p-[24px] rounded-[20px] shadow-[0px_4px_4px_2px_#A2A0A040] opacity-0 invisible group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 translate-y-2 transition-all duration-200 z-10 bg-[#F2F7FF] flex flex-col gap-[8px] max-h-[350px] overflow-scroll">
-                  <h4 className="font-bold text-[20px] ">Additional note</h4>
-                  <p className="text-[16px] text-[#333333]">
-                    {formatText(event?.additionalNotes)}
+          {/* Venue / date / time */}
+          <div className="flex flex-wrap gap-x-[32px] gap-y-[10px] text-[15px] text-[#374151]">
+            {eventMeta.map(({ label, icon, value }) => (
+              <div key={label} className="flex items-center gap-[8px] min-w-0" title={label}>
+                <span className={`${icon} shrink-0 text-[#9CA3AF]`} style={{ width: 18, height: 18 }} />
+                <span>{value || "—"}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Speaker & registration */}
+          <div className="mt-auto pt-[20px] border-t border-[#F0F1F3] flex items-center justify-between gap-6">
+            {event?.resource?.resourceName ? (
+              <div className="flex items-center gap-[12px] min-w-0">
+                {event?.resource?.uploadResourceImageUrl ?
+                  <Image src={event.resource.uploadResourceImageUrl} alt="speaker image" className="w-[44px] h-[44px] shrink-0 object-cover rounded-full" width={88} height={88} />
+                  :
+                  <div className="w-[44px] h-[44px] shrink-0 rounded-full bg-[#F3F4F6] text-[#6B7280] grid place-items-center text-[18px] font-medium">{event?.resource?.resourceName?.[0]?.toUpperCase()}</div>
+                }
+                <div className="min-w-0">
+                  <p className="font-heading text-[18px] font-medium text-[#111] leading-[26px]">{event?.resource?.resourceName}</p>
+                  <p className="text-[15px] text-[#9CA3AF] leading-[22px] line-clamp-1">
+                    Speaker{event?.resource?.resourceDescription && ` · ${event.resource.resourceDescription}`}
                   </p>
                 </div>
               </div>
-            )}
+            ) : <div />}
 
-            <RegistrationToggle
-              value={registrationEnabled}
-              onChange={() => setRegistrationEnabled(!registrationEnabled)}
-            />
+            <div className="flex items-center gap-[32px] shrink-0">
+              {event?.additionalNotes && (
+                <div className="relative inline-block group">
+                  <div className="text-[14px] text-[#147BFF] font-medium hover:underline underline-offset-4 cursor-pointer text-right">
+                    Additional note
+                  </div>
+                  <div className="absolute right-0 top-full w-[380px] p-[24px] rounded-[20px] shadow-[0px_4px_4px_2px_#A2A0A040] opacity-0 invisible group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 translate-y-2 transition-all duration-200 z-10 bg-[#F2F7FF] flex flex-col gap-[8px] max-h-[350px] overflow-scroll">
+                    <h4 className="font-bold text-[20px] ">Additional note</h4>
+                    <p className="text-[16px] text-[#333333]">
+                      {formatText(event?.additionalNotes)}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <RegistrationToggle
+                value={registrationEnabled}
+                onChange={() => setRegistrationEnabled(!registrationEnabled)}
+              />
+            </div>
           </div>
         </div>
       </div>
 
       <div className="bg-white sticky z-10 top-0 pt-[20px]">
-        <ActionableTabs tabs={eventTabs} defaultTab="attendees" />
+        {/* Mencken ships in one weight only, so no bold (it would be faux-bolded) */}
+        <ActionableTabs tabs={eventTabs} defaultTab="attendees" labelClassName="font-heading font-normal" />
       </div>
 
       <>
         {activeTab === "attendees" &&
-          <div className="shrink-0 min-h-[calc(100dvh-180px)] bg-[#F2F7FF] rounded-[20px]">
+          <div className="shrink-0 min-h-[calc(100dvh-180px)] bg-white">
             <Attendees eventId={eventId} />
           </div>
         }
