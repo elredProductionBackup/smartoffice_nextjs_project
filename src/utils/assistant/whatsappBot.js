@@ -1,7 +1,7 @@
 // Server-only: WhatsApp logic shared by the Infobip, Meta and Twilio webhooks.
 // The sender's phone is looked up in Smart Networks, then every message is added as an actionable for that user.
 
-import { interpret } from "./ai";
+import { interpretTask } from "./ai";
 import { ADMIN_ONLY, createFromCall } from "./commands";
 
 const env = process.env;
@@ -62,7 +62,7 @@ async function mintToken(userCode) {
 /** Adds the message as an actionable for the sender and sends the reply through `send(text)`. */
 export async function handleText({ from, text, prefix = "", send }) {
   // Start the model (~1s) while the backend lookups run; backend stores no per-user timezone, so IST
-  const interpreting = interpret({ text, now: localNow(DEFAULT_TIMEZONE), timezone: DEFAULT_TIMEZONE });
+  const interpreting = interpretTask({ text, now: localNow(DEFAULT_TIMEZONE), timezone: DEFAULT_TIMEZONE });
   interpreting.catch(() => {}); // awaited below; this only stops an unhandled rejection on the early returns
 
   const user = await lookupUser(from);
