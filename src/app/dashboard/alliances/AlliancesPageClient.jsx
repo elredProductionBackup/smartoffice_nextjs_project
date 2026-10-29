@@ -2,6 +2,7 @@
 
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useDispatch } from "react-redux";
 import SectionHeader from "@/_components/SectionHeader";
 import AlliancesTable from "@/_components/Tables/AlliancesTable";
 import AddAllianceModal from "@/_components/AddAllianceModal";
@@ -11,7 +12,8 @@ import ConfirmPopup from "@/_components/ConfirmationPopups/ConfirmPopup";
 import useInfiniteScrollObserver from "@/hooks/useInfiniteScroll";
 import useNotes from "@/hooks/useNotes";
 import { addEditVendor, deleteVendor, getVendors } from "@/services/vendor.service";
-import { addEditResource, deleteResource, getResources } from "@/services/resource.service";
+import { addEditResource, deleteResource, getResources, updateResourceType } from "@/services/resource.service";
+import { addToast } from "@/store/toastSlice";
 
 const PAGE_SIZE = 10;
 
@@ -63,12 +65,14 @@ const TAB_CONFIG = {
     fetchList: getResources,
     save: (values, id = "") => addEditResource({ ...values, resourceId: id }),
     remove: deleteResource,
+    saveStages: (id, type) => updateResourceType({ resourceId: id, type }),
     deleteWarning: "This resource will be removed from your list.",
     deleteSuccess: (item) => ({ message: `${item.name} has been deleted.` }),
   },
 };
 
 export default function AlliancesPageClient() {
+  const dispatch = useDispatch();
   const searchParams = useSearchParams();
   const tabParam = searchParams.get("tab");
   const tab = TAB_CONFIG[tabParam] ? tabParam : "vendors";
@@ -88,6 +92,7 @@ export default function AlliancesPageClient() {
   const [error, setError] = useState(false);
   const requestIdRef = useRef(0); // drops responses from outdated tabs/searches
   const nextStartRef = useRef(0); // where the next page starts on the server
+  const stageRequestRef = useRef({}); // { [rowId]: latest stage save }, so only the newest failure rolls back
 
   // Success popup after adding or deleting: { title, message, stats? } | null
   const [success, setSuccess] = useState(null);
@@ -216,6 +221,32 @@ export default function AlliancesPageClient() {
     fetchItems(true); // list is newest first, so the new row shows on top
   };
 
+  // Ticks show straight away; on failure the row goes back to its previous stages
+  const handleStageChange = async (item, type) => {
+    const previous = Array.isArray(item.type) ? item.type : [];
+    const requestId = (stageRequestRef.current[item.id] ?? 0) + 1;
+    stageRequestRef.current[item.id] = requestId;
+    const setRowType = (value) =>
+      setItems((prev) => prev.map((row) => (row.id === item.id ? { ...row, type: value } : row)));
+
+    setRowType(type);
+    try {
+      await config.saveStages(item.id, type);
+    } catch (err) {
+      if (stageRequestRef.current[item.id] !== requestId) return;
+      setRowType(previous);
+      dispatch(
+        addToast({
+          message: {
+            title: "Couldn't update stages",
+            descrip: err?.response?.data?.message || err?.message || "Please try again.",
+          },
+          type: "error",
+        })
+      );
+    }
+  };
+
   const openDeleteConfirm = (item) => {
     setDeleteError("");
     setItemToDelete(item);
@@ -308,6 +339,7 @@ export default function AlliancesPageClient() {
           onAddNote={(item, text) => addNote(item.id, text)}
           onEditNote={(item, noteId, text) => editNote(item.id, noteId, text)}
           onDeleteNote={openDeleteNoteConfirm}
+          onStageChange={config.saveStages && handleStageChange}
         />
       </div>
 

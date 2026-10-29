@@ -83,6 +83,30 @@ export const addEditResource = async ({ resourceId = "", name, organization, ema
 };
 
 /**
+ * Set the outreach stages ticked for a resource
+ *
+ * PATCH /smartOffice/updateResourceType
+ * Body: { resourceId, type }
+ * type replaces the whole list; [] clears it.
+ *
+ * @param {Object} payload
+ * @param {string} payload.resourceId
+ * @param {string[]} payload.type
+ * @returns {Promise<Object>} the updated resource
+ */
+export const updateResourceType = async ({ resourceId, type }) => {
+  try {
+    const res = await api.patch("/smartOffice/updateResourceType", { resourceId, type });
+    const data = throwIfFailed(res, "Failed to update resource type");
+
+    return (Array.isArray(data?.result) ? data.result[0] : data?.result) || {};
+  } catch (error) {
+    console.error("updateResourceType API Error:", error?.response || error);
+    throw error;
+  }
+};
+
+/**
  * Delete a resource (soft delete)
  *
  * DELETE /smartOffice/deleteResource

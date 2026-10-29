@@ -14,7 +14,7 @@ import {
 import MembersTableShimmer from "@/_components/Shimmer/MembersTableShimmer";
 import MultiStatusSelect from "@/_components/UI/MultiStatusSelect";
 
-// Outreach stages for each resource (several can be ticked); only shown on the Resources tab and only kept locally for now
+// Outreach stages for each resource (several can be ticked); only shown on the Resources tab. Saved as the resource's `type`
 const RESOURCE_STAGE_OPTIONS = [
   { value: "initial_mail_sent", label: "Initial mail sent", dotClassName: "bg-slate-400" },
   { value: "reminder_mail_sent", label: "Reminder mail sent", dotClassName: "bg-amber-500" },
@@ -282,11 +282,11 @@ export default function AlliancesTable({
   onAddNote, // (item, text) => void; adds "Add note" to the row menu
   onEditNote, // (item, noteId, text) => Promise; adds an edit icon to each note
   onDeleteNote, // (item, noteId) => void
+  onStageChange, // (item, stages) => void; shows the stage menu on the Resources tab
 }) {
   const isSearching = search?.length >= 3;
   const isEmpty = data.length === 0;
-  const [rowOptions, setRowOptions] = useState({});
-  const showStage = tab === "resources";
+  const showStage = tab === "resources" && !!onStageChange;
   // Room for the stage menu icon (40px + 16px gap) next to the other actions
   const actionsWidth = showStage ? "w-[276px]" : "w-[220px]";
   const [expanded, setExpanded] = useState({}); // { [rowId]: true } for rows showing their notes
@@ -442,10 +442,8 @@ export default function AlliancesTable({
                   {/* Stage menu (resources only) */}
                   {showStage && (
                     <MultiStatusSelect
-                      value={rowOptions[item.id] ?? []}
-                      onChange={(value) =>
-                        setRowOptions((prev) => ({ ...prev, [item.id]: value }))
-                      }
+                      value={Array.isArray(item.type) ? item.type : []}
+                      onChange={(value) => onStageChange(item, value)}
                       options={RESOURCE_STAGE_OPTIONS}
                       label="Outreach stages"
                       openUp={data.length > 3 && index >= data.length - 2}

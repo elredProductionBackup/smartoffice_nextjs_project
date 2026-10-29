@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { HiCheck, HiOutlineClipboardDocumentCheck } from "react-icons/hi2";
+import { HiCheck, HiOutlineClipboardDocumentCheck, HiXMark } from "react-icons/hi2";
 
 // Icon button that opens a menu with a checkbox per option; any number can be ticked.
 // value: array of selected option values. options: [{ value, label, dotClassName }]
-// The menu stays open while options are toggled; it closes on outside click or Escape.
+// The menu stays open while options are toggled; it closes on the X, outside click or Escape.
 // openUp: open above the button (for rows near the bottom of a list)
 export default function MultiStatusSelect({ value = [], onChange, options, label = "Select options", openUp = false }) {
   const [open, setOpen] = useState(false);
@@ -56,14 +56,25 @@ export default function MultiStatusSelect({ value = [], onChange, options, label
       </button>
 
       {open && (
-        <ul
-          role="listbox"
-          aria-multiselectable="true"
+        <div
           className={`absolute right-0 z-20 w-max min-w-[260px] rounded-[20px] bg-white p-3 ${
             openUp ? "bottom-full mb-2" : "top-full mt-2"
           }`}
           style={{ boxShadow: "0px 4px 4px 0px #99999940" }}
         >
+        <div className="flex items-center justify-between gap-4 px-2 pb-2">
+          <span className="text-[14px] font-semibold text-[#333]">{label}</span>
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            aria-label="Close"
+            title="Close"
+            className="w-7 h-7 grid place-items-center rounded-full text-[#666666] hover:bg-[#F2F7FF] cursor-pointer"
+          >
+            <HiXMark className="text-lg" />
+          </button>
+        </div>
+        <ul role="listbox" aria-multiselectable="true" aria-label={label}>
           {options.map((o) => {
             const isSelected = value.includes(o.value);
             return (
@@ -91,6 +102,7 @@ export default function MultiStatusSelect({ value = [], onChange, options, label
             );
           })}
         </ul>
+        </div>
       )}
     </div>
   );
