@@ -56,16 +56,14 @@ const actionableSlice = createSlice({
       })
       .addCase(fetchActionables.fulfilled, (state, action) => {
         state.loading = false;
-        console.log(action.payload.list)
         // Fallback filter to ensure event-checklist tasks are hidden even if API filter fails
         const filteredList = action.payload.list.filter(
           (item) => !item.category || item.category === "all"
         );
         state.items = filteredList;
-        // If we filtered locally, we should adjust total accordingly for the current view
-        state.total = filteredList.length < action.payload.list.length 
-          ? filteredList.length 
-          : action.payload.total;
+        // Keep the overall total (it drives pagination); only discount what was hidden on this page
+        const hidden = action.payload.list.length - filteredList.length;
+        state.total = Math.max(action.payload.total - hidden, 0);
       })
       .addCase(fetchActionables.rejected, (state, action) => {
         state.loading = false;
