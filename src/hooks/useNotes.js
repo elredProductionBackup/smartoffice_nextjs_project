@@ -1,19 +1,26 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { deleteVendorNote, getVendorNotes } from "@/services/vendor.service";
+import { addVendorNote, deleteVendorNote, getVendorNotes } from "@/services/vendor.service";
+import { addResourceNote, deleteResourceNote, getResourceNotes } from "@/services/resource.service";
 
 // Notes kept against vendors/resources: { [rowId]: [{ id, text, createdAt }] }, newest first.
-// Vendor notes are loaded from the API when a row's notes are opened. Resources have no notes API yet, and there are
-// no add note API yet, so added notes only live in memory until the page reloads.
+// Notes are loaded from the API when a row's notes are opened, and added/deleted through it.
 const NOTES_LIMIT = 50;
 
 const FETCH_NOTES = {
   vendors: (rowId) => getVendorNotes({ vendorId: rowId, start: 0, offset: NOTES_LIMIT }),
+  resources: (rowId) => getResourceNotes({ resourceId: rowId, start: 0, offset: NOTES_LIMIT }),
+};
+
+const ADD_NOTE = {
+  vendors: (rowId, text) => addVendorNote({ vendorId: rowId, text }),
+  resources: (rowId, text) => addResourceNote({ resourceId: rowId, text }),
 };
 
 const DELETE_NOTE = {
   vendors: deleteVendorNote,
+  resources: deleteResourceNote,
 };
 
 // API note -> { id, text, createdAt }
@@ -68,17 +75,28 @@ export default function useNotes(tab) {
     [tab]
   );
 
+  // Throws if the API call fails, so the form can show the error
   const addNote = useCallback(
-    (rowId, text) =>
-      setNotes((prev) => ({
-        ...prev,
-        [rowId]: [
-          // local: not saved on the server yet
-          { id: `${Date.now()}`, text, createdAt: new Date().toISOString(), local: true },
-          ...(prev[rowId] || []),
-        ],
-      })),
-    []
+    async (rowId, text) => {
+      const addOnServer = ADD_NOTE[tab];
+      // local: not saved on the server
+      let note = { id: `${Date.now()}`, text, createdAt: new Date().toISOString(), local: true };
+
+      if (addOnServer) {
+        const saved = await addOnServer(rowId, text);
+        const savedNote = saved ? toNote(saved) : {};
+        if (!savedNote.id) {
+          // Response didn't include the note, so reload the list to get its id
+          const { result } = await FETCH_NOTES[tab](rowId);
+          setNotes((prev) => ({ ...prev, [rowId]: result.map(toNote) }));
+          return;
+        }
+        note = { ...note, ...savedNote, text: savedNote.text || text, local: false };
+      }
+
+      setNotes((prev) => ({ ...prev, [rowId]: [note, ...(prev[rowId] || [])] }));
+    },
+    [tab]
   );
 
   // Throws if the API call fails, so the caller can show the error

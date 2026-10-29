@@ -122,11 +122,20 @@ const formatDate = (iso) =>
 // Add-note form; mounted fresh each time it opens, so it always starts empty
 const NoteForm = ({ onCancel, onSave }) => {
   const [text, setText] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
   const trimmed = text.trim();
 
-  const save = () => {
-    if (!trimmed) return;
-    onSave(trimmed);
+  const save = async () => {
+    if (!trimmed || saving) return;
+    setSaving(true);
+    setError("");
+    try {
+      await onSave(trimmed);
+    } catch (err) {
+      setError(err?.response?.data?.message || err?.message || "Couldn't save the note. Please try again.");
+      setSaving(false);
+    }
   };
 
   return (
@@ -144,12 +153,14 @@ const NoteForm = ({ onCancel, onSave }) => {
         placeholder="Write a note…"
         className="w-full resize-none text-[18px] text-[#333] placeholder:text-[#999] outline-none"
       />
+      {error && <p className="text-sm text-red-600 mt-1">{error}</p>}
       <div className="flex items-center justify-between gap-3 mt-2">
         <span className="text-sm text-[#999]">{text.length}/1000</span>
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={onCancel}
+            disabled={saving}
             className="px-5 py-2 rounded-full border border-[#BCBCD9] text-[16px] font-medium text-[#333] cursor-pointer"
           >
             Cancel
@@ -157,10 +168,10 @@ const NoteForm = ({ onCancel, onSave }) => {
           <button
             type="button"
             onClick={save}
-            disabled={!trimmed}
+            disabled={!trimmed || saving}
             className="px-5 py-2 rounded-full bg-gradient-to-r from-[#5597ED] to-[#00449C] text-[16px] font-medium text-white cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Save
+            {saving ? "Saving..." : "Save"}
           </button>
         </div>
       </div>
@@ -465,8 +476,8 @@ export default function AlliancesTable({
                   isAdding={isAdding}
                   onStartAdd={() => setAddingFor(item.id)}
                   onCancelAdd={() => setAddingFor(null)}
-                  onSave={(text) => {
-                    onAddNote(item, text);
+                  onSave={async (text) => {
+                    await onAddNote(item, text);
                     setAddingFor(null);
                   }}
                   onDelete={(noteId) =>
