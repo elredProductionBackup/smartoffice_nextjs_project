@@ -23,7 +23,7 @@ const TABS_ITEMS = ["Past", "Today", "All"];
 
 export default function ActionItems() {
 
-  const { modal } = useSelector((state) => state.actionableUi);
+  const { modal, refreshKey } = useSelector((state) => state.actionableUi);
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -67,6 +67,21 @@ export default function ActionItems() {
       })
     );
   }, [dispatch, pageParam, limit, activeItem, debouncedSearch]);
+
+  /** Silent refetch when actionables changed elsewhere (assistant, WhatsApp, periodic poll) */
+  useEffect(() => {
+    if (!refreshKey) return;
+    dispatch(
+      fetchActionables({
+        page: pageParam,
+        limit,
+        search: debouncedSearch,
+        dueSearchKey: activeItem,
+        silent: true,
+      })
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only on refresh signal; the effect above handles param changes
+  }, [refreshKey]);
 
   const totalPages = Math.max(1, Math.ceil(total / limit));
 

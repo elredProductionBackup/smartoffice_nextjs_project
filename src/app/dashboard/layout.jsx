@@ -93,6 +93,7 @@ import { FiCheckSquare, FiDollarSign, FiHome, FiSend } from "react-icons/fi";
 import { HiOutlineChatBubbleLeftRight } from "react-icons/hi2";
 import { LuUserCog } from "react-icons/lu";
 import { FaFileInvoiceDollar } from "react-icons/fa6";
+import AssistantWidget from "@/_components/Assistant/AssistantWidget";
 
 export default function DashboardLayout({ children }) {
   const pathname = usePathname();
@@ -286,6 +287,7 @@ const userMenu = [
           {/* Nested Page */}
           <div className="flex-1 flex flex-col mx-5 overflow-y-auto">{children}</div>
         </div>
+        <AssistantWidget />
       </div>
     </ProtectedRoute>
   );

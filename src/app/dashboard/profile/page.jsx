@@ -16,9 +16,16 @@ export default function ProfilePage() {
     (state) => state.dashboard
   );
 
+  const refreshKey = useSelector((state) => state.actionableUi.refreshKey);
+
   useEffect(() => {
     dispatch(fetchDashboardActionables());
   }, [dispatch]);
+
+  // Silent refetch when actionables changed elsewhere (assistant, WhatsApp, periodic poll)
+  useEffect(() => {
+    if (refreshKey) dispatch(fetchDashboardActionables({ silent: true }));
+  }, [dispatch, refreshKey]);
   return (
     <div className="flex flex-col h-[calc(100vh-80px)] overflow-auto relative">
       {/* <div className="mx-50">

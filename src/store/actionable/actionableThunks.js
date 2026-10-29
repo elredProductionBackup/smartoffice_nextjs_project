@@ -131,7 +131,10 @@ export const removeActionable = createAsyncThunk(
     }
 
     try {
-      await deleteActionable(payload);
+      const res = await deleteActionable(payload);
+      if (res.data?.success === false) {
+        return rejectWithValue(res.data.message || "Delete failed");
+      }
 
       return { actionableId: payload.actionableId };
     } catch (err) {
@@ -322,7 +325,10 @@ export const removeSubTask = createAsyncThunk(
   async ({ actionableId, subTaskId }, { rejectWithValue }) => {
     try {
       const networkClusterCode = localStorage.getItem("networkClusterCode");
-      await deleteSubTask({ _id: subTaskId, networkClusterCode, actionableId });
+      const res = await deleteSubTask({ _id: subTaskId, networkClusterCode, actionableId });
+      if (res.data?.success === false) {
+        return rejectWithValue(res.data.message || "Delete failed");
+      }
       return { actionableId, subTaskId };
     } catch (err) {
       return rejectWithValue(err.response?.data || err.message);
