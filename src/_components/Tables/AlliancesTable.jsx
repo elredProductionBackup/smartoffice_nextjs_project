@@ -12,16 +12,10 @@ import {
   HiOutlineTrash,
 } from "react-icons/hi2";
 import MembersTableShimmer from "@/_components/Shimmer/MembersTableShimmer";
-import StatusSelect from "@/_components/UI/StatusSelect";
+import MultiStatusSelect from "@/_components/UI/MultiStatusSelect";
 
-// Outreach stage for each resource; only shown on the Resources tab and only kept locally for now
+// Outreach stages for each resource (several can be ticked); only shown on the Resources tab and only kept locally for now
 const RESOURCE_STAGE_OPTIONS = [
-  {
-    value: "",
-    label: "Select Option",
-    dotClassName: "border border-slate-300",
-    isPlaceholder: true,
-  },
   { value: "initial_mail_sent", label: "Initial mail sent", dotClassName: "bg-slate-400" },
   { value: "reminder_mail_sent", label: "Reminder mail sent", dotClassName: "bg-amber-500" },
   { value: "connected_agreed", label: "Connected / agreed for practice", dotClassName: "bg-sky-500" },
@@ -262,6 +256,8 @@ export default function AlliancesTable({
   const isEmpty = data.length === 0;
   const [rowOptions, setRowOptions] = useState({});
   const showStage = tab === "resources";
+  // Room for the stage menu icon (40px + 16px gap) next to the other actions
+  const actionsWidth = showStage ? "w-[276px]" : "w-[220px]";
   const [expanded, setExpanded] = useState({}); // { [rowId]: true } for rows showing their notes
   const [addingFor, setAddingFor] = useState(null); // row whose add-note form is open
 
@@ -284,8 +280,7 @@ export default function AlliancesTable({
       {/* Table Header */}
       <div className="flex items-center font-bold text-lg text-[#333333] px-[30px] sticky top-0 bg-[#F2F7FF] py-3 pt-6 z-10">
         <div className="flex-1">Name/{subtitleLabel}</div>
-        {showStage && <div className="w-[160px] shrink-0 mx-[30px]" />}
-        <div className="w-[220px] shrink-0">Actions</div>
+        <div className={`${actionsWidth} shrink-0`}>Actions</div>
       </div>
 
       {/* Error State (nothing loaded yet) */}
@@ -408,28 +403,24 @@ export default function AlliancesTable({
                   </div>
                 </div>
 
-                {/* MIDDLE - Stage dropdown (resources only) */}
-                {showStage && (
-                  <div
-                    className="shrink-0 mx-[30px]"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <StatusSelect
-                      value={rowOptions[item.id] ?? ""}
+                {/* RIGHT - Action Icons */}
+                <div
+                  className={`flex ${actionsWidth} shrink-0 items-center gap-4 text-[#666666]`}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {/* Stage menu (resources only) */}
+                  {showStage && (
+                    <MultiStatusSelect
+                      value={rowOptions[item.id] ?? []}
                       onChange={(value) =>
                         setRowOptions((prev) => ({ ...prev, [item.id]: value }))
                       }
                       options={RESOURCE_STAGE_OPTIONS}
-                      placeholder="Select Option"
+                      label="Outreach stages"
+                      openUp={data.length > 3 && index >= data.length - 2}
                     />
-                  </div>
-                )}
+                  )}
 
-                {/* RIGHT - Action Icons */}
-                <div
-                  className="flex w-[220px] shrink-0 items-center gap-4 text-[#666666]"
-                  onClick={(e) => e.stopPropagation()}
-                >
                   <Link
                     href={`https://wa.me/${item.phone?.replace(/[^0-9]/g, "")}`}
                     target="_blank"
