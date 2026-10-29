@@ -87,6 +87,7 @@ export default function AlliancesPageClient() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(false);
   const requestIdRef = useRef(0); // drops responses from outdated tabs/searches
+  const nextStartRef = useRef(0); // where the next page starts on the server
 
   // Success popup after adding or deleting: { title, message, stats? } | null
   const [success, setSuccess] = useState(null);
@@ -118,20 +119,32 @@ export default function AlliancesPageClient() {
       const requestId = ++requestIdRef.current;
       reset ? setLoading(true) : setLoadingMore(true);
       setError(false);
-      if (reset) setItems([]);
+      if (reset) {
+        setItems([]);
+        nextStartRef.current = 0;
+      }
+      const start = nextStartRef.current;
 
       try {
         const { result, totalCount } = await config.fetchList({
           searchBy: config.searchBy[searchBy] ?? "name",
           searchKey: search,
-          start: reset ? 0 : items.length,
+          start,
           offset: PAGE_SIZE,
         });
         if (requestId !== requestIdRef.current) return;
 
+        nextStartRef.current = start + result.length;
         const page = result.map((item) => ({ ...item, id: item[config.idKey] }));
-        setItems((prev) => (reset ? page : [...prev, ...page]));
+        // A row can come back again if the list changed on the server between pages
+        setItems((prev) => {
+          if (reset) return page;
+          const loadedIds = new Set(prev.map((item) => item.id));
+          return [...prev, ...page.filter((item) => !loadedIds.has(item.id))];
+        });
         setTotal(totalCount);
+        // Nothing left to load, even if totalCount says otherwise
+        if (!reset && result.length === 0) setTotal(start);
       } catch {
         if (requestId !== requestIdRef.current) return;
         setError(true);
@@ -142,7 +155,7 @@ export default function AlliancesPageClient() {
         }
       }
     },
-    [config, search, searchBy, items.length]
+    [config, search, searchBy]
   );
 
   // Fresh list whenever the tab opens or the search changes
@@ -151,7 +164,7 @@ export default function AlliancesPageClient() {
   }, [tab, search, searchBy]);
 
   const lastRowRef = useInfiniteScrollObserver({
-    hasMore: items.length < total && !error,
+    hasMore: nextStartRef.current < total && !error,
     loading: loading || loadingMore,
     onLoadMore: () => fetchItems(false),
   });
@@ -216,6 +229,7 @@ export default function AlliancesPageClient() {
       const response = await config.remove(itemToDelete.id);
       setItems((prev) => prev.filter((item) => item.id !== itemToDelete.id));
       setTotal((prev) => Math.max(prev - 1, 0));
+      nextStartRef.current = Math.max(nextStartRef.current - 1, 0); // the server list shrank too
       clearNotes(itemToDelete.id);
 
       setSuccess({

@@ -62,8 +62,13 @@ export default function useNotes(tab) {
       try {
         const { result } = await fetchNotes(rowId);
         if (fetchedRef.current !== fetched) return; // tab changed meanwhile
-        // Keep any notes added while the request was in flight
-        setNotes((prev) => ({ ...prev, [rowId]: [...(prev[rowId] || []), ...result.map(toNote)] }));
+        // Keep any notes added while the request was in flight, without listing them twice
+        setNotes((prev) => {
+          const current = prev[rowId] || [];
+          const currentIds = new Set(current.map((t) => t.id));
+          const loaded = result.map(toNote).filter((t) => !currentIds.has(t.id));
+          return { ...prev, [rowId]: [...current, ...loaded] };
+        });
       } catch {
         fetched.delete(rowId); // retried next time the notes are opened
       } finally {
