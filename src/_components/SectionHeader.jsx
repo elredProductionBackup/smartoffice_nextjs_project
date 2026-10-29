@@ -107,18 +107,18 @@ export default function SectionHeader({
         <div className="relative flex items-center h-[60px] bg-[#F7F9FC] border border-[#E1E2E6] rounded-full px-[20px] gap-3">
 
           {/* Dropdown */}
-          <div ref={dropdownRef} className="relative">
+          <div ref={dropdownRef} className="relative shrink-0">
             <button
               type="button"
               onClick={() => setOpenDropdown((v) => !v)}
-              className="flex items-center gap-2 font-[600] cursor-pointer"
+              className="flex items-center gap-2 font-[600] whitespace-nowrap cursor-pointer"
             >
               {searchBy}
               <span className="icon-park-outline--down text-[#999999]" />
             </button>
 
                {openDropdown && (
-                 <div className="absolute p-[10px] top-[46px] left-[-20px] bg-white border border-[#F2F6FC] rounded-[20px] shadow-md w-[120px] z-20 ">
+                 <div className="absolute p-[10px] top-[46px] left-[-20px] bg-white border border-[#F2F6FC] rounded-[20px] shadow-md min-w-[120px] w-max z-20 ">
                    {searchByOptions.map((item) => (
                      <button
                        key={item}
@@ -126,7 +126,7 @@ export default function SectionHeader({
                          setSearchBy(item);
                          setOpenDropdown(false);
                        }}
-                       className={`w-full cursor-pointer text-left pl-[12px] py-[8px] text-[16px] rounded-[10px] font-medium 
+                       className={`w-full cursor-pointer text-left whitespace-nowrap px-[12px] py-[8px] text-[16px] rounded-[10px] font-medium 
                          ${searchBy === item?'bg-[#F2F6FC]':''}`}
 
                      >
@@ -146,7 +146,7 @@ export default function SectionHeader({
             value={localSearch}
             placeholder={`Search by ${searchBy.toLowerCase()} (Min 3 chars)`}
             onChange={handleSearchChange}
-            className="flex-1 bg-transparent outline-none"
+            className="flex-1 min-w-0 bg-transparent outline-none"
           />
 
           {/* Clear / Search Icon */}
