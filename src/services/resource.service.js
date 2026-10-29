@@ -158,6 +158,30 @@ export const addResourceNote = async ({ resourceId, text }) => {
 };
 
 /**
+ * Edit a resource note
+ *
+ * PATCH /smartOffice/resourceNotes
+ * Body: { resourceId, noteId, text }
+ *
+ * @param {Object} payload
+ * @param {string} payload.resourceId
+ * @param {string} payload.noteId
+ * @param {string} payload.text
+ * @returns {Promise<Object>} the updated note
+ */
+export const updateResourceNote = async ({ resourceId, noteId, text }) => {
+  try {
+    const res = await api.patch("/smartOffice/resourceNotes", { resourceId, noteId, text });
+    const data = throwIfFailed(res, "Failed to update note");
+
+    return (Array.isArray(data?.result) ? data.result[0] : data?.result) || {};
+  } catch (error) {
+    console.error("updateResourceNote API Error:", error?.response || error);
+    throw error;
+  }
+};
+
+/**
  * Delete a resource note
  *
  * DELETE /smartOffice/resourceNotes

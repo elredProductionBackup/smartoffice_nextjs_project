@@ -199,6 +199,41 @@ export const addVendorNote = async ({ vendorId, text }) => {
 };
 
 /**
+ * Edit a vendor note
+ *
+ * PATCH /smartOffice/vendorNotes
+ * Body: { vendorId, noteId, text }
+ *
+ * @param {Object} payload
+ * @param {string} payload.vendorId
+ * @param {string} payload.noteId
+ * @param {string} payload.text
+ * @returns {Promise<Object>} the updated note
+ */
+export const updateVendorNote = async ({ vendorId, noteId, text }) => {
+  try {
+    const res = await api.patch("/smartOffice/vendorNotes", { vendorId, noteId, text });
+
+    const data = res.data;
+
+    // Axios validateStatus allows all status codes — check success flag manually
+    if (data?.success === false) {
+      const err = new Error(data?.message || "Failed to update note");
+      err.response = {
+        status: res.status,
+        data,
+      };
+      throw err;
+    }
+
+    return (Array.isArray(data?.result) ? data.result[0] : data?.result) || {};
+  } catch (error) {
+    console.error("updateVendorNote API Error:", error?.response || error);
+    throw error;
+  }
+};
+
+/**
  * Delete a vendor note
  *
  * DELETE /smartOffice/vendorNotes

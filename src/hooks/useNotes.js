@@ -1,8 +1,18 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { addVendorNote, deleteVendorNote, getVendorNotes } from "@/services/vendor.service";
-import { addResourceNote, deleteResourceNote, getResourceNotes } from "@/services/resource.service";
+import {
+  addVendorNote,
+  deleteVendorNote,
+  getVendorNotes,
+  updateVendorNote,
+} from "@/services/vendor.service";
+import {
+  addResourceNote,
+  deleteResourceNote,
+  getResourceNotes,
+  updateResourceNote,
+} from "@/services/resource.service";
 
 // Notes kept against vendors/resources: { [rowId]: [{ id, text, createdAt }] }, newest first.
 // Notes are loaded from the API when a row's notes are opened, and added/deleted through it.
@@ -16,6 +26,11 @@ const FETCH_NOTES = {
 const ADD_NOTE = {
   vendors: (rowId, text) => addVendorNote({ vendorId: rowId, text }),
   resources: (rowId, text) => addResourceNote({ resourceId: rowId, text }),
+};
+
+const UPDATE_NOTE = {
+  vendors: (rowId, noteId, text) => updateVendorNote({ vendorId: rowId, noteId, text }),
+  resources: (rowId, noteId, text) => updateResourceNote({ resourceId: rowId, noteId, text }),
 };
 
 const DELETE_NOTE = {
@@ -104,6 +119,21 @@ export default function useNotes(tab) {
     [tab]
   );
 
+  // Throws if the API call fails, so the form can show the error
+  const editNote = useCallback(
+    async (rowId, noteId, text) => {
+      const note = notes[rowId]?.find((t) => t.id === noteId);
+      const updateOnServer = UPDATE_NOTE[tab];
+      if (updateOnServer && note && !note.local) await updateOnServer(rowId, noteId, text);
+
+      setNotes((prev) => ({
+        ...prev,
+        [rowId]: (prev[rowId] || []).map((t) => (t.id === noteId ? { ...t, text } : t)),
+      }));
+    },
+    [tab, notes]
+  );
+
   // Throws if the API call fails, so the caller can show the error
   const deleteNote = useCallback(
     async (rowId, noteId) => {
@@ -131,5 +161,5 @@ export default function useNotes(tab) {
     []
   );
 
-  return { notes, loadingNotes, loadNotes, addNote, deleteNote, clearNotes };
+  return { notes, loadingNotes, loadNotes, addNote, editNote, deleteNote, clearNotes };
 }

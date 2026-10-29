@@ -106,7 +106,8 @@ export default function AlliancesPageClient() {
   const [deleteNoteError, setDeleteNoteError] = useState("");
 
   // Notes kept against each row
-  const { notes, loadingNotes, loadNotes, addNote, deleteNote, clearNotes } = useNotes(tab);
+  const { notes, loadingNotes, loadNotes, addNote, editNote, deleteNote, clearNotes } =
+    useNotes(tab);
 
   // Each tab has its own search fields
   useEffect(() => {
@@ -305,6 +306,7 @@ export default function AlliancesPageClient() {
           loadingNotes={loadingNotes}
           onOpenNotes={(item) => loadNotes(item.id)}
           onAddNote={(item, text) => addNote(item.id, text)}
+          onEditNote={(item, noteId, text) => editNote(item.id, noteId, text)}
           onDeleteNote={openDeleteNoteConfirm}
         />
       </div>
