@@ -76,7 +76,10 @@ export default function MultiStatusSelect({ value = [], onChange, options, label
               >
                 <span className="flex items-center gap-2">
                   <span className={`h-2 w-2 rounded-full shrink-0 ${o.dotClassName}`} />
-                  {o.label}
+                  {/* Ticked options are shown as done */}
+                  <span className={`transition-colors ${isSelected ? "text-[#A1A1AA] line-through" : ""}`}>
+                    {o.label}
+                  </span>
                 </span>
                 <span
                   className={`h-4 w-4 shrink-0 rounded-[4px] border flex items-center justify-center transition-colors
