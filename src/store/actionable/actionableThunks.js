@@ -29,6 +29,8 @@ export const fetchActionables = createAsyncThunk(
         offset,
         search,
         dueSearchKey,
+        // Only general actionables; event-checklist tasks would otherwise be mixed into the pages
+        category: "all",
       });
 
       return {
