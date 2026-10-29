@@ -3,25 +3,56 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { HiEllipsisVertical, HiOutlinePencilSquare, HiOutlineTrash } from "react-icons/hi2";
+import {
+  HiChevronDown,
+  HiEllipsisVertical,
+  HiOutlineLightBulb,
+  HiOutlinePencilSquare,
+  HiOutlinePlus,
+  HiOutlineTrash,
+} from "react-icons/hi2";
 import MembersTableShimmer from "@/_components/Shimmer/MembersTableShimmer";
+import StatusSelect from "@/_components/UI/StatusSelect";
+
+// Outreach stage for each resource; only shown on the Resources tab and only kept locally for now
+const RESOURCE_STAGE_OPTIONS = [
+  {
+    value: "",
+    label: "Select Option",
+    dotClassName: "border border-slate-300",
+    isPlaceholder: true,
+  },
+  { value: "initial_mail_sent", label: "Initial mail sent", dotClassName: "bg-slate-400" },
+  { value: "reminder_mail_sent", label: "Reminder mail sent", dotClassName: "bg-amber-500" },
+  { value: "connected_agreed", label: "Connected / agreed for practice", dotClassName: "bg-sky-500" },
+  { value: "connected_vc", label: "Connected via VC", dotClassName: "bg-blue-600" },
+  { value: "whatsapp_group_created", label: "WhatsApp group created", dotClassName: "bg-emerald-500" },
+  { value: "pd_asked", label: "Practice details asked", dotClassName: "bg-violet-500" },
+  { value: "pd_received", label: "Practice details received", dotClassName: "bg-green-600" },
+  { value: "pd_reminded", label: "Reminded for PD", dotClassName: "bg-orange-500" },
+];
 
 // Three-dot menu at the end of a row. Opens upwards near the bottom of the list.
-const RowMenu = ({ onEdit, onDelete, openUp }) => {
+const RowMenu = ({ onEdit, onAddNote, onDelete, openUp }) => {
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
 
   useEffect(() => {
     if (!open) return;
     const handleClickOutside = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) setOpen(false);
+      if (menuRef.current && !menuRef.current.contains(e.target))
+        setOpen(false);
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [open]);
 
   return (
-    <div className="relative ml-auto" ref={menuRef} onClick={(e) => e.stopPropagation()}>
+    <div
+      className="relative ml-auto"
+      ref={menuRef}
+      onClick={(e) => e.stopPropagation()}
+    >
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
@@ -33,7 +64,7 @@ const RowMenu = ({ onEdit, onDelete, openUp }) => {
 
       {open && (
         <div
-          className={`absolute right-0 z-20 w-[180px] rounded-[20px] bg-white p-3 ${
+          className={`absolute right-0 z-20 w-[220px] rounded-[20px] bg-white p-3 ${
             openUp ? "bottom-full mb-2" : "top-full mt-2"
           }`}
           style={{ boxShadow: "0px 4px 4px 0px #99999940" }}
@@ -49,6 +80,19 @@ const RowMenu = ({ onEdit, onDelete, openUp }) => {
             >
               <HiOutlinePencilSquare className="text-2xl" />
               Edit
+            </button>
+          )}
+          {onAddNote && (
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                onAddNote();
+              }}
+              className="w-full flex items-center gap-3 rounded-[8px] px-2 py-2 text-[18px] font-medium text-[#333] hover:bg-[#F2F7FF] cursor-pointer"
+            >
+              <HiOutlineLightBulb className="text-2xl" />
+              Add note
             </button>
           )}
           <button
@@ -68,6 +112,122 @@ const RowMenu = ({ onEdit, onDelete, openUp }) => {
   );
 };
 
+const formatDate = (iso) =>
+  new Date(iso).toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+
+// Add-note form; mounted fresh each time it opens, so it always starts empty
+const NoteForm = ({ onCancel, onSave }) => {
+  const [text, setText] = useState("");
+  const trimmed = text.trim();
+
+  const save = () => {
+    if (!trimmed) return;
+    onSave(trimmed);
+  };
+
+  return (
+    <div className="rounded-[12px] bg-white border border-[#D4DFF1] p-4">
+      <textarea
+        autoFocus
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") onCancel();
+          if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) save();
+        }}
+        maxLength={1000}
+        rows={3}
+        placeholder="Write a note…"
+        className="w-full resize-none text-[18px] text-[#333] placeholder:text-[#999] outline-none"
+      />
+      <div className="flex items-center justify-between gap-3 mt-2">
+        <span className="text-sm text-[#999]">{text.length}/1000</span>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="px-5 py-2 rounded-full border border-[#BCBCD9] text-[16px] font-medium text-[#333] cursor-pointer"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={save}
+            disabled={!trimmed}
+            className="px-5 py-2 rounded-full bg-gradient-to-r from-[#5597ED] to-[#00449C] text-[16px] font-medium text-white cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Expanded area under a row: the add form and the saved notes (newest first)
+const NotesPanel = ({
+  notes,
+  loading,
+  isAdding,
+  onStartAdd,
+  onCancelAdd,
+  onSave,
+  onDelete,
+}) => (
+  <div
+    className="pl-[94px] pr-[30px] pb-[20px] flex flex-col gap-3"
+    onClick={(e) => e.stopPropagation()}
+  >
+    {isAdding && <NoteForm onCancel={onCancelAdd} onSave={onSave} />}
+
+    {loading && notes.length === 0 && (
+      <p className="text-[16px] text-[#999]">Loading notes...</p>
+    )}
+    {!loading && !isAdding && notes.length === 0 && (
+      <p className="text-[16px] text-[#999]">No notes yet</p>
+    )}
+
+    {notes.map((t) => (
+      <div
+        key={t.id}
+        className="group flex items-start gap-3 rounded-[12px] bg-white px-4 py-3"
+      >
+        <HiOutlineLightBulb className="mt-1 shrink-0 text-xl text-[#F59E0B]" />
+        <div className="flex-1 min-w-0">
+          <p className="text-[18px] text-[#333] whitespace-pre-wrap break-words">
+            {t.text}
+          </p>
+          <p className="text-sm text-[#999] mt-1">{formatDate(t.createdAt)}</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => onDelete(t.id)}
+          className="shrink-0 w-8 h-8 grid place-items-center rounded-full text-[#999] hover:text-red-600 hover:bg-red-50 cursor-pointer"
+          aria-label="Delete note"
+          title="Delete note"
+        >
+          <HiOutlineTrash className="text-lg" />
+        </button>
+      </div>
+    ))}
+
+    {!isAdding && (
+      <button
+        type="button"
+        onClick={onStartAdd}
+        className="self-start flex items-center gap-2 text-[16px] font-semibold text-[#00449C] cursor-pointer"
+      >
+        <HiOutlinePlus className="text-lg" />
+        Add note
+      </button>
+    )}
+  </div>
+);
+
 export default function AlliancesTable({
   data = [],
   search = "",
@@ -81,19 +241,40 @@ export default function AlliancesTable({
   onEdit, // (item) => void; adds Edit to the row menu
   onDelete, // (item) => void; the row menu only shows when this is passed
   onRowClick, // (item) => void; opens the details popup
+  notes = {}, // { [rowId]: [{ id, text, createdAt }] }
+  loadingNotes = {}, // { [rowId]: true } while that row's notes load
+  onOpenNotes, // (item) => void; called when a row's notes are opened
+  onAddNote, // (item, text) => void; adds "Add note" to the row menu
+  onDeleteNote, // (item, noteId) => void
 }) {
   const isSearching = search?.length >= 3;
   const isEmpty = data.length === 0;
+  const [rowOptions, setRowOptions] = useState({});
+  const showStage = tab === "resources";
+  const [expanded, setExpanded] = useState({}); // { [rowId]: true } for rows showing their notes
+  const [addingFor, setAddingFor] = useState(null); // row whose add-note form is open
+
+  const toggleExpanded = (item) => {
+    if (!expanded[item.id]) onOpenNotes?.(item);
+    setExpanded((prev) => ({ ...prev, [item.id]: !prev[item.id] }));
+    if (addingFor === item.id) setAddingFor(null);
+  };
+
+  const startAdding = (item) => {
+    onOpenNotes?.(item);
+    setExpanded((prev) => ({ ...prev, [item.id]: true }));
+    setAddingFor(item.id);
+  };
 
   if (loading) return <MembersTableShimmer />;
 
   return (
     <div className="flex-1 min-h-0 mt-[20px] rounded-[20px] bg-[#F2F7FF] overflow-y-auto relative flex flex-col">
-
       {/* Table Header */}
       <div className="flex items-center font-bold text-lg text-[#333333] px-[30px] sticky top-0 bg-[#F2F7FF] py-3 pt-6 z-10">
-        <div className="flex-3">Name/{subtitleLabel}</div>
-        <div className="flex-1">Actions</div>
+        <div className="flex-1">Name/{subtitleLabel}</div>
+        {showStage && <div className="w-[160px] shrink-0 mx-[30px]" />}
+        <div className="w-[220px] shrink-0">Actions</div>
       </div>
 
       {/* Error State (nothing loaded yet) */}
@@ -151,70 +332,151 @@ export default function AlliancesTable({
 
       {/* Rows */}
       <div className="flex-1">
-        {data.map((item, index) => (
-          <div
-            key={item.id}
-            ref={index === data.length - 1 ? lastRowRef : undefined}
-            onClick={() => onRowClick?.(item)}
-            className={`
-              flex flex-1 items-center py-[20px] px-[30px] ${onRowClick ? "cursor-pointer" : ""}
-              bg-[#F2F7FF] transition-all duration-200
-              hover:bg-[#E7F0FF]
-              hover:shadow-[0px_4px_4px_0px_#C7C7C740]
+        {data.map((item, index) => {
+          const rowNotes = notes[item.id] || [];
+          const isAdding = addingFor === item.id;
+          const isExpanded = !!expanded[item.id];
+
+          return (
+            <div
+              key={item.id}
+              ref={index === data.length - 1 ? lastRowRef : undefined}
+              className={`
+              transition-colors duration-200
+              ${isExpanded ? "bg-[#E7F0FF]" : "bg-[#F2F7FF]"}
               ${index !== data.length - 1 ? "border-b border-b-[#D4DFF1]" : ""}
             `}
-          >
-            {/* LEFT - Name + subtitle */}
-            <div className="flex flex-3 items-center gap-4">
-              <div className="min-w-[48px] h-[48px] bg-[#D4DFF1] grid place-items-center text-[22px] font-[600] rounded-full uppercase">
-                {item.name?.slice(0, 1)}
+            >
+              <div
+                onClick={() => onRowClick?.(item)}
+                className={`
+              flex flex-1 items-center py-[20px] px-[30px] ${onRowClick ? "cursor-pointer" : ""}
+              transition-all duration-200
+              hover:bg-[#E7F0FF]
+              hover:shadow-[0px_4px_4px_0px_#C7C7C740]
+            `}
+              >
+                {/* LEFT - Name + subtitle */}
+                <div className="flex flex-1 min-w-0 items-center gap-4">
+                  <div className="min-w-[48px] h-[48px] bg-[#D4DFF1] grid place-items-center text-[22px] font-[600] rounded-full uppercase">
+                    {item.name?.slice(0, 1)}
+                  </div>
+                  {/* Text is kept narrow: long descriptions wrap onto more lines (making the row taller), then are cut off */}
+                  <div className="min-w-0 max-w-[600px]">
+                    <p
+                      className="font-semibold text-xl text-[#333333] line-clamp-2 break-words"
+                      title={item.name}
+                    >
+                      {item.name}
+                    </p>
+                    <p
+                      className="text-[20px] text-[#666666] font-[500] capitalize line-clamp-3 break-words"
+                      title={item.subtitle}
+                    >
+                      {item.subtitle}
+                    </p>
+
+                    {/* Shows / hides the notes under the row */}
+                    {onAddNote && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleExpanded(item);
+                        }}
+                        aria-expanded={isExpanded}
+                        className="mt-2 flex items-center gap-1.5 rounded-full bg-[#FEF3C7] px-3 py-1 text-[14px] font-semibold text-[#92400E] cursor-pointer hover:bg-[#FDE68A]"
+                      >
+                        <HiOutlineLightBulb className="text-base" />
+                        Notes
+                        <HiChevronDown
+                          className={`text-base transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
+                        />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* MIDDLE - Stage dropdown (resources only) */}
+                {showStage && (
+                  <div
+                    className="shrink-0 mx-[30px]"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <StatusSelect
+                      value={rowOptions[item.id] ?? ""}
+                      onChange={(value) =>
+                        setRowOptions((prev) => ({ ...prev, [item.id]: value }))
+                      }
+                      options={RESOURCE_STAGE_OPTIONS}
+                      placeholder="Select Option"
+                    />
+                  </div>
+                )}
+
+                {/* RIGHT - Action Icons */}
+                <div
+                  className="flex w-[220px] shrink-0 items-center gap-4 text-[#666666]"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Link
+                    href={`https://wa.me/${item.phone?.replace(/[^0-9]/g, "")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-10 h-10 bg-[#E6EBF2] rounded-full flex items-center justify-center cursor-pointer"
+                    title="Chat on WhatsApp"
+                  >
+                    <span className="ic--baseline-whatsapp"></span>
+                  </Link>
+
+                  <Link
+                    href={`mailto:${item.email}`}
+                    className="w-10 h-10 bg-[#E6EBF2] rounded-full flex items-center justify-center cursor-pointer"
+                    title={item.email}
+                  >
+                    <span className="oui--email"></span>
+                  </Link>
+
+                  <Link
+                    href={`tel:${item.phone}`}
+                    className="w-10 h-10 bg-[#E6EBF2] rounded-full flex items-center justify-center cursor-pointer"
+                    title={item.phone}
+                  >
+                    <span className="proicons--call"></span>
+                  </Link>
+
+                  {onDelete && (
+                    <RowMenu
+                      onEdit={onEdit && (() => onEdit(item))}
+                      onAddNote={
+                        onAddNote && (() => startAdding(item))
+                      }
+                      onDelete={() => onDelete(item)}
+                      openUp={data.length > 3 && index >= data.length - 2}
+                    />
+                  )}
+                </div>
               </div>
-              <div>
-                <p className="font-semibold text-xl text-[#333333]">{item.name}</p>
-                <p className="text-[20px] text-[#666666] font-[500] capitalize">
-                  {item.subtitle}
-                </p>
-              </div>
-            </div>
 
-            {/* RIGHT - Action Icons */}
-            <div className="flex flex-1 items-center gap-4 text-[#666666]" onClick={(e) => e.stopPropagation()}>
-              <Link
-                href={`https://wa.me/${item.phone?.replace(/[^0-9]/g, "")}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-10 h-10 bg-[#E6EBF2] rounded-full flex items-center justify-center cursor-pointer"
-                title="Chat on WhatsApp"
-              >
-                <span className="ic--baseline-whatsapp"></span>
-              </Link>
-
-              <Link
-                href={`mailto:${item.email}`}
-                className="w-10 h-10 bg-[#E6EBF2] rounded-full flex items-center justify-center cursor-pointer"
-                title={item.email}
-              >
-                <span className="oui--email"></span>
-              </Link>
-
-              <Link
-                href={`tel:${item.phone}`}
-                className="w-10 h-10 bg-[#E6EBF2] rounded-full flex items-center justify-center cursor-pointer"
-                title={item.phone}
-              >
-                <span className="proicons--call"></span>
-              </Link>
-
-              {onDelete && (
-                <RowMenu
-                  onEdit={onEdit && (() => onEdit(item))}
-                  onDelete={() => onDelete(item)}
-                  openUp={data.length > 3 && index >= data.length - 2}
+              {isExpanded && (
+                <NotesPanel
+                  notes={rowNotes}
+                  loading={!!loadingNotes[item.id]}
+                  isAdding={isAdding}
+                  onStartAdd={() => setAddingFor(item.id)}
+                  onCancelAdd={() => setAddingFor(null)}
+                  onSave={(text) => {
+                    onAddNote(item, text);
+                    setAddingFor(null);
+                  }}
+                  onDelete={(noteId) =>
+                    onDeleteNote?.(item, noteId)
+                  }
                 />
               )}
             </div>
-          </div>
-        ))}
+          );
+        })}
 
         {/* Next page */}
         {loadingMore && (
@@ -223,7 +485,11 @@ export default function AlliancesTable({
         {!isEmpty && error && !loadingMore && (
           <div className="py-4 text-center text-[#666666]">
             Couldn&apos;t load more {tab}.{" "}
-            <button type="button" onClick={onRetry} className="text-[#00449C] font-semibold cursor-pointer">
+            <button
+              type="button"
+              onClick={onRetry}
+              className="text-[#00449C] font-semibold cursor-pointer"
+            >
               Try again
             </button>
           </div>

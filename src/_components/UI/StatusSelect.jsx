@@ -51,7 +51,7 @@ export default function StatusSelect({ value, onChange, options, placeholder = "
       {open && (
         <ul
           role="listbox"
-          className="absolute right-0 top-[calc(100%+4px)] z-20 w-full min-w-[160px] rounded-md border border-[#E4E4E7] bg-white p-1 shadow-md"
+          className="absolute right-0 top-[calc(100%+4px)] z-20 w-max min-w-full rounded-md border border-[#E4E4E7] bg-white p-1 shadow-md"
         >
           {options.map((o) => {
             const isSelected = o.value === value || (o.isPlaceholder && !selected);

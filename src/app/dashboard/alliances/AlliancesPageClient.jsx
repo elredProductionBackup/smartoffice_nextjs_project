@@ -9,6 +9,7 @@ import AllianceDetailsModal from "@/_components/AllianceDetailsModal";
 import SuccessPopup from "@/_components/ConfirmationPopups/SuccessPopup";
 import ConfirmPopup from "@/_components/ConfirmationPopups/ConfirmPopup";
 import useInfiniteScrollObserver from "@/hooks/useInfiniteScroll";
+import useNotes from "@/hooks/useNotes";
 import { addEditVendor, deleteVendor, getVendors } from "@/services/vendor.service";
 import { addEditResource, deleteResource, getResources } from "@/services/resource.service";
 
@@ -97,6 +98,14 @@ export default function AlliancesPageClient() {
   const [itemToDelete, setItemToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
+
+  // Note waiting for delete confirmation: { item, noteId } | null
+  const [noteToDelete, setNoteToDelete] = useState(null);
+  const [deletingNote, setDeletingNote] = useState(false);
+  const [deleteNoteError, setDeleteNoteError] = useState("");
+
+  // Notes kept against each row
+  const { notes, loadingNotes, loadNotes, addNote, deleteNote, clearNotes } = useNotes(tab);
 
   // Each tab has its own search fields
   useEffect(() => {
@@ -207,6 +216,7 @@ export default function AlliancesPageClient() {
       const response = await config.remove(itemToDelete.id);
       setItems((prev) => prev.filter((item) => item.id !== itemToDelete.id));
       setTotal((prev) => Math.max(prev - 1, 0));
+      clearNotes(itemToDelete.id);
 
       setSuccess({
         title: `${config.modalTitle.replace("Add ", "")} deleted`,
@@ -219,6 +229,32 @@ export default function AlliancesPageClient() {
       );
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const openDeleteNoteConfirm = (item, noteId) => {
+    setDeleteNoteError("");
+    setNoteToDelete({ item, noteId });
+  };
+
+  const handleDeleteNote = async () => {
+    if (!noteToDelete || deletingNote) return;
+    setDeletingNote(true);
+    setDeleteNoteError("");
+
+    try {
+      await deleteNote(noteToDelete.item.id, noteToDelete.noteId);
+      setSuccess({
+        title: "Note deleted",
+        message: `The note has been removed from ${noteToDelete.item.name}.`,
+      });
+      setNoteToDelete(null);
+    } catch (err) {
+      setDeleteNoteError(
+        err?.response?.data?.message || err?.message || "Couldn't delete the note. Please try again."
+      );
+    } finally {
+      setDeletingNote(false);
     }
   };
 
@@ -251,6 +287,11 @@ export default function AlliancesPageClient() {
           onEdit={openEdit}
           onDelete={openDeleteConfirm}
           onRowClick={setSelectedItem}
+          notes={notes}
+          loadingNotes={loadingNotes}
+          onOpenNotes={(item) => loadNotes(item.id)}
+          onAddNote={(item, text) => addNote(item.id, text)}
+          onDeleteNote={openDeleteNoteConfirm}
         />
       </div>
 
@@ -284,6 +325,17 @@ export default function AlliancesPageClient() {
         error={deleteError}
         onConfirm={handleDelete}
         onCancel={() => setItemToDelete(null)}
+      />
+
+      <ConfirmPopup
+        isOpen={!!noteToDelete}
+        title="Delete this note?"
+        message={`This note will be removed from ${noteToDelete?.item.name ?? `this ${config.singular}`}.`}
+        confirmText="Delete"
+        isLoading={deletingNote}
+        error={deleteNoteError}
+        onConfirm={handleDeleteNote}
+        onCancel={() => setNoteToDelete(null)}
       />
 
       <SuccessPopup
