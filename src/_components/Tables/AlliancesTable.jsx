@@ -113,15 +113,17 @@ const formatDate = (iso) =>
     year: "numeric",
   });
 
-// Add-note form; mounted fresh each time it opens, so it always starts empty
-const NoteForm = ({ onCancel, onSave }) => {
-  const [text, setText] = useState("");
+// Add/edit-note form; mounted fresh each time it opens, so it starts from initialText
+const NoteForm = ({ initialText = "", onCancel, onSave }) => {
+  const [text, setText] = useState(initialText);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const trimmed = text.trim();
+  const unchanged = trimmed === initialText.trim();
 
   const save = async () => {
     if (!trimmed || saving) return;
+    if (unchanged) return onCancel();
     setSaving(true);
     setError("");
     try {
@@ -162,7 +164,7 @@ const NoteForm = ({ onCancel, onSave }) => {
           <button
             type="button"
             onClick={save}
-            disabled={!trimmed || saving}
+            disabled={!trimmed || unchanged || saving}
             className="px-5 py-2 rounded-full bg-gradient-to-r from-[#5597ED] to-[#00449C] text-[16px] font-medium text-white cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {saving ? "Saving..." : "Save"}
@@ -181,57 +183,85 @@ const NotesPanel = ({
   onStartAdd,
   onCancelAdd,
   onSave,
+  onEdit, // (noteId, text) => Promise; shows the edit icon when passed
   onDelete,
-}) => (
-  <div
-    className="pl-[94px] pr-[30px] pb-[20px] flex flex-col gap-3"
-    onClick={(e) => e.stopPropagation()}
-  >
-    {isAdding && <NoteForm onCancel={onCancelAdd} onSave={onSave} />}
+}) => {
+  const [editingId, setEditingId] = useState(null); // note being edited in place
 
-    {loading && notes.length === 0 && (
-      <p className="text-[16px] text-[#999]">Loading notes...</p>
-    )}
-    {!loading && !isAdding && notes.length === 0 && (
-      <p className="text-[16px] text-[#999]">No notes yet</p>
-    )}
+  return (
+    <div
+      className="pl-[94px] pr-[30px] pb-[20px] flex flex-col gap-3"
+      onClick={(e) => e.stopPropagation()}
+    >
+      {isAdding && <NoteForm onCancel={onCancelAdd} onSave={onSave} />}
 
-    {notes.map((t) => (
-      <div
-        key={t.id}
-        className="group flex items-start gap-3 rounded-[12px] bg-white px-4 py-3"
-      >
-        <HiOutlineLightBulb className="mt-1 shrink-0 text-xl text-[#F59E0B]" />
-        <div className="flex-1 min-w-0">
-          <p className="text-[18px] text-[#333] whitespace-pre-wrap break-words">
-            {t.text}
-          </p>
-          <p className="text-sm text-[#999] mt-1">{formatDate(t.createdAt)}</p>
-        </div>
+      {loading && notes.length === 0 && (
+        <p className="text-[16px] text-[#999]">Loading notes...</p>
+      )}
+      {!loading && !isAdding && notes.length === 0 && (
+        <p className="text-[16px] text-[#999]">No notes yet</p>
+      )}
+
+      {notes.map((t) =>
+        editingId === t.id ? (
+          <NoteForm
+            key={t.id}
+            initialText={t.text}
+            onCancel={() => setEditingId(null)}
+            onSave={async (text) => {
+              await onEdit(t.id, text);
+              setEditingId(null);
+            }}
+          />
+        ) : (
+          <div
+            key={t.id}
+            className="group flex items-start gap-3 rounded-[12px] bg-white px-4 py-3"
+          >
+            <HiOutlineLightBulb className="mt-1 shrink-0 text-xl text-[#F59E0B]" />
+            <div className="flex-1 min-w-0">
+              <p className="text-[18px] text-[#333] whitespace-pre-wrap break-words">
+                {t.text}
+              </p>
+              <p className="text-sm text-[#999] mt-1">{formatDate(t.createdAt)}</p>
+            </div>
+            {onEdit && (
+              <button
+                type="button"
+                onClick={() => setEditingId(t.id)}
+                className="shrink-0 w-8 h-8 grid place-items-center rounded-full text-[#999] hover:text-[#00449C] hover:bg-[#F2F7FF] cursor-pointer"
+                aria-label="Edit note"
+                title="Edit note"
+              >
+                <HiOutlinePencilSquare className="text-lg" />
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => onDelete(t.id)}
+              className="shrink-0 w-8 h-8 grid place-items-center rounded-full text-[#999] hover:text-red-600 hover:bg-red-50 cursor-pointer"
+              aria-label="Delete note"
+              title="Delete note"
+            >
+              <HiOutlineTrash className="text-lg" />
+            </button>
+          </div>
+        )
+      )}
+
+      {!isAdding && (
         <button
           type="button"
-          onClick={() => onDelete(t.id)}
-          className="shrink-0 w-8 h-8 grid place-items-center rounded-full text-[#999] hover:text-red-600 hover:bg-red-50 cursor-pointer"
-          aria-label="Delete note"
-          title="Delete note"
+          onClick={onStartAdd}
+          className="self-start flex items-center gap-2 text-[16px] font-semibold text-[#00449C] cursor-pointer"
         >
-          <HiOutlineTrash className="text-lg" />
+          <HiOutlinePlus className="text-lg" />
+          Add note
         </button>
-      </div>
-    ))}
-
-    {!isAdding && (
-      <button
-        type="button"
-        onClick={onStartAdd}
-        className="self-start flex items-center gap-2 text-[16px] font-semibold text-[#00449C] cursor-pointer"
-      >
-        <HiOutlinePlus className="text-lg" />
-        Add note
-      </button>
-    )}
-  </div>
-);
+      )}
+    </div>
+  );
+};
 
 export default function AlliancesTable({
   data = [],
@@ -250,6 +280,7 @@ export default function AlliancesTable({
   loadingNotes = {}, // { [rowId]: true } while that row's notes load
   onOpenNotes, // (item) => void; called when a row's notes are opened
   onAddNote, // (item, text) => void; adds "Add note" to the row menu
+  onEditNote, // (item, noteId, text) => Promise; adds an edit icon to each note
   onDeleteNote, // (item, noteId) => void
 }) {
   const isSearching = search?.length >= 3;
@@ -471,6 +502,7 @@ export default function AlliancesTable({
                     await onAddNote(item, text);
                     setAddingFor(null);
                   }}
+                  onEdit={onEditNote && ((noteId, text) => onEditNote(item, noteId, text))}
                   onDelete={(noteId) =>
                     onDeleteNote?.(item, noteId)
                   }
