@@ -124,3 +124,111 @@ export const deleteVendor = async (vendorId) => {
     throw error;
   }
 };
+
+/**
+ * List notes kept against a vendor
+ *
+ * GET /smartOffice/vendorNotes?vendorId=&start=0&offset=10
+ *
+ * @param {Object} params
+ * @param {string} params.vendorId - Vendor whose notes to fetch
+ * @param {number} [params.start]  - Number of notes to skip
+ * @param {number} [params.offset] - Page size
+ * @returns {Promise<{ result: Array, totalCount: number }>}
+ */
+export const getVendorNotes = async ({ vendorId, start = 0, offset = 10 }) => {
+  try {
+    const res = await api.get("/smartOffice/vendorNotes", {
+      params: { vendorId, start, offset },
+    });
+
+    const data = res.data;
+
+    // Axios validateStatus allows all status codes — check success flag manually
+    if (data?.success === false) {
+      const err = new Error(data?.message || "Failed to fetch vendor notes");
+      err.response = {
+        status: res.status,
+        data,
+      };
+      throw err;
+    }
+
+    return {
+      result: Array.isArray(data?.result) ? data.result : [],
+      totalCount: data?.totalCount ?? 0,
+    };
+  } catch (error) {
+    console.error("getVendorNotes API Error:", error?.response || error);
+    throw error;
+  }
+};
+
+/**
+ * Add a note to a vendor
+ *
+ * POST /smartOffice/vendorNotes
+ * Body: { vendorId, text }
+ *
+ * @param {Object} payload
+ * @param {string} payload.vendorId
+ * @param {string} payload.text
+ * @returns {Promise<Object>} the saved note
+ */
+export const addVendorNote = async ({ vendorId, text }) => {
+  try {
+    const res = await api.post("/smartOffice/vendorNotes", { vendorId, text });
+
+    const data = res.data;
+
+    // Axios validateStatus allows all status codes — check success flag manually
+    if (data?.success === false) {
+      const err = new Error(data?.message || "Failed to add note");
+      err.response = {
+        status: res.status,
+        data,
+      };
+      throw err;
+    }
+
+    return Array.isArray(data?.result) ? data.result[0] : data?.result;
+  } catch (error) {
+    console.error("addVendorNote API Error:", error?.response || error);
+    throw error;
+  }
+};
+
+/**
+ * Delete a vendor note
+ *
+ * DELETE /smartOffice/vendorNotes
+ * Body: { noteId }
+ *
+ * @param {string} noteId
+ * @returns {Promise<Object>}
+ */
+export const deleteVendorNote = async (noteId) => {
+  try {
+    const res = await api.delete("/smartOffice/vendorNotes", {
+      data: { noteId },
+      headers: { "Content-Type": "application/json" },
+    });
+
+    const data = res.data;
+
+    // Axios validateStatus allows all status codes — check success flag manually
+    if (data?.success === false) {
+      const err = new Error(data?.message || "Failed to delete note");
+      err.response = {
+        status: res.status,
+        data,
+      };
+      throw err;
+    }
+
+    return (Array.isArray(data?.result) ? data.result[0] : data?.result) || {};
+  } catch (error) {
+    console.error("deleteVendorNote API Error:", error?.response || error);
+    throw error;
+  }
+};
