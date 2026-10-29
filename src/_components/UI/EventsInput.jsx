@@ -3,6 +3,30 @@ import Image from "next/image";
 const baseFieldClass =
   "w-full bg-[#F6F6F6] border-[1.4px] border-[#EAEAEA] rounded-lg outline-none min-h-[50px]";
 
+const formatDate = (date) => {
+  if (!date) return "-";
+  return new Date(date).toLocaleDateString("en-GB", {
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+};
+
+// Declared at module level so it isn't re-created (and remounted) on every render
+const Row = ({ title, value }) => (
+  <div className="flex justify-between gap-3 text-[14px] font-[600]">
+    <span className="text-[#666666] shrink-0">{title}</span>
+    {value && value !== "-" ? (
+      <span className="text-[#333333] font-[600] truncate min-w-0 max-w-[60%] text-right">
+        {value}
+      </span>
+    ) : (
+      <span className="text-[#333333]">-</span>
+    )}
+  </div>
+);
+
 export function EventsInput({
   label,
   icon,
@@ -13,29 +37,6 @@ export function EventsInput({
   dataError,
   ...props
 }) {
-  const formatDate = (date) => {
-    if (!date) return "-";
-    return new Date(date).toLocaleDateString("en-GB", {
-      weekday: "short",
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
-  };
-
-  const Row = ({ title, value }) => (
-    <div className="flex justify-between text-[14px] font-[600]">
-      <span className="text-[#666666]">{title}</span>
-      {value && value !== "-" ? (
-        <span className="text-[#333333] font-[600] truncate max-w-[60%] text-right">
-          {value}
-        </span>
-      ) : (
-        <span className="text-[#333333]">-</span>
-      )}
-    </div>
-  );
-
   return (
     <div className="relative w-full" data-error={dataError?? ''}>
       {label && (

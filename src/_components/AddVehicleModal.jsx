@@ -10,14 +10,14 @@ const AddVehicleModal = ({ isOpen, onClose, onDone, memberName }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-[2px]">
-      <div className="bg-white rounded-[28px] w-[500px]  p-10 shadow-xl relative animate-in fade-in zoom-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-[2px] p-4 md:p-0">
+      <div className="bg-white rounded-[28px] w-full max-w-[500px] max-h-[90dvh] md:max-h-none overflow-y-auto md:overflow-visible p-6 md:p-10 shadow-xl relative animate-in fade-in zoom-in duration-200">
         {/* Header */}
         <div className="mb-[20px]">
-          <h2 className="text-[24px] font-bold text-[#333]">Add Vehicle Details</h2>
+          <h2 className="text-[20px] md:text-[24px] font-bold text-[#333]">Add Vehicle Details</h2>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-5 md:space-y-6">
           {/* Vehicle Type */}
           <div>
             <label className="block text-[16px] font-bold text-[#333] mb-3">
@@ -71,7 +71,7 @@ const AddVehicleModal = ({ isOpen, onClose, onDone, memberName }) => {
         </div>
 
         {/* Buttons */}
-        <div className="flex gap-6 mt-12 justify-center">
+        <div className="flex gap-4 md:gap-6 mt-8 md:mt-12 justify-center">
           <button
             onClick={onClose}
             className="w-[120px] h-[43px] rounded-full bg-[#9E9E9E] text-white font-semibold text-[20px] hover:bg-[#8E8E8E] transition-all flex items-center justify-center"

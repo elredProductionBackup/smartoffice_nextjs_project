@@ -44,14 +44,14 @@ export default function ActionableTabs({
   };
 
   return (
-    <div className="action-tabs flex items-center gap-[10px] relative text-[#666666]">
+    <div className="action-tabs flex items-center gap-[10px] relative text-[#666666] overflow-x-auto pb-px md:overflow-visible md:pb-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
        {tabs.map((tab) => ( 
         <button
           key={tab.value}
           onClick={() => handleTabChange(tab.value)}
-          className={`tab-item relative
-            px-[20px] py-[5px] cursor-pointer 
-            text-[20px] ${labelClassName} transition
+          className={`tab-item relative shrink-0 whitespace-nowrap
+            px-3 md:px-[20px] py-[5px] cursor-pointer 
+            text-lg md:text-[20px] ${labelClassName} transition
             ${activeTab === tab.value ? "bordered text-[#0B57D0] " : ""}`}
         >
           {tab.label}
@@ -60,7 +60,7 @@ export default function ActionableTabs({
         {events &&
         <button
           onClick={() => router.push('/dashboard/events/create')}
-          className="py-[4px] pr-[16px] pl-[10px]  rounded-[100px] bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)] cursor-pointer text-white font-[500] flex items-center gap-[4px] hover:opacity-90 transition"
+          className="shrink-0 whitespace-nowrap py-[4px] pr-[16px] pl-[10px]  rounded-[100px] bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)] cursor-pointer text-white font-[500] flex items-center gap-[4px] hover:opacity-90 transition"
         >
          <span className="ic--round-plus"></span> Create event
         </button>}

@@ -15,8 +15,8 @@ export default function DatepickerModal({ selectedTask }) {
   const { modal } = useSelector((state) => state.actionableUi);
 
   const isOpen = modal.type === "MOVE";
-  if (!isOpen) return null; // Parse existing due date
 
+  // Parse existing due date (hooks must run before the early return below)
   const initialDate = selectedTask?.dueDate
     ? moment(selectedTask.dueDate, "DD MMM YYYY").toDate()
     : new Date(); // LOCAL STATE
@@ -41,11 +41,11 @@ export default function DatepickerModal({ selectedTask }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
       onClick={() => dispatch(closeModal())}
     >
       <div
-        className="w-[480px] rounded-[28px] bg-white p-[30px] shadow-xl"
+        className="w-full max-w-[480px] max-h-[90dvh] overflow-y-auto rounded-[28px] bg-white p-5 sm:p-[30px] shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -63,10 +63,10 @@ export default function DatepickerModal({ selectedTask }) {
         <Calendar value={selectedDate} onChange={(d) => setSelectedDate(d)} />
 
         {/* Footer */}
-        <div className="mt-8 flex justify-between">
+        <div className="mt-6 sm:mt-8 flex justify-between gap-4">
           <button
             onClick={() => dispatch(closeModal())}
-            className="rounded-full text-[20px] bg-[#999999] px-6 py-2 text-white min-w-[120px] flex items-center justify-center whitespace-nowrap shrink-0 cursor-pointer"
+            className="rounded-full text-[18px] sm:text-[20px] bg-[#999999] px-6 py-2 text-white min-w-[110px] sm:min-w-[120px] flex items-center justify-center whitespace-nowrap shrink-0 cursor-pointer"
           >
             Cancel
           </button>
@@ -91,7 +91,7 @@ export default function DatepickerModal({ selectedTask }) {
 
               dispatch(closeModal());
             }}
-            className="rounded-full text-[20px] bg-gradient-to-r from-[#5597ED] to-[#00449C] min-w-[120px] flex items-center justify-center whitespace-nowrap shrink-0 px-[16px] py-[8px] text-white cursor-pointer"
+            className="rounded-full text-[18px] sm:text-[20px] bg-gradient-to-r from-[#5597ED] to-[#00449C] min-w-[110px] sm:min-w-[120px] flex items-center justify-center whitespace-nowrap shrink-0 px-[16px] py-[8px] text-white cursor-pointer"
           >
             Move
           </button>

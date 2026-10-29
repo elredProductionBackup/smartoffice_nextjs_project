@@ -76,7 +76,7 @@ export default function GlobalToast() {
         }}
         role={toast.type === "success" ? "status" : "alert"}
         className={`
-          absolute top-[130px] right-[50px] w-[360px] max-w-[calc(100%-32px)]
+          absolute top-[76px] right-4 md:top-[130px] md:right-[50px] w-[360px] max-w-[calc(100%-32px)]
           flex items-center gap-4 overflow-hidden
           pl-4 pr-12 py-4 rounded-2xl border font-nunito
           shadow-[0_12px_32px_rgba(15,23,42,0.14)]

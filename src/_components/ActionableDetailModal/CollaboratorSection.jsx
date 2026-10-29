@@ -87,8 +87,8 @@ export default function CollaboratorSection({ task, collaborators = [], onChange
 
   /* UI */
   return (
-    <div className="relative flex flex-col gap-[8px] pt-[20px] px-[20px]" >
-      <span className="text-[20px] text-[#333333] font-[700] uppercase">
+    <div className="relative flex flex-col gap-[8px] pt-[20px] px-4 md:px-[20px]" >
+      <span className="text-[18px] md:text-[20px] text-[#333333] font-[700] uppercase">
         Collaborators
       </span>
 
@@ -109,7 +109,7 @@ export default function CollaboratorSection({ task, collaborators = [], onChange
           >
             {/* <div className="w-[24px] h-[24px] bg-[#CCCCCC] rounded-full" /> */}
             <Image src={u?.dp || u?.dpURL} alt="Collaborator Avatar" width={24} height={24} className="h-[24px] w-[24px] rounded-full bg-[#CCCCCC] object-cover" />
-            <span className={`text-[14px] font-[500] ${!canEditOrDelete && 'pr-[6px]'}`}>{u.name}</span>
+            <span className={`text-[14px] font-[500] truncate max-w-[160px] md:max-w-none ${!canEditOrDelete && 'pr-[6px]'}`}>{u.name}</span>
             {canEditOrDelete &&
               <button
                 onClick={(e) => {
@@ -129,7 +129,7 @@ export default function CollaboratorSection({ task, collaborators = [], onChange
             ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="flex-1 outline-none min-w-[120px] pl-[8px]"
+            className="flex-1 outline-none min-w-[120px] pl-[8px] text-base"
           />
 
         )}
@@ -138,7 +138,7 @@ export default function CollaboratorSection({ task, collaborators = [], onChange
       {/* DROPDOWN */}
       {query.length >= 0 && isActive && (
         <div
-          className="absolute left-0 top-[calc(100%+2px)] min-h-[250px] w-full
+          className="absolute left-0 top-[calc(100%+2px)] min-h-[250px] max-h-[50dvh] md:max-h-none w-full
             rounded-[4px] bg-white z-[7] overflow-auto"
           style={{ boxShadow: "0px 4px 4px 0px #A4A3A340" }}
         >
@@ -147,7 +147,7 @@ export default function CollaboratorSection({ task, collaborators = [], onChange
               <div
                 key={u.userCode}
                 onClick={() => addUser(u)}
-                className="flex items-center gap-[8px] px-[20px] py-[12px] hover:bg-[#FAFAFA] cursor-pointer font-[500]"
+                className="flex items-center gap-[8px] px-4 md:px-[20px] py-[12px] hover:bg-[#FAFAFA] cursor-pointer font-[500]"
               > 
                 <Image src={u?.dpURL} alt="Collaborator Avatar" width={32} height={32} className="min-h-[32px] min-w-[32px] rounded-full bg-[#CCCCCC]" />
                 {u.name}
@@ -158,7 +158,7 @@ export default function CollaboratorSection({ task, collaborators = [], onChange
                   <div className="bg-[#D3E3FD] h-[60px] w-[60px] rounded-full mb-[10px] grid place-items-center">
                     <Image src={'/logo/no-search.svg'} alt="No Search" width={38} height={38}/>
                   </div>
-                  <div className="text-[20px] font-[600]">No collaborator found</div>
+                  <div className="text-[18px] md:text-[20px] font-[600]">No collaborator found</div>
                   <div className="text-[14px] text-[#666666] leading-[30px]">Try adjusting your search or filters.</div>
               </div>
           }

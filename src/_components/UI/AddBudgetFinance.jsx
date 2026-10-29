@@ -27,7 +27,8 @@ export default function AddBudgetFinance({ portfolios, onClose, onAdd }) {
   }, []);
 
   const handleSubmit = async () => {
-    if (!isValid) return;
+    // Enter key bypasses the disabled button: guard against double submits
+    if (!isValid || submitting || showSuccess) return;
 
     setSubmitting(true);
     setSubmitError('');
@@ -36,7 +37,6 @@ export default function AddBudgetFinance({ portfolios, onClose, onAdd }) {
         budgetTypeId: form.portfolio,
         budgetAmount: Number(form.totalBudget),
       });
-      console.log('addEditBudget result:', result);
 
       // `result.result` may contain more than just this portfolio's record
       // (addIncome taught us not to trust array position) — match by
@@ -63,13 +63,13 @@ export default function AddBudgetFinance({ portfolios, onClose, onAdd }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40" onClick={onClose}>
-      <div className="bg-white rounded-[16px] w-full max-w-[600px] mx-4 p-8 shadow-xl" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
+      <div className="bg-white rounded-[16px] w-full max-w-[600px] p-5 md:p-8 shadow-xl" onClick={(e) => e.stopPropagation()}>
 
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-[24px] font-bold text-[#1a1a1a]">Add New Budget</h2>
-          <button onClick={onClose} className="text-[#999] hover:text-[#333] transition-colors cursor-pointer">
+        <div className="flex items-center justify-between mb-5 md:mb-6">
+          <h2 className="text-[20px] md:text-[24px] font-bold text-[#1a1a1a]">Add New Budget</h2>
+          <button type="button" onClick={onClose} aria-label="Close" className="text-[#999] hover:text-[#333] transition-colors cursor-pointer p-2 -m-2 md:p-0 md:m-0">
             <FiX className="text-[22px]" />
           </button>
         </div>
@@ -127,7 +127,7 @@ export default function AddBudgetFinance({ portfolios, onClose, onAdd }) {
         </div>
 
         {/* Total Budget */}
-        <div className="mb-8">
+        <div className="mb-6 md:mb-8">
           <label className="block text-[14px] font-semibold text-[#333] mb-2">
             Total Budget <span className="text-red-500">*</span>
           </label>
@@ -140,7 +140,7 @@ export default function AddBudgetFinance({ portfolios, onClose, onAdd }) {
               value={form.totalBudget}
               onChange={(e) => setForm((p) => ({ ...p, totalBudget: e.target.value }))}
               onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-              className="flex-1 outline-none text-[14px] text-[#111] bg-transparent placeholder:text-[#9ca3af]"
+              className="flex-1 min-w-0 outline-none text-[16px] md:text-[14px] text-[#111] bg-transparent placeholder:text-[#9ca3af]"
             />
           </div>
         </div>
@@ -163,7 +163,7 @@ export default function AddBudgetFinance({ portfolios, onClose, onAdd }) {
           <button
             onClick={onClose}
             disabled={submitting}
-            className="px-8 h-[50px] rounded-[8px] border border-[#d1d5db] text-[15px] font-semibold text-[#333] hover:bg-[#f9fafb] cursor-pointer transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            className="px-6 md:px-8 h-[50px] rounded-[8px] border border-[#d1d5db] text-[15px] font-semibold text-[#333] hover:bg-[#f9fafb] cursor-pointer transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
           >
             Cancel
           </button>
@@ -173,7 +173,7 @@ export default function AddBudgetFinance({ portfolios, onClose, onAdd }) {
 
       {showSuccess && (
         <div className="fixed inset-0 z-10000 flex items-center justify-center pointer-events-none">
-          <div className="flex flex-col items-center gap-3 bg-white rounded-2xl shadow-2xl px-12 py-10 min-w-[280px]">
+          <div className="flex flex-col items-center gap-3 bg-white rounded-2xl shadow-2xl px-8 py-8 md:px-12 md:py-10 min-w-[260px] md:min-w-[280px] mx-4">
             <FiCheckCircle className="text-[56px] text-[#16a34a]" />
             <p className="text-[18px] font-bold text-center text-[#16a34a]">Budget added successfully</p>
           </div>

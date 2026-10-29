@@ -1,7 +1,7 @@
 "use client";
 import { setPointsMaster } from "@/store/events/eventsSlice";
 import { fetchMasterConfig, saveMasterConfig } from "@/store/events/eventsThunks";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 const createRule = (label = "", value = 1) => ({
@@ -10,31 +10,35 @@ const createRule = (label = "", value = 1) => ({
   value,
 });
 
+// Stable fallback so the selector doesn't hand back a new [] every render
+const NO_POINTS = [];
+
+// Store points -> editable rows
+const toLocalPoints = (list) =>
+  list.map((p) => ({
+    id: p._id || crypto.randomUUID(),
+    tempId: p._id ? null : crypto.randomUUID(),
+    label: p.label || "",
+    value: p.points !== undefined && p.points !== null ? String(p.points) : "1",
+  }));
+
 export default function PointSystemModal({ onClose }) {
   const dispatch = useDispatch();
   const masterLoading = useSelector((state) => state.events.masterLoading);
-  const pointsMaster = useSelector((state) => state.events.pointsMaster) || [];
+  const pointsMaster = useSelector((state) => state.events.pointsMaster) || NO_POINTS;
   const [editMode, setEditMode] = useState(false);
-  const [localPoints, setLocalPoints] = useState([]);
-  const [originalPoints, setOriginalPoints] = useState([]);
+  const [localPoints, setLocalPoints] = useState(() => toLocalPoints(pointsMaster));
+  const [saving, setSaving] = useState(false);
+  // Re-copy the store's points into the editable rows whenever they change (fetch / save).
+  // Done while rendering instead of in an effect, so there's no extra render with stale rows.
+  const [syncedFrom, setSyncedFrom] = useState(pointsMaster);
+  if (syncedFrom !== pointsMaster) {
+    setSyncedFrom(pointsMaster);
+    setLocalPoints(toLocalPoints(pointsMaster));
+  }
   useEffect(() => {
     dispatch(fetchMasterConfig());
   }, [dispatch]);
-
-useEffect(() => {
-  if (pointsMaster.length > 0) {
-    setLocalPoints(
-      pointsMaster.map((p) => ({
-        id: p._id || crypto.randomUUID(),
-        tempId: p._id ? null : crypto.randomUUID(),
-        label: p.label || "",
-        value: p.points !== undefined && p.points !== null ? String(p.points) : "1", 
-      }))
-    );
-  } else {
-    setLocalPoints([]);
-  }
-}, [pointsMaster]);
 
   const updateLabel = (id, value) => {
     setLocalPoints((prev) =>
@@ -68,30 +72,46 @@ const updateValue = (id, value) => {
   };
 
 const handlePointSave = async (rules) => {
+  if (saving) return; // guard against double clicks while the save is in flight
   const updatedPoints = rules.map((r) => ({
     label: r.label,
     points: r.value === "" ? 1 : Number(r.value),
   }));
 
+  const previous = pointsMaster;
+  setSaving(true);
   dispatch(setPointsMaster(updatedPoints));
 
   const res = await dispatch(saveMasterConfig());
+  setSaving(false);
 
   if (saveMasterConfig.fulfilled.match(res)) {
     onClose();
+  } else {
+    dispatch(setPointsMaster(previous)); // roll back the unsaved change, like the checklist does
   }
 };
 
-  useEffect(() => {
-    if (pointsMaster.length > 0) {
-      setOriginalPoints(
-        pointsMaster.map((p) => ({
-          label: p.label || "",
-          value: String(p.points ?? 1),
-        }))
-      );
-    }
-  }, [pointsMaster]);
+  // Cancel while editing drops the unsaved edits instead of leaving them on screen
+  const cancelEdit = () => {
+    setLocalPoints(toLocalPoints(pointsMaster));
+    setEditMode(false);
+  };
+
+  // "Add Point" on an empty list opens edit mode with a first blank row to fill in
+  const startFirstPoint = () => {
+    setEditMode(true);
+    addRule();
+  };
+
+  const originalPoints = useMemo(
+    () =>
+      pointsMaster.map((p) => ({
+        label: p.label || "",
+        value: String(p.points ?? 1),
+      })),
+    [pointsMaster]
+  );
 
   const isChanged = () => {
     const cleanLocal = localPoints.map((p) => ({
@@ -103,10 +123,10 @@ const handlePointSave = async (rules) => {
   };
 
   return (
-    <div className="w-[480px] min-h-[380px] max-h-[85vh] bg-white rounded-[20px] overflow-y-auto flex flex-col px-[40px] relative">
+    <div className="w-[calc(100vw-32px)] max-w-[480px] min-h-[380px] max-h-[85dvh] md:max-h-[85vh] bg-white rounded-[20px] overflow-y-auto flex flex-col px-5 md:px-[40px] relative">
       {/* Header */}
-      <div className="sticky top-[0px] pt-[30px] pb-[20px] z-[2] bg-white">
-        <h2 className="text-[24px] font-[700]">Point System</h2>
+      <div className="sticky top-[0px] pt-6 md:pt-[30px] pb-4 md:pb-[20px] z-[2] bg-white">
+        <h2 className="text-[20px] md:text-[24px] font-[700]">Point System</h2>
       </div>
 
         <div className="flex-1 flex flex-col items-start">
@@ -124,22 +144,22 @@ const handlePointSave = async (rules) => {
                 <>
                     <p className="text-[18px] text-[#555]">No points created yet</p>
                     <button
-                    onClick={() => setEditMode(true)}
-                    className="text-[#0B57D0] font-[600] text-[18px]"
+                    onClick={startFirstPoint}
+                    className="text-[#0B57D0] font-[600] text-[18px] cursor-pointer"
                     >  
                     Add Point
                     </button>
                 </>
                 ) : (
                !masterLoading && localPoints.map((point) => (
-                    <div key={point.id} className="flex items-center gap-[20px] w-full">
+                    <div key={point.id} className="flex items-center gap-3 md:gap-[20px] w-full">
                     <input
                         type="text"
                         value={point.label}
                         disabled={!editMode}
                         placeholder="Point Name"
                         onChange={(e) => updateLabel(point.id, e.target.value)}
-                        className={`flex-1 h-[48px] px-[20px] rounded-[4px] outline-none font-[500] border-[1.4px] border-[#CCCCCC] ${
+                        className={`flex-1 min-w-0 h-[48px] px-3 md:px-[20px] rounded-[4px] outline-none font-[500] border-[1.4px] border-[#CCCCCC] ${
                         editMode ? "bg-[#fff]" : "bg-[#F6F6F6]"
                         }`}
                     />
@@ -150,14 +170,15 @@ const handlePointSave = async (rules) => {
                       min={1} 
                       disabled={!editMode}
                       onChange={(e) => updateValue(point.id, e.target.value)}
-                      className={`w-[80px] h-[48px] px-[10px] text-center font-[500] rounded-[4px] outline-none border-[1.4px] border-[#CCCCCC] ${
+                      className={`w-[64px] md:w-[80px] shrink-0 h-[48px] px-[10px] text-center font-[500] rounded-[4px] outline-none border-[1.4px] border-[#CCCCCC] ${
                         editMode ? "bg-[#fff]" : "bg-[#F6F6F6]"
                       }`}
                     />
                     {editMode && localPoints.length !== 1 &&(
                         <button
                         onClick={() => removeRule(point.id)}
-                        className="cursor-pointer h-[20px] w-[20px] bg-[#EEEEEE] text-[#999999] rounded-full grid place-items-center"
+                        aria-label="Remove point"
+                        className="cursor-pointer shrink-0 h-[20px] w-[20px] bg-[#EEEEEE] text-[#999999] rounded-full grid place-items-center"
                         >
                         <span className="akar-icons--cross small-cross"></span>
                         </button>
@@ -189,16 +210,16 @@ const handlePointSave = async (rules) => {
 
 
       {/* Footer */}
-      <div className="bg-white flex justify-center w-[100%] gap-[80px] sticky bottom-[0px] pt-[20px] pb-[30px]">
+      <div className="bg-white flex justify-center w-[100%] gap-4 md:gap-[80px] sticky bottom-[0px] pt-4 md:pt-[20px] pb-6 md:pb-[30px]">
         <button
-          onClick={()=>{editMode ? setEditMode(false):onClose()}}
+          onClick={()=>{editMode ? cancelEdit():onClose()}}
           className="w-[120px] py-[8px] rounded-[20px] bg-[#999999] text-white cursor-pointer"
         >
           Cancel
         </button>
         <button
           onClick={handleSave}
-          disabled={masterLoading || localPoints.length === 0 || !isChanged()}
+          disabled={saving || masterLoading || localPoints.length === 0 || !isChanged()}
           className={`w-[120px] py-[8px] rounded-[20px] text-white transition bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)] ${
             !isChanged()
               ? "opacity-50 cursor-not-allowed"

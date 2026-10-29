@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState, useRef } from "react";
+import React, { Suspense, useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { createPortal } from "react-dom";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   FiFileText,
   FiSend,
@@ -121,13 +122,13 @@ function StatCard({ card, loading }) {
   // Same card style as the Income / Budget / Expense cards (VisionCard)
   return (
     <div
-      className={`${card.bgClass} border ${card.borderClass} rounded-[20px] p-6 font-nunito shadow-[0px_1px_3px_0px_#0000001A,0px_0px_4px_-1px_#8B878733] transition-all duration-200`}
+      className={`${card.bgClass} border ${card.borderClass} rounded-[20px] p-4 md:p-6 font-nunito shadow-[0px_1px_3px_0px_#0000001A,0px_0px_4px_-1px_#8B878733] transition-all duration-200`}
     >
-      <div className="flex items-center gap-3 mb-4">
-        <div className={`w-[42px] h-[42px] rounded-xl ${card.iconBgClass} text-white flex items-center justify-center shrink-0`}>
-          <Icon className="text-2xl" />
+      <div className="flex items-center gap-3 mb-3 md:mb-4">
+        <div className={`w-9 h-9 md:w-[42px] md:h-[42px] rounded-xl ${card.iconBgClass} text-white flex items-center justify-center shrink-0`}>
+          <Icon className="text-xl md:text-2xl" />
         </div>
-        <span className="text-[#4b5563] font-medium text-lg">{card.label}</span>
+        <span className="text-[#4b5563] font-medium text-base md:text-lg">{card.label}</span>
       </div>
 
       {loading ? (
@@ -136,7 +137,7 @@ function StatCard({ card, loading }) {
           style={{ width: card.money ? 140 : 72 }}
         />
       ) : (
-        <div className={`text-[32px] font-bold ${card.textColorClass} mb-1 leading-none tabular-nums`}>
+        <div className={`text-[28px] md:text-[32px] font-bold ${card.textColorClass} mb-1 leading-none tabular-nums`}>
           {card.format(animated)}
         </div>
       )}
@@ -187,7 +188,7 @@ function PaymentStatusDropdown({ expenseId, currentStatus, onUpdate }) {
         ref={btnRef}
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[12px] font-semibold font-nunito whitespace-nowrap cursor-pointer border-0 outline-none transition-opacity hover:opacity-80 ${
+        className={`inline-flex items-center gap-1 px-2.5 py-1.5 md:py-1 rounded-md text-[12px] font-semibold font-nunito whitespace-nowrap cursor-pointer border-0 outline-none transition-opacity hover:opacity-80 ${
           variant === "paid"
             ? "bg-[#E6F4EA] text-[#137333]"
             : variant === "overdue"
@@ -273,6 +274,36 @@ function BillCell({ expense, onView }) {
   );
 }
 
+/* ─── Approval column: Send / Sent / — (shared by table row + phone card) ── */
+function ApprovalAction({ expense, sent, onSend }) {
+  if (expense.canSend && (expense.isSent || sent)) {
+    return (
+      <button
+        type="button"
+        disabled
+        title="Approval request already sent"
+        className="inline-flex items-center gap-1.5 bg-[#E2E8F0] text-[#64748B] font-nunito font-semibold text-[12px] px-3 py-1.5 rounded-md border-0 outline-none whitespace-nowrap cursor-not-allowed"
+      >
+        <FiCheck className="w-3.5 h-3.5" />
+        Sent
+      </button>
+    );
+  }
+  if (expense.canSend) {
+    return (
+      <button
+        type="button"
+        onClick={() => onSend(expense)}
+        className="inline-flex items-center gap-1.5 bg-[#2B7FFF] hover:bg-[#1a6fe6] active:scale-[0.97] text-white font-nunito font-semibold text-[12px] px-3 py-1.5 rounded-md transition-all cursor-pointer border-0 outline-none whitespace-nowrap"
+      >
+        <FiSend className="w-3.5 h-3.5" />
+        Send
+      </button>
+    );
+  }
+  return <span className="text-[#CBD5E1]">—</span>;
+}
+
 /* ─── Row "…" actions: portal popover with icon chips ────────────────────── */
 function RowActionsMenu({ onPick, onDelete }) {
   const [open, setOpen] = useState(false);
@@ -291,7 +322,7 @@ function RowActionsMenu({ onPick, onDelete }) {
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-label="More options"
-        className={`w-8 h-7 flex items-center justify-center rounded-md border transition-colors ${
+        className={`w-9 h-9 md:w-8 md:h-7 flex items-center justify-center rounded-md border transition-colors ${
           open ? "border-[#2B7FFF] text-[#2B7FFF] bg-[#F2F7FF]" : "border-[#E2E8F0] text-[#94A3B8] hover:bg-[#F1F5F9] hover:text-[#334155]"
         }`}
       >
@@ -399,15 +430,15 @@ function SendApprovalModal({ expense, onClose, onSent }) {
 
   // Same look as DeleteConfirm / IncomePopup: 480px card, 28px radius, pill buttons
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => !sending && onClose()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => !sending && onClose()}>
       <div
-        className="w-[480px] max-w-[95vw] max-h-[92vh] overflow-y-auto rounded-[28px] bg-white shadow-xl font-nunito px-10 py-10 flex flex-col items-center"
+        className="w-full max-w-[480px] max-h-[90dvh] md:max-h-[92vh] overflow-y-auto rounded-[24px] md:rounded-[28px] bg-white shadow-xl font-nunito px-5 py-7 sm:px-10 sm:py-10 flex flex-col items-center"
         onClick={(e) => e.stopPropagation()}
       >
         {sent ? (
           <>
             <FiCheckCircle className="text-[56px] text-green-500" />
-            <div className="mt-5 text-[24px] font-[700] text-[#333333] text-center">Sent successfully</div>
+            <div className="mt-5 text-[20px] sm:text-[24px] font-[700] text-[#333333] text-center">Sent successfully</div>
             <p className="mt-2 text-[16px] text-[#727272] text-center leading-[136%]">
               <span className="font-bold text-[#333333] capitalize">{expense.description}</span> has been sent for
               approval via Email and WhatsApp.
@@ -423,7 +454,7 @@ function SendApprovalModal({ expense, onClose, onSent }) {
         ) : alreadySent ? (
           <>
             <FiClock className="text-[56px] text-[#F59E0B]" />
-            <div className="mt-5 text-[24px] font-[700] text-[#333333] text-center">Already sent for approval</div>
+            <div className="mt-5 text-[20px] sm:text-[24px] font-[700] text-[#333333] text-center">Already sent for approval</div>
             <p className="mt-2 text-[16px] text-[#727272] text-center leading-[136%]">
               <span className="font-bold text-[#333333] capitalize">{expense.description}</span> is already awaiting
               approval. You&apos;ll be able to send it again once a decision is made.
@@ -438,11 +469,11 @@ function SendApprovalModal({ expense, onClose, onSent }) {
           </>
         ) : (
           <>
-            <div className="text-[24px] font-[700] text-[#333333] text-center">Send for approval?</div>
-            <p className="mt-1.5 text-[16px] text-[#727272] text-center">Review the expense details before sending.</p>
+            <div className="text-[20px] sm:text-[24px] font-[700] text-[#333333] text-center">Send for approval?</div>
+            <p className="mt-1.5 text-[15px] sm:text-[16px] text-[#727272] text-center">Review the expense details before sending.</p>
 
             {/* Expense details */}
-            <div className="mt-6 w-full bg-[#f0f4ff] border border-[#c7d7fb] rounded-[14px] p-[18px]">
+            <div className="mt-6 w-full bg-[#f0f4ff] border border-[#c7d7fb] rounded-[14px] p-3.5 sm:p-[18px]">
               <div className="flex items-center justify-between gap-3 mb-3.5">
                 <span className="text-[16px] font-bold text-[#0B57D0] truncate capitalize" title={expense.description}>
                   {expense.description}
@@ -451,7 +482,7 @@ function SendApprovalModal({ expense, onClose, onSent }) {
                   {formatCurrency(expense.totalAmount)}
                 </span>
               </div>
-              <dl className="grid grid-cols-[120px_1fr] gap-y-2 text-[14px]">
+              <dl className="grid grid-cols-[104px_1fr] sm:grid-cols-[120px_1fr] gap-y-2 text-[14px]">
                 {details.map(({ label, value }) => (
                   <React.Fragment key={label}>
                     <dt className="text-[#727272] font-medium">{label}</dt>
@@ -470,8 +501,8 @@ function SendApprovalModal({ expense, onClose, onSent }) {
                 {contacts.map(({ label, value, icon, chip }) => (
                   <div key={label} className="flex items-center gap-3 px-3.5 py-2.5 rounded-[14px] border border-[#E2E8F0]">
                     <span className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${chip}`}>{icon}</span>
-                    <span className="text-[14px] text-[#727272] font-medium w-[72px]">{label}</span>
-                    <span className="text-[14px] font-semibold text-[#333333] truncate">{value}</span>
+                    <span className="text-[14px] text-[#727272] font-medium w-[72px] shrink-0">{label}</span>
+                    <span className="text-[14px] font-semibold text-[#333333] truncate min-w-0">{value}</span>
                   </div>
                 ))}
               </div>
@@ -481,7 +512,7 @@ function SendApprovalModal({ expense, onClose, onSent }) {
               <p className="mt-5 w-full text-[14px] text-[#E40000] text-center">{error}</p>
             )}
 
-            <div className={`${error ? "mt-5" : "mt-9"} flex gap-[80px]`}>
+            <div className={`${error ? "mt-5" : "mt-7 sm:mt-9"} flex gap-4 sm:gap-[80px]`}>
               <button
                 type="button"
                 onClick={onClose}
@@ -559,8 +590,39 @@ function FilterDropdown({ label, value, onChange, options }) {
   );
 }
 
+const STATUS_OPTIONS = [
+  { label: "All Statuses", value: "" },
+  { label: "Pending Approval", value: "pending" },
+  { label: "Sent", value: "sent" },
+  { label: "Approved", value: "approved" },
+];
+
+// Shareable view: `?status=<STATUS_OPTIONS value>&page=<n>` (defaults are omitted)
+function readStatusParam(searchParams) {
+  const raw = searchParams.get("status") || "";
+  return STATUS_OPTIONS.some((o) => o.value === raw) ? raw : "";
+}
+
+function readPageParam(searchParams) {
+  const n = parseInt(searchParams.get("page") || "", 10);
+  return Number.isFinite(n) && n > 1 ? n : 1;
+}
+
 /* ─── Main Page ──────────────────────────────────────────────────────────── */
-export default function ExpenseRecordsPage() {
+// useSearchParams needs a Suspense boundary in the App Router
+export default function ExpenseRecordsRoute() {
+  return (
+    <Suspense fallback={null}>
+      <ExpenseRecordsPage />
+    </Suspense>
+  );
+}
+
+function ExpenseRecordsPage() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
   const expenses = useExpenseRecordsStore((state) => state.expenses);
   const totalCount = useExpenseRecordsStore((state) => state.totalCount);
   const totalExpense = useExpenseRecordsStore((state) => state.totalExpense);
@@ -578,11 +640,6 @@ export default function ExpenseRecordsPage() {
   const [approvalExpense, setApprovalExpense] = useState(null);
   // Expenses with an approval request awaiting a decision; their Send button shows "Sent"
   const [sentExpenseIds, setSentExpenseIds] = useState(() => new Set());
-
-  const markExpenseSent = (expenseId, { refetch = true } = {}) => {
-    setSentExpenseIds((prev) => new Set(prev).add(expenseId));
-    if (refetch) refetchExpenses();
-  };
   const [selectedExpense, setSelectedExpense] = useState(null);
   const [showPopup, setShowPopup] = useState(false);
 
@@ -599,13 +656,38 @@ export default function ExpenseRecordsPage() {
 
   // Filter state
   const [type, setType] = useState("all");
-  const [approvedStatus, setApprovedStatus] = useState("");
+  const [approvedStatus, setApprovedStatus] = useState(() => readStatusParam(searchParams));
   const [eventId, setEventId] = useState("");
 
   // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(() => readPageParam(searchParams));
   const PAGE_SIZE = 10;
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+
+  // Mirror the Status filter + page into the URL so a shared link opens the same view.
+  // Other params (e.g. networkClusterCode) are preserved.
+  const syncQuery = (status, page) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (status) params.set("status", status);
+    else params.delete("status");
+    if (page > 1) params.set("page", String(page));
+    else params.delete("page");
+    if (params.toString() === searchParams.toString()) return;
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  };
+
+  const changeStatus = (status) => {
+    setApprovedStatus(status);
+    setCurrentPage(1);
+    syncQuery(status, 1);
+  };
+
+  const goToPage = (page) => {
+    const next = Math.max(1, page);
+    setCurrentPage(next);
+    syncQuery(approvedStatus, next);
+  };
 
   // Horizontal-scroll edge indicator (drives the pinned-column shadow)
   const scrollRef = useRef(null);
@@ -642,6 +724,11 @@ export default function ExpenseRecordsPage() {
   }, [fetchExpenses, currentPage, type, eventId, approvedStatus]);
 
   const refetchExpenses = loadExpenses;
+
+  const markExpenseSent = (expenseId, { refetch = true } = {}) => {
+    setSentExpenseIds((prev) => new Set(prev).add(expenseId));
+    if (refetch) refetchExpenses();
+  };
 
   useEffect(() => {
     loadExpenses();
@@ -741,18 +828,38 @@ export default function ExpenseRecordsPage() {
     [totalAmount, totalExpense, pendingCount]
   );
 
-  const STATUS_OPTIONS = [
-    { label: "All Statuses", value: "" },
-    { label: "Pending Approval", value: "pending" },
-    { label: "Sent", value: "sent" },
-    { label: "Approved", value: "approved" },
-  ];
-
   const filtersActive = type !== "all" || approvedStatus !== "" || eventId !== "";
   const pinShadow = edges.left ? "shadow-[10px_0_14px_-10px_rgba(16,24,40,0.16)]" : "";
 
+  // Loading / error / empty state, shared by the table (md+) and the phone card list
+  const listStatus = loading ? (
+    <div className="flex items-center justify-center gap-3 py-20 text-[#666666]">
+      <FiLoader className="w-6 h-6 animate-spin text-[#2B7FFF]" />
+      <span className="text-[14px] font-semibold">Loading expenses…</span>
+    </div>
+  ) : error ? (
+    <div className="flex flex-col items-center justify-center gap-2 py-20 text-center">
+      <span className="text-[15px] font-bold text-[#B91C1C]">Couldn&apos;t load expenses</span>
+      <span className="text-[13px] text-[#94A3B8] font-medium">
+        {error}. Try adjusting the filters or reloading the page.
+      </span>
+    </div>
+  ) : expenses.length === 0 ? (
+    <div className="flex flex-col items-center justify-center gap-3 py-20 text-center">
+      <div className="w-12 h-12 rounded-2xl bg-[#F1F5F9] flex items-center justify-center">
+        <FiInbox className="w-6 h-6 text-[#94A3B8]" />
+      </div>
+      <span className="text-[15px] font-bold text-[#334155]">No expenses to show</span>
+      <span className="text-[13px] text-[#94A3B8] font-medium">
+        {filtersActive
+          ? "Nothing matches the current filters — reset them to see everything."
+          : "New submissions will appear here."}
+      </span>
+    </div>
+  ) : null;
+
   return (
-    <div className="p-6 min-h-screen font-nunito">
+    <div className="pt-4 pb-24 md:p-6 md:min-h-screen font-nunito">
       {/* one-off keyframes: card skeletons + popover entrance */}
       <style jsx global>{`
         @keyframes statShimmer {
@@ -766,25 +873,25 @@ export default function ExpenseRecordsPage() {
       `}</style>
 
       {/* Header */}
-      <div className="mb-7">
-        <h1 className="font-heading font-bold text-[32px] leading-[136%] text-[#1E293B] tracking-tight">My Expenses</h1>
-        <p className="font-nunito font-medium text-[17px] leading-[136%] text-[#64748B] tracking-normal mt-1">
+      <div className="mb-5 md:mb-7">
+        <h1 className="font-heading font-bold text-[26px] md:text-[32px] leading-[136%] text-[#1E293B] tracking-tight">My Expenses</h1>
+        <p className="font-nunito font-medium text-[15px] md:text-[17px] leading-[136%] text-[#64748B] tracking-normal mt-1">
           Track and manage all your expense submissions
         </p>
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-5 mb-6 md:mb-8">
         {summaryCards.map((card) => (
           <StatCard key={card.label} card={card} loading={loading} />
         ))}
       </div>
 
       {/* All Expenses table */}
-      <div className="rounded-[22px] bg-white overflow-hidden p-6 md:p-8 border border-[#EAEEF2] mb-[20px]">
+      <div className="rounded-[22px] bg-white overflow-hidden p-4 sm:p-6 md:p-8 border border-[#EAEEF2] mb-[20px]">
         {/* Table top bar */}
         <div className="flex items-center gap-2.5">
-          <h2 className="font-nunito font-bold text-[20px] text-[#1E293B]">All Expenses</h2>
+          <h2 className="font-nunito font-bold text-[18px] md:text-[20px] text-[#1E293B]">All Expenses</h2>
           {!loading && totalCount > 0 && (
             <span className="inline-flex items-center h-6 px-2.5 rounded-full bg-[#F1F5F9] text-[12px] font-bold text-[#64748B]">
               {totalCount}
@@ -793,14 +900,11 @@ export default function ExpenseRecordsPage() {
         </div>
 
         {/* Filter bar */}
-        <div className="flex flex-wrap items-center gap-3 pt-5 pb-6 border-b border-[#F1F5F9] mb-2">
+        <div className="flex flex-wrap items-center gap-3 pt-4 pb-4 md:pt-5 md:pb-6 border-b border-[#F1F5F9] mb-2">
           <FilterDropdown
             label="Status"
             value={approvedStatus}
-            onChange={(v) => {
-              setApprovedStatus(v);
-              setCurrentPage(1);
-            }}
+            onChange={changeStatus}
             options={STATUS_OPTIONS}
           />
           {filtersActive && (
@@ -808,9 +912,8 @@ export default function ExpenseRecordsPage() {
               type="button"
               onClick={() => {
                 setType("all");
-                setApprovedStatus("");
                 setEventId("");
-                setCurrentPage(1);
+                changeStatus("");
               }}
               className="text-[13px] text-red-500 hover:text-red-700 font-bold bg-transparent border-0 cursor-pointer outline-none hover:underline"
             >
@@ -819,8 +922,74 @@ export default function ExpenseRecordsPage() {
           )}
         </div>
 
+        {/* Phones: stacked cards (same data + handlers as the table rows) */}
+        <div className="md:hidden">
+          {listStatus ?? (
+            <ul className="flex flex-col">
+              {expenses.map((expense) => (
+                <li key={expense.id} className="py-4 border-b border-[#EBEFF4] last:border-b-0 text-[14px] text-[#334155]">
+                  <div className="flex items-start justify-between gap-3">
+                    <button
+                      type="button"
+                      onClick={() => handleExpenseClick(expense)}
+                      title={expense.description}
+                      className="min-w-0 flex-1 text-left bg-transparent border-0 p-0 cursor-pointer font-bold text-[15px] text-[#0B57D0] capitalize truncate"
+                    >
+                      {expense.description}
+                    </button>
+                    <div className="shrink-0 -mt-1.5">
+                      <RowActionsMenu
+                        onPick={(channel) => setReminderModal({ expenseId: expense.id, expense, channel })}
+                        onDelete={() => setDeleteModal({ expense })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-0.5 flex items-baseline justify-between gap-3">
+                    <span className="min-w-0 truncate text-[13px] text-[#64748B]">
+                      {expense.portfolio} · {expense.date}
+                    </span>
+                    <span className="shrink-0 font-bold text-[16px] text-[#0F172A] tabular-nums">
+                      {formatCurrency(expense.totalAmount)}
+                    </span>
+                  </div>
+
+                  {expense.vendor && expense.vendor !== "-" && (
+                    <div className="mt-1 text-[13px] text-[#475569] truncate" title={expense.vendor}>
+                      <span className="text-[#94A3B8]">Vendor:</span> {expense.vendor}
+                    </div>
+                  )}
+
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <PaymentStatusDropdown
+                      expenseId={expense.id}
+                      currentStatus={expense.paymentStatus}
+                      onUpdate={updatePaymentStatus}
+                    />
+                    <StatusBadge variant={getStatusBadgeVariant(expense.status)}>{expense.status}</StatusBadge>
+                    {expense.reminderCount > 0 && (
+                      <span className="text-[12px] text-[#94A3B8] font-medium">
+                        {expense.reminderCount} reminder{expense.reminderCount > 1 ? "s" : ""} sent
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="mt-3 flex items-center justify-between gap-3">
+                    <BillCell expense={expense} onView={(e) => setBillPreviewId(e.id)} />
+                    <ApprovalAction
+                      expense={expense}
+                      sent={sentExpenseIds.has(expense.id)}
+                      onSend={setApprovalExpense}
+                    />
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
         {/* Pinned first column + scrollbar (thumb only, no track pad) */}
-        <div className="relative">
+        <div className="relative hidden md:block">
           <div
             ref={scrollRef}
             className="overflow-x-auto pb-3 scroll-smooth [scrollbar-width:thin] [scrollbar-color:#AEB9C8_transparent] [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-[#AEB9C8] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:transition-colors hover:[&::-webkit-scrollbar-thumb]:bg-[#8B98AB]"
@@ -846,31 +1015,7 @@ export default function ExpenseRecordsPage() {
               </div>
 
               {/* Body */}
-              {loading ? (
-                <div className="flex items-center justify-center gap-3 py-20 text-[#666666]">
-                  <FiLoader className="w-6 h-6 animate-spin text-[#2B7FFF]" />
-                  <span className="text-[14px] font-semibold">Loading expenses…</span>
-                </div>
-              ) : error ? (
-                <div className="flex flex-col items-center justify-center gap-2 py-20 text-center">
-                  <span className="text-[15px] font-bold text-[#B91C1C]">Couldn&apos;t load expenses</span>
-                  <span className="text-[13px] text-[#94A3B8] font-medium">
-                    {error}. Try adjusting the filters or reloading the page.
-                  </span>
-                </div>
-              ) : expenses.length === 0 ? (
-                <div className="flex flex-col items-center justify-center gap-3 py-20 text-center">
-                  <div className="w-12 h-12 rounded-2xl bg-[#F1F5F9] flex items-center justify-center">
-                    <FiInbox className="w-6 h-6 text-[#94A3B8]" />
-                  </div>
-                  <span className="text-[15px] font-bold text-[#334155]">No expenses to show</span>
-                  <span className="text-[13px] text-[#94A3B8] font-medium">
-                    {filtersActive
-                      ? "Nothing matches the current filters — reset them to see everything."
-                      : "New submissions will appear here."}
-                  </span>
-                </div>
-              ) : (
+              {listStatus ??
                 expenses.map((expense) => (
                   <div
                     key={expense.id}
@@ -893,20 +1038,8 @@ export default function ExpenseRecordsPage() {
                     <div className="truncate text-[#475569]" title={expense.vendor}>
                       {expense.vendor}
                     </div>
-                    <div>
-                      {expense.bill && expense.bill !== "-" ? (
-                        <button
-                          type="button"
-                          onClick={() => expense.billUrl && window.open(expense.billUrl, "_blank", "noopener,noreferrer")}
-                          className="inline-flex items-center gap-1.5 text-[#0B57D0] font-semibold text-[13px] bg-transparent border-0 p-0 cursor-pointer hover:underline max-w-full"
-                        >
-                          <FiFileText className="w-4 h-4 shrink-0" />
-                          <span className="truncate max-w-[100px]">{expense.bill}</span>
-                          <FiDownload className="w-3.5 h-3.5 shrink-0" />
-                        </button>
-                      ) : (
-                        <span className="text-[#CBD5E1]">—</span>
-                      )}
+                    <div className="min-w-0">
+                      <BillCell expense={expense} onView={(e) => setBillPreviewId(e.id)} />
                     </div>
                     <div className="flex flex-col gap-0.5">
                       {expense.reminderCount > 0 ? (
@@ -931,28 +1064,11 @@ export default function ExpenseRecordsPage() {
                       <StatusBadge variant={getStatusBadgeVariant(expense.status)}>{expense.status}</StatusBadge>
                     </div>
                     <div>
-                      {expense.canSend && (expense.isSent || sentExpenseIds.has(expense.id)) ? (
-                        <button
-                          type="button"
-                          disabled
-                          title="Approval request already sent"
-                          className="inline-flex items-center gap-1.5 bg-[#E2E8F0] text-[#64748B] font-nunito font-semibold text-[12px] px-3 py-1.5 rounded-md border-0 outline-none whitespace-nowrap cursor-not-allowed"
-                        >
-                          <FiCheck className="w-3.5 h-3.5" />
-                          Sent
-                        </button>
-                      ) : expense.canSend ? (
-                        <button
-                          type="button"
-                          onClick={() => setApprovalExpense(expense)}
-                          className="inline-flex items-center gap-1.5 bg-[#2B7FFF] hover:bg-[#1a6fe6] active:scale-[0.97] text-white font-nunito font-semibold text-[12px] px-3 py-1.5 rounded-md transition-all cursor-pointer border-0 outline-none whitespace-nowrap"
-                        >
-                          <FiSend className="w-3.5 h-3.5" />
-                          Send
-                        </button>
-                      ) : (
-                        <span className="text-[#CBD5E1]">—</span>
-                      )}
+                      <ApprovalAction
+                        expense={expense}
+                        sent={sentExpenseIds.has(expense.id)}
+                        onSend={setApprovalExpense}
+                      />
                     </div>
 
                     {/* Actions — portal popover, opens in front of everything */}
@@ -963,15 +1079,14 @@ export default function ExpenseRecordsPage() {
                       />
                     </div>
                   </div>
-                ))
-              )}
+                ))}
             </div>
           </div>
         </div>
 
         {/* Pagination */}
         {!loading && totalCount > 0 && (
-          <div className="flex flex-col sm:flex-row items-center justify-between border-t border-[#F1F5F9] pt-6 mt-6 gap-4 font-nunito">
+          <div className="flex flex-col sm:flex-row items-center justify-between border-t border-[#F1F5F9] pt-4 mt-4 md:pt-6 md:mt-6 gap-3 md:gap-4 font-nunito">
             <span className="text-[14px] text-[#777777] font-medium">
               Showing{" "}
               <span className="font-bold text-[#334155]">
@@ -984,7 +1099,7 @@ export default function ExpenseRecordsPage() {
               <button
                 type="button"
                 disabled={currentPage === 1}
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                onClick={() => goToPage(currentPage - 1)}
                 className="px-4 py-2 border border-[#E2E8F0] rounded-xl text-[14px] font-semibold text-[#333333] bg-white hover:bg-slate-50 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Previous
@@ -995,7 +1110,7 @@ export default function ExpenseRecordsPage() {
               <button
                 type="button"
                 disabled={currentPage * PAGE_SIZE >= totalCount}
-                onClick={() => setCurrentPage((p) => p + 1)}
+                onClick={() => goToPage(currentPage + 1)}
                 className="px-4 py-2 border border-[#E2E8F0] rounded-xl text-[14px] font-semibold text-[#333333] bg-white hover:bg-slate-50 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Next
@@ -1006,9 +1121,9 @@ export default function ExpenseRecordsPage() {
       </div>
 
       {reminderModal && (
-        <div className="fixed inset-0 z-50 bg-black/35 flex items-center justify-center" onClick={closeReminderModal}>
+        <div className="fixed inset-0 z-50 bg-black/35 flex items-center justify-center p-4" onClick={closeReminderModal}>
           <div
-            className="bg-white rounded-2xl border border-[#E2E8F0] w-[400px] overflow-hidden shadow-xl"
+            className="bg-white rounded-2xl border border-[#E2E8F0] w-full max-w-[400px] max-h-[90dvh] overflow-y-auto shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-5">
@@ -1051,7 +1166,7 @@ export default function ExpenseRecordsPage() {
             <div className="flex gap-2.5 px-5 pb-5">
               <button
                 type="button"
-                className="flex-1 py-2 border border-[#CBD5E1] rounded-lg text-[13px] text-[#64748B] font-medium hover:bg-[#F8FAFC] transition-colors"
+                className="flex-1 py-2.5 md:py-2 border border-[#CBD5E1] rounded-lg text-[13px] text-[#64748B] font-medium hover:bg-[#F8FAFC] transition-colors"
                 disabled={sendingReminder}
                 onClick={closeReminderModal}
               >
@@ -1060,7 +1175,7 @@ export default function ExpenseRecordsPage() {
               <button
                 type="button"
                 disabled={sendingReminder}
-                className={`flex-[2] py-2 rounded-lg text-[13px] font-semibold text-white transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${
+                className={`flex-[2] py-2.5 md:py-2 rounded-lg text-[13px] font-semibold text-white transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${
                   reminderModal.channel === "whatsapp"
                     ? "bg-[#25D366] hover:bg-[#1ebe5e]"
                     : reminderModal.channel === "email"
@@ -1090,11 +1205,11 @@ export default function ExpenseRecordsPage() {
       {/* Delete confirm modal */}
       {deleteModal && (
         <div
-          className="fixed inset-0 z-50 bg-black/35 flex items-center justify-center"
+          className="fixed inset-0 z-50 bg-black/35 flex items-center justify-center p-4"
           onClick={() => !deleting && setDeleteModal(null)}
         >
           <div
-            className="bg-white rounded-2xl border border-[#E2E8F0] w-[400px] overflow-hidden shadow-xl"
+            className="bg-white rounded-2xl border border-[#E2E8F0] w-full max-w-[400px] max-h-[90dvh] overflow-y-auto shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-5">
@@ -1111,7 +1226,7 @@ export default function ExpenseRecordsPage() {
               <button
                 type="button"
                 disabled={deleting}
-                className="flex-1 py-2 border border-[#CBD5E1] rounded-lg text-[13px] text-[#64748B] font-medium hover:bg-[#F8FAFC] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 py-2.5 md:py-2 border border-[#CBD5E1] rounded-lg text-[13px] text-[#64748B] font-medium hover:bg-[#F8FAFC] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={() => setDeleteModal(null)}
               >
                 Cancel
@@ -1119,7 +1234,7 @@ export default function ExpenseRecordsPage() {
               <button
                 type="button"
                 disabled={deleting}
-                className="flex-[2] py-2 rounded-lg text-[13px] font-semibold text-white bg-[#DC2626] hover:bg-[#B91C1C] transition-colors disabled:opacity-70 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
+                className="flex-[2] py-2.5 md:py-2 rounded-lg text-[13px] font-semibold text-white bg-[#DC2626] hover:bg-[#B91C1C] transition-colors disabled:opacity-70 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
                 onClick={handleConfirmDelete}
               >
                 {deleting && <FiLoader className="w-4 h-4 animate-spin" />}

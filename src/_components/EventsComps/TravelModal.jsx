@@ -229,18 +229,18 @@ useEffect(() => {
   if (type !== "TRAVEL") return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center" onClick={() => dispatch(closeEventFormModal())}>
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => dispatch(closeEventFormModal())}>
       <div
-        className="w-[500px] bg-white rounded-[20px] overflow-y-auto flex flex-col max-h-[85vh] px-[30px]"
+        className="w-full max-w-[500px] bg-white rounded-[20px] overflow-y-auto flex flex-col max-h-[85dvh] px-4 sm:px-[30px]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="sticky top-0 pt-[30px] pb-[20px] bg-white z-[2]">
-          <h2 className="text-[24px] font-[700]">Add travel info</h2>
+        <div className="sticky top-0 pt-6 pb-4 sm:pt-[30px] sm:pb-[20px] bg-white z-[2]">
+          <h2 className="text-[20px] sm:text-[24px] font-[700]">Add travel info</h2>
         </div>
 
         {/* Body */}
-        <div className="flex-1 flex flex-col gap-[30px]">
+        <div className="flex-1 flex flex-col gap-6 sm:gap-[30px]">
 
           <Input
             label="Venue link you want to add"
@@ -274,7 +274,7 @@ useEffect(() => {
                 checked={draft.requiredInfo[key]}
                 onChange={() => toggleRequired(key)}
               />
-              <span className="text-[18px] font-[500]">{label}</span>
+              <span className="text-[16px] sm:text-[18px] font-[500]">{label}</span>
             </div>
           ))}
         </div>
@@ -305,7 +305,7 @@ useEffect(() => {
 
             {draft.reminders?.map((r, index) => (
               <div
-                key={index}
+                key={r.id || index}
                 className={`relative w-[100%] ${
                   index !== draft.reminders.length - 1
                     ? "border-b border-[#EAEAEA] pb-[15px] mb-[15px]"
@@ -315,8 +315,8 @@ useEffect(() => {
                 <div className="flex gap-[10px] items-start">
                   <div className="flex-1 flex flex-col gap-[10px]">
                     {/* Date + Time */}
-                    <div className="flex gap-[10px]">
-                      <div className="flex-[1.2] bg-[#F6F6F6] border-[1.4px] border-[#EAEAEA] rounded-lg h-[50px] flex items-center pl-[20px] font-[600]">Reminder</div>
+                    <div className="flex flex-wrap sm:flex-nowrap gap-[10px]">
+                      <div className="flex-[1.2] max-sm:basis-full bg-[#F6F6F6] border-[1.4px] border-[#EAEAEA] rounded-lg h-[50px] flex items-center pl-[20px] font-[600]">Reminder</div>
                       <DateInput
                         value={r.date}
                         onChange={(date) =>
@@ -376,10 +376,10 @@ useEffect(() => {
         </div>
 
         {/* Footer */}
-        <div className="flex justify-center gap-[60px] sticky bottom-0 bg-white pt-[20px] pb-[30px]">
+        <div className="flex justify-center gap-4 sm:gap-[60px] sticky bottom-0 bg-white pt-4 pb-6 sm:pt-[20px] sm:pb-[30px]">
           <button
             onClick={() => dispatch(closeEventFormModal())}
-            className="w-[120px] py-[8px] rounded-[20px] bg-[#999] text-white cursor-pointer"
+            className="w-[120px] py-[10px] sm:py-[8px] rounded-[20px] bg-[#999] text-white cursor-pointer"
           >
             Cancel
           </button>
@@ -387,7 +387,7 @@ useEffect(() => {
           <button
             onClick={handleSave}
             disabled={disableDone}
-            className={`w-[120px] py-[8px] rounded-[20px] text-white bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)]
+            className={`w-[120px] py-[10px] sm:py-[8px] rounded-[20px] text-white bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)]
               ${disableDone
                 ? "opacity-50 cursor-not-allowed"
                 : "cursor-pointer "

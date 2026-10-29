@@ -20,56 +20,44 @@ export default function ActionableDetailsModal({
   canEdit, onAddAttachment, onUpdateAttachment,
   onDeleteAttachment
 }) {
-  if (!task) return null;
-
+  // All hooks run before any early return (rules of hooks)
   const scrollRef = useRef(null);
   const [showAllComments, setShowAllComments] = useState(false);
   const dispatch = useDispatch();
 
   const [draft, setDraft] = useState({
-    title: task.title,
-    collaborators: task.collaborators || [],
-    notes: task.notes || "",
+    title: task?.title,
+    collaborators: task?.collaborators || [],
+    notes: task?.notes || "",
   });
 
 const commentsState = useSelector(
   (state) =>
-    state.actionable.comments.byActionableId[task.actionableId]
+    state.actionable.comments.byActionableId[task?.actionableId]
 ) || {
-  list: task.comments || [],
+  list: task?.comments || [],
   page: 1,
-  total: task.comments?.length || 0,
+  total: task?.comments?.length || 0,
   hasMore: false,
   loading: false,
 };
 
 
 useEffect(() => {
+  if (!task) return;
   setDraft({
     title: task.title,
     collaborators: task.collaborators || [],
     notes: task.notes || "",
   });
-}, [task.actionableId]);
+}, [task?.actionableId]);
 
 
   const reduxActionable = useSelector((state) =>
-    state.actionable.items.find((i) => i.actionableId === task.actionableId)
+    state.actionable.items.find((i) => i.actionableId === task?.actionableId)
   );
 
   const actionable = reduxActionable || task;
-
-  if (!actionable) return null;
-
-  const handleSave = () => {
-    onSave(task.actionableId, {
-      title: draft.title,
-      notes: draft.notes,
-      collaborators: draft.collaborators,
-    });
-
-    onClose();
-  };
 
   const { user } = useSelector((state) => state.auth);
   const isAdmin = user?.userType?.toLowerCase() === "admin";
@@ -78,7 +66,7 @@ useEffect(() => {
 
   // --- Initial fetch ---
   useEffect(() => {
-    if (!actionable || task.isLocal) return;
+    if (!actionable || task?.isLocal) return;
     if (commentsState.page === 0) {
       dispatch(fetchComments({
         actionableId: actionable.actionableId,
@@ -86,7 +74,7 @@ useEffect(() => {
         limit: 10,
       }));
     }
-  }, [actionable?.actionableId, task.isLocal]);
+  }, [actionable?.actionableId, task?.isLocal]);
 
   // --- Infinite Scroll ---
   const isFetchingRef = useRef(false);
@@ -97,7 +85,7 @@ useEffect(() => {
   }, [commentsState]);
 useEffect(() => {
   const scrollEl = scrollRef.current;
-  if (!scrollEl || !showAllComments || task.isLocal) return;
+  if (!scrollEl || !showAllComments || task?.isLocal) return;
 
   const handleScroll = () => {
     const state = commentsStateRef.current;
@@ -129,21 +117,31 @@ useEffect(() => {
   handleScroll();
 
   return () => scrollEl.removeEventListener("scroll", handleScroll);
-}, [showAllComments, actionable?.actionableId, task.isLocal]);
+}, [showAllComments, actionable?.actionableId, task?.isLocal]);
 
+  if (!task || !actionable) return null;
 
+  const handleSave = () => {
+    onSave(task.actionableId, {
+      title: draft.title,
+      notes: draft.notes,
+      collaborators: draft.collaborators,
+    });
+
+    onClose();
+  };
 
   return (
     <div
-      className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center font-nunito"
+      className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center font-nunito p-4 md:p-0"
       onClick={onClose}
     >
-      <div className="bg-white w-[600px] rounded-[20px] flex flex-col items-center pr-[8px]">
+      <div className="bg-white w-full max-w-[600px] md:w-[600px] rounded-[20px] flex flex-col items-center pr-[4px] md:pr-[8px]" onClick={(e) => e.stopPropagation()}>
         <div
           onClick={(e) => e.stopPropagation()}
            ref={scrollRef}
           id="custom-scroll"
-          className="relative w-[100%] max-h-[90vh] rounded-[20px] pl-[20px] pr-[7px] flex flex-col gap-[20px] overflow-y-auto"
+          className="relative w-[100%] max-h-[90dvh] md:max-h-[90vh] rounded-[20px] pl-0 pr-0 md:pl-[20px] md:pr-[7px] flex flex-col gap-4 md:gap-[20px] overflow-y-auto"
         >
         <ModalHeader
           title={draft.title}
@@ -160,8 +158,8 @@ useEffect(() => {
 
         {/* Link to Event (Disabled for local tasks) */}
          {!hideLinkEvent && (
-           <div className="flex flex-col gap-[12px] opacity-50 px-[20px]">
-             <span className="text-[20px] text-[#333333] font-[700] uppercase">
+           <div className="flex flex-col gap-[12px] opacity-50 px-4 md:px-[20px]">
+             <span className="text-[18px] md:text-[20px] text-[#333333] font-[700] uppercase">
                Link to event
              </span>
              <div className="flex border-[1.4px] border-[#CCCCCC] rounded-[4px] p-[8px] cursor-not-allowed">
@@ -188,13 +186,13 @@ useEffect(() => {
           }
           canEditOrDelete={canEditOrDelete}
           />
+        {/* Prop names must match AttachmentSection's (onAddAttachment etc.); editing is only offered when handlers exist */}
         <AttachmentSection
           task={actionable}
-          onAddSubtask={onAddAttachment}
-          onToggleSubtask={onToggleSubtask}
-          onUpdateSubtask={onUpdateAttachment}
-          onDeleteSubtask={onDeleteAttachment}
-          canEditOrDelete={canEditOrDelete}
+          onAddAttachment={onAddAttachment}
+          onUpdateAttachment={onUpdateAttachment}
+          onDeleteAttachment={onDeleteAttachment}
+          canEditOrDelete={canEditOrDelete && !!onAddAttachment}
         />
         <NotesSection
           value={draft.notes}

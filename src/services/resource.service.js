@@ -83,6 +83,30 @@ export const addEditResource = async ({ resourceId = "", name, organization, ema
 };
 
 /**
+ * Set the outreach stages ticked for a resource
+ *
+ * PATCH /smartOffice/updateResourceType
+ * Body: { resourceId, type }
+ * type replaces the whole list; [] clears it.
+ *
+ * @param {Object} payload
+ * @param {string} payload.resourceId
+ * @param {string[]} payload.type
+ * @returns {Promise<Object>} the updated resource
+ */
+export const updateResourceType = async ({ resourceId, type }) => {
+  try {
+    const res = await api.patch("/smartOffice/updateResourceType", { resourceId, type });
+    const data = throwIfFailed(res, "Failed to update resource type");
+
+    return (Array.isArray(data?.result) ? data.result[0] : data?.result) || {};
+  } catch (error) {
+    console.error("updateResourceType API Error:", error?.response || error);
+    throw error;
+  }
+};
+
+/**
  * Delete a resource (soft delete)
  *
  * DELETE /smartOffice/deleteResource
@@ -102,6 +126,105 @@ export const deleteResource = async (resourceId) => {
     return (Array.isArray(data?.result) ? data.result[0] : data?.result) || {};
   } catch (error) {
     console.error("deleteResource API Error:", error?.response || error);
+    throw error;
+  }
+};
+
+/**
+ * List notes kept against a resource
+ *
+ * GET /smartOffice/resourceNotes?resourceId=&start=0&offset=10
+ *
+ * @param {Object} params
+ * @param {string} params.resourceId - Resource whose notes to fetch
+ * @param {number} [params.start]    - Number of notes to skip
+ * @param {number} [params.offset]   - Page size
+ * @returns {Promise<{ result: Array, totalCount: number }>}
+ */
+export const getResourceNotes = async ({ resourceId, start = 0, offset = 10 }) => {
+  try {
+    const res = await api.get("/smartOffice/resourceNotes", {
+      params: { resourceId, start, offset },
+    });
+    const data = throwIfFailed(res, "Failed to fetch resource notes");
+
+    return {
+      result: Array.isArray(data?.result) ? data.result : [],
+      totalCount: data?.totalCount ?? 0,
+    };
+  } catch (error) {
+    console.error("getResourceNotes API Error:", error?.response || error);
+    throw error;
+  }
+};
+
+/**
+ * Add a note to a resource
+ *
+ * POST /smartOffice/resourceNotes
+ * Body: { resourceId, text }
+ *
+ * @param {Object} payload
+ * @param {string} payload.resourceId
+ * @param {string} payload.text
+ * @returns {Promise<Object>} the saved note
+ */
+export const addResourceNote = async ({ resourceId, text }) => {
+  try {
+    const res = await api.post("/smartOffice/resourceNotes", { resourceId, text });
+    const data = throwIfFailed(res, "Failed to add note");
+
+    return Array.isArray(data?.result) ? data.result[0] : data?.result;
+  } catch (error) {
+    console.error("addResourceNote API Error:", error?.response || error);
+    throw error;
+  }
+};
+
+/**
+ * Edit a resource note
+ *
+ * PATCH /smartOffice/resourceNotes
+ * Body: { resourceId, noteId, text }
+ *
+ * @param {Object} payload
+ * @param {string} payload.resourceId
+ * @param {string} payload.noteId
+ * @param {string} payload.text
+ * @returns {Promise<Object>} the updated note
+ */
+export const updateResourceNote = async ({ resourceId, noteId, text }) => {
+  try {
+    const res = await api.patch("/smartOffice/resourceNotes", { resourceId, noteId, text });
+    const data = throwIfFailed(res, "Failed to update note");
+
+    return (Array.isArray(data?.result) ? data.result[0] : data?.result) || {};
+  } catch (error) {
+    console.error("updateResourceNote API Error:", error?.response || error);
+    throw error;
+  }
+};
+
+/**
+ * Delete a resource note
+ *
+ * DELETE /smartOffice/resourceNotes
+ * Body: { noteId }
+ *
+ * @param {string} noteId
+ * @returns {Promise<Object>}
+ */
+export const deleteResourceNote = async (noteId) => {
+  try {
+    const res = await api.delete("/smartOffice/resourceNotes", {
+      data: { noteId },
+      headers: { "Content-Type": "application/json" },
+    });
+    const data = throwIfFailed(res, "Failed to delete note");
+
+    return (Array.isArray(data?.result) ? data.result[0] : data?.result) || {};
+  } catch (error) {
+    console.error("deleteResourceNote API Error:", error?.response || error);
     throw error;
   }
 };

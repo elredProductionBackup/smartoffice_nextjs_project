@@ -22,14 +22,14 @@ const ExportDetailsPopup = ({ onClose }) => {
   const renderRow = (label, key) => {
     const value = fields[key];
     return (
-      <div className="flex items-center justify-between py-[6px]" key={key}>
-        <span className="text-[20px] font-bold text-[#333333] uppercase">
+      <div className="flex items-center justify-between gap-3 py-[6px]" key={key}>
+        <span className="text-[15px] md:text-[20px] font-bold text-[#333333] uppercase min-w-0">
           {label}
         </span>
         <button
           type="button"
           onClick={() => toggleField(key)}
-          className="flex items-center justify-between w-[95px] gap-2"
+          className="flex items-center justify-between w-[85px] md:w-[95px] gap-2 shrink-0 min-h-[40px] md:min-h-0"
         >
           <span
             className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
@@ -42,7 +42,7 @@ const ExportDetailsPopup = ({ onClose }) => {
               }`}
             />
           </span>
-          <span className="text-[18px]  font-semibold text-[#666666]">
+          <span className="text-[15px] md:text-[18px] font-semibold text-[#666666]">
             {value ? "Show" : "Hide"}
           </span>
         </button>
@@ -52,15 +52,15 @@ const ExportDetailsPopup = ({ onClose }) => {
 
   return (
     <div
-      className="fixed inset-0 z-60 bg-black/40 flex items-center justify-center"
+      className="fixed inset-0 z-60 bg-black/40 flex items-center justify-center p-4"
       onClick={onClose}
     >
       <div
-        className="bg-white w-[480px] h-[846px] max-h-[90vh] rounded-[20px] p-[40px] flex flex-col gap-[16px] overflow-y-auto"
+        className="bg-white w-full max-w-[480px] md:h-[846px] max-h-[90dvh] md:max-h-[90vh] rounded-[20px] p-5 md:p-[40px] flex flex-col gap-3 md:gap-[16px] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-[8px]">
-          <h2 className="text-[24px] text-center font-bold text-[#333333]">
+          <h2 className="text-[20px] md:text-[24px] text-center font-bold text-[#333333]">
             Do you want to hide few fields for export?
           </h2>
         </div>
@@ -81,7 +81,7 @@ const ExportDetailsPopup = ({ onClose }) => {
         </div>
 
         {/* Helper text */}
-        <div className="mt-auto pt-[16px] text-center font-medium text-[15px] text-[#666666]">
+        <div className="mt-auto pt-2 md:pt-[16px] text-center font-medium text-[14px] md:text-[15px] text-[#666666]">
           Fields you hide will not be visible in exported document
         </div>
 
@@ -90,13 +90,13 @@ const ExportDetailsPopup = ({ onClose }) => {
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 h-[43px] w-[130px] rounded-full bg-[#999999] text-white text-[20px] font-semibold cursor-pointer"
+            className="flex-1 h-[43px] w-[130px] rounded-full bg-[#999999] text-white text-[18px] md:text-[20px] font-semibold cursor-pointer"
           >
             Cancel
           </button>
           <button
             type="button"
-            className="flex-1 h-[43px] w-[130px] rounded-full text-white text-[20px] font-semibold cursor-pointer"
+            className="flex-1 h-[43px] w-[130px] rounded-full text-white text-[18px] md:text-[20px] font-semibold cursor-pointer"
             style={{
               backgroundImage: "linear-gradient(90deg, #5597ED 0%, #00449C 100%)",
             }}

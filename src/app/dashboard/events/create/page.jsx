@@ -37,6 +37,7 @@ const CreateEvent = () => {
   const [submitting, setSubmitting] = useState(false);
   const [draftSubmitting, setDraftSubmitting] = useState(false);
   const router = useRouter();
+  const dispatch = useDispatch();
   
   const { eventDetailsMap,eventDetailsFormLoader } = useSelector((state) => state.events);
 
@@ -115,8 +116,6 @@ const CreateEvent = () => {
       minute: moment(date).format("mm"),
     });
 
-    const dispatch = useDispatch();
-
     const scrollToFirstError = (errors) => {
       if (!formContainerRef.current) return;
 
@@ -139,7 +138,7 @@ useEffect(() => {
   if (!eventId) return;
 
   dispatch(fetchEventDetails({ eventId, noSkip:true }));
-}, [eventId]);
+}, [eventId, dispatch]);
 
 useEffect(() => {
   if (!eventId) return;
@@ -155,21 +154,24 @@ useEffect(() => {
 
     if (loading) {
   return (
-    <div className="h-[calc(100vh-80px)] flex items-center justify-center">
+    <div className="h-[calc(100dvh-60px)] md:h-[calc(100vh-80px)] flex items-center justify-center">
       <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
     </div>
   );
 }
 
   return (
-    <div ref={formContainerRef} className="h-[calc(100vh-80px)] flex justify-center py-5 gap-[80px] overflow-auto relative">
+    <div ref={formContainerRef} className="lg:h-[calc(100vh-80px)] flex flex-col items-center lg:flex-row lg:items-stretch lg:justify-center pt-4 pb-20 lg:py-5 gap-6 lg:gap-[80px] lg:overflow-auto relative">
+        {/* Title row shown above the image when the layout stacks (below lg) */}
+        <div className="lg:hidden w-full max-w-[500px] font-heading text-[26px] md:text-[32px] font-[600] flex items-center gap-[14px]">
+          <span className="maki--arrow rotate-180 inline-block cursor-pointer" onClick={()=>router.back()}></span> {isEditMode && !form?.isDraft?'Update':'Create'} event</div>
         <EventImage
           value={form.image}
           onChange={(files) => update("image", files)}
         />
 
-        <div  className="flex-1 max-w-[500px] ">
-          <div className="font-heading mb-[30px] text-[36px] font-[600] flex items-center gap-[20px]">
+        <div  className="flex-1 w-full max-w-[500px] ">
+          <div className="hidden lg:flex font-heading mb-[30px] text-[36px] font-[600] items-center gap-[20px]">
            <span className="maki--arrow rotate-180 inline-block cursor-pointer" onClick={()=>router.back()}></span> {isEditMode && !form?.isDraft?'Update':'Create'} event</div>
             <div className="w-full flex flex-col gap-[30px]" >
 
@@ -315,11 +317,11 @@ useEffect(() => {
 
               {/* Actions */}
               <div className="flex gap-3 mb-[25px]">
-                <button className="flex-1 h-[50px] text-[20px] font-[500] border border-[#0B57D0] text-[#0B57D0] rounded-full cursor-pointer" disabled={submitting} onClick={()=> dispatch(openEventFormModal({ type: "APPROVAL" }))} 
+                <button className="flex-1 h-[50px] text-[17px] md:text-[20px] font-[500] border border-[#0B57D0] text-[#0B57D0] rounded-full cursor-pointer" disabled={submitting || draftSubmitting} onClick={()=> dispatch(openEventFormModal({ type: "APPROVAL" }))} 
                 >
                   Save as draft
                 </button> 
-                <button className="flex-1 h-[50px] text-[20px] font-[500] bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)] cursor-pointer text-white rounded-full flex items-center justify-center" type="button" disabled={submitting} onClick={handleCreateEvent}>
+                <button className="flex-1 h-[50px] text-[17px] md:text-[20px] font-[500] bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)] cursor-pointer text-white rounded-full flex items-center justify-center" type="button" disabled={submitting || draftSubmitting} onClick={handleCreateEvent}>
                   {submitting?<div className="w-[20px] h-[20px] border-2 border-[white] border-t-transparent rounded-full animate-spin" />: isEditMode && !form?.isDraft ?'Update event':'Create event'}
                 </button>
               </div>

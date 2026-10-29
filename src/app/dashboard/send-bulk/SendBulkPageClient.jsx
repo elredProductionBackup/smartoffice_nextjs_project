@@ -264,13 +264,15 @@ export default function SendBulkPageClient() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
-    if (groupsModalOpen) refreshGroups();
-  }, [groupsModalOpen]);
-
-  useEffect(() => {
-    if (contactsModalMode) refreshGroups();
-  }, [contactsModalMode]);
+  // The group popups always open on fresh data from the backend
+  const openGroupsModal = () => {
+    setGroupsModalOpen(true);
+    refreshGroups();
+  };
+  const openContactsModal = (mode) => {
+    if (mode !== contactsModalMode) refreshGroups();
+    setContactsModalMode(mode);
+  };
 
   const fetchGroupContacts = async (groupName) => {
     const groupId = groupIds[groupName];
@@ -292,12 +294,11 @@ export default function SendBulkPageClient() {
     }
   };
 
-  useEffect(() => {
-    if (groupFilter !== "All groups") {
-      fetchGroupContacts(groupFilter);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [groupFilter]);
+  // Picking a group in the filter loads that group's contacts
+  const selectGroupFilter = (g) => {
+    if (g !== groupFilter && g !== "All groups") fetchGroupContacts(g);
+    setGroupFilter(g);
+  };
 
   const createGroup = async (name) => {
     const trimmed = name.trim();
@@ -511,24 +512,24 @@ export default function SendBulkPageClient() {
   const whatsappCount = selectedContacts.filter((c) => c.hasWhatsApp).length;
   const emailCount = selectedContacts.length;
 
-  const handleConfirmSend = (payload) => {
-    console.log("Confirm send payload", payload);
+  const handleConfirmSend = () => {
     setConfirmModalOpen(false);
     setNotice("Broadcast sent");
   };
 
   return (
-    <div className="pt-6 pb-10">
+    <div className="pt-4 pb-24 md:pt-6 md:pb-10">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 md:gap-4 mb-4 md:mb-6">
+        <div className="flex items-center gap-3 md:gap-4">
           <button
             onClick={() => router.back()}
-            className="w-10 h-10 rounded-xl bg-white shadow-[0px_2px_6px_rgba(0,0,0,0.08)] flex items-center justify-center cursor-pointer text-[#333]"
+            aria-label="Back"
+            className="w-10 h-10 shrink-0 rounded-xl bg-white shadow-[0px_2px_6px_rgba(0,0,0,0.08)] flex items-center justify-center cursor-pointer text-[#333]"
           >
             <FiArrowLeft className="text-[18px]" />
           </button>
-          <h1 className="font-heading text-[32px] font-semibold text-[#1a1a2e]">New broadcast</h1>
+          <h1 className="font-heading text-[24px] md:text-[32px] font-semibold text-[#1a1a2e]">New broadcast</h1>
         </div>
         <button
           onClick={() => router.push("/dashboard/send-bulk/reports")}
@@ -547,14 +548,14 @@ export default function SendBulkPageClient() {
 
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_420px] gap-6 items-stretch">
         {/* LEFT: Message card */}
-        <div className="bg-white rounded-2xl p-6 shadow-[0px_2px_10px_rgba(0,0,0,0.04)]">
-          <div className="flex items-center justify-between gap-3 mb-6">
+        <div className="max-xl:min-w-0 bg-white rounded-2xl p-4 md:p-6 shadow-[0px_2px_10px_rgba(0,0,0,0.04)]">
+          <div className="flex items-center justify-between gap-3 mb-5 md:mb-6">
             <div className="flex items-center gap-3">
               <div className="w-11 h-11 rounded-xl bg-[#EFF6FF] grid place-items-center text-[#2563eb]">
                 <FiMessageCircle className="text-[20px]" />
               </div>
               <div>
-                <h2 className="text-[22px] font-bold text-[#1a1a2e]">Message</h2>
+                <h2 className="text-[20px] md:text-[22px] font-bold text-[#1a1a2e]">Message</h2>
                 <p className="text-[16px] text-[#888]">Pick a template or write your own</p>
               </div>
             </div>
@@ -575,7 +576,7 @@ export default function SendBulkPageClient() {
                 <div className="absolute z-30 right-0 mt-2 w-[200px] bg-white border border-[#e5e7eb] rounded-[10px] shadow-lg py-1.5 px-1.5">
                   <button
                     onClick={() => {
-                      setGroupsModalOpen(true);
+                      openGroupsModal();
                       setMessageMenuOpen(false);
                     }}
                     className="w-full flex items-center gap-2.5 px-3 py-2.5 text-[16px] font-medium text-[#333] hover:bg-[#f9fafb] rounded-[7px] cursor-pointer"
@@ -589,7 +590,7 @@ export default function SendBulkPageClient() {
           </div>
 
           {/* Template + Channels */}
-          <div className="grid grid-cols-2 gap-4 mb-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
             <div>
               <label className="block text-[16px] font-semibold text-[#333] mb-1.5">Template</label>
               <div ref={templateRef} className="relative">
@@ -600,7 +601,7 @@ export default function SendBulkPageClient() {
                     templateOpen ? "border-[#2563eb] ring-1 ring-[#2563eb]/30" : "border-[#d1d5db] hover:border-[#9ca3af]"
                   }`}
                 >
-                  <span className="text-[#111]">
+                  <span className="min-w-0 truncate text-[#111]">
                     {activeTemplate?.label || (templatesLoading ? "Loading templates…" : "No templates available")}
                   </span>
                   <FiChevronDown
@@ -725,14 +726,14 @@ export default function SendBulkPageClient() {
             <>
               {/* Message content */}
               <div
-                className="w-full min-h-[196px] max-h-[320px] overflow-y-auto border border-[#d1d5db] rounded-[10px] px-4 py-3 bg-white text-[16px] text-[#111]"
+                className="w-full min-h-[196px] max-h-[320px] overflow-y-auto max-md:overflow-x-auto border border-[#d1d5db] rounded-[10px] px-4 py-3 bg-white text-[16px] text-[#111]"
                 dangerouslySetInnerHTML={{ __html: messages.email || "" }}
               />
 
               {/* Preview */}
               <h3 className="text-[18px] font-bold text-[#1a1a2e] mt-6 mb-2">Preview</h3>
               <div className="rounded-2xl border border-[#e5e7eb] bg-white overflow-hidden">
-                <div className="px-5 py-4 border-b border-[#f1f5f9] flex flex-col gap-1.5">
+                <div className="px-4 md:px-5 py-4 border-b border-[#f1f5f9] flex flex-col gap-1.5">
                   <div className="flex items-center text-[16px]">
                     <span className="w-16 shrink-0 text-[#9ca3af]">From</span>
                     <span className="text-[#111] font-medium truncate">
@@ -752,7 +753,7 @@ export default function SendBulkPageClient() {
                 </div>
                 {previewText ? (
                   <div
-                    className="px-5 py-5 text-[16px] text-[#111] leading-relaxed"
+                    className="px-4 py-4 md:px-5 md:py-5 text-[16px] text-[#111] leading-relaxed max-md:overflow-x-auto max-md:break-words"
                     dangerouslySetInnerHTML={{ __html: previewText }}
                   />
                 ) : (
@@ -768,14 +769,14 @@ export default function SendBulkPageClient() {
 
         {/* RIGHT: Send To + delivery summary */}
         <div className="flex flex-col gap-6">
-          <div className="bg-white rounded-2xl p-6 shadow-[0px_2px_10px_rgba(0,0,0,0.04)] flex flex-col flex-1 min-h-0">
+          <div className="bg-white rounded-2xl p-4 md:p-6 shadow-[0px_2px_10px_rgba(0,0,0,0.04)] flex flex-col flex-1 min-h-0">
             <div className="flex items-center justify-between gap-3 mb-4">
               <div className="flex items-center gap-3">
                 <div className="w-11 h-11 rounded-xl bg-[#EFF6FF] grid place-items-center text-[#2563eb]">
                   <FiUsers className="text-[20px]" />
                 </div>
                 <div>
-                  <h2 className="text-[22px] font-bold text-[#1a1a2e]">Send To</h2>
+                  <h2 className="text-[20px] md:text-[22px] font-bold text-[#1a1a2e]">Send To</h2>
                   <p className="text-[16px] text-[#888]">
                     {selectedContacts.length} of {contacts.length} contacts selected
                   </p>
@@ -798,7 +799,7 @@ export default function SendBulkPageClient() {
                   <div className="absolute z-30 right-0 mt-2 w-[200px] bg-white border border-[#e5e7eb] rounded-[10px] shadow-lg py-1.5 px-1.5">
                     <button
                       onClick={() => {
-                        setContactsModalMode("contact");
+                        openContactsModal("contact");
                         setSendToMenuOpen(false);
                       }}
                       className="w-full flex items-center gap-2.5 px-3 py-2.5 text-[16px] font-medium text-[#333] hover:bg-[#f9fafb] rounded-[7px] cursor-pointer"
@@ -808,7 +809,7 @@ export default function SendBulkPageClient() {
                     </button>
                     <button
                       onClick={() => {
-                        setContactsModalMode("manage");
+                        openContactsModal("manage");
                         setSendToMenuOpen(false);
                       }}
                       className="w-full flex items-center gap-2.5 px-3 py-2.5 text-[16px] font-medium text-[#333] hover:bg-[#f9fafb] rounded-[7px] cursor-pointer"
@@ -822,8 +823,8 @@ export default function SendBulkPageClient() {
             </div>
 
             <div className="flex items-center gap-2 mb-4">
-              <div className="flex-1 flex items-center gap-2 h-[42px] px-3 rounded-[8px] border border-[#d1d5db] focus-within:border-[#2563eb] transition-colors">
-                <FiSearch className="text-[18px] text-[#9ca3af]" />
+              <div className="flex-1 min-w-0 flex items-center gap-2 h-[42px] px-3 rounded-[8px] border border-[#d1d5db] focus-within:border-[#2563eb] transition-colors">
+                <FiSearch className="text-[18px] text-[#9ca3af] shrink-0" />
                 <input
                   value={search}
                   onChange={(e) => {
@@ -831,7 +832,7 @@ export default function SendBulkPageClient() {
                     setShowAllContacts(false);
                   }}
                   placeholder="Search name, email or number"
-                  className="flex-1 text-[16px] outline-none placeholder:text-[#9ca3af]"
+                  className="flex-1 min-w-0 text-[16px] outline-none placeholder:text-[#9ca3af]"
                 />
               </div>
 
@@ -843,7 +844,7 @@ export default function SendBulkPageClient() {
                     groupFilterOpen ? "border-[#2563eb]" : "border-[#d1d5db] hover:border-[#9ca3af]"
                   }`}
                 >
-                  {groupFilter}
+                  <span className="max-w-[110px] sm:max-w-none truncate">{groupFilter}</span>
                   <FiChevronDown
                     className={`text-[#6b7280] text-[16px] transition-transform duration-200 ${
                       groupFilterOpen ? "rotate-180" : ""
@@ -856,7 +857,7 @@ export default function SendBulkPageClient() {
                       <button
                         key={g}
                         onClick={() => {
-                          setGroupFilter(g);
+                          selectGroupFilter(g);
                           setGroupFilterOpen(false);
                           setShowAllContacts(false);
                         }}
@@ -939,7 +940,7 @@ export default function SendBulkPageClient() {
           </div>
 
           {/* Will be delivered to */}
-          <div className="bg-white rounded-2xl p-6 shadow-[0px_2px_10px_rgba(0,0,0,0.04)]">
+          <div className="bg-white rounded-2xl p-4 md:p-6 shadow-[0px_2px_10px_rgba(0,0,0,0.04)]">
             <h3 className="text-[18px] font-bold text-[#1a1a2e] mb-4">Will be delivered to</h3>
 
             <div className="flex flex-col gap-3 mb-5">

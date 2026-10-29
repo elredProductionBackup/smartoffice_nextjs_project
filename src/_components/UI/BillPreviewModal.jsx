@@ -38,17 +38,15 @@ export function getDownloadHref(url) {
 
 export default function BillPreviewModal({ urls = [], title, onClose }) {
   const [index, setIndex] = useState(0);
-  const [failed, setFailed] = useState(false);
+  // Remember which url failed so switching files resets the error without an effect
+  const [failedUrl, setFailedUrl] = useState(null);
 
   // If the list changes (e.g. after an edit) keep the index in range.
   const safeIndex = Math.min(index, Math.max(0, urls.length - 1));
   const url = urls[safeIndex];
   const kind = url ? getKind(url) : "other";
   const hasMany = urls.length > 1;
-
-  useEffect(() => {
-    setFailed(false);
-  }, [url]);
+  const failed = !!url && failedUrl === url;
 
   useEffect(() => {
     const onKey = (e) => {
@@ -63,19 +61,19 @@ export default function BillPreviewModal({ urls = [], title, onClose }) {
   if (!url) return null;
 
   const btn =
-    "text-[#333] bg-[#EEEEEE] hover:bg-white cursor-pointer flex items-center justify-center rounded-full h-[35px] w-[35px] border-0 transition-colors";
+    "text-[#333] bg-[#EEEEEE] hover:bg-white cursor-pointer flex items-center justify-center rounded-full h-10 w-10 md:h-[35px] md:w-[35px] border-0 transition-colors";
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-[20px]"
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-3 sm:p-[20px]"
       onClick={onClose}
     >
       <div
-        className="flex flex-col bg-[#111] w-full max-w-[760px] h-full max-h-[90vh] rounded-[20px] relative p-[28px] md:p-[36px] overflow-hidden font-nunito"
+        className="flex flex-col bg-[#111] w-full max-w-[760px] h-full max-h-[90dvh] md:max-h-[90vh] rounded-[16px] sm:rounded-[20px] relative p-4 sm:p-[28px] md:p-[36px] overflow-hidden font-nunito"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top bar */}
-        <div className="flex items-center justify-between gap-4 mb-5 shrink-0">
+        <div className="flex items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-5 shrink-0">
           <div className="min-w-0 text-white">
             <p className="text-[16px] font-bold truncate capitalize">{title || "Bill"}</p>
             <p className="text-[13px] text-[#9CA3AF] font-medium truncate">
@@ -103,7 +101,7 @@ export default function BillPreviewModal({ urls = [], title, onClose }) {
               key={url}
               src={url}
               alt={getFileName(url)}
-              onError={() => setFailed(true)}
+              onError={() => setFailedUrl(url)}
               className="max-w-full max-h-full object-contain"
             />
           )}
@@ -121,7 +119,7 @@ export default function BillPreviewModal({ urls = [], title, onClose }) {
                 {failed ? "This file couldn't be loaded here" : "Preview isn't available for this file type"}
               </p>
               <p className="text-[13px] text-[#9CA3AF]">Download it to view on your device.</p>
-              <div className="flex gap-3 mt-2">
+              <div className="flex flex-wrap justify-center gap-3 mt-2">
                 <a
                   href={getDownloadHref(url)}
                   className="inline-flex items-center gap-2 bg-[#2B7FFF] hover:bg-[#1a6fe6] text-white text-[13px] font-semibold px-4 py-2 rounded-lg"
@@ -145,7 +143,7 @@ export default function BillPreviewModal({ urls = [], title, onClose }) {
               <button
                 type="button"
                 onClick={() => setIndex((i) => (i - 1 + urls.length) % urls.length)}
-                className={`${btn} absolute left-3 top-1/2 -translate-y-1/2`}
+                className={`${btn} absolute left-2 sm:left-3 top-1/2 -translate-y-1/2`}
                 aria-label="Previous file"
               >
                 <FiChevronLeft className="w-5 h-5" />
@@ -153,7 +151,7 @@ export default function BillPreviewModal({ urls = [], title, onClose }) {
               <button
                 type="button"
                 onClick={() => setIndex((i) => (i + 1) % urls.length)}
-                className={`${btn} absolute right-3 top-1/2 -translate-y-1/2`}
+                className={`${btn} absolute right-2 sm:right-3 top-1/2 -translate-y-1/2`}
                 aria-label="Next file"
               >
                 <FiChevronRight className="w-5 h-5" />
@@ -164,13 +162,13 @@ export default function BillPreviewModal({ urls = [], title, onClose }) {
 
         {/* Thumbnails when there are several attachments */}
         {hasMany && (
-          <div className="flex gap-3 mt-4 overflow-x-auto shrink-0 pb-1">
+          <div className="flex gap-2 sm:gap-3 mt-3 sm:mt-4 overflow-x-auto shrink-0 pb-1">
             {urls.map((u, i) => (
               <button
                 key={u}
                 type="button"
                 onClick={() => setIndex(i)}
-                className={`w-[64px] h-[64px] shrink-0 rounded-[10px] overflow-hidden border-2 bg-white/10 flex items-center justify-center cursor-pointer ${
+                className={`w-[52px] h-[52px] sm:w-[64px] sm:h-[64px] shrink-0 rounded-[10px] overflow-hidden border-2 bg-white/10 flex items-center justify-center cursor-pointer ${
                   i === safeIndex ? "border-[#2B7FFF]" : "border-transparent opacity-70 hover:opacity-100"
                 }`}
                 aria-label={`Show file ${i + 1}`}

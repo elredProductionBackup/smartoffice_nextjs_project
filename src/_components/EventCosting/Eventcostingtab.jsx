@@ -77,10 +77,14 @@ export function EventCostingTab({
   const [draftBudget, setDraftBudget] = useState(totalBudget?.toString?.() ?? "0");
   const [showDistribution, setShowDistribution] = useState(false);
 
-  useEffect(() => {
+  // Re-sync the local budget whenever the prop changes (adjusting state during
+  // render instead of in an effect avoids an extra render pass).
+  const [syncedTotalBudget, setSyncedTotalBudget] = useState(totalBudget);
+  if (!Object.is(syncedTotalBudget, totalBudget)) {
+    setSyncedTotalBudget(totalBudget);
     setBudget(totalBudget);
     setDraftBudget(totalBudget?.toString?.() ?? "0");
-  }, [totalBudget]);
+  }
 
   const catNameToId = useMemo(
     () => Object.fromEntries(sections.map((s) => [s.name, s.id])),
@@ -385,7 +389,7 @@ export function EventCostingTab({
   const isOverallOverBudget = totalActualSpent > budget && totalActualSpent > 0;
 
   return (
-    <div className="p-6">
+    <div className="px-0 pt-3 pb-20 sm:p-6">
       <BudgetOverviewBar
         totalBudget={budget}
         totalActualSpent={totalActualSpent}
@@ -404,7 +408,7 @@ export function EventCostingTab({
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 mb-6 sm:mb-8">
         <PieChartPanel
           title="Budget Distribution"
           subtitle={`Total: ₹${budget.toLocaleString("en-IN")}`}
@@ -424,7 +428,7 @@ export function EventCostingTab({
         />
       </div>
 
-      <div className="border-t border-gray-200 pt-6">
+      <div className="border-t border-gray-200 pt-5 sm:pt-6">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="text-base font-semibold text-gray-900">Budget Breakup</h3>
@@ -485,14 +489,14 @@ export function EventCostingTab({
 
       {showEditBudget && !readOnly && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-sm">
+          <div className="bg-white rounded-xl p-5 sm:p-6 w-full max-w-sm">
             <h3 className="text-base font-semibold text-gray-900 mb-3">Edit Budget</h3>
             <input
               type="number"
               min="0"
               value={draftBudget}
               onChange={(e) => setDraftBudget(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-base md:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
               autoFocus
             />
             <div className="flex justify-end gap-2">
@@ -560,7 +564,7 @@ function DistributionModal({ categories, onClose, budget }) {
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl p-6 w-full max-w-lg">
+      <div className="bg-white rounded-xl p-5 sm:p-6 w-full max-w-lg max-h-[90dvh] overflow-y-auto">
         <h3 className="text-base font-semibold text-gray-900 mb-2">Budget Distribution</h3>
         <p className="text-xs text-gray-500 mb-4">
           How the planned budget is distributed across categories.
@@ -586,9 +590,9 @@ function DistributionModal({ categories, onClose, budget }) {
               <span
                 className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${SECTION_COLORS[i % SECTION_COLORS.length]}`}
               />
-              <span className="text-sm text-gray-700 flex-1">{cat.name}</span>
-              <span className="text-sm text-gray-500 w-12 text-right">{cat.percentage}%</span>
-              <span className="text-sm font-medium text-gray-900 w-24 text-right">
+              <span className="text-sm text-gray-700 flex-1 min-w-0 break-words">{cat.name}</span>
+              <span className="text-sm text-gray-500 w-12 text-right shrink-0">{cat.percentage}%</span>
+              <span className="text-sm font-medium text-gray-900 w-24 text-right shrink-0">
                 ₹{totals[cat.name].toLocaleString("en-IN")}
               </span>
             </div>

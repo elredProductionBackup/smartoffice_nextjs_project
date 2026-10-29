@@ -30,15 +30,16 @@ export function ExpenseItemCard({ expense, onRemove, onSubItemChange, onSave, re
     // No overflow-hidden here — it would clip the vendor dropdown; corners are rounded per section instead
     <div className="border border-gray-200 rounded-xl">
       {/* Header */}
-      <div className="flex items-center justify-between bg-gray-50 px-4 py-3 border-b border-gray-200 rounded-t-xl">
-        <h4 className="text-sm font-semibold text-gray-900">{expense.category}</h4>
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between gap-3 bg-gray-50 px-3 sm:px-4 py-3 border-b border-gray-200 rounded-t-xl">
+        <h4 className="text-sm font-semibold text-gray-900 min-w-0 break-words">{expense.category}</h4>
+        <div className="flex items-center gap-3 shrink-0">
           <span className="text-sm font-semibold text-gray-700">₹{fmt(cardTotal)}</span>
           {!readOnly && (
           <button
             onClick={() => onRemove(expense.id)}
-            className="text-gray-300 hover:text-red-500 transition-colors"
+            className="text-gray-300 hover:text-red-500 transition-colors p-1 -m-1 md:p-0 md:m-0"
             title="Remove category"
+            aria-label="Remove category"
           >
             <Trash2 className="w-4 h-4" />
           </button>
@@ -52,7 +53,7 @@ export function ExpenseItemCard({ expense, onRemove, onSubItemChange, onSave, re
           const amount =
             (parseFloat(si.attendees) || 0) * (parseFloat(si.unitCost) || 0);
           return (
-            <div key={si.id} className="p-4 grid grid-cols-12 gap-3 items-end">
+            <div key={si.id} className="p-3 sm:p-4 grid grid-cols-12 gap-3 items-end">
               {/* Item name (the split — its identity, so read-only) */}
               <div className="col-span-12 md:col-span-3">
                 <label className="block text-[11px] text-gray-500 mb-1">Item</label>
@@ -65,7 +66,7 @@ export function ExpenseItemCard({ expense, onRemove, onSubItemChange, onSave, re
               </div>
 
               {/* Vendor */}
-              <div className="col-span-6 md:col-span-3">
+              <div className="col-span-12 sm:col-span-6 md:col-span-3">
                 <label className="block text-[11px] text-gray-500 mb-1">Vendor</label>
                 {readOnly ? (
                   <div className="text-sm px-2 py-1.5 bg-gray-50 border border-gray-300 rounded-lg text-gray-700 truncate">
@@ -86,7 +87,7 @@ export function ExpenseItemCard({ expense, onRemove, onSubItemChange, onSave, re
               </div>
 
               {/* Qty */}
-              <div className="col-span-3 md:col-span-1">
+              <div className="col-span-4 sm:col-span-3 md:col-span-1">
                 <label className="block text-[11px] text-gray-500 mb-1">Qty</label>
                 <input
                   type="number"
@@ -97,12 +98,12 @@ export function ExpenseItemCard({ expense, onRemove, onSubItemChange, onSave, re
                   }
                   placeholder="0"
                   disabled={readOnly}
-                  className="w-full text-sm text-right px-2 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-default [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  className="w-full text-base md:text-sm text-right px-2 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-default [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
               </div>
 
               {/* Rate */}
-              <div className="col-span-3 md:col-span-2">
+              <div className="col-span-4 sm:col-span-3 md:col-span-2">
                 <label className="block text-[11px] text-gray-500 mb-1">Rate</label>
                 <input
                   type="number"
@@ -113,20 +114,20 @@ export function ExpenseItemCard({ expense, onRemove, onSubItemChange, onSave, re
                   }
                   placeholder="0"
                   disabled={readOnly}
-                  className="w-full text-sm text-right px-2 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-default [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  className="w-full text-base md:text-sm text-right px-2 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-default [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
               </div>
 
               {/* Amount (computed) */}
-              <div className="col-span-6 md:col-span-2">
+              <div className="col-span-4 sm:col-span-6 md:col-span-2">
                 <label className="block text-[11px] text-gray-500 mb-1">Amount</label>
-                <div className="w-full text-sm text-right px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-medium">
+                <div className="w-full text-sm text-right px-2 py-2 md:py-1.5 truncate bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-medium">
                   ₹{fmt(amount)}
                 </div>
               </div>
 
               {/* Receipt */}
-              <div className="col-span-6 md:col-span-1 flex items-center gap-1 md:justify-end">
+              <div className="col-span-12 sm:col-span-6 md:col-span-1 flex items-center gap-1 md:justify-end">
                 {readOnly ? (
                   si.billUploaded && (
                     <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border border-green-300 text-green-700 bg-green-50">
@@ -164,7 +165,7 @@ export function ExpenseItemCard({ expense, onRemove, onSubItemChange, onSave, re
                 {si.billUploaded && (
                   <button
                     onClick={() => onSubItemChange(expense.id, si.id, "attachment", "")}
-                    className="text-gray-400 hover:text-red-500 transition-colors"
+                    className="text-gray-400 hover:text-red-500 transition-colors p-1.5 md:p-0"
                     title="Remove receipt"
                   >
                     <X className="w-3.5 h-3.5" />
@@ -180,11 +181,11 @@ export function ExpenseItemCard({ expense, onRemove, onSubItemChange, onSave, re
 
       {/* Save CTA */}
       {!readOnly && (
-      <div className="flex items-center justify-end px-4 py-3 bg-gray-50 border-t border-gray-200 rounded-b-xl">
+      <div className="flex items-center justify-end px-3 sm:px-4 py-3 bg-gray-50 border-t border-gray-200 rounded-b-xl">
         <button
           onClick={handleSave}
           disabled={saving}
-          className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+          className="inline-flex w-full sm:w-auto justify-center items-center gap-1.5 px-4 py-2.5 sm:py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
         >
           {saved && !saving && <Check className="w-4 h-4" />}
           {saving ? "Saving…" : saved ? "Saved" : "Save Expense"}

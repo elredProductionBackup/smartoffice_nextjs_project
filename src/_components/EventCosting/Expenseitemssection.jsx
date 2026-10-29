@@ -37,11 +37,11 @@ function CategorySelect({ value, onChange, options }) {
     "block w-full text-left px-4 py-2.5 border-none rounded-lg transition-colors duration-150 font-['Nunito_Sans'] font-medium text-[16px] leading-[136%]";
 
   return (
-    <div ref={ref} className="relative flex-1">
+    <div ref={ref} className="relative w-full sm:w-auto sm:flex-1">
       <button
         type="button"
         onClick={handleToggle}
-        className="w-full flex items-center justify-between px-4 py-3 border border-gray-300 rounded-[14px] bg-white text-[15px] cursor-pointer outline-none text-left focus:border-[#1A73E8] transition-colors"
+        className="w-full flex items-center justify-between px-4 py-3 border border-gray-300 rounded-[14px] bg-white text-[16px] sm:text-[15px] cursor-pointer outline-none text-left focus:border-[#1A73E8] transition-colors"
         style={{ color: value ? "#1e293b" : "#94a3b8" }}
       >
         <span className="truncate">{value || PLACEHOLDER}</span>
@@ -114,10 +114,10 @@ export function ExpenseItemsSection({
   };
 
   return (
-    <div className="mt-8 pt-6 border-t border-gray-200">
+    <div className="mt-6 sm:mt-8 pt-5 sm:pt-6 border-t border-gray-200">
       <h3 className="text-base font-semibold text-gray-900 mb-4">Expense Items</h3>
       {!readOnly && (
-      <div className="flex items-center gap-3 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-5 sm:mb-6">
         <CategorySelect
           value={selectedCategory}
           onChange={setSelectedCategory}
@@ -129,7 +129,7 @@ export function ExpenseItemsSection({
         <button
           onClick={handleAdd}
           disabled={!selectedCategory}
-          className="flex items-center gap-2 px-4 py-3 border border-gray-300 rounded-[14px] text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex items-center justify-center gap-2 px-4 py-3 border border-gray-300 rounded-[14px] whitespace-nowrap text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Plus className="w-4 h-4" />
           Add new item

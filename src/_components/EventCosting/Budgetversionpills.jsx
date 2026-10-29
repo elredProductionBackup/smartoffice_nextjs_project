@@ -44,14 +44,15 @@ export function BudgetVersionPills({
             }`}
           >
             <span>
-              {v.label} 
+              {v.label}
               {/* — {v.paxLabel} */}
             </span>
 
             {versions.length > 1 && !readOnly && (
               <button
                 onClick={() => onRemoveVersion(v.id)}
-                className="opacity-60 hover:opacity-100 transition-opacity ml-0.5"
+                className="opacity-60 hover:opacity-100 transition-opacity ml-0.5 p-1 -my-1 -mr-1.5 sm:p-0 sm:my-0 sm:mr-0"
+                aria-label={`Remove ${v.label}`}
               >
                 <X className="w-3 h-3" />
               </button>

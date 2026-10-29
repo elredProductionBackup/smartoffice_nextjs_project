@@ -227,7 +227,7 @@ function ImageLightbox({ file, size, onClose }) {
 
   return createPortal(
     <div role="dialog" aria-modal="true" aria-label={file.name} className="fixed inset-0 z-[60] flex flex-col bg-black/80 font-nunito" onMouseDown={closeOnBackdrop}>
-      <div className="flex items-center gap-3 px-5 py-4 shrink-0" onMouseDown={closeOnBackdrop}>
+      <div className="flex items-center gap-2 md:gap-3 px-3 md:px-5 py-3 md:py-4 shrink-0" onMouseDown={closeOnBackdrop}>
         <div className="min-w-0 flex-1">
           <p className="text-[16px] font-bold text-white truncate">{file.name}</p>
           {size && <p className="text-[13px] text-white/60">{size}</p>}
@@ -243,7 +243,7 @@ function ImageLightbox({ file, size, onClose }) {
         </button>
       </div>
 
-      <div className="flex-1 min-h-0 flex items-center justify-center px-6 pb-6" onMouseDown={closeOnBackdrop}>
+      <div className="flex-1 min-h-0 flex items-center justify-center px-3 pb-3 md:px-6 md:pb-6" onMouseDown={closeOnBackdrop}>
         {status === "loading" && <p className="absolute text-[15px] text-white/70">Loading image…</p>}
         {status === "error" ? (
           <div className="text-center">
@@ -413,7 +413,7 @@ export const ApprovalCard = memo(function ApprovalCard({ message, compact = fals
         onKeyDown={(e) => e.key === "Enter" && !busy && onConfirm()}
         placeholder={placeholder}
         maxLength={300}
-        className="w-full h-10 px-3 rounded-xl border border-[#E2E8F0] bg-white text-[15px] text-[#1E293B] placeholder:text-[#94A3B8] outline-none focus:border-[#0B57D0]"
+        className="w-full h-10 px-3 rounded-xl border border-[#E2E8F0] bg-white text-[16px] md:text-[15px] text-[#1E293B] placeholder:text-[#94A3B8] outline-none focus:border-[#0B57D0]"
       />
       <div className="flex flex-wrap gap-2">
         <button type="button" disabled={busy} onClick={onConfirm} className={primary}>
@@ -521,7 +521,7 @@ export const ApprovalCard = memo(function ApprovalCard({ message, compact = fals
       {actions}
 
       {ask.notify.length > 0 && (
-        <div className="flex items-center gap-2 mt-3 pt-3 border-t border-[#F1F5F9]">
+        <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-[#F1F5F9]">
           <span className="text-[13px] text-[#94A3B8]">Notified via</span>
           {ask.notify.includes("email") && <NotifyTag icon={FiMail} label="Email" className="text-[#0B57D0] border-[#C9DAF8]" />}
           {ask.notify.includes("whatsapp") && (
@@ -587,23 +587,25 @@ export function MessageToolbar({ message, isMine, compact = false, onReply, onEd
     setPickerOpen(false);
   };
   const reactedByMe = (emoji) => message.reactions.some((r) => r.emoji === emoji && r.people.includes(me));
-  const size = compact ? "w-8 h-8" : "w-9 h-9";
+  const size = compact ? "w-8 h-8" : "w-8 h-8 md:w-9 md:h-9";
   const icon = `${size} rounded-full flex items-center justify-center text-[#475569] transition hover:bg-[#F1F5F9] cursor-pointer`;
 
   return (
     <div
       ref={ref}
       className={`absolute -top-6 z-10 ${isMine ? "right-3" : "left-3"} ${
-        pickerOpen ? "flex" : "hidden group-hover:flex"
+        // No hover on touch screens: the message row is focusable, so a tap on it shows the toolbar
+        pickerOpen ? "flex" : "hidden group-hover:flex [@media(hover:none)]:group-focus-within:flex"
       } flex-col ${isMine ? "items-end" : "items-start"}`}
     >
       <div className="flex items-center gap-0.5 bg-white rounded-full border border-[#E2E8F0] shadow-[0_4px_14px_rgba(15,23,42,0.12)] px-1.5 py-1">
-        {(compact ? QUICK_REACTIONS.slice(0, 3) : QUICK_REACTIONS).map((emoji) => (
+        {(compact ? QUICK_REACTIONS.slice(0, 3) : QUICK_REACTIONS).map((emoji, i) => (
           <button
             key={emoji}
             type="button"
             onClick={() => react(emoji)}
-            className={`${size} rounded-full ${compact ? "text-[17px]" : "text-[20px]"} flex items-center justify-center transition hover:bg-[#F1F5F9] hover:scale-110 cursor-pointer ${
+            // Phones show the first three quick reactions so the bar fits; the rest are in the picker
+            className={`${size} ${i >= 3 ? "max-md:hidden" : ""} rounded-full ${compact ? "text-[17px]" : "text-[18px] md:text-[20px]"} flex items-center justify-center transition hover:bg-[#F1F5F9] hover:scale-110 cursor-pointer ${
               reactedByMe(emoji) ? "bg-[#E3EDFD]" : ""
             }`}
           >
@@ -633,7 +635,7 @@ export function MessageToolbar({ message, isMine, compact = false, onReply, onEd
 
       {pickerOpen && (
         <div
-          className={`mt-1.5 grid ${compact ? "grid-cols-6" : "grid-cols-8"} gap-0.5 bg-white rounded-2xl border border-[#E2E8F0] shadow-[0_8px_24px_rgba(15,23,42,0.12)] p-2`}
+          className={`mt-1.5 grid ${compact ? "grid-cols-6" : "grid-cols-6 md:grid-cols-8"} gap-0.5 bg-white rounded-2xl border border-[#E2E8F0] shadow-[0_8px_24px_rgba(15,23,42,0.12)] p-2`}
         >
           {MORE_REACTIONS.map((emoji) => (
             <button
@@ -682,7 +684,7 @@ export function InlineEditor({ initial, onSave, onCancel }) {
             save();
           }
         }}
-        className="w-full min-w-[240px] resize-none rounded-xl border border-[#B6CFF5] bg-white px-3 py-2 text-[15px] text-[#1E293B] outline-none focus:border-[#0B57D0]"
+        className="w-full min-w-[200px] md:min-w-[240px] resize-none rounded-xl border border-[#B6CFF5] bg-white px-3 py-2 text-[16px] md:text-[15px] text-[#1E293B] outline-none focus:border-[#0B57D0]"
       />
       <div className="flex justify-end gap-2">
         <button type="button" onClick={onCancel} className="h-8 px-3 rounded-full text-[14px] font-bold text-[#334155] hover:bg-white/70 cursor-pointer">

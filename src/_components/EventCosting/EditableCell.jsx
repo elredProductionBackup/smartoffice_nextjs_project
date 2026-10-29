@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 
 export function EditableCell({
   value,
@@ -9,10 +9,12 @@ export function EditableCell({
 }) {
   const [focused, setFocused] = useState(false);
   const [draft, setDraft] = useState(value.toString());
-  const prev = useRef(value);
+  // Last value we synced from props / committed. Kept in state (not a ref) so
+  // it can be compared during render to re-sync the draft when the prop changes.
+  const [prev, setPrev] = useState(value);
 
-  if (!focused && prev.current !== value) {
-    prev.current = value;
+  if (!focused && !Object.is(prev, value)) {
+    setPrev(value);
     setDraft(value.toString());
   }
 
@@ -21,9 +23,9 @@ export function EditableCell({
 
     if (!isNaN(parsed) && parsed >= 0) {
       onChange?.(parsed);
-      prev.current = parsed;
+      setPrev(parsed);
     } else {
-      setDraft(prev.current.toString());
+      setDraft(prev.toString());
     }
 
     setFocused(false);
@@ -55,7 +57,7 @@ export function EditableCell({
           e.target.blur();
         }
       }}
-      className={`w-full min-w-[48px] px-1 py-0.5 text-right text-sm bg-transparent border border-transparent rounded focus:border-blue-400 focus:bg-white focus:outline-none hover:border-gray-300 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
+      className={`w-full min-w-[48px] px-1 py-0.5 text-right text-base md:text-sm bg-transparent border border-transparent rounded focus:border-blue-400 focus:bg-white focus:outline-none hover:border-gray-300 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
         isHighlighted ? "font-medium" : ""
       } ${className}`}
     />

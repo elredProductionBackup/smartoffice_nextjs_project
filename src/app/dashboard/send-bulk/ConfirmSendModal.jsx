@@ -228,28 +228,28 @@ export default function ConfirmSendModal({ contacts, templateId, messageType, su
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40" onClick={onClose}>
       <div
-        className="bg-white rounded-[16px] w-full max-w-[480px] mx-4 shadow-xl flex flex-col max-h-[90vh]"
+        className="bg-white rounded-[16px] w-full max-w-[480px] mx-4 shadow-xl flex flex-col max-h-[90dvh] md:max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-start justify-between px-7 pt-6 pb-4 border-b border-[#f1f5f9]">
+        <div className="flex items-start justify-between gap-3 px-5 pt-5 md:px-7 md:pt-6 pb-4 border-b border-[#f1f5f9]">
           <div>
             <h2 className="text-[22px] font-bold text-[#1a1a2e] leading-tight">Confirm details</h2>
             <p className="text-[13px] text-[#888] mt-0.5">These values fill the message before it goes out</p>
           </div>
-          <button onClick={onClose} className="text-[#999] hover:text-[#333] transition-colors cursor-pointer mt-1">
+          <button onClick={onClose} aria-label="Close" className="text-[#999] hover:text-[#333] transition-colors cursor-pointer mt-1 max-md:p-2 max-md:-m-2">
             <FiX className="text-[20px]" />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-7 py-5">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2">
+        <div className="flex-1 overflow-y-auto px-5 md:px-7 py-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="sm:col-span-2">
               <label className="block text-[13px] font-semibold text-[#333] mb-1.5">Attendee name</label>
               <AttendeeSelect contacts={contacts} selectedNames={attendeeNames} onChange={setAttendeeNames} />
             </div>
 
             {!nameOnly && FIELDS.map((f) => (
-              <div key={f.key} className={f.type === "text" ? "col-span-2" : ""}>
+              <div key={f.key} className={f.type === "text" ? "sm:col-span-2" : ""}>
                 <label className="block text-[13px] font-semibold text-[#333] mb-1.5">{f.label}</label>
                 {f.type === "date" ? (
                   <CustomDatePicker compact openUp disablePast value={values[f.key]} onChange={(v) => setField(f.key, v)} />
@@ -268,7 +268,7 @@ export default function ConfirmSendModal({ contacts, templateId, messageType, su
                     onChange={(e) => setField(f.key, e.target.value)}
                     onBlur={(e) => setField(f.key, e.target.value.trim())}
                     placeholder={f.placeholder}
-                    className="w-full h-[42px] px-3 rounded-[8px] border border-[#d1d5db] bg-white text-[13px] text-[#111] outline-none focus:border-[#2563eb] transition-colors placeholder:text-[#9ca3af]"
+                    className="w-full h-[42px] px-3 rounded-[8px] border border-[#d1d5db] bg-white text-[16px] md:text-[13px] text-[#111] outline-none focus:border-[#2563eb] transition-colors placeholder:text-[#9ca3af]"
                   />
                 )}
               </div>
@@ -276,7 +276,7 @@ export default function ConfirmSendModal({ contacts, templateId, messageType, su
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-3 px-7 py-4 border-t border-[#f1f5f9]">
+        <div className="flex items-center justify-end gap-3 px-5 md:px-7 py-4 border-t border-[#f1f5f9]">
           <button
             onClick={onClose}
             className="px-5 h-[42px] rounded-[8px] border border-[#d1d5db] text-[13px] font-semibold text-[#333] hover:bg-[#f9fafb] cursor-pointer transition-colors"
@@ -306,7 +306,7 @@ export default function ConfirmSendModal({ contacts, templateId, messageType, su
           }}
         >
           <div
-            className="bg-white rounded-[16px] w-full max-w-[380px] mx-4 shadow-xl p-6"
+            className="bg-white rounded-[16px] w-full max-w-[380px] mx-4 shadow-xl p-5 md:p-6"
             onClick={(e) => e.stopPropagation()}
           >
             {sendStatus === "idle" && (

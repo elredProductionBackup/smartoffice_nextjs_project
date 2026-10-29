@@ -131,11 +131,11 @@ function ChannelIcon({ type, size = "md" }) {
 
 function StatTile({ icon: Icon, iconClass, label, value, hint }) {
   return (
-    <div className="bg-white rounded-2xl p-5 shadow-[0px_2px_10px_rgba(0,0,0,0.04)] flex items-start gap-3.5">
+    <div className="min-w-0 bg-white rounded-2xl p-4 sm:p-5 shadow-[0px_2px_10px_rgba(0,0,0,0.04)] flex flex-col sm:flex-row items-start gap-2.5 sm:gap-3.5">
       <div className={`w-10 h-10 rounded-xl grid place-items-center shrink-0 ${iconClass}`}>
         <Icon className="text-[18px]" />
       </div>
-      <div className="min-w-0">
+      <div className="min-w-0 max-w-full">
         <p className="text-[12px] font-medium text-[#888]">{label}</p>
         <p className="text-[24px] font-bold text-[#1a1a2e] leading-tight mt-0.5 tabular-nums">{value}</p>
         {hint && <p className="text-[12px] text-[#9ca3af] mt-0.5 truncate">{hint}</p>}
@@ -173,7 +173,8 @@ function Dropdown({ value, options, onChange, className = "" }) {
         />
       </button>
       {open && (
-        <div className="absolute z-30 right-0 min-w-full mt-1 bg-white border border-[#e5e7eb] rounded-[10px] shadow-lg py-1.5 px-1.5 max-h-[260px] overflow-y-auto">
+        // Phones: open under the button at its width (labels wrap) so the menu never leaves the screen
+        <div className="absolute z-30 right-0 max-sm:left-0 max-sm:right-auto min-w-full mt-1 bg-white border border-[#e5e7eb] rounded-[10px] shadow-lg py-1.5 px-1.5 max-h-[260px] overflow-y-auto">
           {options.map((o) => (
             <button
               key={o.value}
@@ -182,7 +183,7 @@ function Dropdown({ value, options, onChange, className = "" }) {
                 onChange(o.value);
                 setOpen(false);
               }}
-              className={`w-full text-left px-3 py-2 text-[13px] rounded-[7px] whitespace-nowrap cursor-pointer ${
+              className={`w-full text-left px-3 py-2 text-[13px] rounded-[7px] whitespace-nowrap max-sm:whitespace-normal cursor-pointer ${
                 value === o.value ? "bg-[#eff6ff] text-[#2563eb] font-medium" : "text-[#111] hover:bg-[#f9fafb]"
               }`}
             >
@@ -197,13 +198,13 @@ function Dropdown({ value, options, onChange, className = "" }) {
 
 function Segmented({ value, options, onChange }) {
   return (
-    <div className="inline-flex p-1 rounded-[10px] bg-[#f3f4f6]">
+    <div className="inline-flex max-w-full max-md:overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden p-1 rounded-[10px] bg-[#f3f4f6]">
       {options.map((o) => (
         <button
           key={o.value}
           type="button"
           onClick={() => onChange(o.value)}
-          className={`flex items-center gap-1.5 px-3 h-[34px] rounded-[8px] text-[13px] font-semibold whitespace-nowrap cursor-pointer transition-colors ${
+          className={`flex items-center gap-1.5 px-3 h-[34px] shrink-0 rounded-[8px] text-[13px] font-semibold whitespace-nowrap cursor-pointer transition-colors ${
             value === o.value ? "bg-white text-[#1a1a2e] shadow-[0_1px_3px_rgba(0,0,0,0.08)]" : "text-[#6b7280] hover:text-[#1a1a2e]"
           }`}
         >
@@ -346,13 +347,15 @@ export default function BroadcastReportsClient() {
 
   // replaceState (not router.replace) so typing in search doesn't trigger a
   // navigation or add history entries; Next keeps useSearchParams in sync.
+  // Starts from the current query so params owned by others (e.g. networkClusterCode) are kept.
   useEffect(() => {
-    const params = new URLSearchParams();
-    if (search.trim()) params.set("q", search.trim());
-    if (templateFilter) params.set("template", templateFilter);
-    if (statusFilter !== "all") params.set("status", statusFilter);
-    if (channel !== "all") params.set("channel", channel);
-    if (view !== "messages") params.set("view", view);
+    const params = new URLSearchParams(window.location.search);
+    const put = (key, value) => (value ? params.set(key, value) : params.delete(key));
+    put("q", search.trim());
+    put("template", templateFilter);
+    put("status", statusFilter !== "all" ? statusFilter : "");
+    put("channel", channel !== "all" ? channel : "");
+    put("view", view !== "messages" ? view : "");
     const qs = params.toString();
     const url = `${window.location.pathname}${qs ? `?${qs}` : ""}`;
     if (url !== `${window.location.pathname}${window.location.search}`) {
@@ -551,18 +554,18 @@ export default function BroadcastReportsClient() {
   ];
 
   return (
-    <div className="pt-6 pb-10">
+    <div className="pt-4 pb-24 md:pt-6 md:pb-10">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 md:gap-4 mb-5 md:mb-6">
+        <div className="flex items-center gap-3 md:gap-4 min-w-0">
           <button
             onClick={() => router.push("/dashboard/send-bulk")}
             title="Back to new broadcast"
-            className="w-10 h-10 rounded-xl bg-white shadow-[0px_2px_6px_rgba(0,0,0,0.08)] flex items-center justify-center cursor-pointer text-[#333]"
+            className="w-10 h-10 shrink-0 rounded-xl bg-white shadow-[0px_2px_6px_rgba(0,0,0,0.08)] flex items-center justify-center cursor-pointer text-[#333]"
           >
             <FiArrowLeft className="text-[18px]" />
           </button>
-          <div>
+          <div className="min-w-0">
             <h1 className="font-heading text-2xl font-bold text-[#1a1a2e]">Broadcast reports</h1>
             <p className="text-[13px] text-[#888]">Everyone you&apos;ve messaged on WhatsApp and email, and where each message stands</p>
           </div>
@@ -589,7 +592,7 @@ export default function BroadcastReportsClient() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5 gap-4 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5 gap-3 md:gap-4 mb-5 md:mb-6">
         <StatTile
           icon={FiSend}
           iconClass="bg-[#eff6ff] text-[#2563eb]"
@@ -630,17 +633,17 @@ export default function BroadcastReportsClient() {
       {/* Toolbar */}
       <div className="bg-white rounded-2xl p-4 shadow-[0px_2px_10px_rgba(0,0,0,0.04)] mb-5 flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-3">
-          <div className="relative flex-1 min-w-[220px]">
+          <div className="relative flex-1 basis-full sm:basis-0 min-w-[220px]">
             <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9ca3af] text-[16px]" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search recipient name, phone or email"
-              className="w-full h-[42px] pl-10 pr-3 rounded-[10px] border border-[#d1d5db] text-[13px] text-[#111] outline-none focus:border-[#2563eb] transition-colors placeholder:text-[#9ca3af]"
+              className="w-full h-[42px] pl-10 pr-3 rounded-[10px] border border-[#d1d5db] text-[16px] md:text-[13px] text-[#111] outline-none focus:border-[#2563eb] transition-colors placeholder:text-[#9ca3af]"
             />
           </div>
-          <Dropdown value={templateFilter} options={templateOptions} onChange={setTemplateFilter} className="w-[220px]" />
-          <Dropdown value={statusFilter} options={statusOptions} onChange={setStatusFilter} className="w-[150px]" />
+          <Dropdown value={templateFilter} options={templateOptions} onChange={setTemplateFilter} className="flex-1 sm:flex-initial sm:w-[220px] max-sm:min-w-0" />
+          <Dropdown value={statusFilter} options={statusOptions} onChange={setStatusFilter} className="flex-1 sm:flex-initial sm:w-[150px] max-sm:min-w-0" />
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -675,7 +678,7 @@ export default function BroadcastReportsClient() {
       {loading ? (
         <Skeleton />
       ) : error ? (
-        <div className="bg-white rounded-2xl p-10 shadow-[0px_2px_10px_rgba(0,0,0,0.04)] flex flex-col items-center text-center">
+        <div className="bg-white rounded-2xl p-6 md:p-10 shadow-[0px_2px_10px_rgba(0,0,0,0.04)] flex flex-col items-center text-center">
           <div className="w-12 h-12 rounded-full bg-[#fef2f2] text-[#dc2626] grid place-items-center mb-3">
             <FiAlertCircle className="text-[22px]" />
           </div>
@@ -689,7 +692,7 @@ export default function BroadcastReportsClient() {
           </button>
         </div>
       ) : visibleReports.length === 0 ? (
-        <div className="bg-white rounded-2xl p-10 shadow-[0px_2px_10px_rgba(0,0,0,0.04)] flex flex-col items-center text-center">
+        <div className="bg-white rounded-2xl p-6 md:p-10 shadow-[0px_2px_10px_rgba(0,0,0,0.04)] flex flex-col items-center text-center">
           <div className="w-12 h-12 rounded-full bg-[#f3f4f6] text-[#9ca3af] grid place-items-center mb-3">
             <FiInbox className="text-[22px]" />
           </div>

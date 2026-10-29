@@ -16,11 +16,18 @@ export default function ProfilePage() {
     (state) => state.dashboard
   );
 
+  const refreshKey = useSelector((state) => state.actionableUi.refreshKey);
+
   useEffect(() => {
     dispatch(fetchDashboardActionables());
   }, [dispatch]);
+
+  // Silent refetch when actionables changed elsewhere (assistant, WhatsApp, periodic poll)
+  useEffect(() => {
+    if (refreshKey) dispatch(fetchDashboardActionables({ silent: true }));
+  }, [dispatch, refreshKey]);
   return (
-    <div className="flex flex-col h-[calc(100vh-80px)] overflow-auto relative">
+    <div className="flex flex-col md:h-[calc(100vh-80px)] md:overflow-auto relative">
       {/* <div className="mx-50">
         <div className="relative border outline-none w-full h-15 border-[#E1E2E6] bg-[#F2F6FC] rounded-full px-6 ">
           <Image
@@ -38,11 +45,11 @@ export default function ProfilePage() {
         </div>
       </div> */}
 
-        <div className="flex items-center gap-[20px] mt-[20px] mb-[10px]">
-          <h2 className="font-heading text-[32px] font-semibold">Dashboard</h2>
+        <div className="flex items-center gap-[20px] mt-4 md:mt-[20px] mb-3 md:mb-[10px]">
+          <h2 className="font-heading text-[24px] md:text-[32px] font-semibold">Dashboard</h2>
         </div>
 
-      <div className="dashboard-items grid grid-cols-2 gap-4 flex-1 min-h-0 w-full pb-[20px]">
+      <div className="dashboard-items grid grid-cols-1 md:grid-cols-2 gap-4 md:flex-1 md:min-h-0 w-full pb-24 md:pb-[20px]">
         <DashboardActionableList
           data={items}
           loading={loading}

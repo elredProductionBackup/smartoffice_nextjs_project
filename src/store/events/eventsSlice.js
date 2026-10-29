@@ -237,7 +237,7 @@ const eventSlice = createSlice({
           state.total = action.payload.total;
           state.groupedEvents = groupEventsByMonth(action.payload.list);
         } catch (err) {
-          console.log("Reducer crash:", err);
+          console.error("Reducer crash:", err);
         }
       })
       .addCase(fetchEvents.rejected, (state, action) => {
@@ -484,7 +484,7 @@ const eventSlice = createSlice({
           state.membersMediaUploadingCount[eventId] -= files.length;
         }
 
-        console.log(
+        console.error(
           "Upload Member Media Failed:",
           action.payload || action.error
         );
@@ -566,7 +566,7 @@ const eventSlice = createSlice({
           state.documentsUploadingCount[eventId] -= files.length;
         }
 
-        console.log("Upload Document Failed:", action.payload || action.error);
+        console.error("Upload Document Failed:", action.payload || action.error);
       })
       .addCase(deleteMembersMedia.fulfilled, (state, action) => {
         const { eventId, deleteURL } = action.payload;
@@ -579,7 +579,7 @@ const eventSlice = createSlice({
       })
 
       .addCase(deleteMembersMedia.rejected, (state, action) => {
-        console.log("Delete Member Media Failed:", action.payload || action.error);
+        console.error("Delete Member Media Failed:", action.payload || action.error);
       })
 
       .addCase(deleteDocument.fulfilled, (state, action) => {
@@ -593,7 +593,7 @@ const eventSlice = createSlice({
       })
 
       .addCase(deleteDocument.rejected, (state, action) => {
-        console.log("Delete Document Failed:", action.payload || action.error);
+        console.error("Delete Document Failed:", action.payload || action.error);
       })
 
 // ─── Event Checklist ──────────────────────────────────────────────────

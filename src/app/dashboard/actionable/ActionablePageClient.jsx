@@ -16,7 +16,7 @@ export default function ActionablePageClient() {
     const { total } = useSelector((state) => state.actionable);
 
   return (
-   <div className="h-[calc(100vh-120px)] my-5 flex flex-col">
+   <div className="h-[calc(100dvh-100px)] md:h-[calc(100vh-120px)] my-5 flex flex-col">
       <ActionableHeader
         title="Actionable"
         taskCount={total}

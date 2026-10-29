@@ -21,7 +21,7 @@ const GROUPS = [
 ];
 
 const inputClass =
-  "w-full h-11 px-3.5 rounded-xl bg-white border border-[#E2E8F0] text-[15px] text-[#1E293B] placeholder:text-[#94A3B8] outline-none focus:border-[#0B57D0] transition";
+  "w-full h-11 px-3.5 rounded-xl bg-white border border-[#E2E8F0] text-[16px] md:text-[15px] text-[#1E293B] placeholder:text-[#94A3B8] outline-none focus:border-[#0B57D0] transition";
 
 const chipClass = (active) =>
   `h-8 px-3.5 rounded-full border text-[14px] font-bold transition cursor-pointer ${
@@ -213,21 +213,22 @@ export default function NewTopicModal({ topic, onClose, onCreated }) {
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 font-nunito p-4"
       onMouseDown={(e) => e.target === e.currentTarget && !saving && onClose()}
     >
-      <div className="w-full max-w-[620px] max-h-[calc(100vh-32px)] bg-white rounded-[20px] shadow-xl flex flex-col overflow-hidden">
-        <div className="flex items-center justify-between px-7 pt-6 pb-4 shrink-0">
-          <h3 className="text-[24px] font-semibold text-[#1E293B]">{isEdit ? "Edit topic" : "New topic"}</h3>
+      <div className="w-full max-w-[620px] max-h-[calc(100dvh-32px)] md:max-h-[calc(100vh-32px)] bg-white rounded-[20px] shadow-xl flex flex-col overflow-hidden">
+        <div className="flex items-center justify-between px-5 pt-5 md:px-7 md:pt-6 pb-4 shrink-0">
+          <h3 className="text-[20px] md:text-[24px] font-semibold text-[#1E293B]">{isEdit ? "Edit topic" : "New topic"}</h3>
           <button
             type="button"
             title="Close"
             onClick={onClose}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-[#1E293B] hover:bg-[#F1F5F9] transition cursor-pointer"
+            className="w-10 h-10 -mr-1 md:mr-0 md:w-8 md:h-8 rounded-full flex items-center justify-center text-[#1E293B] hover:bg-[#F1F5F9] transition cursor-pointer"
           >
             <FiX className="text-[20px]" />
           </button>
         </div>
 
-        <div className="flex-1 min-h-0 flex flex-col px-7 pb-5">
-          <div className="grid grid-cols-2 gap-4 shrink-0">
+        {/* Phones: the whole body scrolls, since the stacked fields leave little room for the list */}
+        <div className="flex-1 min-h-0 flex flex-col px-5 md:px-7 pb-5 max-md:overflow-y-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 shrink-0">
             <label className="block">
               <span className="block text-[14px] font-semibold text-[#64748B] mb-1.5">Topic</span>
               <input
@@ -260,7 +261,7 @@ export default function NewTopicModal({ topic, onClose, onCreated }) {
             ))}
           </div>
 
-          <div className="flex-1 min-h-[220px] border border-[#E2E8F0] rounded-2xl flex flex-col overflow-hidden">
+          <div className="flex-1 min-h-[220px] max-md:shrink-0 border border-[#E2E8F0] rounded-2xl flex flex-col overflow-hidden">
             <div className="p-3 border-b border-[#E2E8F0] shrink-0">
               <div className="relative">
                 <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8] text-[16px]" />
@@ -338,7 +339,7 @@ export default function NewTopicModal({ topic, onClose, onCreated }) {
           )}
         </div>
 
-        <div className="flex items-center justify-between px-7 py-4 border-t border-[#E2E8F0] shrink-0">
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-5 md:px-7 py-4 border-t border-[#E2E8F0] shrink-0">
           {blocker && (title || others.length) ? (
             <span aria-live="polite" className="text-[15px] font-semibold text-[#B45309]">{blocker}</span>
           ) : (
@@ -346,7 +347,7 @@ export default function NewTopicModal({ topic, onClose, onCreated }) {
               {selected.size} {selected.size === 1 ? "person" : "people"} selected
             </span>
           )}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 ml-auto">
             <button type="button" onClick={onClose} disabled={saving} className="h-10 px-4 rounded-full text-[15px] font-bold text-[#334155] hover:bg-[#F1F5F9] transition cursor-pointer disabled:opacity-50">
               Cancel
             </button>

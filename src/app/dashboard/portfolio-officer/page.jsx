@@ -5,10 +5,11 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import { MdCurrencyRupee } from 'react-icons/md';
-import { FiArrowRight, FiCalendar, FiTrendingUp, FiSend, FiCheckSquare } from 'react-icons/fi';
+import { FiArrowRight, FiCalendar, FiTrendingUp, FiSend } from 'react-icons/fi';
 import RequestEvent from '@/_components/UI/RequestEvent';
 import DashboardActionableList from '@/_components/DashboardActionableList';
 import TitleTooltipHover from '@/_components/UI/TitleTooltipHover';
+import DashboardApprovalList from '@/_components/DashboardApprovalList';
 import { getBudgetReportCategory, getBudgetEventReportCategory } from '@/services/finance.service';
 import { formatCompactAmount } from '@/utils/currency';
 
@@ -83,15 +84,15 @@ const PortfolioOfficerPage = () => {
   const totalEventUsed = events.reduce((sum, r) => sum + (Number(r.eventExpenseAmount) || 0), 0);
 
   return (
-    <div className="p-6">
+    <div className="pt-4 pb-24 md:p-6">
       {showRequestEvent && <RequestEvent onClose={() => setShowRequestEvent(false)} />}
 
       {/* ── Top Banner ── */}
-      <div className="flex justify-between items-center gap-6 mb-6">
+      <div className="flex flex-col items-start gap-3 sm:flex-row sm:justify-between sm:items-center sm:gap-6 mb-5 md:mb-6">
 
         {/* Left: name + role */}
-        <div className="shrink-0">
-          <h1 className="font-heading text-[32px] font-bold text-[#1a1a2e] leading-tight">{fullName}</h1>
+        <div className="shrink-0 max-w-full">
+          <h1 className="font-heading text-[26px] md:text-[32px] font-bold text-[#1a1a2e] leading-tight">{fullName}</h1>
           <p className="text-[15px] text-[#888] mt-1">Learning Portfolio Officer · FY 2026</p>
         </div>
 
@@ -110,32 +111,20 @@ const PortfolioOfficerPage = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
         <DashboardActionableList data={DUMMY_ACTIONABLES} />
 
-        {/* TODO: replace with approvals API response */}
-        <div className="flex flex-col rounded-2xl bg-[#F2F7FF] px-6 py-6 min-h-[500px] max-h-[500px]">
-          <h3 className="text-[20px] font-[700] text-[#333] mb-[20px]">Approvals</h3>
-          <div className="flex-1 flex flex-col gap-[10px] items-center justify-center">
-            <div className="h-[60px] w-[60px] bg-[#D3E3FD] rounded-full mb-[10px] grid place-items-center">
-              <FiCheckSquare className="text-[24px] text-[#0B57D0]" />
-            </div>
-            <div className="text-[20px] font-[600] text-[#333333] text-center">
-              No approvals found
-            </div>
-            <p className="text-[14px] text-[#666666]">You don&apos;t have any approvals right now</p>
-          </div>
-        </div>
+        <DashboardApprovalList />
       </div>
 
       {/* ── Total Budget ── */}
-      <div className="bg-white border border-[#e5e7eb] rounded-[16px] p-6 shadow-[0px_1px_4px_0px_#0000000d] overflow-hidden">
-        <div className="flex items-start justify-between mb-3">
+      <div className="bg-white border border-[#e5e7eb] rounded-[16px] p-4 md:p-6 shadow-[0px_1px_4px_0px_#0000000d] overflow-hidden">
+        <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex items-center gap-3">
             <div className="w-[42px] h-[42px] rounded-[10px] bg-[#eff6ff] flex items-center justify-center">
               <MdCurrencyRupee className="text-[22px] text-[#2563eb]" />
             </div>
-            <span className="text-[18px] font-semibold text-[#2563eb]">Total Budget</span>
+            <span className="text-[16px] md:text-[18px] font-semibold text-[#2563eb]">Total Budget</span>
           </div>
 
-          <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#f5f3ff] text-[#7c3aed]">
+          <div className="flex items-center gap-2 px-3 md:px-4 py-2 rounded-full bg-[#f5f3ff] text-[#7c3aed] shrink-0">
             <FiCalendar className="text-[16px]" />
             <span className="text-[14px] font-semibold">
               {loading ? '—' : eventCount} event{eventCount === 1 ? '' : 's'}
@@ -144,13 +133,13 @@ const PortfolioOfficerPage = () => {
         </div>
 
         <TitleTooltipHover title={formatExactRupees(assigned)}>
-          <div className="text-[32px] font-bold text-[#1a1a2e] leading-tight mb-3">
+          <div className="text-[26px] md:text-[32px] font-bold text-[#1a1a2e] leading-tight mb-3">
             {loading ? '—' : formatExactRupees(assigned)}
           </div>
         </TitleTooltipHover>
 
         {!loading && (
-          <div className="flex items-center gap-4 text-[13px] font-medium">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] font-medium">
             <span className="flex items-center gap-1.5 text-[#6366f1]">
               <FiTrendingUp className="text-[15px]" />
               {usedPct.toFixed(1)}% used ({formatRupees(used)})
@@ -160,8 +149,8 @@ const PortfolioOfficerPage = () => {
         )}
 
         {/* ── Learning events (same table as Finance Budget) ── */}
-        <div className="-mx-6 -mb-6 mt-6 border-t border-slate-100">
-        <div className="flex items-center justify-between px-6 pt-4 pb-1">
+        <div className="-mx-4 -mb-4 md:-mx-6 md:-mb-6 mt-5 md:mt-6 border-t border-slate-100">
+        <div className="flex items-center justify-between gap-3 px-4 md:px-6 pt-4 pb-1">
           <div className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">{PORTFOLIO_NAME} Events</div>
           <Link
             href={
@@ -175,6 +164,9 @@ const PortfolioOfficerPage = () => {
           </Link>
         </div>
 
+        {/* Events table: scrolls sideways below lg */}
+        <div className="overflow-x-auto">
+        <div className="min-w-[720px] lg:min-w-0">
         {/* Table header */}
         <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr] gap-4 px-6 py-3 border-b border-slate-100">
           {['Event Name', 'Date', 'Assigned Budget', 'Used Budget', 'Remaining', 'Status'].map((col) => (
@@ -235,6 +227,8 @@ const PortfolioOfficerPage = () => {
             </div>
           </>
         )}
+        </div>
+        </div>
         </div>
       </div>
     </div>

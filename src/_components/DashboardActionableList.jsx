@@ -25,7 +25,7 @@ export default function DashboardActionableList({ data = [], loading = false, fi
 
   return (
     // fillHeight: stretch to the parent's height (min 500px) instead of a fixed 500px box
-    <div className={`flex flex-col rounded-2xl bg-[#F2F7FF] px-6 py-6 min-h-[500px] ${fillHeight ? "h-full" : "max-h-[500px]"}`}>
+    <div className={`flex flex-col rounded-2xl bg-[#F2F7FF] px-4 py-5 md:px-6 md:py-6 min-h-[360px] md:min-h-[500px] ${fillHeight ? "max-h-[70dvh] md:max-h-none md:h-full" : "max-h-[500px]"}`}>
 
       {/* SHIMMER */}
       {loading ?
@@ -33,9 +33,9 @@ export default function DashboardActionableList({ data = [], loading = false, fi
         :
         <>
           {/* Header */}
-          <div className="flex items-center justify-between mb-[20px]">
-            <h3 className="font-heading text-[20px] font-[700] text-[#333]">Actionable</h3>
-            <Link href={`/dashboard/actionable?item=all&page=1`} className="text-[14px] font-[600] text-[#0B57D0] border border-[#0B57D0] px-[14px] py-[4px] rounded-full cursor-pointer">
+          <div className="flex items-center justify-between gap-3 mb-4 md:mb-[20px]">
+            <h3 className="font-heading text-[18px] md:text-[20px] font-[700] text-[#333]">Actionable</h3>
+            <Link href={`/dashboard/actionable?item=all&page=1`} className="shrink-0 text-[14px] font-[600] text-[#0B57D0] border border-[#0B57D0] px-[14px] py-[4px] rounded-full cursor-pointer">
               {data.length ? `View all` : `Go to actionable`}
             </Link>
           </div>
@@ -53,26 +53,26 @@ export default function DashboardActionableList({ data = [], loading = false, fi
                     className="object-contain"
                   />
                 </div>
-                <div className="text-[20px] font-[600] text-[#333333] text-center">
+                <div className="text-[18px] md:text-[20px] font-[600] text-[#333333] text-center">
                   No action items found
                 </div>
-                <p className="text-[14px] text-[#666666]">Looks like you haven’t added any action item yet</p>
+                <p className="text-[14px] text-[#666666] text-center">Looks like you haven’t added any action item yet</p>
               </div>
             )}
             {/* REAL DATA */}
             {data.length > 0 &&
-              <div className="flex flex-col gap-[20px]">
+              <div className="flex flex-col gap-4 md:gap-[20px]">
                 {data.map((item) => (
                   <div
                     key={item.actionableId}
-                    className="flex items-start justify-between gap-[34px] border-b border-[#D4DFF1] pb-[20px] last:border-none"
+                    className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between lg:gap-[34px] border-b border-[#D4DFF1] pb-4 md:pb-[20px] last:border-none"
                   >
                     {/* Left */}
-                    <div className="flex gap-3">
+                    <div className="flex gap-3 min-w-0">
                       <div className="mt-[7px] h-[8px] min-w-[8px] rounded-full bg-[#333]" />
 
-                      <div className="flex flex-col gap-[6px]">
-                        <p className="text-[16px] leading-[21px] font-[500] text-[#333] line-clamp-2">
+                      <div className="flex flex-col gap-[6px] min-w-0">
+                        <p className="text-[16px] leading-[21px] font-[500] text-[#333] line-clamp-2 break-words">
                           {cleanText(item.title ?? "—")}
                         </p>
 
@@ -85,8 +85,8 @@ export default function DashboardActionableList({ data = [], loading = false, fi
                     </div>
 
                     {/* Right */}
-                    <div className="flex items-center gap-[34px]">
-                      <span className="w-[100px] text-[14px] text-[#333333] font-[600] whitespace-nowrap">
+                    <div className="flex items-center justify-between gap-4 pl-5 lg:pl-0 lg:justify-start lg:gap-[34px]">
+                      <span className="lg:w-[100px] text-[14px] text-[#333333] font-[600] whitespace-nowrap">
                         {item?.dueDate
                           ? new Date(item.dueDate).toLocaleDateString("en-GB", {
                             day: "2-digit",

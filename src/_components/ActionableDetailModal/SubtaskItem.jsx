@@ -29,11 +29,11 @@ export default function SubtaskItem({
           onChange={(e) => setEditingValue(e.target.value)}
           onBlur={() => onCommitEdit(subtask._id)}
           onKeyDown={(e) => e.key === "Enter" && onCommitEdit(subtask._id)}
-          className="flex-1 bg-transparent outline-none text-[16px] font-[600] mr-[22px]"
+          className="flex-1 min-w-0 bg-transparent outline-none text-[16px] font-[600] mr-3 md:mr-[22px]"
         />
       ) : (
         <span
-          className={`flex-1 text-[16px] font-[600] line-clamp-1 mr-[22px] ${subtask.isCompleted ? "line-through " : ""
+          className={`flex-1 min-w-0 text-[16px] font-[600] line-clamp-1 mr-3 md:mr-[22px] ${subtask.isCompleted ? "line-through " : ""
             }`}
         >
           {subtask.title}
@@ -42,7 +42,7 @@ export default function SubtaskItem({
 
       {/* ACTION ICONS */}
         {canEditOrDelete &&
-      <div className="flex gap-[10px] ">
+      <div className="flex shrink-0 gap-[10px] ">
           <button
             disabled={subtask?.isOptimistic}
             onClick={() => {
