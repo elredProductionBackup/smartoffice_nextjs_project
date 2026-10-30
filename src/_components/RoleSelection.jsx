@@ -202,10 +202,21 @@ const RoleSelection = () => {
 
     setLoading(true);
     setError(null);
+    let autoEntering = false;
     getNetworkClusterAdminDetail({ networkClusterCode, email })
       .then((res) => {
         if (res?.data?.success) {
           dispatch(setAdminDetail(res.data.result));
+
+          // Only one role: skip this screen and log straight into it
+          const roles = ROLES.filter((role) => res.data.result?.role?.includes(role.key));
+          if (roles.length === 1) {
+            autoEntering = true;
+            const roleKey = roles[0].key;
+            dispatch(setSelectedRole(roleKey));
+            showLoader();
+            router.replace(ROLE_HOME[roleKey] ?? "/dashboard");
+          }
         } else {
           setError("fetchFailed");
         }
@@ -214,8 +225,9 @@ const RoleSelection = () => {
         console.error("Admin detail fetch error:", err);
         setError("fetchFailed");
       })
-      .finally(() => setLoading(false));
-  }, [network?.networkClusterCode, user?.email, dispatch]);
+      // Keep the shimmer up while redirecting so the single card never flashes
+      .finally(() => !autoEntering && setLoading(false));
+  }, [network?.networkClusterCode, user?.email, dispatch, router, showLoader]);
 
   useEffect(() => {
     fetchRoles();
