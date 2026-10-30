@@ -1,9 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useSelector } from "react-redux";
-import { FiMail, FiPhone, FiBriefcase, FiShield, FiHash, FiCopy, FiCheck, FiArrowLeft } from "react-icons/fi";
+import { useDispatch, useSelector } from "react-redux";
+import { FiMail, FiPhone, FiBriefcase, FiShield, FiHash, FiCopy, FiCheck, FiArrowLeft, FiChevronDown } from "react-icons/fi";
+import { setSelectedRole } from "@/store/auth/authSlice";
+import { useOutsideClick } from "@/hooks/useOutsideClick";
+import { ROLE_HOME } from "@/utils/routeAccess";
+import useGlobalLoader from "@/store/useGlobalLoader";
+import SuccessPopup from "@/_components/ConfirmationPopups/SuccessPopup";
 
 // "financeOfficer" -> "Finance Officer"
 const formatRole = (role = "") =>
@@ -51,15 +56,97 @@ const InfoRow = ({ icon: Icon, label, value, copyable = false }) => {
   );
 };
 
+// Current role next to the name. With more than one role it opens a menu to switch roles.
+const RoleSwitcher = ({ roles, selectedRole, onSwitch }) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const close = useCallback(() => setOpen(false), []);
+  useOutsideClick(ref, close);
+
+  const pillClass =
+    "inline-flex items-center gap-2 h-10 px-4 rounded-full bg-white border border-[#D4DFF1] text-[15px] font-semibold text-[#333333] shadow-[0px_1px_4px_0px_#0000000d]";
+
+  if (roles.length <= 1) {
+    return roles[0] ? <span className={pillClass}>{formatRole(roles[0])}</span> : null;
+  }
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        className={`${pillClass} cursor-pointer hover:border-[#0B57D0] transition-colors`}
+      >
+        {formatRole(selectedRole)}
+        <FiChevronDown className={`text-[16px] text-[#777777] transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      {open && (
+        <ul
+          role="listbox"
+          className="absolute right-0 top-full mt-2 z-20 min-w-[200px] rounded-xl bg-white border border-[#EAEEF2] shadow-[0px_4px_16px_0px_#0000001a] py-1.5"
+        >
+          {roles.map((role) => {
+            const active = role === selectedRole;
+            return (
+              <li key={role}>
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={active}
+                  onClick={() => {
+                    close();
+                    if (!active) onSwitch(role);
+                  }}
+                  className={`w-full flex items-center justify-between gap-3 px-4 py-2.5 text-left text-[15px] cursor-pointer transition-colors ${
+                    active ? "text-[#0B57D0] font-bold bg-[#F2F7FF]" : "text-[#333333] font-semibold hover:bg-[#F2F7FF]"
+                  }`}
+                >
+                  {formatRole(role)}
+                  {active && <FiCheck />}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+};
+
 const MyProfilePage = () => {
   const router = useRouter();
-  const { user, adminDetail } = useSelector((state) => state.auth);
+  const dispatch = useDispatch();
+  const { user, adminDetail, selectedRole } = useSelector((state) => state.auth);
 
   const profile = adminDetail || user || {};
   const fullName =
     `${profile.firstname || ""} ${profile.lastname || ""}`.trim() || "—";
   const titles = (profile.title || []).map((t) => capitalize(t.value)).filter(Boolean);
-  const roles = (profile.role || []).map(formatRole);
+  const roleKeys = profile.role || [];
+  const roles = roleKeys.map(formatRole);
+
+  const [switchedRole, setSwitchedRole] = useState(null);
+
+  // Same token works for every role, so switching is just a new selectedRole.
+  // Brief loader, then the success popup; OK takes the user to that role's home.
+  const handleRoleSwitch = (role) => {
+    const { showLoader, hideLoader } = useGlobalLoader.getState();
+    showLoader();
+    setTimeout(() => {
+      dispatch(setSelectedRole(role));
+      hideLoader();
+      setSwitchedRole(role);
+    }, 500);
+  };
+
+  const handleSwitchPopupClose = () => {
+    const role = switchedRole;
+    setSwitchedRole(null);
+    router.replace(ROLE_HOME[role] ?? "/dashboard");
+  };
   const networkClusterCode =
     user?.networkClusterDetails?.networkClusterCode ||
     (typeof window !== "undefined" ? localStorage.getItem("networkClusterCode") : "");
@@ -91,23 +178,14 @@ const MyProfilePage = () => {
             height={96}
             className="w-[96px] h-[96px] rounded-full object-cover bg-[#CCCCCC] border border-[#D4DFF1]"
           />
-          <div>
+          <div className="min-w-0 flex-1">
             <h3 className="text-[26px] font-bold text-[#333333] capitalize">{fullName}</h3>
             {titles.length > 0 && (
               <p className="text-[16px] text-[#666666]">{titles.join(" | ")}</p>
             )}
-            {roles.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-2">
-                {roles.map((r) => (
-                  <span
-                    key={r}
-                    className="inline-flex items-center h-7 px-3 rounded-full bg-[#D3E3FD] text-[13px] font-bold text-[#0B57D0]"
-                  >
-                    {r}
-                  </span>
-                ))}
-              </div>
-            )}
+          </div>
+          <div className="shrink-0">
+            <RoleSwitcher roles={roleKeys} selectedRole={selectedRole} onSwitch={handleRoleSwitch} />
           </div>
         </div>
 
@@ -120,6 +198,13 @@ const MyProfilePage = () => {
         </div>
       </div>
       </div>
+
+      <SuccessPopup
+        isOpen={!!switchedRole}
+        title="Role switched"
+        message={`You're now using Smart Networks as ${formatRole(switchedRole ?? "")}.`}
+        onClose={handleSwitchPopupClose}
+      />
     </div>
   );
 };
