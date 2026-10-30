@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { MdCurrencyRupee } from 'react-icons/md';
 import { FiArrowRight, FiCalendar, FiTrendingUp, FiSend, FiCheckSquare } from 'react-icons/fi';
 import RequestEvent from '@/_components/UI/RequestEvent';
@@ -11,6 +11,7 @@ import DashboardActionableList from '@/_components/DashboardActionableList';
 import TitleTooltipHover from '@/_components/UI/TitleTooltipHover';
 import { getBudgetReportCategory, getBudgetEventReportCategory } from '@/services/finance.service';
 import { formatCompactAmount } from '@/utils/currency';
+import { fetchDashboardActionables } from '@/store/dashboard/dashboardThunks';
 
 // This page belongs to the Learning portfolio officer
 const PORTFOLIO_NAME = 'Learning';
@@ -24,26 +25,30 @@ const formatDate = (iso) => {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 };
 
-// TODO: replace with actionables API response
-const DUMMY_ACTIONABLES = [
-  { actionableId: 'a1', title: 'please advise status of Bangalore hotel', createdBy: { name: 'Nandini Handa' }, dueTime: '4:10 PM', dueDate: '2026-09-23' },
-  { actionableId: 'a2', title: 'Coordinate with Uttam for lanyards and badges design', createdBy: { name: 'Nandini Handa' }, dueTime: '10:21 AM', dueDate: '2026-09-23' },
-  { actionableId: 'a3', title: 'Send modules and key takeaways to EAs', createdBy: { name: 'Nandini Handa' }, dueTime: '10:21 AM', dueDate: '2026-09-23' },
-  { actionableId: 'a4', title: 'Native discussion with SG and team', createdBy: { name: 'Nandini Handa' }, dueTime: '10:18 AM', dueDate: '2026-09-23' },
-  { actionableId: 'a5', title: 'Smart networks demo with YPO at 4 pm', dueDate: '2026-09-23' },
-];
-
 const capitalize = (str = '') => str.charAt(0).toUpperCase() + str.slice(1);
 
 const PortfolioOfficerPage = () => {
   const router = useRouter();
+  const dispatch = useDispatch();
   const { user, adminDetail } = useSelector((state) => state.auth);
+  const { items: actionables, loading: actionablesLoading } = useSelector((state) => state.dashboard);
+  const refreshKey = useSelector((state) => state.actionableUi.refreshKey);
   const profile = adminDetail || user || {};
   const fullName = [profile.firstname, profile.lastname].filter(Boolean).map(capitalize).join(' ');
   const [showRequestEvent, setShowRequestEvent] = useState(false);
   const [portfolio, setPortfolio] = useState(null);
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Same actionables API as the admin dashboard (latest 5)
+  useEffect(() => {
+    dispatch(fetchDashboardActionables());
+  }, [dispatch]);
+
+  // Silent refetch when actionables changed elsewhere (assistant, WhatsApp, periodic poll)
+  useEffect(() => {
+    if (refreshKey) dispatch(fetchDashboardActionables({ silent: true }));
+  }, [dispatch, refreshKey]);
 
   // Same APIs as Finance Budget: find the Learning category in the report,
   // then load its events by budgetTypeId.
@@ -108,7 +113,7 @@ const PortfolioOfficerPage = () => {
 
       {/* ── Actionables & Approvals ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
-        <DashboardActionableList data={DUMMY_ACTIONABLES} />
+        <DashboardActionableList data={actionables} loading={actionablesLoading} />
 
         {/* TODO: replace with approvals API response */}
         <div className="flex flex-col rounded-2xl bg-[#F2F7FF] px-6 py-6 min-h-[500px] max-h-[500px]">
