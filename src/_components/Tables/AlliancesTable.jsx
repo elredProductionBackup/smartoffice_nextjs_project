@@ -147,10 +147,10 @@ const NoteForm = ({ initialText = "", onCancel, onSave }) => {
         maxLength={1000}
         rows={3}
         placeholder="Write a note…"
-        className="w-full resize-none text-[16px] md:text-[18px] text-[#333] placeholder:text-[#999] outline-none"
+        className="w-full resize-none text-[18px] text-[#333] placeholder:text-[#999] outline-none"
       />
       {error && <p className="text-sm text-red-600 mt-1">{error}</p>}
-      <div className="flex flex-wrap items-center justify-between gap-3 mt-2">
+      <div className="flex items-center justify-between gap-3 mt-2">
         <span className="text-sm text-[#999]">{text.length}/1000</span>
         <div className="flex items-center gap-3">
           <button
@@ -190,7 +190,7 @@ const NotesPanel = ({
 
   return (
     <div
-      className="px-4 pb-4 md:pl-[94px] md:pr-[30px] md:pb-[20px] flex flex-col gap-3"
+      className="pl-[94px] pr-[30px] pb-[20px] flex flex-col gap-3"
       onClick={(e) => e.stopPropagation()}
     >
       {isAdding && <NoteForm onCancel={onCancelAdd} onSave={onSave} />}
@@ -220,7 +220,7 @@ const NotesPanel = ({
           >
             <HiOutlineLightBulb className="mt-1 shrink-0 text-xl text-[#F59E0B]" />
             <div className="flex-1 min-w-0">
-              <p className="text-[16px] md:text-[18px] text-[#333] whitespace-pre-wrap break-words">
+              <p className="text-[18px] text-[#333] whitespace-pre-wrap break-words">
                 {t.text}
               </p>
               <p className="text-sm text-[#999] mt-1">{formatDate(t.createdAt)}</p>
@@ -288,7 +288,7 @@ export default function AlliancesTable({
   const isEmpty = data.length === 0;
   const showStage = tab === "resources" && !!onStageChange;
   // Room for the stage menu icon (40px + 16px gap) next to the other actions
-  const actionsWidth = showStage ? "md:w-[276px]" : "md:w-[220px]";
+  const actionsWidth = showStage ? "w-[276px]" : "w-[220px]";
   const [expanded, setExpanded] = useState({}); // { [rowId]: true } for rows showing their notes
   const [addingFor, setAddingFor] = useState(null); // row whose add-note form is open
 
@@ -307,9 +307,9 @@ export default function AlliancesTable({
   if (loading) return <MembersTableShimmer />;
 
   return (
-    <div className="flex-1 min-h-0 mt-[20px] rounded-[20px] bg-[#F2F7FF] md:overflow-y-auto relative flex flex-col">
+    <div className="flex-1 min-h-0 mt-[20px] rounded-[20px] bg-[#F2F7FF] overflow-y-auto relative flex flex-col">
       {/* Table Header */}
-      <div className="hidden md:flex items-center font-bold text-lg text-[#333333] px-[30px] sticky top-0 bg-[#F2F7FF] py-3 pt-6 z-10">
+      <div className="flex items-center font-bold text-lg text-[#333333] px-[30px] sticky top-0 bg-[#F2F7FF] py-3 pt-6 z-10">
         <div className="flex-1">Name/{subtitleLabel}</div>
         <div className={`${actionsWidth} shrink-0`}>Actions</div>
       </div>
@@ -387,28 +387,27 @@ export default function AlliancesTable({
               <div
                 onClick={() => onRowClick?.(item)}
                 className={`
-              flex flex-col items-stretch gap-3 py-4 px-4
-              md:flex-row md:flex-1 md:items-center md:gap-0 md:py-[20px] md:px-[30px] ${onRowClick ? "cursor-pointer" : ""}
+              flex flex-1 items-center py-[20px] px-[30px] ${onRowClick ? "cursor-pointer" : ""}
               transition-all duration-200
               hover:bg-[#E7F0FF]
               hover:shadow-[0px_4px_4px_0px_#C7C7C740]
             `}
               >
                 {/* LEFT - Name + subtitle */}
-                <div className="flex md:flex-1 min-w-0 items-center gap-4">
+                <div className="flex flex-1 min-w-0 items-center gap-4">
                   <div className="min-w-[48px] h-[48px] bg-[#D4DFF1] grid place-items-center text-[22px] font-[600] rounded-full uppercase">
                     {item.name?.slice(0, 1)}
                   </div>
                   {/* Text is kept narrow: long descriptions wrap onto more lines (making the row taller), then are cut off */}
                   <div className="min-w-0 max-w-[600px]">
                     <p
-                      className="font-semibold text-lg md:text-xl text-[#333333] line-clamp-2 break-words"
+                      className="font-semibold text-xl text-[#333333] line-clamp-2 break-words"
                       title={item.name}
                     >
                       {item.name}
                     </p>
                     <p
-                      className="text-[16px] md:text-[20px] text-[#666666] font-[500] capitalize line-clamp-3 break-words"
+                      className="text-[20px] text-[#666666] font-[500] capitalize line-clamp-3 break-words"
                       title={item.subtitle}
                     >
                       {item.subtitle}
@@ -437,7 +436,7 @@ export default function AlliancesTable({
 
                 {/* RIGHT - Action Icons */}
                 <div
-                  className={`flex ${actionsWidth} shrink-0 items-center gap-3 md:gap-4 pl-16 md:pl-0 text-[#666666]`}
+                  className={`flex ${actionsWidth} shrink-0 items-center gap-4 text-[#666666]`}
                   onClick={(e) => e.stopPropagation()}
                 >
                   {/* Stage menu (resources only) */}

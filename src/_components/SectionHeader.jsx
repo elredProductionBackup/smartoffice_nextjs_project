@@ -120,7 +120,7 @@ export default function SectionHeader({
             <button
               type="button"
               onClick={() => setOpenDropdown((v) => !v)}
-              className="flex items-center gap-2 font-[600] cursor-pointer whitespace-nowrap"
+              className="flex items-center gap-2 font-[600] whitespace-nowrap cursor-pointer"
             >
               {searchBy}
               <span className="icon-park-outline--down text-[#999999]" />
@@ -155,7 +155,7 @@ export default function SectionHeader({
             value={localSearch}
             placeholder={`Search by ${searchBy.toLowerCase()} (Min 3 chars)`}
             onChange={handleSearchChange}
-            className="flex-1 min-w-0 bg-transparent outline-none text-base"
+            className="flex-1 min-w-0 bg-transparent outline-none"
           />
 
           {/* Clear / Search Icon */}
