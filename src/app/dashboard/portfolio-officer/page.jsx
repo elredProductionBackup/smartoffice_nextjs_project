@@ -96,13 +96,13 @@ const PortfolioOfficerPage = () => {
           <p className="text-[15px] text-[#888] mt-1">Learning Portfolio Officer · FY 2026</p>
         </div>
 
-        {/* Right: Request an Event */}
+        {/* Right: Propose an Event */}
         <button
           onClick={() => setShowRequestEvent(true)}
           className="shrink-0 flex items-center justify-center gap-2 bg-[#2445cc] text-white text-[14px] font-semibold px-6 py-2.5 rounded-full cursor-pointer border-none hover:opacity-90 transition-opacity"
         >
           <FiSend className="text-[14px]" />
-          Request an Event
+          Propose an Event
         </button>
 
       </div>

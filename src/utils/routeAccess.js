@@ -66,3 +66,10 @@ export const isAdminRouteAllowed = (pathname = "") =>
   !ADMIN_BLOCKED_ROUTES.some(
     (route) => pathname === route || pathname.startsWith(`${route}/`)
   );
+
+// Where each role lands after switching roles from My Profile
+export const ROLE_HOME = {
+  admin: ADMIN_HOME,
+  financeOfficer: FINANCE_MANAGER_HOME,
+  portfolioOfficer: LEARNING_OFFICER_HOME,
+};

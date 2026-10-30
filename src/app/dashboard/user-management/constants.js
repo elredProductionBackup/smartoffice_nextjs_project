@@ -33,6 +33,20 @@ export const ROLES = {
   },
 };
 
+// Page role keys -> API role keys; Collaborator has no API role yet, so it isn't offered when inviting or editing
+export const API_ROLES = { admin: "admin", finance: "financeOfficer", portfolio: "portfolioOfficer" };
+
+// The API needs a country code; numbers typed without one are treated as Indian (+91) for now.
+// "98765 43210" / "098765 43210" / "919876543210" / "+91 98765 43210" -> "+919876543210"; a bare "+91" counts as empty
+export const toApiPhone = (value = "") => {
+  const raw = value.trim();
+  const digits = raw.replace(/\D/g, "");
+  if (!digits || digits === "91") return "";
+  if (raw.startsWith("+")) return `+${digits}`;
+  if (digits.length === 12 && digits.startsWith("91")) return `+${digits}`;
+  return `+91${digits.replace(/^0+/, "")}`;
+};
+
 export const PORTFOLIOS = [
   "Learning",
   "Forum",

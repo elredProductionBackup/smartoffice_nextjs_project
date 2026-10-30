@@ -64,8 +64,8 @@ export default function RequestEvent({ onClose }) {
         {/* Header */}
         <div className="flex items-start justify-between gap-3 px-5 pt-5 md:px-7 md:pt-6 pb-4 border-b border-[#f1f5f9]">
           <div>
-            <h2 className="text-[20px] md:text-[22px] font-bold text-[#1a1a2e] leading-tight">Request an Event</h2>
-            <p className="text-[13px] text-[#888] mt-0.5">This will be sent to your admin for review</p>
+            <h2 className="text-[20px] md:text-[22px] font-bold text-[#1a1a2e] leading-tight">Propose an Event</h2>
+            <p className="text-[13px] text-[#888] mt-0.5">Outline your event — it goes to admin for sign-off</p>
           </div>
           <button type="button" onClick={onClose} aria-label="Close" className="text-[#999] hover:text-[#333] transition-colors cursor-pointer p-2 -mr-2 -mt-1 md:p-0 md:mr-0 md:mt-1">
             <FiX className="text-[20px]" />
@@ -228,7 +228,7 @@ export default function RequestEvent({ onClose }) {
               }`}
             >
               <FiSend className="text-[13px]" />
-              Send Event Request
+              Submit Proposal
             </button>
           </div>
         </div>
