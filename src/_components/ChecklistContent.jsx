@@ -64,6 +64,12 @@ const MASTER_DIFFICULTY_COLOR = {
   medium: "bg-yellow-400",
   easy: "bg-green-500",
 };
+// Event task category -> key in the API's checklistSummary
+const CATEGORY_SUMMARY_KEY = {
+  "Very difficult": "difficult",
+  "Mildly difficult": "medium",
+  "Easy to do": "easy",
+};
 const CATEGORY_COLOR = {
   "Very difficult": "bg-red-500",
   "Mildly difficult": "bg-yellow-400",
@@ -127,6 +133,7 @@ const ChecklistContent = ({ eventId }) => {
   const {
     eventChecklist: taskList,
     eventChecklistLoading: loading,
+    eventChecklistSummary: checklistSummary,
     selectedEvent,
     checklistMaster: masterList,
     masterLoading,
@@ -182,12 +189,17 @@ const ChecklistContent = ({ eventId }) => {
   const showError = (title, descrip) =>
     dispatch(addToast({ message: { title, descrip }, type: "error" }));
 
+  // The progress rings come from the API's checklistSummary, so refetch after any change
+  const refreshChecklist = () => dispatch(fetchEventChecklist({ eventId }));
+
   const toggleCheck = async (task) => {
     const taskId = task.actionableId || task.id;
     const newCompleted = !(task.isCompleted === true || task.isCompleted === "true");
     const result = await dispatch(toggleEventActionable({ actionableId: taskId, isCompleted: newCompleted }));
     if (toggleEventActionable.rejected.match(result)) {
       showError("Couldn't update task", result.payload || "Please try again.");
+    } else {
+      refreshChecklist();
     }
   };
 
@@ -205,6 +217,8 @@ const ChecklistContent = ({ eventId }) => {
     );
     if (setEventActionableStatus.rejected.match(result)) {
       showError("Couldn't update status", result.payload || "Please try again.");
+    } else {
+      refreshChecklist();
     }
   };
 
@@ -223,10 +237,12 @@ const ChecklistContent = ({ eventId }) => {
     if (!saveMasterConfig.fulfilled.match(result)) {
       dispatch(setChecklistMaster(previous));
       showError("Couldn't update status", result.payload || "Please try again.");
+    } else {
+      refreshChecklist();
     }
   };
 
-  const handleAddTask = ({ label, difficulty }) => {
+  const handleAddTask = async ({ label, difficulty }) => {
     const categoryValue =
       difficulty === "hard"
         ? "Very difficult"
@@ -234,7 +250,8 @@ const ChecklistContent = ({ eventId }) => {
         ? "Mildly difficult"
         : "Easy to do";
 
-    dispatch(
+    setShowAddModal(false);
+    const result = await dispatch(
       createEventActionable({
         tempId: `temp-${Date.now()}`,
         title: label,
@@ -252,14 +269,15 @@ const ChecklistContent = ({ eventId }) => {
         collaborators: [],
       })
     );
-    setShowAddModal(false);
+    if (createEventActionable.fulfilled.match(result)) refreshChecklist();
   };
 
-  const handleDeleteTask = () => {
+  const handleDeleteTask = async () => {
     if (!deleteTask) return;
     const networkClusterCode = localStorage.getItem("networkClusterCode");
-    dispatch(removeEventActionable({ actionableId: deleteTask.id, networkClusterCode }));
     setDeleteTask(null);
+    const result = await dispatch(removeEventActionable({ actionableId: deleteTask.id, networkClusterCode }));
+    if (removeEventActionable.fulfilled.match(result)) refreshChecklist();
   };
 
   return (
@@ -300,18 +318,12 @@ const ChecklistContent = ({ eventId }) => {
 
           {/* ===========task completion Progress bar=================== */}
           {(() => {
-            // Counts both the event's own tasks and the master checklist items for a category
+            // Totals come from the API's checklistSummary (covers master + event checklist items)
             const countFor = (p) => {
-              const filteredTasks = taskList.filter((t) => t.category === p);
-              const filteredMaster = masterList.filter(
-                (item) => MASTER_DIFFICULTY_CATEGORY[item.difficulty] === p
-              );
+              const summary = checklistSummary?.[CATEGORY_SUMMARY_KEY[p]];
               return {
-                total: filteredTasks.length + filteredMaster.length,
-                done:
-                  filteredTasks.filter(
-                    (t) => t.isCompleted === true || t.isCompleted === "true" || t.status === "completed"
-                  ).length + filteredMaster.filter((item) => item.status === "Done").length,
+                total: summary?.total || 0,
+                done: summary?.completed || 0,
               };
             };
             return (

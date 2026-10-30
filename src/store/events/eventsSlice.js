@@ -65,6 +65,7 @@ const initialState = {
   eventChecklist: [],
   eventChecklistLoading: false,
   eventChecklistTotal: 0,
+  eventChecklistSummary: null,
 
   eventTaskSummaries: {},
 
@@ -604,6 +605,7 @@ const eventSlice = createSlice({
           state.eventChecklistLoading = false;
           state.eventChecklist = action.payload.list;
           state.eventChecklistTotal = action.payload.total;
+          state.eventChecklistSummary = action.payload.checklistSummary;
           updateSummaryInGroupedEvents(state);
         })
         .addCase(fetchEventChecklist.rejected, (state) => {
