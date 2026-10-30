@@ -55,7 +55,7 @@ export function EventTypeDropdown({
   return (
     <div ref={wrapperRef} className="relative w-full flex flex-col" data-error={dataError?? ''}>
       <label className="text-[16px] mb-[6px] block text-[#333333] font-[700]">
-        Type of event*
+        Type of event<span className="text-red-500 ml-0.5">*</span>
       </label>
 
       <div className="flex flex-1 gap-[20px]">

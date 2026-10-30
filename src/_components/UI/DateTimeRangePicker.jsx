@@ -11,10 +11,14 @@ export default function DateTimeRangePicker({
   onStartTimeChange,
   onEndTimeChange,
   error,
+  required = false,
 }) {
   return (
     <div className="flex flex-col">
-      <label className="text-[16px] mb-[6px] block text-[#333333] font-[700]">Date & Time</label>
+      <label className="text-[16px] mb-[6px] block text-[#333333] font-[700]">
+        Date & Time
+        {required && <span className="text-red-500 ml-0.5">*</span>}
+      </label>
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-[8px]">
         <div className="flex gap-[5px] flex-1">

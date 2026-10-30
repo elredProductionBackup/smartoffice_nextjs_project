@@ -35,6 +35,7 @@ export function EventsInput({
   isTravelField = false,
   travelData,
   dataError,
+  required = false,
   ...props
 }) {
   return (
@@ -42,6 +43,7 @@ export function EventsInput({
       {label && (
         <label className="text-[16px] mb-[6px] block text-[#333] font-[700]">
           {label}
+          {required && <span className="text-red-500 ml-0.5">*</span>}
         </label>
       )}
 

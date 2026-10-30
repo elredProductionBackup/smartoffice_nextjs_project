@@ -7,7 +7,7 @@ import { useDispatch } from "react-redux";
 import addIcon from "@/assets/logo/add.svg";
 import deleteIcon from "@/assets/logo/delete.svg";
 
-export const EventImage = ({ value, onChange }) => {
+export const EventImage = ({ value, onChange, required = false }) => {
   const inputRef = useRef(null);
   const dispatch = useDispatch();
 
@@ -113,6 +113,7 @@ const isValidPreview =
           </div>
           <span className="text-[15px] lg:text-[18px] font-[600] text-[#333333] text-center leading-[125%] font-nunito">
             Add / Replace<br />image
+            {required && <span className="text-red-500 ml-0.5">*</span>}
           </span>
         </div>
 

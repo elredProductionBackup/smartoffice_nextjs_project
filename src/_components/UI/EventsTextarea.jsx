@@ -4,6 +4,7 @@ export function EventsTextarea({
   icon,
   error,
   dataError,
+  required = false,
   ...props
 }) {
   return (
@@ -11,6 +12,7 @@ export function EventsTextarea({
       {label && (
         <label className="text-[16px] mb-[6px] block text-[#333333] font-[700]">
           {label}
+          {required && <span className="text-red-500 ml-0.5">*</span>}
         </label>
       )}
 

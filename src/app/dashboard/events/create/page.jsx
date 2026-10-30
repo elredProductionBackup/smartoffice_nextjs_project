@@ -135,6 +135,13 @@ const CreateEvent = () => {
     };
     const loading = eventDetailsFormLoader?.[eventId];
 
+    // Shown under the page title (both layouts)
+    const requiredNote = (
+      <p className="mt-1 text-[14px] text-[#777]">
+        Fields marked with <span className="text-red-500">*</span> are mandatory.
+      </p>
+    );
+
 useEffect(() => {
   if (!eventId) return;
 
@@ -164,20 +171,28 @@ useEffect(() => {
   return (
     <div ref={formContainerRef} className="lg:h-[calc(100vh-80px)] flex flex-col items-center lg:flex-row lg:items-stretch lg:justify-center pt-4 pb-20 lg:py-5 gap-6 lg:gap-[80px] lg:overflow-auto relative">
         {/* Title row shown above the image when the layout stacks (below lg) */}
-        <div className="lg:hidden w-full max-w-[500px] font-heading text-[26px] md:text-[32px] font-[600] flex items-center gap-[14px]">
-          <span className="maki--arrow rotate-180 inline-block cursor-pointer" onClick={()=>router.back()}></span> {isEditMode && !form?.isDraft?'Update':'Create'} event</div>
+        <div className="lg:hidden w-full max-w-[500px]">
+          <div className="font-heading text-[26px] md:text-[32px] font-[600] flex items-center gap-[14px]">
+            <span className="maki--arrow rotate-180 inline-block cursor-pointer" onClick={()=>router.back()}></span> {isEditMode && !form?.isDraft?'Update':'Create'} event</div>
+          {requiredNote}
+        </div>
         <EventImage
           value={form.image}
           onChange={(files) => update("image", files)}
+          required
         />
 
         <div  className="flex-1 w-full max-w-[500px] ">
-          <div className="hidden lg:flex font-heading mb-[30px] text-[36px] font-[600] items-center gap-[20px]">
-           <span className="maki--arrow rotate-180 inline-block cursor-pointer" onClick={()=>router.back()}></span> {isEditMode && !form?.isDraft?'Update':'Create'} event</div>
+          <div className="hidden lg:block mb-[30px]">
+            <div className="flex font-heading text-[36px] font-[600] items-center gap-[20px]">
+             <span className="maki--arrow rotate-180 inline-block cursor-pointer" onClick={()=>router.back()}></span> {isEditMode && !form?.isDraft?'Update':'Create'} event</div>
+            {requiredNote}
+          </div>
             <div className="w-full flex flex-col gap-[30px]" >
 
               <EventsInput
-                label="Event name*"
+                label="Event name"
+                required
                 icon={<span className="uil--calendar"></span>}
                 placeholder="Enter Event name"
                 value={form.eventName}
@@ -199,7 +214,8 @@ useEffect(() => {
 
               {/* Description */}
               <EventsTextarea
-                label="Event Description*"
+                label="Event Description"
+                required
                 placeholder="Add event Description"
                 value={form.description}
                 onChange={(e) => update("description", e.target.value)}
@@ -244,6 +260,7 @@ useEffect(() => {
                   }
 
                   error={errors.startDate || errors.endDate}
+                  required
                 />
               </div>
 
@@ -251,7 +268,8 @@ useEffect(() => {
 
               {/* Location */}
               <EventsInput
-                  label="Event location*"
+                  label="Event location"
+                  required
                   placeholder="Add location/room or meeting link"
                   value={form.location || ""}
                   readOnly
