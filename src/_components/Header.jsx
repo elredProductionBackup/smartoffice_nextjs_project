@@ -6,9 +6,12 @@ import bell from "@/assets/logo/bell.svg";
 import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import { FiMenu } from "react-icons/fi";
-import { ChevronDown, LogOut, UserRound } from "lucide-react";
-import { logout } from "@/store/auth/authSlice";
+import { ArrowLeftRight, Check, ChevronDown, LogOut, UserRound } from "lucide-react";
+import { logout, setSelectedRole } from "@/store/auth/authSlice";
 import { buildLoginUrl, getStoredClusterCode } from "@/utils/shareLink";
+import { ROLE_HOME } from "@/utils/routeAccess";
+import useGlobalLoader from "@/store/useGlobalLoader";
+import SuccessPopup from "@/_components/ConfirmationPopups/SuccessPopup";
 
 // "financeOfficer" -> "Finance Officer"
 const formatRole = (role = "") =>
@@ -25,8 +28,11 @@ const Header = ({ onMenuClick }) => {
   const email = adminDetail?.email || user?.email;
   const avatar = adminDetail?.dpURL || user?.dpURL || "/logo/user-icon.svg";
   const network = user?.networkClusterDetails;
+  const roles = adminDetail?.role ?? [];
 
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [rolesOpen, setRolesOpen] = useState(false);
+  const [switchedRole, setSwitchedRole] = useState(null);
   const meRef = useRef(null);
   const router = useRouter();
 
@@ -48,6 +54,25 @@ const Header = ({ onMenuClick }) => {
   const onLogoutClick = () => {
     setOpen(false);
     setShowLogoutConfirm(true);
+  };
+
+  // Same token works for every role, so switching is just a new selectedRole.
+  // Brief loader, then the success popup; OK takes the user to that role's home.
+  const handleRoleSwitch = (role) => {
+    setOpen(false);
+    const { showLoader, hideLoader } = useGlobalLoader.getState();
+    showLoader();
+    setTimeout(() => {
+      dispatch(setSelectedRole(role));
+      hideLoader();
+      setSwitchedRole(role);
+    }, 500);
+  };
+
+  const handleSwitchPopupClose = () => {
+    const role = switchedRole;
+    setSwitchedRole(null);
+    router.replace(ROLE_HOME[role] ?? "/dashboard");
   };
 
   const confirmLogout = () => {
@@ -126,7 +151,10 @@ const Header = ({ onMenuClick }) => {
           <div ref={meRef} className="relative">
             <button
               type="button"
-              onClick={() => setOpen(!open)}
+              onClick={() => {
+                setOpen(!open);
+                setRolesOpen(false);
+              }}
               aria-label="Account menu"
               aria-haspopup="menu"
               aria-expanded={open}
@@ -191,6 +219,49 @@ const Header = ({ onMenuClick }) => {
                     My Profile
                   </button>
 
+                  {/* Only users with more than one role can switch */}
+                  {roles.length > 1 && (
+                    <>
+                      <button
+                        role="menuitem"
+                        aria-expanded={rolesOpen}
+                        onClick={() => setRolesOpen((o) => !o)}
+                        className="w-full flex items-center gap-[10px] px-[12px] py-[10px] text-[15px] font-semibold text-[#333] rounded-lg cursor-pointer hover:bg-[#F2F7FF] transition-colors"
+                      >
+                        <ArrowLeftRight size={18} className="text-[#666]" />
+                        Switch Role
+                        <ChevronDown
+                          size={16}
+                          className={`ml-auto text-[#777] transition-transform ${rolesOpen ? "rotate-180" : ""}`}
+                        />
+                      </button>
+
+                      {rolesOpen && (
+                        <ul role="listbox" className="mb-[4px] ml-[28px] border-l border-[#EAEEF2] pl-[6px]">
+                          {roles.map((role) => {
+                            const active = role === selectedRole;
+                            return (
+                              <li key={role}>
+                                <button
+                                  type="button"
+                                  role="option"
+                                  aria-selected={active}
+                                  onClick={() => (active ? setRolesOpen(false) : handleRoleSwitch(role))}
+                                  className={`w-full flex items-center justify-between gap-3 px-[12px] py-[8px] text-left text-[14px] rounded-lg cursor-pointer transition-colors ${
+                                    active ? "text-[#0B57D0] font-bold bg-[#F2F7FF]" : "text-[#333] font-semibold hover:bg-[#F2F7FF]"
+                                  }`}
+                                >
+                                  {formatRole(role)}
+                                  {active && <Check size={16} />}
+                                </button>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
+                    </>
+                  )}
+
                   <button
                     role="menuitem"
                     onClick={onLogoutClick}
@@ -230,6 +301,13 @@ const Header = ({ onMenuClick }) => {
           </div>
         </div>
       )}
+
+      <SuccessPopup
+        isOpen={!!switchedRole}
+        title="Role switched"
+        message={`You're now using Smart Networks as ${formatRole(switchedRole ?? "")}.`}
+        onClose={handleSwitchPopupClose}
+      />
     </>
   );
 };
