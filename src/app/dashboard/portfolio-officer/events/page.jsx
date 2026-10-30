@@ -38,11 +38,11 @@ const PortfolioEventsPage = () => {
             <span className="text-white text-[16px] font-bold">Vision Board</span>
           </div>
           <p className="text-white/80 text-[13px] leading-[1.6]">
-            Have a learning initiative in mind? Submit an event request to your admin for review and approval.
+            Turn your learning ideas into events. Draft a proposal and get it on the calendar.
           </p>
           <button className="flex items-center justify-center gap-2 bg-white text-[#2445cc] text-[14px] font-semibold px-5 py-2.5 rounded-full cursor-pointer border-none hover:opacity-90 transition-opacity w-full">
             <FiSend className="text-[14px]" />
-            Request an Event
+            Propose an Event
           </button>
         </div>
       </div>
