@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
 import { MdCurrencyRupee } from 'react-icons/md';
 import { FiArrowRight, FiCalendar, FiTrendingUp, FiSend } from 'react-icons/fi';
-import RequestEvent from '@/_components/UI/RequestEvent';
 import DashboardActionableList from '@/_components/DashboardActionableList';
 import TitleTooltipHover from '@/_components/UI/TitleTooltipHover';
 import DashboardApprovalList from '@/_components/DashboardApprovalList';
@@ -36,7 +35,6 @@ const PortfolioOfficerPage = () => {
   const refreshKey = useSelector((state) => state.actionableUi.refreshKey);
   const profile = adminDetail || user || {};
   const fullName = [profile.firstname, profile.lastname].filter(Boolean).map(capitalize).join(' ');
-  const [showRequestEvent, setShowRequestEvent] = useState(false);
   const [portfolio, setPortfolio] = useState(null);
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -90,8 +88,6 @@ const PortfolioOfficerPage = () => {
 
   return (
     <div className="pt-4 pb-24 md:p-6">
-      {showRequestEvent && <RequestEvent onClose={() => setShowRequestEvent(false)} />}
-
       {/* ── Top Banner ── */}
       <div className="flex flex-col items-start gap-3 sm:flex-row sm:justify-between sm:items-center sm:gap-6 mb-5 md:mb-6">
 
@@ -103,7 +99,7 @@ const PortfolioOfficerPage = () => {
 
         {/* Right: Propose an Event */}
         <button
-          onClick={() => setShowRequestEvent(true)}
+          onClick={() => router.push('/dashboard/events/create')}
           className="shrink-0 flex items-center justify-center gap-2 bg-[#2445cc] text-white text-[14px] font-semibold px-6 py-2.5 rounded-full cursor-pointer border-none hover:opacity-90 transition-opacity"
         >
           <FiSend className="text-[14px]" />

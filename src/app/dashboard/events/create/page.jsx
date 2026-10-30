@@ -40,6 +40,7 @@ const CreateEvent = () => {
   const dispatch = useDispatch();
   
   const { eventDetailsMap,eventDetailsFormLoader } = useSelector((state) => state.events);
+  const isPortfolioOfficer = useSelector((state) => state.auth.selectedRole) === "portfolioOfficer";
 
   const handleCreateEvent = async (e, isDraft = false) => {
     e?.preventDefault?.();
@@ -322,7 +323,7 @@ useEffect(() => {
                   Save as draft
                 </button> 
                 <button className="flex-1 h-[50px] text-[17px] md:text-[20px] font-[500] bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)] cursor-pointer text-white rounded-full flex items-center justify-center" type="button" disabled={submitting || draftSubmitting} onClick={handleCreateEvent}>
-                  {submitting?<div className="w-[20px] h-[20px] border-2 border-[white] border-t-transparent rounded-full animate-spin" />: isEditMode && !form?.isDraft ?'Update event':'Create event'}
+                  {submitting?<div className="w-[20px] h-[20px] border-2 border-[white] border-t-transparent rounded-full animate-spin" />: isEditMode && !form?.isDraft ?'Update event': isPortfolioOfficer ?'Propose event':'Create event'}
                 </button>
               </div>
             </div>

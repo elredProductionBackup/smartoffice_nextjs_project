@@ -1,10 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { MdCurrencyRupee } from 'react-icons/md';
 import { FiCalendar, FiSend } from 'react-icons/fi';
 import { HiOutlineLightBulb } from 'react-icons/hi';
-import RequestEvent from '@/_components/UI/RequestEvent';
 
 const STATUS_STYLES = {
   'Planned':     { text: '#64748b', bg: '#f1f5f9' },
@@ -22,12 +21,10 @@ const EVENTS = [
 const COLUMNS = ['Event Name', 'Date', 'Category', 'Budget', 'Status'];
 
 const PortfolioEventsPage = () => {
-  const [showRequestEvent, setShowRequestEvent] = useState(false);
+  const router = useRouter();
 
   return (
     <div className="pt-4 pb-24 md:p-6">
-      {showRequestEvent && <RequestEvent onClose={() => setShowRequestEvent(false)} />}
-
       {/* ── Top Banner ── */}
       <div className="flex flex-col gap-4 md:flex-row md:justify-between md:gap-0 mb-5 md:mb-6">
         <div>
@@ -47,7 +44,7 @@ const PortfolioEventsPage = () => {
           </p>
           <button
             type="button"
-            onClick={() => setShowRequestEvent(true)}
+            onClick={() => router.push('/dashboard/events/create')}
             className="flex items-center justify-center gap-2 bg-white text-[#2445cc] text-[14px] font-semibold px-5 py-2.5 rounded-full cursor-pointer border-none hover:opacity-90 transition-opacity w-full">
             <FiSend className="text-[14px]" />
             Propose an Event
