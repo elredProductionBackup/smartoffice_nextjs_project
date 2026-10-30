@@ -3,25 +3,11 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { FiCheck, FiX } from "react-icons/fi";
-import { ROLES } from "./constants";
+import { API_ROLES, ROLES, toApiPhone } from "./constants";
 import { addNetworkClusterAdmin } from "@/services/auth.service";
 import { fetchBudgetTypes } from "@/store/events/budgetChecklist/budgetThunks";
 
-// Page role keys -> API role keys; Collaborator has no API role yet, so it isn't offered here
-const API_ROLES = { admin: "admin", finance: "financeOfficer", portfolio: "portfolioOfficer" };
-
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-// The API needs a country code; numbers typed without one are treated as Indian (+91) for now.
-// "98765 43210" / "098765 43210" / "919876543210" / "+91 98765 43210" -> "+919876543210"; a bare "+91" counts as empty
-const toApiPhone = (value) => {
-  const raw = value.trim();
-  const digits = raw.replace(/\D/g, "");
-  if (!digits || digits === "91") return "";
-  if (raw.startsWith("+")) return `+${digits}`;
-  if (digits.length === 12 && digits.startsWith("91")) return `+${digits}`;
-  return `+91${digits.replace(/^0+/, "")}`;
-};
 
 function Checkbox({ checked }) {
   return (

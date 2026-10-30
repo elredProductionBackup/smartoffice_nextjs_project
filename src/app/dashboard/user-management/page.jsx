@@ -14,8 +14,9 @@ import {
   FiUserX,
   FiXCircle,
 } from "react-icons/fi";
-import { AVATAR_COLORS, PORTFOLIO_INITIALS, ROLES, STATUS } from "./constants";
+import { API_ROLES, AVATAR_COLORS, PORTFOLIO_INITIALS, ROLES, STATUS, toApiPhone } from "./constants";
 import {
+  addNetworkClusterAdmin,
   getAllNetworkClusterAdminDetails,
   removeNetworkClusterAdmin,
   resendNetworkClusterAdminInvite,
@@ -24,6 +25,7 @@ import {
 import { addToast } from "@/store/toastSlice";
 import EventActionConfirmModal from "@/_components/EventsComps/EventActionConfirmModal";
 import ChangeRoleModal from "./ChangeRoleModal";
+import EditUserModal from "./EditUserModal";
 import InviteUserModal from "./InviteUserModal";
 import SuccessPopup from "@/_components/ConfirmationPopups/SuccessPopup";
 import UserDetailsModal from "./UserDetailsModal";
@@ -207,6 +209,7 @@ export default function UserManagementPage() {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [roleUserId, setRoleUserId] = useState(null);
+  const [editUserId, setEditUserId] = useState(null);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [inviteSuccess, setInviteSuccess] = useState(null); // invite payload, for the success popup
   const [deactivateUserId, setDeactivateUserId] = useState(null); // waiting on the confirm popup
@@ -218,13 +221,20 @@ export default function UserManagementPage() {
     if (!budgetTypes?.length) dispatch(fetchBudgetTypes());
   }, [budgetTypes?.length, dispatch]);
 
-  // Swap portfolio ids for their budget type names once those have loaded
+  // Swap portfolio ids for their budget type names once those have loaded.
+  // portfolioIds keeps the budgetTypeIds the update API needs (names from the API are looked up by name).
   const users = useMemo(() => {
     const nameById = Object.fromEntries((budgetTypes || []).map((t) => [t.budgetTypeId, t.budgetType]));
-    return rawUsers.map((u) => ({ ...u, portfolios: u.portfolios.map((p) => nameById[p] || p) }));
+    const idByName = Object.fromEntries((budgetTypes || []).map((t) => [String(t.budgetType).toLowerCase(), t.budgetTypeId]));
+    return rawUsers.map((u) => ({
+      ...u,
+      portfolios: u.portfolios.map((p) => nameById[p] || p),
+      portfolioIds: u.portfolios.map((p) => (nameById[p] ? p : idByName[String(p).toLowerCase()])).filter(Boolean),
+    }));
   }, [rawUsers, budgetTypes]);
 
   const roleUser = users.find((u) => u.id === roleUserId);
+  const editUser = users.find((u) => u.id === editUserId);
   const detailsUser = users.find((u) => u.id === detailsUserId);
   const deactivateUser = users.find((u) => u.id === deactivateUserId);
   const cancelInviteUser = users.find((u) => u.id === cancelInviteUserId);
@@ -347,6 +357,64 @@ export default function UserManagementPage() {
     } finally {
       setActivationPending(false);
       setDeactivateUserId(null);
+    }
+  };
+
+  // addNetworkClusterAdmin updates an existing user (matched by email) with the full details sent.
+  // patch: { name?, roles?, portfolioIds?, whatsapp? } in page shape; anything left out keeps the user's current value.
+  const saveUserDetails = async (target, patch) => {
+    const name = patch.name ?? target.name;
+    const roles = patch.roles ?? target.roles;
+    const portfolioIds = roles.includes("portfolio") ? patch.portfolioIds ?? target.portfolioIds : [];
+    const phone = toApiPhone(patch.whatsapp ?? target.whatsapp);
+    const details = {
+      fullName: name,
+      email: target.email,
+      ...(phone && { phone }),
+      role: roles.map((r) => API_ROLES[r]).filter(Boolean),
+      portfolioIds,
+    };
+
+    const res = await addNetworkClusterAdmin([details]);
+    if (!res?.data?.success) throw new Error(res?.data?.message || "Request failed");
+    // Raw rows keep portfolio ids; the users memo turns them back into names
+    updateUser(target.id, { name, roles, portfolios: portfolioIds, whatsapp: phone || target.whatsapp });
+  };
+
+  const changeRole = async (target, { roles, portfolioIds }) => {
+    await saveUserDetails(target, { roles, portfolioIds });
+    dispatch(addToast({
+      message: { title: "Role updated", descrip: `${target.name}'s roles have been saved.` },
+      type: "success",
+    }));
+  };
+
+  const editDetails = async (target, { name, whatsapp }) => {
+    await saveUserDetails(target, { name, whatsapp });
+    dispatch(addToast({
+      message: { title: "User updated", descrip: `${name}'s details have been saved.` },
+      type: "success",
+    }));
+  };
+
+  // Row shows the new number straight away, then rolls back if the API refuses
+  const saveWhatsApp = async (target, whatsapp) => {
+    if (!toApiPhone(whatsapp)) return;
+    const previous = target.whatsapp;
+    updateUser(target.id, { whatsapp });
+    try {
+      await saveUserDetails(target, { whatsapp });
+      dispatch(addToast({
+        message: { title: "Number saved", descrip: `${target.name}'s WhatsApp number has been updated.` },
+        type: "success",
+      }));
+    } catch (err) {
+      console.error("WhatsApp update error:", err);
+      updateUser(target.id, { whatsapp: previous });
+      dispatch(addToast({
+        message: { title: "Couldn't save number", descrip: err.message || "Please try again." },
+        type: "error",
+      }));
     }
   };
 
@@ -496,7 +564,7 @@ export default function UserManagementPage() {
 
                     <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center gap-3">
-                        <WhatsAppCell value={u.whatsapp} onSave={(whatsapp) => updateUser(u.id, { whatsapp })} />
+                        <WhatsAppCell value={u.whatsapp} onSave={(whatsapp) => saveWhatsApp(u, whatsapp)} />
                         <a
                           href={`mailto:${u.email}`}
                           title={u.email}
@@ -516,7 +584,7 @@ export default function UserManagementPage() {
                                 { label: "Cancel invite", icon: FiXCircle, danger: true, onClick: () => setCancelInviteUserId(u.id) },
                               ]
                             : [
-                                { label: "Edit", icon: FiEdit2, onClick: () => {} },
+                                { label: "Edit", icon: FiEdit2, onClick: () => setEditUserId(u.id) },
                                 // You can't change your own role
                                 !isMe && { label: "Change role", icon: FiShield, onClick: () => setRoleUserId(u.id) },
                                 !isMe &&
@@ -563,11 +631,19 @@ export default function UserManagementPage() {
         />
       )}
 
+      {editUser && (
+        <EditUserModal
+          user={editUser}
+          onClose={() => setEditUserId(null)}
+          onSave={(patch) => editDetails(editUser, patch)}
+        />
+      )}
+
       {roleUser && (
         <ChangeRoleModal
           user={roleUser}
           onClose={() => setRoleUserId(null)}
-          onSave={(patch) => updateUser(roleUser.id, patch)}
+          onSave={(patch) => changeRole(roleUser, patch)}
         />
       )}
 
