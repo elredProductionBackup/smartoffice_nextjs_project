@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import { FiMail, FiPhone, FiBriefcase, FiShield, FiHash, FiCopy, FiCheck, FiArrowLeft, FiChevronDown } from "react-icons/fi";
-import { setSelectedRole } from "@/store/auth/authSlice";
+import { setAdminDetail, setSelectedRole } from "@/store/auth/authSlice";
+import { getNetworkClusterAdminDetail } from "@/services/auth.service";
 import { useOutsideClick } from "@/hooks/useOutsideClick";
 import { ROLE_HOME } from "@/utils/routeAccess";
 import useGlobalLoader from "@/store/useGlobalLoader";
@@ -129,6 +130,21 @@ const MyProfilePage = () => {
   const roles = roleKeys.map(formatRole);
 
   const [switchedRole, setSwitchedRole] = useState(null);
+
+  // adminDetail is cached from login; refetch so roles changed since then (e.g. in User Management) show up
+  const email = adminDetail?.email || user?.email;
+  useEffect(() => {
+    const code =
+      user?.networkClusterDetails?.networkClusterCode || localStorage.getItem("networkClusterCode");
+    const userEmail = email || localStorage.getItem("userEmail");
+    if (!code || !userEmail) return;
+
+    getNetworkClusterAdminDetail({ networkClusterCode: code, email: userEmail })
+      .then((res) => {
+        if (res?.data?.success) dispatch(setAdminDetail(res.data.result));
+      })
+      .catch((err) => console.error("Admin detail refresh error:", err));
+  }, [dispatch, email, user?.networkClusterDetails?.networkClusterCode]);
 
   // Same token works for every role, so switching is just a new selectedRole.
   // Brief loader, then the success popup; OK takes the user to that role's home.
