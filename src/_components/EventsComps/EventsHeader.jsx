@@ -4,7 +4,7 @@ import { useCallback, useRef, useState } from "react";
 import { useDispatch } from "react-redux";
 import { openEventsModal } from "@/store/events/eventsUiSlice";
 import { useRouter } from "next/navigation";
-import { Award, ChevronDown, Inbox, ListChecks, Settings2, Wallet } from "lucide-react";
+import { Award, ChevronDown, Inbox, ListChecks, Plus, Settings2, Wallet } from "lucide-react";
 import { useOutsideClick } from "@/hooks/useOutsideClick";
 
 // Event requests raised by learning officers
@@ -107,6 +107,15 @@ export default function EventsHeader() {
             </ul>
           )}
         </div>
+
+        {/* Create event — primary action, last in the row */}
+        <button
+          onClick={() => router.push("/dashboard/events/create")}
+          className="h-[44px] pl-[14px] pr-[20px] rounded-[100px] bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)] text-white text-[18px] font-[500] cursor-pointer flex items-center gap-[6px] shadow-[0px_2px_8px_0px_#00449C40] hover:opacity-90 transition"
+        >
+          <Plus size={20} strokeWidth={2.25} />
+          Create event
+        </button>
       </div>
     </div>
   );

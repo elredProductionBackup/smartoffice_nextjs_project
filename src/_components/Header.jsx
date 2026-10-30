@@ -7,15 +7,23 @@ import bell from "@/assets/logo/bell.svg";
 import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "@/store/auth/authSlice";
+import { ChevronDown, LogOut, UserRound } from "lucide-react";
+
+// "financeOfficer" -> "Finance Officer"
+const formatRole = (role = "") =>
+  role.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/^./, (c) => c.toUpperCase());
 
 const Header = () => {
   const [open, setOpen] = useState(false);
   const dispatch = useDispatch();
 
-  const { user, adminDetail } = useSelector((state) => state.auth);
+  const { user, adminDetail, selectedRole } = useSelector((state) => state.auth);
 
   const firstName = adminDetail?.firstname || user?.firstname || "Me";
+  const fullName = `${adminDetail?.firstname || user?.firstname || ""} ${adminDetail?.lastname || user?.lastname || ""}`.trim() || firstName;
+  const email = adminDetail?.email || user?.email;
   const avatar = adminDetail?.dpURL || user?.dpURL || "/logo/user-icon.svg";
+  const network = user?.networkClusterDetails;
 
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const meRef = useRef(null);
@@ -60,79 +68,110 @@ const confirmLogout = () => {
       <div className="min-h-20 bg-[#F2F7FF] flex items-center justify-between px-[50px]">
         <Image src={'/logo/smart-networks.svg'} alt="logo" width={155} height={40} className="object-contain" />
 
-        <div className="flex gap-[30px] items-center">
+        {/* Network, notifications and profile share one 40px row */}
+        <div className="flex gap-[12px] items-center">
           {/* Network Cluster Details */}
-          {user?.networkClusterDetails && (
-            <div className="flex items-center gap-[10px] bg-white border border-[#D5E2F6] px-[16px] py-[6px] rounded-full shadow-sm">
-              {user.networkClusterDetails.logo && (
+          {network && (
+            <div
+              title={network.name}
+              className="h-[40px] flex items-center gap-[8px] bg-white border border-[#D5E2F6] pl-[5px] pr-[14px] rounded-full"
+            >
+              {network.logo ? (
                 <img
-                  src={user.networkClusterDetails.logo}
-                  alt={user.networkClusterDetails.name || "Network logo"}
-                  className="w-[28px] h-[28px] rounded-full object-cover"
+                  src={network.logo}
+                  alt={network.name || "Network logo"}
+                  className="w-[30px] h-[30px] rounded-full object-cover bg-white"
                 />
+              ) : (
+                <span className="w-[30px] h-[30px] rounded-full bg-[#0B57D0] text-white text-[13px] font-semibold flex items-center justify-center">
+                  {(network.name || "N").charAt(0).toUpperCase()}
+                </span>
               )}
-              <span className="font-heading text-[16px] font-[500] text-[#333]">
-                {user.networkClusterDetails.name}
+              <span className="max-w-[180px] truncate font-heading text-[15px] font-[500] text-[#333]">
+                {network.name}
               </span>
             </div>
           )}
 
           {/* Notification */}
-          <div className="flex gap-[10px] items-center cursor-pointer">
-            <Image src={bell} alt="bell" height={32} width={32}/>
-            {/* <div className="text-xl font-medium">Notification</div> */}
-          </div>
+          <button
+            type="button"
+            aria-label="Notifications"
+            className="h-[40px] w-[40px] rounded-full bg-white border border-[#D5E2F6] flex items-center justify-center cursor-pointer hover:border-[#0B57D0] transition-colors"
+          >
+            <Image src={bell} alt="" height={22} width={22} />
+          </button>
 
           {/* Me dropdown */}
           <div ref={meRef} className="relative">
-            <div
+            <button
+              type="button"
               onClick={() => setOpen(!open)}
-              className="flex items-center gap-[10px] text-xl font-medium cursor-pointer"
+              aria-haspopup="menu"
+              aria-expanded={open}
+              className={`h-[40px] flex items-center gap-[8px] bg-white border pl-[4px] pr-[10px] rounded-full cursor-pointer transition-colors ${
+                open ? "border-[#0B57D0]" : "border-[#D5E2F6] hover:border-[#0B57D0]"
+              }`}
             >
               <img
                 src={avatar}
-                alt="user"
+                alt=""
                 width={32}
                 height={32}
-                className="w-[32px] h-[32px] rounded-full object-cover"
+                className="w-[32px] h-[32px] rounded-full object-cover bg-[#CCCCCC]"
               />
-              {/* <div>Me</div> */}
-            </div>
+              <span className="max-w-[120px] truncate text-[15px] font-semibold text-[#333] capitalize">
+                {firstName}
+              </span>
+              <ChevronDown size={16} className={`text-[#777] transition-transform ${open ? "rotate-180" : ""}`} />
+            </button>
 
             {open && (
-              <div className="absolute right-[10px] top-[calc(100%+14px)] z-50">
-                {/* Triangle */}
-                <div className="absolute -top-[8px] right-[40px] w-0 h-0
-                  border-l-[8px] border-l-transparent
-                  border-r-[8px] border-r-transparent
-                  border-b-[8px] border-b-white"
-                />
-
-                {/* Dropdown */}
-                <div className="w-[250px] bg-white rounded-[20px] p-[20px]
-                  shadow-[0px_4px_4px_0px_#99999940]">
-                  <div className="flex flex-col gap-[10px]">
-                    <button
-                      onClick={() => {
-                        setOpen(false);
-                        router.push("/dashboard/my-profile");
-                      }}
-                      className="flex gap-[6px] py-[8px] pl-[12px] text-[20px] text-[#333] rounded-lg cursor-pointer capitalize"
-                    >
-                      <span className="h-[30px] w-[30px] rounded-full bg-[#CCCCCC] flex items-center justify-center">
-                        <img src={avatar} alt="" width={30} height={30} className="w-[30px] h-[30px] rounded-full object-cover" />
+              <div
+                role="menu"
+                className="absolute right-0 top-[calc(100%+8px)] z-50 w-[280px] bg-white rounded-[16px] border border-[#EAEEF2] shadow-[0px_4px_16px_0px_#0000001a] overflow-hidden"
+              >
+                {/* Who is signed in, and as which role */}
+                <div className="flex items-center gap-[12px] p-[16px] border-b border-[#EAEEF2]">
+                  <img
+                    src={avatar}
+                    alt=""
+                    width={44}
+                    height={44}
+                    className="w-[44px] h-[44px] rounded-full object-cover bg-[#CCCCCC] shrink-0"
+                  />
+                  <div className="min-w-0">
+                    <p className="text-[16px] font-semibold text-[#333] capitalize truncate">{fullName}</p>
+                    {email && <p className="text-[13px] text-[#777] truncate">{email}</p>}
+                    {selectedRole && (
+                      <span className="inline-block mt-[4px] px-[8px] py-[1px] rounded-full bg-[#F2F7FF] text-[12px] font-semibold text-[#0B57D0]">
+                        {formatRole(selectedRole)}
                       </span>
-                      {firstName}
-                    </button>
-
-                    <button
-                      onClick={onLogoutClick}
-                      className="flex gap-[6px] py-[8px] pl-[12px] text-[20px] text-[#333] rounded-lg cursor-pointer"
-                    >
-                      <Image src="/logo/logout-icon.svg" alt="" width={30} height={30} />
-                      Logout
-                    </button>
+                    )}
                   </div>
+                </div>
+
+                <div className="p-[6px]">
+                  <button
+                    role="menuitem"
+                    onClick={() => {
+                      setOpen(false);
+                      router.push("/dashboard/my-profile");
+                    }}
+                    className="w-full flex items-center gap-[10px] px-[12px] py-[10px] text-[15px] font-semibold text-[#333] rounded-lg cursor-pointer hover:bg-[#F2F7FF] transition-colors"
+                  >
+                    <UserRound size={18} className="text-[#666]" />
+                    My Profile
+                  </button>
+
+                  <button
+                    role="menuitem"
+                    onClick={onLogoutClick}
+                    className="w-full flex items-center gap-[10px] px-[12px] py-[10px] text-[15px] font-semibold text-[#E40000] rounded-lg cursor-pointer hover:bg-[#FFEBEB] transition-colors"
+                  >
+                    <LogOut size={18} />
+                    Logout
+                  </button>
                 </div>
               </div>
             )}

@@ -47,7 +47,6 @@ export default function EventsPageClient() {
       <ActionableTabs
         tabs={EVENT_TABS}
         defaultTab="upcomming"
-        events={true}
         labelClassName="font-heading font-normal"
       />
 
