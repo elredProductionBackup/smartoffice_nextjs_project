@@ -1,12 +1,48 @@
 "use client";
 
+import { useCallback, useRef, useState } from "react";
 import { useDispatch } from "react-redux";
 import { openEventsModal } from "@/store/events/eventsUiSlice";
 import { useRouter } from "next/navigation";
+import { Award, ChevronDown, Inbox, ListChecks, Settings2, Wallet } from "lucide-react";
+import { useOutsideClick } from "@/hooks/useOutsideClick";
+
+// Event requests raised by learning officers
+const EVENT_REQUESTS_ROUTE = "/dashboard/events/requests";
+
+const pillClass =
+  "h-[44px] px-[18px] rounded-[100px] border border-[#BCBCD9] bg-white text-[18px] font-[500] cursor-pointer flex items-center gap-[8px] hover:border-[#0B57D0] transition-colors";
 
 export default function EventsHeader() {
   const dispatch = useDispatch();
-  const router = useRouter()
+  const router = useRouter();
+
+  const [setupOpen, setSetupOpen] = useState(false);
+  const setupRef = useRef(null);
+  const closeSetup = useCallback(() => setSetupOpen(false), []);
+  useOutsideClick(setupRef, closeSetup);
+
+  // Setup pages are opened occasionally, so they share one menu instead of three buttons
+  const setupItems = [
+    {
+      label: "Point System",
+      description: "Points for event participation",
+      icon: Award,
+      onClick: () => dispatch(openEventsModal({ type: "POINT_SYSTEM" })),
+    },
+    {
+      label: "Master Checklist",
+      description: "Tasks added to every event",
+      icon: ListChecks,
+      onClick: () => dispatch(openEventsModal({ type: "MASTER_CHECKLIST" })),
+    },
+    {
+      label: "Budget Checklist",
+      description: "Budget categories and limits",
+      icon: Wallet,
+      onClick: () => router.push("/dashboard/events/budget-checklist"),
+    },
+  ];
 
   return (
     <div className="flex items-center justify-between w-full relative">
@@ -18,43 +54,59 @@ export default function EventsHeader() {
       </div>
 
       {/* RIGHT — Buttons */}
-      <div className="absolute right-0 bottom-[0px] z-30 flex items-center gap-[20px]">
-         {/* Point System */}
-        <button
-          onClick={() =>
-            dispatch(
-              openEventsModal({
-                type: "POINT_SYSTEM",
-              })
-            )
-          }
-           className="py-[8px] px-[20px] rounded-[100px] border border-[#BCBCD9] text-[20px] font-[500] cursor-pointer flex items-center gap-[4px]"
-        >
-         Point System <span className="iconamoon--arrow-up-2-duotone full rotate-90"></span>
+      <div className="absolute right-0 bottom-[0px] z-30 flex items-center gap-[12px]">
+        {/* Event Requests — frequent action, kept as its own button */}
+        <button onClick={() => router.push(EVENT_REQUESTS_ROUTE)} className={pillClass}>
+          <Inbox size={20} strokeWidth={1.75} className="text-[#0B57D0]" />
+          Event Requests
         </button>
 
-        {/* Master Checklist */}
-        <button
-          onClick={() =>
-            dispatch(
-              openEventsModal({
-                type: "MASTER_CHECKLIST",
-              })
-            )
-          }
-          className="py-[8px] px-[20px] rounded-[100px] border border-[#BCBCD9] text-[20px] font-[500] cursor-pointer flex items-center gap-[4px]"
-        >
-          Master Checklist <span className="iconamoon--arrow-up-2-duotone full rotate-90"></span>
+        {/* Event setup menu */}
+        <div ref={setupRef} className="relative">
+          <button
+            type="button"
+            onClick={() => setSetupOpen((o) => !o)}
+            aria-haspopup="menu"
+            aria-expanded={setupOpen}
+            className={`${pillClass} ${setupOpen ? "border-[#0B57D0]" : ""}`}
+          >
+            <Settings2 size={20} strokeWidth={1.75} className="text-[#666666]" />
+            Event setup
+            <ChevronDown
+              size={18}
+              className={`text-[#777777] transition-transform ${setupOpen ? "rotate-180" : ""}`}
+            />
+          </button>
 
-        </button>
-
-        {/* Budget Checklist */}
-        <button
-          onClick={() => router.push("/dashboard/events/budget-checklist")}
-          className="py-[8px] px-[20px] rounded-[100px] border border-[#BCBCD9] text-[20px] font-[500] cursor-pointer flex items-center gap-[4px]"
-        >
-          Budget Checklist <span className="iconamoon--arrow-up-2-duotone full rotate-90"></span>
-        </button>
+          {setupOpen && (
+            <ul
+              role="menu"
+              className="absolute right-0 top-full mt-2 min-w-[280px] rounded-xl bg-white border border-[#EAEEF2] shadow-[0px_4px_16px_0px_#0000001a] py-1.5"
+            >
+              {setupItems.map(({ label, description, icon: Icon, onClick }) => (
+                <li key={label}>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      closeSetup();
+                      onClick();
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-left cursor-pointer hover:bg-[#F2F7FF] transition-colors"
+                  >
+                    <span className="w-9 h-9 rounded-lg bg-[#F2F7FF] text-[#0B57D0] flex items-center justify-center shrink-0">
+                      <Icon size={18} strokeWidth={1.75} />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-[16px] font-semibold text-[#333333]">{label}</span>
+                      <span className="block text-[13px] text-[#777777]">{description}</span>
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -15,7 +15,7 @@ const FINANCE_MANAGER_ROUTES = [
 ];
 
 // Event pages that stay blocked even though event details are allowed.
-const FINANCE_MANAGER_BLOCKED_EVENT_PAGES = ["create", "budget-checklist"];
+const FINANCE_MANAGER_BLOCKED_EVENT_PAGES = ["create", "budget-checklist", "requests"];
 
 export const FINANCE_MANAGER_HOME = "/dashboard/profile";
 
