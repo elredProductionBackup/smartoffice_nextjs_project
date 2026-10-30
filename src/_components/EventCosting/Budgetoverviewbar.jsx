@@ -14,7 +14,7 @@ export function BudgetOverviewBar({
       : 0;
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+    <div className="flex flex-wrap items-center justify-between gap-3 sm:gap-4 mb-5 sm:mb-6">
       <div>
         <p className="text-xs text-gray-500 mb-1">Budget</p>
         <p className="text-2xl font-semibold text-gray-900">
@@ -22,7 +22,7 @@ export function BudgetOverviewBar({
         </p>
       </div>
 
-      <div className="flex-1 min-w-[200px] bg-blue-50 rounded-xl px-5 py-3">
+      <div className="flex-1 min-w-[200px] bg-blue-50 rounded-xl px-4 sm:px-5 py-3">
         <div className="flex items-center justify-between mb-1">
           <span className="text-sm text-gray-700">
             Event Budget Utilized
@@ -54,11 +54,11 @@ export function BudgetOverviewBar({
         </p>
       </div>
 
-      <div className="flex gap-2.5 flex-shrink-0">
+      <div className="flex gap-2.5 flex-shrink-0 w-full sm:w-auto">
         {!readOnly && (
         <button
           onClick={onEditBudget}
-          className="flex items-center gap-2 px-4 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors text-sm"
+          className="flex flex-1 sm:flex-none items-center justify-center gap-2 px-3 sm:px-4 py-2.5 sm:py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors text-sm"
         >
           <Edit2 className="w-3.5 h-3.5" />
           Edit Budget
@@ -67,7 +67,7 @@ export function BudgetOverviewBar({
 
         <button
           onClick={onOpenDistribution}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+          className="flex flex-1 sm:flex-none items-center justify-center gap-2 px-3 sm:px-4 py-2.5 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
         >
           Budget Distribution
           <ChevronDown className="w-3.5 h-3.5" />

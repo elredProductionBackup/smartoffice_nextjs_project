@@ -291,7 +291,7 @@ const onDeleteAttachment = (
 
 
   return (
-    <div className="flex-1 flex flex-col  min-h-0 bg-[#F2F7FF] pt-[30px] mt-[20px] rounded-[20px] overflow-hidden">
+    <div className="flex-1 flex flex-col  min-h-0 bg-[#F2F7FF] pt-5 md:pt-[30px] mt-4 md:mt-[20px] rounded-[20px] overflow-hidden">
       {loading && !debouncedSearch ?
         <><ActionableShimmer /></> :
         <>
@@ -311,7 +311,7 @@ const onDeleteAttachment = (
             disableWhileAdd={adding}
           />
 
-          <div className="flex flex-1 w-full overflow-y-auto pt-[20px] px-[30px]">
+          <div className="flex flex-1 w-full overflow-y-auto pt-4 md:pt-[20px] px-4 md:px-[30px] pb-20 md:pb-0">
             {activeItem === "today" && (
               <TodayItems
                 items={items.filter(item => !item.category || item.category === "all")}

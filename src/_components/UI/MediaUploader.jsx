@@ -90,7 +90,7 @@ export default function MediaUploader({
 
   if (!fetched && data.length === 0 && uploadingCount === 0) {
     return (
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-[35px]">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-[35px]">
         {Array.from({ length: 3 }).map((_, i) => (
           <div
             key={i}
@@ -127,7 +127,7 @@ export default function MediaUploader({
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-[35px]">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-[35px]">
           {/* Upload Card */}
           <button
             onClick={() => inputRef.current?.click()}
@@ -136,7 +136,7 @@ export default function MediaUploader({
             <div className="h-[50px] w-[50px] rounded-full bg-[#D3E3FD] text-[#0B57D0] grid place-items-center">
               <span className="solar--add-folder-bold"></span>
             </div>
-            <span className="font-[600] px-[15px] text-[#000]">
+            <span className="font-[600] px-[10px] sm:px-[15px] text-[14px] sm:text-[16px] text-[#000]">
               Add media/ documents
             </span>
           </button>
@@ -167,10 +167,11 @@ export default function MediaUploader({
                   src={src}
                   alt="uploaded"
                   fill
+                  sizes="(min-width: 1024px) 16vw, (min-width: 768px) 25vw, (min-width: 640px) 33vw, 50vw"
                   className="object-cover"
                 />
 
-                <div className="absolute bottom-[12px] right-[12px] flex gap-[8px] opacity-0 group-hover:opacity-100 transition">
+                <div className="absolute bottom-[8px] right-[8px] md:bottom-[12px] md:right-[12px] flex gap-[8px] opacity-100 md:opacity-0 md:group-hover:opacity-100 transition">
                   <button
                     title="Download"
                     onClick={(e) => {
@@ -204,7 +205,7 @@ export default function MediaUploader({
       )}
 
       <p
-        className={`text-[#999999] leading-[24px] text-[18px] font-normal font-['Nunito_Sans'] ${displayList.length === 0 ? 'text-center mt-0' : 'text-left mt-[40px]'}`}
+        className={`text-[#999999] leading-[22px] md:leading-[24px] text-[15px] md:text-[18px] font-normal font-['Nunito_Sans'] ${displayList.length === 0 ? 'text-center mt-0' : 'text-left mt-6 md:mt-[40px]'}`}
       >
         Note: Any media added will be publicly visible to attendees
       </p>

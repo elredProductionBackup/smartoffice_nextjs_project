@@ -69,22 +69,22 @@ function EventDetailContent() {
     `₹ ${formatCompactAmount(val)}`;
 
   return (
-    <div className="p-6 min-h-screen bg-white font-nunito">
+    <div className="pt-4 pb-20 md:p-6 min-h-screen bg-white font-nunito">
       {/* ── Header ── */}
-      <div className="flex items-start justify-between mb-6">
-        <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start justify-between mb-6">
+        <div className="flex flex-col gap-1 min-w-0">
           <div className="flex items-center gap-3">
             <button
               onClick={() => router.back()}
-              className="text-[#333333] hover:opacity-75 transition-opacity bg-transparent border-0 p-0 outline-none cursor-pointer flex items-center justify-center"
+              className="shrink-0 text-[#333333] hover:opacity-75 transition-opacity bg-transparent border-0 p-0 outline-none cursor-pointer flex items-center justify-center [&>svg]:w-[22px] [&>svg]:h-[22px] md:[&>svg]:w-[28px] md:[&>svg]:h-[28px]"
             >
               <FaArrowLeft size={28} />
             </button>
-            <h1 className="font-heading font-bold text-[32px] leading-[136%] text-[#333333] tracking-normal">
+            <h1 className="font-heading font-bold text-[24px] md:text-[32px] leading-[136%] text-[#333333] tracking-normal break-words min-w-0">
               {event.title}
             </h1>
           </div>
-          <p className="font-nunito font-medium text-[18px] leading-[136%] text-[#666666] tracking-normal pl-11">
+          <p className="font-nunito font-medium text-[16px] md:text-[18px] leading-[136%] text-[#666666] tracking-normal pl-[34px] md:pl-11">
             {event.portfolio}
           </p>
         </div>
@@ -92,7 +92,7 @@ function EventDetailContent() {
         {/* View Breakdown button */}
         <button
           onClick={() => setIsBreakdownOpen(true)}
-          className="flex items-center gap-2 border border-[#0B57D0] rounded-full px-5 py-2 text-[#0B57D0] font-medium text-[20px] hover:bg-gray-50 transition-colors cursor-pointer bg-white outline-none"
+          className="self-start shrink-0 flex items-center gap-2 border border-[#0B57D0] rounded-full px-4 md:px-5 py-2 text-[#0B57D0] font-medium text-[16px] md:text-[20px] hover:bg-gray-50 transition-colors cursor-pointer bg-white outline-none whitespace-nowrap"
         >
           <FiPieChart size={18} />
           <span className="leading-[100%] tracking-[-2%]">View breakdown</span>
@@ -103,7 +103,7 @@ function EventDetailContent() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-6">
 
         {/* LEFT – Budget Summary */}
-        <div className="bg-white border border-[#E2E8F2] rounded-[16px] p-6 shadow-[0px_1px_3px_0px_#0000001A,_0px_0px_4px_-1px_#8B878733]">
+        <div className="bg-white border border-[#E2E8F2] rounded-[16px] p-4 md:p-6 shadow-[0px_1px_3px_0px_#0000001A,_0px_0px_4px_-1px_#8B878733]">
           <h2 className="font-nunito font-bold text-[20px] text-[#333333] mb-5">
             Budget Summary
           </h2>
@@ -169,7 +169,7 @@ function EventDetailContent() {
         </div> 
 
         {/* RIGHT – Budget Distribution */}
-        <div className="bg-white border border-[#E2E8F2] rounded-[16px] p-6">
+        <div className="bg-white border border-[#E2E8F2] rounded-[16px] p-4 md:p-6 min-w-0">
           <h2 className="font-nunito font-bold text-[20px] text-[#333333] mb-4">
             Budget Distribution
           </h2>
@@ -202,7 +202,7 @@ function EventDetailContent() {
           </div>
 
           {/* Budget totals below chart */}
-          <div className="flex items-center justify-center gap-12 mt-2 pt-4 border-t border-[#E2E8F2]">
+          <div className="flex items-center justify-center gap-8 md:gap-12 mt-2 pt-4 border-t border-[#E2E8F2]">
             <div className="flex flex-col items-center gap-1">
               <span className="text-[#666666] leading-[136%] text-[14px]">Total Budget</span>
               <span className="text-[#333333] font-bold text-[20px] leading-[136%]">

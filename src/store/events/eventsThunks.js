@@ -352,27 +352,6 @@ export const fetchEventChecklist = createAsyncThunk(
       ]);
       const list = mergedList.filter((item) => actionableBelongsToEvent(item, eventId));
 
-      if (process.env.NODE_ENV !== "production") {
-        const previous = getState()?.events?.eventChecklist || [];
-        const incomingIds = new Set(
-          list.map((item) => item.actionableId || item._id || item.id).filter(Boolean)
-        );
-        const missingCompleted = previous
-          .filter((item) => (item.isCompleted === true || item.isCompleted === "true"))
-          .filter((item) => !incomingIds.has(item.actionableId || item._id || item.id))
-          .map((item) => item.actionableId || item._id || item.id);
-
-        console.log("[events] fetchEventChecklist debug", {
-          eventId,
-          fetchedCount: list.length,
-          fetchedAllCount: (allRes?.data?.result || []).length,
-          fetchedPastCount: (pastRes?.data?.result || []).length,
-          prevCount: previous.length,
-          missingCompletedCount: missingCompleted.length,
-          missingCompletedIds: missingCompleted,
-        });
-      }
-
       return {
         list,
         total: list.length,

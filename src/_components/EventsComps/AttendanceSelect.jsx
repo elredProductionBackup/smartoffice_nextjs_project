@@ -111,7 +111,7 @@ export default function AttendanceSelect({ value = "none", onChange }) {
           className={`shrink-0 transition-all duration-200 ${
             open
               ? "opacity-70 rotate-180"
-              : "opacity-0 group-hover:opacity-70 group-focus-visible:opacity-70"
+              : "opacity-70 md:opacity-0 md:group-hover:opacity-70 md:group-focus-visible:opacity-70"
           }`}
         />
       </button>

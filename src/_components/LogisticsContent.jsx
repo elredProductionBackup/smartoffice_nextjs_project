@@ -152,10 +152,188 @@ const LogisticsContent = () => {
     }
   ];
 
+  // Opens the member popup with the logistics fields filled in
+  const openMember = (item, group) => {
+    const memberForModal = {
+      ...item,
+      name: item.member,
+      // Prefer real avatar, fall back to local dummy
+      avatar: item.avatar || "/image/dummy.jpg",
+      email: item.email || "ellen@example.com",
+      phone: item.phone || "+91 9876543210",
+      spouse: item.spouse || "Julia Dissinger",
+      children: item.children || [],
+      documents: item.documents || [],
+      location: item.location || { city: "Mumbai", state: "Maharashtra", country: "India" },
+      title: item.title || [{ value: "UX Designer" }],
+      pickup: item.pickup || "Mumbai, India",
+      // Show ETA as DATE | TIME (using group.date from list)
+      eta: `${group.date} | ${item.eta}`,
+      hotelDetails: item.hotelDetails || "Novotel Hyderabad Airport",
+      modeOfTravel: item.modeOfTravel || item.travelMode || "Flight, Bus",
+      flightDetails: item.flightDetails || "AY101",
+      // Separate car details into two lines
+      pickupCarDetails: item.pickupCarDetails || "Pickup - Car - TG 09 0001",
+      dropoffCarDetails: item.dropoffCarDetails || "Drop off - Car - TG 09 0001",
+      carDetails: item.carDetails,
+    };
+    setSelectedMember(memberForModal);
+  };
+
+  // A "Done" with both numbers empty keeps the Add button instead of leaving an empty cell
+  const hasVehicle = (id) => !!(vehicleDetails[id]?.pickupNumber || vehicleDetails[id]?.dropOffNumber);
+
+  // Vehicle pills (or the Add button); `align` lines the pills up with their column / card
+  const renderVehicle = (item, align) =>
+    hasVehicle(item.id) ? (
+      <div className={`flex flex-col gap-1.5 w-full ${align}`}>
+        {vehicleDetails[item.id].pickupNumber && (
+          <div className="bg-[#EEF2F9] px-4 py-1.5 rounded-full w-fit max-w-full">
+            <span className="text-[#0051CC] text-[12px] font-semibold underline decoration-[#0051CC]/40">
+              Pick up - {vehicleDetails[item.id].vehicleType} - {vehicleDetails[item.id].pickupNumber}
+            </span>
+          </div>
+        )}
+        {vehicleDetails[item.id].dropOffNumber && (
+          <div className="bg-[#EEF2F9] px-4 py-1.5 rounded-full w-fit max-w-full">
+            <span className="text-[#0051CC] text-[12px] font-semibold underline decoration-[#0051CC]/40">
+              Drop off - {vehicleDetails[item.id].vehicleType} - {vehicleDetails[item.id].dropOffNumber}
+            </span>
+          </div>
+        )}
+      </div>
+    ) : (
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          setMemberForVehicle(item);
+          setIsVehicleModalOpen(true);
+        }}
+        className="text-[#0070FF] font-semibold hover:underline transition-all cursor-pointer"
+      >
+        Add
+      </button>
+    );
+
+  // Email, phone (with its copy popup) and reminder buttons
+  const renderActions = (item, recordIndex) => (
+    <>
+      {/* Email */}
+      <Link
+        href={`mailto:${item.email}`}
+        onClick={(e) => e.stopPropagation()}
+        className="w-10 h-10 bg-[#E6EBF2] rounded-full flex items-center justify-center cursor-pointer text-[#666666] text-[18px]"
+        title="Send Email"
+      >
+        <span className="oui--email"></span>
+      </Link>
+
+      {/* PHONE ICON + POPUP */}
+      <div
+        className="w-10 h-10 bg-[#E6EBF2] rounded-full flex items-center justify-center cursor-pointer relative text-[#666666] text-[18px]"
+        onClick={(e) => showPhoneDetails(e, item.id)}
+      >
+        <span className="proicons--call"></span>
+        {/* PHONE POPUP */}
+        {openPhoneFor === item.id && (
+          <div
+            data-phone-popup
+            className={`w-[250px] bg-white z-30 p-5 rounded-[20px] absolute shadow-[0px_3px_4px_rgba(190,190,190,0.25)]
+            ${recordIndex >= 1 ? "bottom-12" : "top-12"} -right-2 cursor-default`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              className={`bg-white w-[24px] h-[24px] rotate-45 absolute right-4
+              ${recordIndex >= 1 ? "-bottom-2" : "-top-2"}`}
+            ></div>
+
+            <div className="uppercase text-base font-bold text-[#333333] mb-2.5 text-left">
+              Phone
+            </div>
+
+            <div className="min-w-[180px] flex gap-2.5 items-center justify-between">
+              <div className="flex items-center gap-[6px] hover:underline cursor-pointer" onClick={(e) => handleCopyPhone(e, item.phone, item.id)}>
+                <div className="bg-[#E6EBF2] rounded-full h-8 w-8 flex items-center justify-center pointer-events-none">
+                  <Image src={callIcon} alt="call" width={20} height={20} />
+                </div>
+                <div className="text-[#333333] text-base font-semibold pointer-events-none">
+                  {item.phone}
+                </div>
+              </div>
+              <div className="relative">
+                {/* COPIED TOOLTIP */}
+                {copiedPhoneFor === item.id && (
+                  <div className="absolute -top-8 left-1/2 -translate-x-1/2
+                              bg-[#333] text-white text-xs px-2 py-1
+                              rounded-md whitespace-nowrap shadow-md z-50 pointer-events-none"
+                  >
+                    Copied
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={(e) => handleCopyPhone(e, item.phone, item.id)}
+                  className="cursor-pointer flex items-center justify-center"
+                  title="Copy phone number"
+                >
+                  <span className="lucide--copy pointer-events-none"></span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Reminder / Bell */}
+      <button className="w-10 h-10 bg-[#E6EBF2] rounded-full flex items-center justify-center hover:bg-gray-200 transition text-[#666666] text-[18px]">
+        <FiBell />
+      </button>
+    </>
+  );
+
   return (
     <div className="w-full rounded-[24px] relative">
+      {/* Phones: one card per traveller, grouped by date (the table below is md+) */}
+      <div className="md:hidden flex flex-col gap-5">
+        {dummyData.map((group, groupIndex) => (
+          <section key={groupIndex}>
+            <h3 className="font-bold text-[18px] text-[#222] mb-2 pl-1">{group.date}</h3>
+            <div className="flex flex-col rounded-[16px] bg-white divide-y divide-gray-200/80">
+              {group.records.map((item, recordIndex) => (
+                <div key={item.id} className="flex flex-col gap-3 p-4">
+                  <button
+                    type="button"
+                    onClick={() => openMember(item, group)}
+                    className="flex items-center gap-3 min-w-0 text-left cursor-pointer"
+                  >
+                    <img
+                      src={item.avatar || "/image/dummy.jpg"}
+                      alt={item.member}
+                      className="w-10 h-10 rounded-full object-cover shrink-0"
+                    />
+                    <div className="min-w-0">
+                      <p className="truncate text-gray-800 font-semibold text-[15px]">{item.member}</p>
+                      <p className="truncate text-gray-500 font-medium text-[13px]">
+                        ETA {item.eta} · {item.travelMode}
+                      </p>
+                    </div>
+                  </button>
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 min-w-0 flex flex-col gap-1">
+                      <span className="text-[12px] font-bold text-gray-500">Vehicle Details</span>
+                      <div className="flex">{renderVehicle(item, "items-start")}</div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">{renderActions(item, recordIndex)}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
+
       {/* Table Headers */}
-      <div className="flex pb-4 text-[14px] md:text-[15px] font-bold text-gray-700">
+      <div className="hidden md:flex pb-4 text-[14px] md:text-[15px] font-bold text-gray-700">
         <div className="w-[15%] text-left">Date</div>
         <div className="w-[85%] grid grid-cols-12 gap-2">
           <div className="col-span-2 text-left pl-2">ETA</div>
@@ -167,7 +345,7 @@ const LogisticsContent = () => {
       </div>
 
       {/* Table Body */}
-      <div className="flex flex-col">
+      <div className="hidden md:flex flex-col">
         {dummyData.map((group, groupIndex) => (
           <div key={groupIndex} className="flex flex-col">
             <div className="flex">
@@ -196,34 +374,9 @@ const LogisticsContent = () => {
                     </div>
 
                     {/* Member name */}
-                    <div 
+                    <div
                       className="col-span-3 flex font-600 items-center gap-4 pl-6 cursor-pointer p-1.5 -ml-1.5 rounded-lg transition"
-                      onClick={() => {
-                        const memberForModal = {
-                          ...item,
-                          name: item.member,
-                          // Prefer real avatar, fall back to local dummy
-                          avatar: item.avatar || "/image/dummy.jpg",
-                          email: item.email || "ellen@example.com",
-                          phone: item.phone || "+91 9876543210",
-                          spouse: item.spouse || "Julia Dissinger",
-                          children: item.children || [],
-                          documents: item.documents || [],
-                          location: item.location || { city: "Mumbai", state: "Maharashtra", country: "India" },
-                          title: item.title || [{ value: "UX Designer" }],
-                          pickup: item.pickup || "Mumbai, India",
-                          // Show ETA as DATE | TIME (using group.date from list)
-                          eta: `${group.date} | ${item.eta}`,
-                          hotelDetails: item.hotelDetails || "Novotel Hyderabad Airport",
-                          modeOfTravel: item.modeOfTravel || item.travelMode || "Flight, Bus",
-                          flightDetails: item.flightDetails || "AY101",
-                          // Separate car details into two lines
-                          pickupCarDetails: item.pickupCarDetails || "Pickup - Car - TG 09 0001",
-                          dropoffCarDetails: item.dropoffCarDetails || "Drop off - Car - TG 09 0001",
-                          carDetails: item.carDetails,
-                        };
-                        setSelectedMember(memberForModal);
-                      }}
+                      onClick={() => openMember(item, group)}
                     >
                       <img
                         src={item.avatar || "/image/dummy.jpg"}
@@ -235,109 +388,12 @@ const LogisticsContent = () => {
 
                     {/* Vehicle Details */}
                     <div className="col-span-2 flex flex-col items-center gap-2">
-                      {vehicleDetails[item.id] ? (
-                        <div className="flex flex-col gap-1.5 w-full items-center">
-                          {vehicleDetails[item.id].pickupNumber && (
-                            <div className="bg-[#EEF2F9] px-4 py-1.5 rounded-full w-fit">
-                              <span className="text-[#0051CC] text-[12px] font-semibold underline decoration-[#0051CC]/40">
-                                Pick up - {vehicleDetails[item.id].vehicleType} - {vehicleDetails[item.id].pickupNumber}
-                              </span>
-                            </div>
-                          )}
-                          {vehicleDetails[item.id].dropOffNumber && (
-                            <div className="bg-[#EEF2F9] px-4 py-1.5 rounded-full w-fit">
-                              <span className="text-[#0051CC] text-[12px] font-semibold underline decoration-[#0051CC]/40">
-                                Drop off - {vehicleDetails[item.id].vehicleType} - {vehicleDetails[item.id].dropOffNumber}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setMemberForVehicle(item);
-                            setIsVehicleModalOpen(true);
-                          }}
-                          className="text-[#0070FF] font-semibold hover:underline transition-all cursor-pointer"
-                        >
-                          Add
-                        </button>
-                      )}
+                      {renderVehicle(item, "items-center")}
                     </div>
 
                     {/* Actions */}
                     <div className="col-span-2 flex items-center justify-center gap-3">
-                      {/* Email */}
-                      <Link
-                        href={`mailto:${item.email}`}
-                        onClick={(e) => e.stopPropagation()}
-                        className="w-10 h-10 bg-[#E6EBF2] rounded-full flex items-center justify-center cursor-pointer text-[#666666] text-[18px]"
-                        title="Send Email"
-                      >
-                        <span className="oui--email"></span>
-                      </Link>
-
-                      {/* PHONE ICON + POPUP */}
-                      <div
-                        className="w-10 h-10 bg-[#E6EBF2] rounded-full flex items-center justify-center cursor-pointer relative text-[#666666] text-[18px]"
-                        onClick={(e) => showPhoneDetails(e, item.id)}
-                      >
-                        <span className="proicons--call"></span>
-                        {/* PHONE POPUP */}
-                        {openPhoneFor === item.id && (
-                          <div
-                            ref={phonePopupRef}
-                            className={`w-[250px] bg-white z-30 p-5 rounded-[20px] absolute shadow-[0px_3px_4px_rgba(190,190,190,0.25)]
-                            ${recordIndex >= 1 ? "bottom-12" : "top-12"} -right-2 cursor-default`} 
-                            onClick={(e)=>e.stopPropagation()}
-                          >
-                            <div
-                              className={`bg-white w-[24px] h-[24px] rotate-45 absolute right-4 
-                              ${recordIndex >= 1 ? "-bottom-2" : "-top-2"}`}
-                            ></div>
-
-                            <div className="uppercase text-base font-bold text-[#333333] mb-2.5 text-left">
-                              Phone
-                            </div>
-
-                            <div className="min-w-[180px] flex gap-2.5 items-center justify-between">
-                                  <div className="flex items-center gap-[6px] hover:underline cursor-pointer" onClick={(e) => handleCopyPhone(e, item.phone, item.id)}>
-                                    <div className="bg-[#E6EBF2] rounded-full h-8 w-8 flex items-center justify-center pointer-events-none">
-                                      <Image src={callIcon} alt="call" width={20} height={20} />
-                                    </div>
-                                    <div className="text-[#333333] text-base font-semibold pointer-events-none">
-                                      {item.phone}
-                                    </div>
-                                  </div>
-                                <div className="relative" >
-                                {/* COPIED TOOLTIP */}
-                                {copiedPhoneFor === item.id && (
-                                  <div className="absolute -top-8 left-1/2 -translate-x-1/2
-                                              bg-[#333] text-white text-xs px-2 py-1
-                                              rounded-md whitespace-nowrap shadow-md z-50 pointer-events-none"
-                                  >
-                                    Copied
-                                  </div>
-                                )}
-                                <button
-                                  type="button"
-                                  onClick={(e) => handleCopyPhone(e, item.phone, item.id)}
-                                  className="cursor-pointer flex items-center justify-center"
-                                  title="Copy phone number"
-                                >
-                                  <span className="lucide--copy pointer-events-none"></span>
-                                </button>
-                              </div>
-                              </div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Reminder / Bell */}
-                      <button className="w-10 h-10 bg-[#E6EBF2] rounded-full flex items-center justify-center hover:bg-gray-200 transition text-[#666666] text-[18px]">
-                        <FiBell />
-                      </button>
+                      {renderActions(item, recordIndex)}
                     </div>
                   </div>
                 ))}
@@ -353,7 +409,7 @@ const LogisticsContent = () => {
       </div>
 
       {/* Export as Excel button */}
-      <div className="absolute bottom-6 right-8">
+      <div className="mt-6 mb-16 flex justify-end md:mt-0 md:mb-0 md:block md:absolute md:bottom-6 md:right-8">
         <ExportAsExcelButton className="pointer-events-auto shadow-lg" />
       </div>
 
@@ -369,6 +425,8 @@ const LogisticsContent = () => {
 
       {/* Vehicle Details Modal */}
       <AddVehicleModal
+        // Fresh form per member, so one member's numbers don't carry over to the next
+        key={memberForVehicle?.id ?? "none"}
         isOpen={isVehicleModalOpen}
         onClose={() => setIsVehicleModalOpen(false)}
         memberName={memberForVehicle?.member}

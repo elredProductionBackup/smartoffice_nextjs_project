@@ -73,18 +73,18 @@ const UploadSheetModal = ({ onClose, onSelect }) => {
 
   return (
     <div
-      className="fixed inset-0 z-[200] grid place-items-center bg-[rgba(20,30,55,0.35)] p-5"
+      className="fixed inset-0 z-[200] grid place-items-center bg-[rgba(20,30,55,0.35)] p-4 md:p-5"
       onMouseDown={(e) => e.target === e.currentTarget && onClose()}
     >
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="upload-sheet-title"
-        className="flex max-h-full w-full max-w-[820px] flex-col overflow-hidden rounded-[18px] bg-white shadow-[0_20px_50px_rgba(30,50,90,0.12)]"
+        className="flex max-h-[calc(100dvh-32px)] md:max-h-full w-full max-w-[820px] flex-col overflow-hidden rounded-[18px] bg-white shadow-[0_20px_50px_rgba(30,50,90,0.12)]"
       >
-        <div className="flex items-start justify-between gap-3 px-[30px] pt-7">
+        <div className="flex items-start justify-between gap-3 px-5 pt-5 md:px-[30px] md:pt-7">
           <div>
-            <h3 id="upload-sheet-title" className="text-[24px] font-semibold text-[#1E293B]">
+            <h3 id="upload-sheet-title" className="text-[20px] md:text-[24px] font-semibold text-[#1E293B]">
               Upload attendee sheet
             </h3>
             <p className="mt-1 text-[15px] text-[#475569]">Add everyone from an Excel or CSV file in one go.</p>
@@ -99,7 +99,7 @@ const UploadSheetModal = ({ onClose, onSelect }) => {
           </button>
         </div>
 
-        <div className="flex-1 overflow-auto px-[30px] pt-5 pb-5">
+        <div className="flex-1 overflow-auto px-5 md:px-[30px] pt-5 pb-5">
           <div
             role="button"
             tabIndex={0}
@@ -111,7 +111,7 @@ const UploadSheetModal = ({ onClose, onSelect }) => {
             }}
             onDragLeave={() => setDragging(false)}
             onDrop={handleDrop}
-            className={`flex flex-col items-center justify-center rounded-[16px] border-2 border-dashed px-5 py-12 text-center outline-none transition cursor-pointer focus-visible:border-[#0B57D0] ${
+            className={`flex flex-col items-center justify-center rounded-[16px] border-2 border-dashed px-5 py-8 md:py-12 text-center outline-none transition cursor-pointer focus-visible:border-[#0B57D0] ${
               dragging
                 ? "border-[#0B57D0] bg-[#E8F0FE]"
                 : error
@@ -119,10 +119,10 @@ const UploadSheetModal = ({ onClose, onSelect }) => {
                 : "border-[#B6CFF5] bg-[#F5F8FF] hover:border-[#8AB4F8]"
             }`}
           >
-            <div className="mb-5 grid h-[76px] w-[76px] place-items-center rounded-full bg-white text-[#0B57D0] shadow-[0_2px_8px_rgba(30,50,90,0.08)]">
+            <div className="mb-4 md:mb-5 grid h-16 w-16 md:h-[76px] md:w-[76px] place-items-center rounded-full bg-white text-[#0B57D0] shadow-[0_2px_8px_rgba(30,50,90,0.08)]">
               <FiUpload className="text-[24px]" />
             </div>
-            <p className="text-[19px] font-bold text-[#1E293B]">
+            <p className="text-[17px] md:text-[19px] font-bold text-[#1E293B]">
               {dragging ? "Drop it to upload" : (
                 <>
                   Drop your sheet here or <span className="text-[#0B57D0] underline underline-offset-4">browse</span>
@@ -151,7 +151,7 @@ const UploadSheetModal = ({ onClose, onSelect }) => {
             {COLUMNS.map((c) => (
               <span
                 key={c.label}
-                className="inline-flex items-center gap-2 h-9 px-4 rounded-full border border-[#E2E8F0] text-[15px] font-bold text-[#1E293B]"
+                className="inline-flex items-center gap-2 h-9 px-3 md:px-4 rounded-full border border-[#E2E8F0] text-[14px] md:text-[15px] font-bold text-[#1E293B]"
               >
                 {c.label}
                 {c.required && <span className="text-[12.5px] font-bold text-[#0B57D0]">Required</span>}
@@ -160,7 +160,7 @@ const UploadSheetModal = ({ onClose, onSelect }) => {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-6 border-t border-[#E2E8F0] px-[30px] pt-4 pb-5">
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 md:gap-6 border-t border-[#E2E8F0] px-5 md:px-[30px] pt-4 pb-5">
           <button type="button" onClick={downloadTemplate} className={linkBtn}>
             <FiDownload className="text-[16px]" />
             Download template

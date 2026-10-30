@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { FiX } from 'react-icons/fi';
 import { formatCompactAmount } from '@/utils/currency';
 
@@ -33,12 +33,19 @@ export default function EventBudgetPopup({
   const [localCategories, setLocalCategories] = useState([]);
   const [localTotalBudget, setLocalTotalBudget] = useState('');
 
-  useEffect(() => {
+  // Re-seed the local copies whenever the popup opens or its inputs change while
+  // open (adjusting state during render rather than in an effect).
+  const [synced, setSynced] = useState({ isOpen: false, categories: null, totalBudget: undefined });
+  if (
+    synced.isOpen !== isOpen ||
+    (isOpen && (synced.categories !== categories || !Object.is(synced.totalBudget, totalBudget)))
+  ) {
+    setSynced({ isOpen, categories, totalBudget });
     if (isOpen) {
       setLocalCategories(categories);
       setLocalTotalBudget(totalBudget ? String(totalBudget) : '');
     }
-  }, [isOpen, categories, totalBudget]);
+  }
 
   if (!isOpen) return null;
 
@@ -75,12 +82,12 @@ export default function EventBudgetPopup({
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-[20px] w-full max-w-[560px] max-h-[90vh] flex flex-col shadow-2xl overflow-hidden"
+        className="bg-white rounded-[20px] w-full max-w-[560px] max-h-[90dvh] md:max-h-[90vh] flex flex-col shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-[#E8ECEF] shrink-0">
-          <h2 className="text-[20px] font-bold text-[#2B7FFF]">
+        <div className="flex items-center justify-between gap-3 px-4 py-4 sm:px-6 sm:py-5 border-b border-[#E8ECEF] shrink-0">
+          <h2 className="text-[18px] sm:text-[20px] font-bold text-[#2B7FFF] min-w-0">
             {mode === 'edit'
               ? 'Edit Budget'
               : `Budget: ${formatIndianCurrency(parsedTotalBudget)}`}
@@ -88,7 +95,7 @@ export default function EventBudgetPopup({
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-lg text-[#94A3B8] hover:bg-gray-100 hover:text-[#33] transition-colors border-0 bg-transparent cursor-pointer outline-none"
+            className="w-9 h-9 sm:w-8 sm:h-8 shrink-0 flex items-center justify-center rounded-lg text-[#94A3B8] hover:bg-gray-100 hover:text-[#333333] transition-colors border-0 bg-transparent cursor-pointer outline-none"
             aria-label="Close"
           >
             <FiX className="w-5 h-5" />
@@ -96,7 +103,7 @@ export default function EventBudgetPopup({
         </div>
 
         {mode === 'edit' ? (
-          <div className="flex-1 overflow-y-auto px-6 py-6">
+          <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-6 sm:py-6">
             <label className="block text-[15px] font-semibold text-[#333333] mb-3">
               Enter budget amount
             </label>
@@ -119,7 +126,7 @@ export default function EventBudgetPopup({
           </div>
         ) : (
         /* Scrollable list */
-        <div className="flex-1 overflow-y-auto px-6 py-4 flex flex-col gap-3 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full">
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 flex flex-col gap-3 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full">
           {localCategories.map((item, index) => {
             const percent = Number(item.value) || 0;
             const amount = (parsedTotalBudget * percent) / 100;
@@ -127,14 +134,14 @@ export default function EventBudgetPopup({
             return (
               <div
                 key={item.key}
-                className="bg-[#F5F7FA] rounded-xl px-4 py-4"
+                className="bg-[#F5F7FA] rounded-xl px-3 py-3 sm:px-4 sm:py-4"
               >
-                <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center justify-between gap-3 sm:gap-4">
                   <span className="text-[15px] font-semibold text-[#333333] leading-snug flex-1 min-w-0">
                     {index + 1}. {item.name}
                   </span>
                   <div className="flex flex-col items-end shrink-0">
-                    <span className="text-[18px] font-bold text-[#2B7FFF] leading-tight">
+                    <span className="text-[16px] sm:text-[18px] font-bold text-[#2B7FFF] leading-tight">
                       {formatIndianCurrency(amount)}
                     </span>
                     <div className="flex items-center gap-1.5 mt-2">

@@ -7,6 +7,9 @@ import { FaPlus } from "react-icons/fa6";
 export default function SectionHeader({
   title = "Members",
   tabs = [],
+  // Optional controlled tab: pages that track the tab themselves pass these (e.g. Members)
+  activeTab: activeTabProp,
+  onTabChange,
   search = "",
   onSearch = () => {},
   searchBy="Name",
@@ -18,11 +21,17 @@ export default function SectionHeader({
   const searchParams = useSearchParams();
   const router = useRouter();
 
+  // Fall back to the first tab when the URL has none, so the default tab is highlighted
   const activeTab =
-    tabs.length > 0 ? searchParams.get("tab") || "members" : null;
+    tabs.length > 0 ? activeTabProp || searchParams.get("tab") || tabs[0].key : null;
 
   const handleTabChange = (key) => {
-    router.replace(`?tab=${key}`);
+    if (onTabChange) return onTabChange(key);
+    // Keep the other query params (e.g. networkClusterCode); a new tab starts from page 1
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", key);
+    params.delete("page");
+    router.replace(`?${params.toString()}`);
   };
 
   /* ---------- DROPDOWN STATE ---------- */
@@ -75,17 +84,17 @@ export default function SectionHeader({
   return (
     <div className="flex flex-col w-full relative">
       {/* Title */}
-      <h2 className="font-heading text-[32px] font-semibold mb-[20px]">{title}</h2>
+      <h2 className="font-heading text-[24px] md:text-[32px] font-semibold mb-3 md:mb-[20px]">{title}</h2>
 
       {/* Tabs */}
        {tabs.length > 0 && (
-         <div className="action-tabs flex items-center gap-[10px] border-b border-[#E5E7EB]">
+         <div className="action-tabs relative lg:static flex items-center gap-[10px] border-b border-[#E5E7EB] overflow-x-auto pb-px md:overflow-visible md:pb-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
            {tabs.map((tab) => (
              <button
                key={tab.key}
                onClick={() => handleTabChange(tab.key)}
-               className={`tab-item px-[20px] py-[5px] text-[20px] font-[700] relative cursor-pointer
-                 ${activeTab === tab.key ? "bordered text-[20px] text-[#0B57D0]" : "text-[#666666]"}`}
+               className={`tab-item shrink-0 whitespace-nowrap px-3 md:px-[20px] py-[5px] text-lg md:text-[20px] font-[700] relative cursor-pointer
+                 ${activeTab === tab.key ? "bordered text-[18px] md:text-[20px] text-[#0B57D0]" : "text-[#666666]"}`}
              >
                {tab.label}
              </button>
@@ -94,7 +103,7 @@ export default function SectionHeader({
              <button
                type="button"
                onClick={onAdd}
-               className="w-[50px] h-[36px] mb-[4px] rounded-full bg-gradient-to-r from-[#5597ED] to-[#00449C] text-white flex items-center justify-center cursor-pointer hover:opacity-90 transition"
+               className="shrink-0 w-[50px] h-[36px] mb-[4px] rounded-full bg-gradient-to-r from-[#5597ED] to-[#00449C] text-white flex items-center justify-center cursor-pointer hover:opacity-90 transition"
              >
                <FaPlus size={16} />
              </button>
@@ -103,8 +112,8 @@ export default function SectionHeader({
        )}
 
       {/* Search */}
-      <div className="w-[500px] absolute right-0 top-1/2 -translate-y-1/2 z-30">
-        <div className="relative flex items-center h-[60px] bg-[#F7F9FC] border border-[#E1E2E6] rounded-full px-[20px] gap-3">
+      <div className="w-full mt-4 lg:mt-0 lg:w-[500px] lg:absolute lg:right-0 lg:top-1/2 lg:-translate-y-1/2 z-30">
+        <div className="relative flex items-center h-12 lg:h-[60px] bg-[#F7F9FC] border border-[#E1E2E6] rounded-full px-[20px] gap-3">
 
           {/* Dropdown */}
           <div ref={dropdownRef} className="relative shrink-0">
@@ -138,7 +147,7 @@ export default function SectionHeader({
           </div>
 
           {/* Divider */}
-          <div className="h-[40px] w-[1px] bg-[#D4DFF1]" />
+          <div className="h-8 lg:h-[40px] w-[1px] shrink-0 bg-[#D4DFF1]" />
 
           {/* Input */}
           <input

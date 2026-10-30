@@ -10,8 +10,10 @@ import { useOutsideClick } from "@/hooks/useOutsideClick";
 // Event requests raised by learning officers
 const EVENT_REQUESTS_ROUTE = "/dashboard/events/requests";
 
-const pillClass =
-  "h-[44px] px-[18px] rounded-[100px] border border-[#BCBCD9] bg-white text-[18px] font-[500] cursor-pointer flex items-center gap-[8px] hover:border-[#0B57D0] transition-colors";
+// Smaller on phones/tablets, full size from lg
+const pillSize =
+  "h-[36px] px-[14px] text-[14px] md:text-[16px] lg:h-[44px] lg:px-[18px] lg:text-[18px] rounded-[100px] font-[500] cursor-pointer flex items-center gap-[8px] whitespace-nowrap";
+const pillClass = `${pillSize} border border-[#BCBCD9] bg-white hover:border-[#0B57D0] transition-colors`;
 
 export default function EventsHeader() {
   const dispatch = useDispatch();
@@ -45,16 +47,16 @@ export default function EventsHeader() {
   ];
 
   return (
-    <div className="flex items-center justify-between w-full relative">
+    <div className="flex flex-col gap-3 mb-4 lg:mb-0 lg:gap-0 lg:flex-row lg:items-center justify-between w-full relative">
       <div>
         {/* Title Row */}
-        <div className="flex items-center gap-[20px] mb-[20px]">
-          <h2 className="font-heading text-[32px] font-semibold ">Events</h2>
+        <div className="flex items-center justify-between gap-[20px] lg:mb-[20px]">
+          <h2 className="font-heading text-[26px] md:text-[32px] font-semibold">Events</h2>
         </div>
       </div>
 
-      {/* RIGHT — Buttons */}
-      <div className="absolute right-0 bottom-[0px] z-30 flex items-center gap-[12px]">
+      {/* RIGHT — Buttons (wrap below the title on smaller screens) */}
+      <div className="flex flex-wrap items-center gap-2 md:gap-3 lg:absolute lg:right-0 lg:bottom-[0px] z-30">
         {/* Event Requests — frequent action, kept as its own button */}
         <button onClick={() => router.push(EVENT_REQUESTS_ROUTE)} className={pillClass}>
           <Inbox size={20} strokeWidth={1.75} className="text-[#0B57D0]" />
@@ -81,7 +83,7 @@ export default function EventsHeader() {
           {setupOpen && (
             <ul
               role="menu"
-              className="absolute right-0 top-full mt-2 min-w-[280px] rounded-xl bg-white border border-[#EAEEF2] shadow-[0px_4px_16px_0px_#0000001a] py-1.5"
+              className="absolute left-0 lg:left-auto lg:right-0 top-full mt-2 min-w-[280px] rounded-xl bg-white border border-[#EAEEF2] shadow-[0px_4px_16px_0px_#0000001a] py-1.5"
             >
               {setupItems.map(({ label, description, icon: Icon, onClick }) => (
                 <li key={label}>
@@ -111,7 +113,7 @@ export default function EventsHeader() {
         {/* Create event — primary action, last in the row */}
         <button
           onClick={() => router.push("/dashboard/events/create")}
-          className="h-[44px] pl-[14px] pr-[20px] rounded-[100px] bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)] text-white text-[18px] font-[500] cursor-pointer flex items-center gap-[6px] shadow-[0px_2px_8px_0px_#00449C40] hover:opacity-90 transition"
+          className={`${pillSize} pl-[12px] lg:pl-[14px] bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)] text-white shadow-[0px_2px_8px_0px_#00449C40] hover:opacity-90 transition`}
         >
           <Plus size={20} strokeWidth={2.25} />
           Create event

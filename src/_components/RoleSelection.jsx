@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import {
   AlertTriangle,
@@ -24,6 +24,7 @@ import { logout, setAdminDetail, setSelectedRole } from "@/store/auth/authSlice"
 import { getNetworkClusterAdminDetail } from "@/services/auth.service";
 import { FINANCE_MANAGER_HOME, LEARNING_OFFICER_HOME } from "@/utils/routeAccess";
 import RoleCardShimmer from "./Shimmer/RoleCardShimmer";
+import { REDIRECT_PARAM, buildLoginUrl, getStoredClusterCode, sanitizeRedirect } from "@/utils/shareLink";
 
 const ROLES = [
   {
@@ -180,8 +181,11 @@ const RoleIllustration = ({ role, selected }) => {
 
 const RoleSelection = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const dispatch = useDispatch();
   const { showLoader } = useGlobalLoader.getState();
+  // Page the user opened from a shared link before logging in
+  const redirectTo = sanitizeRedirect(searchParams.get(REDIRECT_PARAM));
   const { user, adminDetail } = useSelector((state) => state.auth);
   const network = user?.networkClusterDetails;
 
@@ -241,9 +245,10 @@ const RoleSelection = () => {
   const popupType = loading ? null : error ?? (availableRoles.length === 0 ? "noRoles" : null);
 
   const handleLogout = () => {
-    const networkClusterCode = localStorage.getItem("networkClusterCode");
+    const networkClusterCode = getStoredClusterCode();
     dispatch(logout());
-    router.replace(networkClusterCode ? `/?networkClusterCode=${networkClusterCode}` : "/");
+    // Full reload so the login screen starts fresh (this screen is rendered by the login page itself)
+    window.location.replace(buildLoginUrl({ clusterCode: networkClusterCode, redirect: redirectTo }));
   };
 
   // Picking a role saves it and logs the user straight in
@@ -253,7 +258,8 @@ const RoleSelection = () => {
     setSelected(roleKey);
     dispatch(setSelectedRole(roleKey));
     showLoader();
-    router.push(ROLE_HOME[roleKey] ?? "/dashboard");
+    // Shared link: open that page (role access is still enforced by ProtectedRoute)
+    router.push(redirectTo || ROLE_HOME[roleKey] || "/dashboard");
   };
 
   return (

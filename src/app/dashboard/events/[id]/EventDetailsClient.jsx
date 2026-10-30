@@ -8,7 +8,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import { EVENTS_DETAILS } from "@/assets/helpers/sampleEvents";
 import ActionableTabs from "@/_components/ActionableTabs";
 import { RegistrationToggle } from "@/_components/UI/RegistrationToggle";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import MediaUploader from "@/_components/UI/MediaUploader";
 import Attendees from "@/_components/EventsComps/Attendees";
@@ -30,6 +30,9 @@ import EventsMenu from "@/_components/EventsComps/EventsMenu";
 import EventActionConfirmModal from "@/_components/EventsComps/EventActionConfirmModal";
 // import { HiEllipsisVertical } from "react-icons/hi2";
 
+// Finance managers only get the attendees and event costing tabs
+const FINANCE_MANAGER_HIDDEN_TABS = ["checklist", "memberMedia", "documents"];
+
 export default function EventDetailsClient() {
   // ================= ROUTER / PARAMS =================
   const params = useParams();
@@ -39,12 +42,14 @@ export default function EventDetailsClient() {
 
   const eventId = params?.id;
 
-  // Finance managers only get the attendees and event costing tabs
   const isFinanceManager = useSelector(selectIsFinanceOfficer);
-  const FINANCE_MANAGER_HIDDEN_TABS = ["checklist", "memberMedia", "documents"];
-  const eventTabs = isFinanceManager
-    ? EVENTS_DETAILS.filter((t) => !FINANCE_MANAGER_HIDDEN_TABS.includes(t.value))
-    : EVENTS_DETAILS;
+  const eventTabs = useMemo(
+    () =>
+      isFinanceManager
+        ? EVENTS_DETAILS.filter((t) => !FINANCE_MANAGER_HIDDEN_TABS.includes(t.value))
+        : EVENTS_DETAILS,
+    [isFinanceManager]
+  );
 
   const requestedTab = searchParams.get("tab") || "attendees";
   const activeTab = eventTabs.some((t) => t.value === requestedTab)
@@ -56,6 +61,8 @@ export default function EventDetailsClient() {
     const [deleting, setDeleting] = useState(false);
   const [registrationEnabled, setRegistrationEnabled] = useState(true);
   const [showMenu, setShowMenu] = useState(false);
+  // Phones have no hover, so the "Additional note" popover also opens on tap
+  const [noteOpen, setNoteOpen] = useState(false);
   const menuRef = useRef(null);
 
   useEffect(() => {
@@ -125,7 +132,7 @@ export default function EventDetailsClient() {
         limit: 20,
       })
     );
-  }, [activeTab, eventId, membersMediaPageNumber]);
+  }, [activeTab, eventId, membersMediaPageNumber, dispatch]);
 
   const membersMediaRef = useInfiniteScrollObserver({
     hasMore: activeTab === "memberMedia" && hasMoreMembersMedia,
@@ -154,7 +161,7 @@ export default function EventDetailsClient() {
         limit: 20,
       })
     );
-  }, [activeTab, eventId, documentsPageNumber]);
+  }, [activeTab, eventId, documentsPageNumber, dispatch]);
 
   const documentsRef = useInfiniteScrollObserver({
     hasMore: activeTab === "documents" && hasMoreDocuments,
@@ -173,13 +180,13 @@ export default function EventDetailsClient() {
     if (activeTab === "documents") {
       dispatch(fetchDocuments({ eventId, page: 1, limit: 20 }));
     }
-  }, [activeTab, eventId]);
+  }, [activeTab, eventId, dispatch]);
 
   useEffect(() => {
     if (eventId) {
       dispatch(fetchEventDetails({ eventId, noSkip:true }));
     }
-  }, [eventId]);
+  }, [eventId, dispatch]);
 
   // ================= DATE =================
   const start = moment(event?.startDateTime).local();
@@ -233,15 +240,15 @@ export default function EventDetailsClient() {
 
   // ================= LOADING =================
   if (!event) {
-    return <div className="p-10 text-xl">Loading event...</div>;
+    return <div className="p-5 md:p-10 text-xl">Loading event...</div>;
   }
 
   return (
-    <div className="h-[calc(100vh-80px)] flex flex-col gap-[20px] overflow-y-auto overflow-x-hidden relative pb-[20px] focus:outline-none" ref={containerRef}>
+    <div className="h-[calc(100dvh-60px)] md:h-[calc(100vh-80px)] flex flex-col gap-4 md:gap-[20px] overflow-y-auto overflow-x-hidden relative pb-20 md:pb-[20px] focus:outline-none" ref={containerRef}>
 
-      <div className="bg-white rounded-2xl pt-6 pb-4 w-full relative z-[15] flex gap-[36px] items-stretch">
+      <div className="bg-white rounded-2xl pt-4 lg:pt-6 pb-4 w-full relative z-[15] flex flex-col lg:flex-row gap-4 lg:gap-[36px] items-stretch">
         {/* Cover */}
-        <div className="w-[240px] shrink-0 min-h-[320px] relative rounded-[16px] overflow-hidden bg-[#F5F6F8]">
+        <div className="w-full h-[200px] sm:h-[280px] lg:h-auto lg:w-[240px] shrink-0 lg:min-h-[320px] relative rounded-[16px] overflow-hidden bg-[#F5F6F8]">
           <Image
             src={
               isValidImage(event?.eventImage)
@@ -250,15 +257,17 @@ export default function EventDetailsClient() {
             }
             alt={event?.eventName || "event"}
             fill
+            sizes="(min-width: 1024px) 240px, 100vw"
             className={isValidImage(event?.eventImage)
               ? "object-cover"
               : "object-contain p-14 opacity-60"}
           />
         </div>
 
-        <div className="flex-1 min-w-0 flex flex-col gap-[24px]">
+        {/* Below lg this column dissolves into the stacked card, so the top bar can sit above the cover */}
+        <div className="flex-1 min-w-0 flex flex-col gap-[24px] max-lg:contents">
           {/* Top bar */}
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center justify-between gap-4 max-lg:order-first">
             <button
               type="button"
               onClick={handleBack}
@@ -320,19 +329,19 @@ export default function EventDetailsClient() {
               <span>{isPast ? "Past" : "Upcoming"}</span>
             </div>
 
-            <h1 className="font-heading text-[32px] leading-[1.25] font-semibold text-[#111]">
+            <h1 className="font-heading text-[24px] lg:text-[32px] leading-[1.25] font-semibold text-[#111] break-words">
               {event?.eventName}
             </h1>
 
             {event?.eventDescription && (
-              <p className="text-[16px] leading-[26px] text-[#6B7280]">
+              <p className="text-[15px] leading-[24px] md:text-[16px] md:leading-[26px] text-[#6B7280] break-words">
                 {event.eventDescription}
               </p>
             )}
           </div>
 
           {/* Venue / date / time */}
-          <div className="flex flex-wrap gap-x-[32px] gap-y-[10px] text-[15px] text-[#374151]">
+          <div className="flex flex-wrap gap-x-5 md:gap-x-[32px] gap-y-[10px] text-[14px] md:text-[15px] text-[#374151]">
             {eventMeta.map(({ label, icon, value }) => (
               <div key={label} className="flex items-center gap-[8px] min-w-0" title={label}>
                 <span className={`${icon} shrink-0 text-[#9CA3AF]`} style={{ width: 18, height: 18 }} />
@@ -342,7 +351,7 @@ export default function EventDetailsClient() {
           </div>
 
           {/* Speaker & registration */}
-          <div className="mt-auto pt-[20px] border-t border-[#F0F1F3] flex items-center justify-between gap-6">
+          <div className="mt-auto pt-4 md:pt-[20px] border-t border-[#F0F1F3] flex flex-wrap md:flex-nowrap items-center justify-between gap-4 md:gap-6">
             {event?.resource?.resourceName ? (
               <div className="flex items-center gap-[12px] min-w-0">
                 {event?.resource?.uploadResourceImageUrl ?
@@ -359,14 +368,17 @@ export default function EventDetailsClient() {
               </div>
             ) : <div />}
 
-            <div className="flex items-center gap-[32px] shrink-0">
+            <div className="flex items-center gap-5 md:gap-[32px] shrink-0 max-md:w-full max-md:justify-between">
               {event?.additionalNotes && (
                 <div className="relative inline-block group">
-                  <div className="text-[14px] text-[#147BFF] font-medium hover:underline underline-offset-4 cursor-pointer text-right">
+                  <div
+                    onClick={() => setNoteOpen((o) => !o)}
+                    className="text-[14px] text-[#147BFF] font-medium hover:underline underline-offset-4 cursor-pointer text-right"
+                  >
                     Additional note
                   </div>
-                  <div className="absolute right-0 top-full w-[380px] p-[24px] rounded-[20px] shadow-[0px_4px_4px_2px_#A2A0A040] opacity-0 invisible group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 translate-y-2 transition-all duration-200 z-10 bg-[#F2F7FF] flex flex-col gap-[8px] max-h-[350px] overflow-scroll">
-                    <h4 className="font-bold text-[20px] ">Additional note</h4>
+                  <div className={`absolute max-md:left-0 md:right-0 top-full w-[min(380px,calc(100vw-32px))] md:w-[380px] p-4 md:p-[24px] rounded-[20px] shadow-[0px_4px_4px_2px_#A2A0A040] opacity-0 invisible group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 translate-y-2 transition-all duration-200 z-10 bg-[#F2F7FF] flex flex-col gap-[8px] max-h-[350px] overflow-scroll ${noteOpen ? "max-md:opacity-100 max-md:visible max-md:translate-y-0" : ""}`}>
+                    <h4 className="font-bold text-[18px] md:text-[20px]">Additional note</h4>
                     <p className="text-[16px] text-[#333333]">
                       {formatText(event?.additionalNotes)}
                     </p>
@@ -383,9 +395,12 @@ export default function EventDetailsClient() {
         </div>
       </div>
 
-      <div className="bg-white sticky z-10 top-0 pt-[20px]">
-        {/* Mencken ships in one weight only, so no bold (it would be faux-bolded) */}
-        <ActionableTabs tabs={eventTabs} defaultTab="attendees" labelClassName="font-heading font-normal" />
+      <div className="bg-white sticky z-10 top-0 pt-2 md:pt-[20px]">
+        {/* Below lg the tab row scrolls sideways instead of squeezing/wrapping the labels */}
+        <div className="max-lg:overflow-x-auto max-lg:overflow-y-hidden max-lg:pb-px max-lg:whitespace-nowrap max-lg:[scrollbar-width:none] max-lg:[&>.action-tabs]:w-max max-lg:[&>.action-tabs]:min-w-full max-md:[&_.tab-item]:text-[17px] max-md:[&_.tab-item]:px-[12px]">
+          {/* Mencken ships in one weight only, so no bold (it would be faux-bolded) */}
+          <ActionableTabs tabs={eventTabs} defaultTab="attendees" labelClassName="font-heading font-normal" />
+        </div>
       </div>
 
       <>

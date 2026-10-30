@@ -91,7 +91,12 @@ export default function AlliancesPageClient() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(false);
   const requestIdRef = useRef(0); // drops responses from outdated tabs/searches
-  const nextStartRef = useRef(0); // where the next page starts on the server
+  const nextStartRef = useRef(0); // where the next page starts on the server (read by fetches)
+  const [nextStart, setNextStartState] = useState(0); // same value, for rendering (hasMore)
+  const setNextStart = useCallback((value) => {
+    nextStartRef.current = value;
+    setNextStartState(value);
+  }, []);
   const stageRequestRef = useRef({}); // { [rowId]: latest stage save }, so only the newest failure rolls back
 
   // Success popup after adding or deleting: { title, message, stats? } | null
@@ -114,11 +119,14 @@ export default function AlliancesPageClient() {
   const { notes, loadingNotes, loadNotes, addNote, editNote, deleteNote, clearNotes } =
     useNotes(tab);
 
-  // Each tab has its own search fields
-  useEffect(() => {
+  // Each tab has its own search fields: reset them while rendering the new tab
+  // (instead of in an effect) so the first fetch for the tab already uses "Name"
+  const [prevTab, setPrevTab] = useState(tab);
+  if (prevTab !== tab) {
+    setPrevTab(tab);
     setSearchBy("Name");
     setSelectedItem(null);
-  }, [tab]);
+  }
 
   const fetchItems = useCallback(
     async (reset) => {
@@ -127,7 +135,7 @@ export default function AlliancesPageClient() {
       setError(false);
       if (reset) {
         setItems([]);
-        nextStartRef.current = 0;
+        setNextStart(0);
       }
       const start = nextStartRef.current;
 
@@ -140,7 +148,7 @@ export default function AlliancesPageClient() {
         });
         if (requestId !== requestIdRef.current) return;
 
-        nextStartRef.current = start + result.length;
+        setNextStart(start + result.length);
         const page = result.map((item) => ({ ...item, id: item[config.idKey] }));
         // A row can come back again if the list changed on the server between pages
         setItems((prev) => {
@@ -161,7 +169,7 @@ export default function AlliancesPageClient() {
         }
       }
     },
-    [config, search, searchBy]
+    [config, search, searchBy, setNextStart]
   );
 
   // Fresh list whenever the tab opens or the search changes
@@ -170,7 +178,7 @@ export default function AlliancesPageClient() {
   }, [tab, search, searchBy]);
 
   const lastRowRef = useInfiniteScrollObserver({
-    hasMore: nextStartRef.current < total && !error,
+    hasMore: nextStart < total && !error,
     loading: loading || loadingMore,
     onLoadMore: () => fetchItems(false),
   });
@@ -261,7 +269,7 @@ export default function AlliancesPageClient() {
       const response = await config.remove(itemToDelete.id);
       setItems((prev) => prev.filter((item) => item.id !== itemToDelete.id));
       setTotal((prev) => Math.max(prev - 1, 0));
-      nextStartRef.current = Math.max(nextStartRef.current - 1, 0); // the server list shrank too
+      setNextStart(Math.max(nextStartRef.current - 1, 0)); // the server list shrank too
       clearNotes(itemToDelete.id);
 
       setSuccess({
@@ -305,7 +313,7 @@ export default function AlliancesPageClient() {
   };
 
   return (
-    <div className="h-[calc(100vh-120px)] my-5 flex flex-col">
+    <div className="md:h-[calc(100vh-120px)] my-5 pb-20 md:pb-0 flex flex-col">
       <SectionHeader
         title="Vendor/Resources"
         tabs={[

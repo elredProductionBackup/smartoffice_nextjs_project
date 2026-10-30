@@ -51,8 +51,10 @@ export default function VendorSelect({
     const handler = (e) => {
       if (ref.current && !ref.current.contains(e.target)) setOpen(false);
     };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    // Capture phase so it still fires inside modals that stop mousedown propagation
+    // (e.g. NewExpensesPopup), otherwise the list never closed on an outside click there.
+    document.addEventListener('mousedown', handler, true);
+    return () => document.removeEventListener('mousedown', handler, true);
   }, []);
 
   // Debounce the search box
@@ -159,7 +161,7 @@ export default function VendorSelect({
                 e.stopPropagation();
                 handleSelect(null);
               }}
-              className="w-5 h-5 grid place-items-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600 cursor-pointer"
+              className="w-7 h-7 -my-1 md:my-0 md:w-5 md:h-5 grid place-items-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600 cursor-pointer"
               aria-label="Clear vendor"
             >
               <FiX className="w-3.5 h-3.5" />
@@ -176,7 +178,7 @@ export default function VendorSelect({
         <div
           className={`absolute left-0 w-full bg-white rounded-[14px] z-[9999] p-2 flex flex-col ${
             openUp ? 'bottom-[calc(100%+6px)]' : 'top-[calc(100%+6px)]'
-          } ${isSmall ? 'min-w-[240px]' : ''}`}
+          } ${isSmall ? 'min-w-[240px] max-w-[calc(100vw-32px)]' : ''}`}
           style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.13)' }}
         >
           {/* Search */}
@@ -189,7 +191,7 @@ export default function VendorSelect({
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search vendor by name"
               className={`w-full bg-transparent outline-none text-slate-800 placeholder:text-slate-400 ${
-                isSmall ? 'text-sm' : 'text-[15px]'
+                isSmall ? 'text-base md:text-sm' : 'text-[16px] md:text-[15px]'
               }`}
             />
             {query && (

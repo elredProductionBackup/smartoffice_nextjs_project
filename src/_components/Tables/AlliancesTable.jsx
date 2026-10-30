@@ -316,8 +316,8 @@ export default function AlliancesTable({
 
       {/* Error State (nothing loaded yet) */}
       {isEmpty && error && (
-        <div className="flex flex-col justify-center items-center h-[calc(100vh-340px)] text-center">
-          <div className="mb-3 text-2xl font-semibold text-[#333333]">
+        <div className="flex flex-col justify-center items-center px-4 py-16 md:py-0 md:h-[calc(100vh-340px)] text-center">
+          <div className="mb-3 text-xl md:text-2xl font-semibold text-[#333333]">
             Couldn&apos;t load {tab}
           </div>
           <div className="text-base font-normal text-[#666666] mb-6">
@@ -335,7 +335,7 @@ export default function AlliancesTable({
 
       {/* Empty State */}
       {isEmpty && !error && (
-        <div className="flex flex-col justify-center items-center h-[calc(100vh-340px)] text-center">
+        <div className="flex flex-col justify-center items-center px-4 py-16 md:py-0 md:h-[calc(100vh-340px)] text-center">
           <div className="h-[80px] w-[80px] rounded-full bg-[#D3E3FD] grid place-items-center mb-[30px]">
             <Image
               src={isSearching ? "/logo/no-search.svg" : "/logo/no-member.svg"}
@@ -347,7 +347,7 @@ export default function AlliancesTable({
 
           {isSearching ? (
             <>
-              <div className="mb-3 text-2xl font-semibold text-[#333333]">
+              <div className="mb-3 text-xl md:text-2xl font-semibold text-[#333333]">
                 No search result found
               </div>
               <div className="text-base font-normal text-[#666666]">
@@ -356,7 +356,7 @@ export default function AlliancesTable({
             </>
           ) : (
             <>
-              <div className="mb-3 text-2xl font-semibold text-[#333333]">
+              <div className="mb-3 text-xl md:text-2xl font-semibold text-[#333333]">
                 No {tab} yet
               </div>
               <div className="text-base font-normal text-[#666666]">

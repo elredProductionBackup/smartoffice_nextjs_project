@@ -1,15 +1,30 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { formatText } from "@/utils/functions";
 
 export default function TitleTooltipHover({ title, children }) {
   const [visible, setVisible] = useState(false);
+  const ref = useRef(null);
+
+  // Touch screens have no hover: a tap toggles the tooltip, tapping elsewhere closes it
+  useEffect(() => {
+    if (!visible) return;
+    const onOutside = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setVisible(false);
+    };
+    document.addEventListener("touchstart", onOutside, { passive: true });
+    return () => document.removeEventListener("touchstart", onOutside);
+  }, [visible]);
 
   return (
     <div
+      ref={ref}
       className="relative inline-block max-w-full"
       onMouseEnter={() => setVisible(true)}
       onMouseLeave={() => setVisible(false)}
+      onPointerUp={(e) => {
+        if (e.pointerType === "touch") setVisible((v) => !v);
+      }}
     >
       <div className="w-full">{children}</div>
 

@@ -68,16 +68,16 @@ const isValidPreview =
 
 
   return (
-    <div className="sticky top-0 flex flex-col items-center gap-[30px]">
+    <div className="lg:sticky lg:top-0 w-full lg:w-auto flex flex-col items-center gap-5 lg:gap-[30px]">
       {/* Image Preview */}
-      <div className="relative h-[600px] aspect-[3/4] overflow-hidden rounded-[20px] bg-gray-200">
+      <div className="relative w-full max-w-[300px] sm:max-w-[360px] lg:max-w-none lg:w-auto lg:h-[600px] aspect-[3/4] overflow-hidden rounded-[20px] bg-gray-200">
 
 {imageSrc && isValidPreview ? (
   <Image
     src={imageSrc}
     alt="event"
     fill
-    sizes="450px"
+    sizes="(min-width: 1024px) 450px, 360px"
     className="object-cover border-[1.4px] border-[#EAEAEA] rounded-[20px]"
   />
 ) : (
@@ -87,7 +87,7 @@ const isValidPreview =
             bg-gradient-to-b from-[#999999] to-[#333333] gap-[20px]"
         >
           <Image src={`/logo/no-image.svg`} alt="Default Image" width={100} height={100}/>
-          <span className="text-white text-[20px] font-[600]">
+          <span className="text-white text-[18px] lg:text-[20px] font-[600]">
             No event image
           </span>
         </div>
@@ -97,7 +97,7 @@ const isValidPreview =
       </div>
 
       {/* Controls */}
-      <div className="flex gap-[30px]">
+      <div className="flex gap-4 lg:gap-[30px]">
         {/* Add / Replace */}
         <div
           onClick={openGallery}
@@ -111,7 +111,7 @@ const isValidPreview =
               width={20}
             />
           </div>
-          <span className="text-[18px] font-[600] text-[#333333] text-center leading-[125%] font-nunito ">
+          <span className="text-[15px] lg:text-[18px] font-[600] text-[#333333] text-center leading-[125%] font-nunito">
             Add / Replace<br />image
           </span>
         </div>
@@ -132,7 +132,7 @@ const isValidPreview =
               width={20}
             />
           </div>
-          <span className="text-[18px] font-[600] text-[#333333] text-center leading-[125%] font-nunito ">
+          <span className="text-[15px] lg:text-[18px] font-[600] text-[#333333] text-center leading-[125%] font-nunito">
             Delete<br />image
           </span>
         </div>

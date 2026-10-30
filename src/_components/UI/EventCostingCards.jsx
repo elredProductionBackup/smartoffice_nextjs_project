@@ -7,7 +7,7 @@ import { addEditExpense } from '@/services/expense.service';
 import { useBudgetTypeStore } from '@/store/useBudgetTypeStore';
 
 const EXPENSE_INPUT_CLASS =
-  'h-[44px] w-full rounded-[8px] border border-[#DDDDDD] bg-[#E5E7EB] px-3 text-[14px] text-[#666666] outline-none focus:border-[#5597ED] font-nunito';
+  'h-[44px] w-full rounded-[8px] border border-[#DDDDDD] bg-[#E5E7EB] px-3 text-[16px] md:text-[14px] text-[#666666] outline-none focus:border-[#5597ED] font-nunito';
 const EXPENSE_LABEL_CLASS = 'text-[14px] font-medium text-[#111827] mb-1 font-nunito';
 
 const EventCostingCard = ({
@@ -57,7 +57,6 @@ const EventCostingCard = ({
   const calendarDropdownRef = useRef(null);
   const reminderDropdownRef = useRef(null);
   const fileInputRef = useRef(null);
-  const isFirstRender = useRef(true);
 
   useEffect(() => {
     fetchBudgetTypes();
@@ -155,12 +154,12 @@ const EventCostingCard = ({
     );
   };
 
-  // Reset isSubmitted when any input fields change, but only if they differ from initialData
-  useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
+  // Reset isSubmitted when any input fields change, but only if they differ from initialData.
+  // Done while rendering (comparing against the previous snapshot) instead of in an effect.
+  const fieldSnapshot = { description, totalAmount, remark, vendorName, billFileName, selectedDate, initialData };
+  const [prevFieldSnapshot, setPrevFieldSnapshot] = useState(fieldSnapshot);
+  if (Object.keys(fieldSnapshot).some((k) => !Object.is(fieldSnapshot[k], prevFieldSnapshot[k]))) {
+    setPrevFieldSnapshot(fieldSnapshot);
 
     const initialDescription = initialData?.description ?? initialData?.narrative ?? '';
     const initialTotalAmount = String(initialData?.totalAmount ?? initialData?.cost ?? '');
@@ -178,10 +177,10 @@ const EventCostingCard = ({
       billFileName !== initialBill ||
       currentDateStr !== initialDateStr;
 
-    if (hasChanged) {
+    if (hasChanged && isSubmitted) {
       setIsSubmitted(false);
     }
-  }, [description, totalAmount, remark, vendorName, billFileName, selectedDate, initialData]);
+  }
 
   const uploadId = `upload-${title.replace(/\s+/g, '-').toLowerCase()}`;
 
@@ -334,14 +333,14 @@ const EventCostingCard = ({
   };
 
   return (
-    <div className="group w-full rounded-[12px] border border-[#E8ECEF] bg-white p-6 mb-6 font-nunito shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+    <div className="group w-full rounded-[12px] border border-[#E8ECEF] bg-white p-4 md:p-6 mb-4 md:mb-6 font-nunito shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
       {/* Header */}
-      <div className="flex items-start justify-between mb-5">
-        <h2 className="text-[20px] font-bold text-[#1e3a8a] leading-tight">{title}</h2>
+      <div className="flex items-start justify-between gap-3 mb-4 md:mb-5">
+        <h2 className="text-[18px] md:text-[20px] font-bold text-[#1e3a8a] leading-tight min-w-0 break-words">{title}</h2>
         <button
           type="button"
           onClick={() => onRemove(savedBudgetExpenseId)}
-          className="opacity-0 group-hover:opacity-100 transition-opacity duration-150 text-[#EF4444] hover:text-[#DC2626] bg-transparent border-0 p-1 cursor-pointer outline-none shrink-0"
+          className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-150 text-[#EF4444] hover:text-[#DC2626] bg-transparent border-0 p-1 cursor-pointer outline-none shrink-0"
           aria-label={`Remove ${title}`}
         >
           <FiX className="w-5 h-5" strokeWidth={2.5} />
@@ -366,7 +365,7 @@ const EventCostingCard = ({
             htmlFor={uploadId}
             className={`${EXPENSE_INPUT_CLASS} flex items-center justify-center gap-2 cursor-pointer hover:bg-[#dfe3e8] transition-colors`}
           >
-            <span className="text-[14px] font-medium text-[#666666] truncate max-w-[190px]">
+            <span className="text-[14px] font-medium text-[#666666] truncate min-w-0 max-w-[190px]">
               {billFileName || 'Upload file'}
             </span>
             <FiUpload className="w-[18px] h-[18px] text-[#666666]" />
@@ -402,7 +401,7 @@ const EventCostingCard = ({
           </button>
           
           {showCalendar && (
-            <div ref={calendarDropdownRef} className="absolute top-[calc(100%+6px)] left-0 w-[280px] bg-white rounded-[12px] shadow-[0_4px_20px_rgba(0,0,0,0.08)] border border-[#E8ECEF] p-4 z-20 font-nunito">
+            <div ref={calendarDropdownRef} className="absolute top-[calc(100%+6px)] left-0 w-[280px] max-w-[calc(100vw-48px)] bg-white rounded-[12px] shadow-[0_4px_20px_rgba(0,0,0,0.08)] border border-[#E8ECEF] p-4 z-20 font-nunito">
               {/* Calendar Header */}
               <div className="flex items-center justify-between mb-3">
                 <button
@@ -515,14 +514,14 @@ const EventCostingCard = ({
               placeholder="No. of Attendees"
               value={sub.attendees}
               onChange={(e) => updateSubItem(sub.id, 'attendees', e.target.value)}
-              className={`${EXPENSE_INPUT_CLASS} flex-1 min-w-[120px]`}
+              className={`${EXPENSE_INPUT_CLASS} flex-1 min-w-[72px] md:min-w-[120px]`}
             />
             <input
               type="text"
               placeholder="Amount"
               value={sub.amount}
               onChange={(e) => updateSubItem(sub.id, 'amount', e.target.value)}
-              className={`${EXPENSE_INPUT_CLASS} flex-1 min-w-[100px]`}
+              className={`${EXPENSE_INPUT_CLASS} flex-1 min-w-[64px] md:min-w-[100px]`}
             />
           </div>
         ))}
@@ -544,14 +543,14 @@ const EventCostingCard = ({
             {approvalStatus}
           </span>
         </div>
-        <div className="flex items-center gap-3 shrink-0">
-          <div className="relative" ref={reminderRef}>
+        <div className="flex flex-wrap items-center gap-3 shrink-0">
+          <div className="relative max-w-full" ref={reminderRef}>
             <button
               type="button"
               onClick={() => setShowReminderDropdown(!showReminderDropdown)}
-              className="h-[40px] px-4 rounded-[10px] border border-[#2B7FFF] bg-white text-[#2B7FFF] text-[14px] font-medium cursor-pointer hover:bg-[#F2F7FF] transition-colors outline-none whitespace-nowrap flex items-center gap-2"
+              className="min-h-[40px] py-2 sm:py-0 sm:h-[40px] px-4 rounded-[10px] border border-[#2B7FFF] bg-white text-[#2B7FFF] text-[14px] font-medium cursor-pointer hover:bg-[#F2F7FF] transition-colors outline-none whitespace-normal text-left sm:whitespace-nowrap flex items-center gap-2"
             >
-              <FiBell className="w-4 h-4" />
+              <FiBell className="w-4 h-4 shrink-0" />
               <span>
                 {reminderChannel === 'both'
                   ? 'Send Reminder via WhatsApp and Email'
@@ -561,7 +560,7 @@ const EventCostingCard = ({
                   ? 'Send Reminder via Email'
                   : 'Send Reminder'}
               </span>
-              <FiChevronDown className={`w-4 h-4 transition-transform ${showReminderDropdown ? 'rotate-180' : ''}`} />
+              <FiChevronDown className={`w-4 h-4 shrink-0 transition-transform ${showReminderDropdown ? 'rotate-180' : ''}`} />
             </button>
             {showReminderDropdown && (
               <div ref={reminderDropdownRef} className="absolute right-0 mt-2 w-[180px] bg-white rounded-[12px] shadow-[0_4px_20px_rgba(0,0,0,0.08)] border border-[#E8ECEF] py-2 z-30 font-nunito">

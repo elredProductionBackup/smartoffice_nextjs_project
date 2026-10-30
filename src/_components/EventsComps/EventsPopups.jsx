@@ -82,15 +82,21 @@ export default function EventsPopups() {
         return (
           <div
             key={index}
-            className={`fixed inset-0 flex items-center justify-center ${
+            className={`fixed inset-0 flex items-center justify-center p-4 ${
               isTop ? "bg-black/50" : "bg-black/30"
             }`}
             style={{ zIndex: 100 + index * 10 }}
             onClick={() => dispatch(closeTopEventsModal())}
           >
+            {/* Full-width row that centres the modal, so fixed-width modals can
+                shrink to fit a phone screen. Clicks on the empty area around the
+                modal still close it, like clicks on the backdrop. */}
             <div
-              className="relative"
-              onClick={(e) => e.stopPropagation()}
+              className="relative w-full max-h-full flex justify-center"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (e.target === e.currentTarget) dispatch(closeTopEventsModal());
+              }}
             >
               {modal.type === "MASTER_CHECKLIST" && (
                 <MasterChecklistModal onClose={()=>dispatch(closeTopEventsModal())}/>

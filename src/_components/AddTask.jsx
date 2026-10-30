@@ -21,17 +21,17 @@ function AddTask({ onClose, onAdd }) {
   return (
     /* Backdrop */
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
+      className="fixed inset-0 z-50 flex items-center justify-center px-4"
       style={{ backgroundColor: "rgba(0,0,0,0.35)" }}
       onMouseDown={onClose}
     >
       {/* Card – stop propagation so clicks inside don't close */}
       <div
-        className="bg-white rounded-[18px] shadow-2xl p-[40px] flex flex-col gap-[20px] w-[520px]"
+        className="bg-white rounded-[18px] shadow-2xl p-5 md:p-[40px] flex flex-col gap-4 md:gap-[20px] w-full max-w-[520px] max-h-[90dvh] overflow-y-auto"
         onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Title */}
-        <h3 className="text-[24px] font-[700] text-[#222]">Add new item</h3>
+        <h3 className="text-[20px] md:text-[24px] font-[700] text-[#222]">Add new item</h3>
 
         {/* Name input */}
         <input
@@ -43,7 +43,7 @@ function AddTask({ onClose, onAdd }) {
 
         {/* Difficulty section */}
         <div className="flex flex-col gap-[14px]">
-          <p className="text-[18px] font-[700] text-[#222]">
+          <p className="text-[16px] md:text-[18px] font-[700] text-[#222]">
             Choose difficulty level
           </p>
 
@@ -65,30 +65,30 @@ function AddTask({ onClose, onAdd }) {
                         : "border-[2px] border-[#999999]"
                       }`}
                   />
-                  <span className="text-[20px] font-[500] text-[#333]">
+                  <span className="text-[16px] md:text-[20px] font-[500] text-[#333]">
                     {d.label}
                   </span>
                 </div>
 
                 {/* Right: color pill */}
-                <span className={`h-[12px] w-[50px] rounded-full ${d.color}`} />
+                <span className={`h-[12px] w-[50px] shrink-0 rounded-full ${d.color}`} />
               </button>
             );
           })}
         </div>
 
         {/* Action buttons */}
-        <div className="flex justify-center gap-[80px] mt-[10px]">
+        <div className="flex justify-center gap-4 sm:gap-[80px] mt-[10px]">
           <button
             onClick={onClose}
-            className="rounded-full text-[20px] bg-[#999999] px-6 py-2 text-white w-[120px] cursor-pointer"
+            className="rounded-full text-[18px] sm:text-[20px] bg-[#999999] px-6 py-2 text-white w-[120px] cursor-pointer"
           >
             Cancel
           </button>
           <button
             onClick={handleAdd}
             disabled={isInvalid}
-            className={`rounded-full text-[20px] w-[120px] px-[16px] py-[8px] text-white transition bg-gradient-to-r from-[#5597ED] to-[#00449C] ${isInvalid ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+            className={`rounded-full text-[18px] sm:text-[20px] w-[120px] px-[16px] py-[8px] text-white transition bg-gradient-to-r from-[#5597ED] to-[#00449C] ${isInvalid ?"opacity-50 cursor-not-allowed" : "cursor-pointer"
               }`}
           >
             Add

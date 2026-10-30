@@ -44,15 +44,15 @@ const handleSaveExpense = (expense) => {
 
   return (
     // fillHeight: stretch to the parent's height (min 500px) instead of a fixed 500px box
-    <div className={`flex flex-col rounded-2xl bg-[#F2F7FF] px-6 py-6 min-h-[500px] ${fillHeight ? "h-full" : "max-h-[500px]"}`}>
+    <div className={`flex flex-col rounded-2xl bg-[#F2F7FF] px-4 py-5 md:px-6 md:py-6 min-h-[360px] md:min-h-[500px] ${fillHeight ? "max-h-[70dvh] md:max-h-none md:h-full" : "max-h-[500px]"}`}>
       {/* Header */}
-      <div className="flex items-center justify-between mb-5 shrink-0">
-        <h3 className="font-heading text-[20px] font-bold text-[#333]">
+      <div className="flex items-center justify-between gap-3 mb-4 md:mb-5 shrink-0">
+        <h3 className="font-heading text-[18px] md:text-[20px] font-bold text-[#333]">
           {isFinanceManager ? "Approvals" : "Finance"}
         </h3>
         <Link
           href={isFinanceManager ? "/dashboard/approvals" : "/dashboard/expense-records"}
-          className="text-[14px] font-semibold text-[#0B57D0] border border-[#0B57D0] px-3.5 py-1 rounded-full cursor-pointer bg-transparent hover:bg-[#0B57D0]/5 transition-colors"
+          className="shrink-0 text-[14px] font-semibold text-[#0B57D0] border border-[#0B57D0] px-3.5 py-1 rounded-full cursor-pointer bg-transparent hover:bg-[#0B57D0]/5 transition-colors"
         >
           View All
         </Link>
@@ -102,7 +102,7 @@ const handleSaveExpense = (expense) => {
               className="bg-white rounded-2xl p-4 flex flex-col gap-2.5 border border-[#E8ECEF] shadow-[0_1px_3px_rgba(0,0,0,0.02)]"
             >
               {/* Status & Time */}
-              <div className="flex justify-between items-center">
+              <div className="flex flex-wrap justify-between items-center gap-2">
                 <span
                   className={`px-2 py-0.5 text-[12px] font-semibold rounded-[6px] ${
                     item.statusType === "approval"
@@ -125,7 +125,7 @@ const handleSaveExpense = (expense) => {
 
               {/* Title & Description */}
               <div className="flex flex-col gap-0.5">
-                <h4 className="text-[16px] font-bold text-[#1F1F1F] leading-snug">
+                <h4 className="text-[16px] font-bold text-[#1F1F1F] leading-snug break-words">
                   {item.title}
                 </h4>
                 {/* <p className="text-[13px] text-[#5F6368] leading-normal font-medium">

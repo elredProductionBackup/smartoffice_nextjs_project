@@ -11,7 +11,7 @@ export function PieChartPanel({
   const hasData = chartData.length > 0;
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5">
+    <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 min-w-0">
       <h4 className="text-sm font-semibold text-gray-900">
         {title}
       </h4>
@@ -21,7 +21,7 @@ export function PieChartPanel({
       </p>
 
       {hasData ? (
-        <div className="h-64">
+        <div className="h-56 sm:h-64">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
@@ -51,7 +51,7 @@ export function PieChartPanel({
           </ResponsiveContainer>
         </div>
       ) : (
-        <div className="h-64 flex items-center justify-center text-sm text-gray-400">
+        <div className="h-56 sm:h-64 flex items-center justify-center text-sm text-gray-400">
           {emptyLabel}
         </div>
       )}
@@ -60,7 +60,7 @@ export function PieChartPanel({
         {chartData.map((d, i) => (
           <div
             key={`${d.name}-${i}`}
-            className="flex items-center justify-between text-xs"
+            className="flex items-center justify-between gap-2 text-xs"
           >
             <div className="flex items-center gap-2 min-w-0">
               <span

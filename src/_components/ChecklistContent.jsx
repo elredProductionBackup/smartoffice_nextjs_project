@@ -293,8 +293,8 @@ const ChecklistContent = ({ eventId }) => {
 
       {/* =============== Header – Always visible ================  */}
       <div className="w-full">
-        <div className=" flex justify-between ">
-          <div className=" w-fit flex items-center gap-4">
+        <div className="flex flex-col gap-4 md:flex-row md:justify-between md:gap-0">
+          <div className="w-full md:w-fit flex flex-wrap md:flex-nowrap items-center gap-3 md:gap-4">
             <span className="text-[24px] font-[600] pl-2">All</span>
             {/* =============== Add Task Button ================ */}
             <button
@@ -302,16 +302,16 @@ const ChecklistContent = ({ eventId }) => {
               className="w-[50px] h-[36px] rounded-full flex items-center justify-center cursor-pointer"
               style={{ backgroundImage: "linear-gradient(90deg, #5597ED 0%, #00449C 100%)" }}
             >
-              <img src="/image/Plus-Icon.svg" alt="plus" />
+              <img src="/image/Plus-Icon.svg" alt="Add task" />
             </button>
             {/* =============== Search ================ */}
-            <div className="relative w-[300px] max-w-full">
+            <div className="relative w-full sm:w-[300px] max-w-full">
               <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8] text-[16px]" />
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search checklist"
-                className="w-full h-10 pl-10 pr-4 rounded-xl bg-white border border-[#E2E8F0] text-[15px] text-[#1E293B] placeholder:text-[#94A3B8] outline-none focus:border-[#0B57D0] transition"
+                className="w-full h-10 pl-10 pr-4 rounded-xl bg-white border border-[#E2E8F0] text-[16px] md:text-[15px] text-[#1E293B] placeholder:text-[#94A3B8] outline-none focus:border-[#0B57D0] transition"
               />
             </div>
           </div>
@@ -327,7 +327,7 @@ const ChecklistContent = ({ eventId }) => {
               };
             };
             return (
-              <div className="flex justify-around items-center gap-3">
+              <div className="flex justify-start md:justify-around items-center gap-3">
                 <div style={{ display: showDifficultyBar && activeDifficulty !== "Very difficult" ? "none" : "block" }}>
                   <CircularProgress
                     {...countFor("Very difficult")}
@@ -358,31 +358,31 @@ const ChecklistContent = ({ eventId }) => {
         </div>
 
         {/* ================= difficulty selection boxes =======================    */}
-        {showDifficultyBar && <div className="w-full h-[50px]  mt-5 gap-1.5 flex">
+        {showDifficultyBar && <div className="w-full h-[44px] md:h-[50px] mt-5 gap-1.5 flex overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <button
             onClick={() => setActiveDifficulty("Very difficult")}
-            className={`w-[180px] text-[20px] cursor-pointer h-full rounded-full ${activeDifficulty === "Very difficult" ? "bg-[#FFEBEB] text-[#E40000] font-bold" : "font-[500]"}`}
+            className={`shrink-0 whitespace-nowrap px-4 md:px-0 md:w-[180px] text-[16px] md:text-[20px] cursor-pointer h-full rounded-full ${activeDifficulty ==="Very difficult" ? "bg-[#FFEBEB] text-[#E40000] font-bold" : "font-[500]"}`}
           >
             Very difficult
           </button>
           <button
             onClick={() => setActiveDifficulty("Mildly difficult")}
-            className={`w-[180px] text-[20px] cursor-pointer h-full rounded-full ${activeDifficulty === "Mildly difficult" ? "bg-[#FFEBEB] text-[#E40000] font-bold" : "font-[500]"}`}
+            className={`shrink-0 whitespace-nowrap px-4 md:px-0 md:w-[180px] text-[16px] md:text-[20px] cursor-pointer h-full rounded-full ${activeDifficulty ==="Mildly difficult" ? "bg-[#FFEBEB] text-[#E40000] font-bold" : "font-[500]"}`}
           >
             Mildly difficult
           </button>
           <button
             onClick={() => setActiveDifficulty("Easy to do")}
-            className={`w-[180px] text-[20px] cursor-pointer h-full rounded-full ${activeDifficulty === "Easy to do" ? "bg-[#FFEBEB] text-[#E40000] font-bold" : "font-[500]"}`}
+            className={`shrink-0 whitespace-nowrap px-4 md:px-0 md:w-[180px] text-[16px] md:text-[20px] cursor-pointer h-full rounded-full ${activeDifficulty ==="Easy to do" ? "bg-[#FFEBEB] text-[#E40000] font-bold" : "font-[500]"}`}
           >
             Easy to do
           </button>
-          <button onClick={() => { setActiveDifficulty(null); setShowDifficultyBar(false); }} className="w-[106px] border-[2px] text-[16px] cursor-pointer border-[#666666] text-[#666666] h-full rounded-full flex items-center justify-center gap-2">Close <span><img src="/image/cross.svg" /></span></button>
+          <button onClick={() => { setActiveDifficulty(null); setShowDifficultyBar(false); }} className="shrink-0 w-[106px] border-[2px] text-[16px] cursor-pointer border-[#666666] text-[#666666] h-full rounded-full flex items-center justify-center gap-2">Close <span><img src="/image/cross.svg" alt="" /></span></button>
         </div>}
 
         {/* =============== Master Checklist ================ */}
-        <div className="flex items-center gap-4 mt-8">
-          <span className="text-[20px] font-[600] text-[#333333] whitespace-nowrap pl-2">
+        <div className="flex items-center gap-3 md:gap-4 mt-8">
+          <span className="text-[18px] md:text-[20px] font-[600] text-[#333333] whitespace-nowrap pl-2">
             Master Checklist
           </span>
           <div className="flex-1 h-[1px] bg-[#B3C6E7]" />
@@ -405,17 +405,17 @@ const ChecklistContent = ({ eventId }) => {
               return (
                 <div
                   key={masterKey}
-                  className="flex min-h-[80px] items-center gap-3 pb-[20px] pt-[20px] pl-2 border-b border-[#d4dff1] last:border-b-0"
+                  className="flex flex-wrap md:flex-nowrap min-h-[80px] items-center gap-3 pb-4 pt-4 md:pb-[20px] md:pt-[20px] pl-2 border-b border-[#d4dff1] last:border-b-0"
                 >
                   {/* Same columns as event rows so everything lines up */}
                   <span className="shrink-0 w-[18px]" />
 
-                  <div className="flex-1 min-w-0 text-[20px] font-[500] leading-snug text-[#333333] break-words">
+                  <div className="grow basis-[calc(100%-30px)] md:basis-0 min-w-0 text-[17px] md:text-[20px] font-[500] leading-snug text-[#333333] break-words">
                     {item.label}
                   </div>
 
                   <span
-                    className={`h-[12px] w-[50px] shrink-0 rounded-full ${MASTER_DIFFICULTY_COLOR[item.difficulty]}`}
+                    className={`ml-[30px] md:ml-0 h-[12px] w-[36px] md:w-[50px] shrink-0 rounded-full ${MASTER_DIFFICULTY_COLOR[item.difficulty]}`}
                   />
 
                   {/* Status */}
@@ -425,8 +425,8 @@ const ChecklistContent = ({ eventId }) => {
                     options={MASTER_STATUS_OPTIONS}
                   />
 
-                  <span className="shrink-0 w-[200px]" />
-                  <span className="shrink-0 w-9" />
+                  <span className="hidden md:block shrink-0 w-[200px]" />
+                  <span className="hidden md:block shrink-0 w-9" />
                 </div>
               );
             })}
@@ -435,8 +435,8 @@ const ChecklistContent = ({ eventId }) => {
 
         {/* =============== Event Specific Checklist ================ */}
         {(masterList.length > 0 || taskList.length > 0) && (
-          <div className="flex items-center gap-4 mt-8">
-            <span className="text-[20px] font-[600] text-[#333333] whitespace-nowrap pl-2">
+          <div className="flex items-center gap-3 md:gap-4 mt-8">
+            <span className="text-[18px] md:text-[20px] font-[600] text-[#333333] whitespace-nowrap pl-2">
               Event Specific Checklist
             </span>
             <div className="flex-1 h-[1px] bg-[#B3C6E7]" />
@@ -455,13 +455,14 @@ const ChecklistContent = ({ eventId }) => {
                 return (
                   <div
                     key={taskId}
-                    className="flex min-h-[80px] items-start gap-3 pb-[20px] pt-[20px] pl-2 border-b border-[#d4dff1] last:border-b-0"
+                    className="flex flex-wrap md:flex-nowrap min-h-[80px] items-start gap-3 pb-4 pt-4 md:pb-[20px] md:pt-[20px] pl-2 border-b border-[#d4dff1] last:border-b-0"
                   >
                     {/* Checkbox */}
                     <div className="pt-[5px]">
                       <button
                         onClick={() => toggleCheck(task)}
-                        className="shrink-0 w-[18px] h-[18px] rounded-[3px] border-[2px] border-[#666666] flex items-center justify-center "
+                        aria-label={isDone ? "Mark as not done" : "Mark as done"}
+                        className="relative before:absolute before:-inset-2.5 before:content-[''] shrink-0 w-[18px] h-[18px] rounded-[3px] border-[2px] border-[#666666] flex items-center justify-center "
                         style={isDone ? { borderColor: "#E40000", backgroundColor: "#E40000" } : {}}
                       >
                         {isDone && (
@@ -476,17 +477,17 @@ const ChecklistContent = ({ eventId }) => {
 
                     {/* Task info */}
                     <div
-                      className="flex-1 min-w-0 cursor-pointer"
+                      className="grow basis-[calc(100%-30px)] md:basis-0 min-w-0 cursor-pointer"
                       onClick={() => dispatch(openModal({ type: "DETAILS", taskId: taskId }))}
                     >
                       <div
-                        className={`text-[20px] font-[500] leading-snug ${isDone ? "line-through text-[#333333]" : "text-[#333333]"
+                        className={`text-[17px] md:text-[20px] font-[500] leading-snug break-words ${isDone ?"line-through text-[#333333]" : "text-[#333333]"
                           }`}
                       >
                         {task.title}
                       </div>
                       {creatorName && (
-                        <div className="text-[16px] text-[#666666] font-[600] mt-0.5">
+                        <div className="text-[14px] md:text-[16px] text-[#666666] font-[600] mt-0.5">
                           {creatorName}
                         </div>
                       )}
@@ -496,7 +497,7 @@ const ChecklistContent = ({ eventId }) => {
                           {task.subTask.map((st) => (
                             <div key={st._id} className="flex items-center gap-2">
                               <span className="w-1.5 h-1.5 rounded-full bg-[#333333] shrink-0" />
-                              <span className={`text-[16px] font-[400] text-[#333333] ${st.isCompleted ? 'line-through opacity-60' : ''}`}>
+                              <span className={`text-[14px] md:text-[16px] font-[400] text-[#333333] break-words min-w-0 ${st.isCompleted ?'line-through opacity-60' : ''}`}>
                                 {st.title}
                               </span>
                             </div>
@@ -506,9 +507,9 @@ const ChecklistContent = ({ eventId }) => {
                     </div>
 
                     {/* Difficulty */}
-                    <div className="h-9 flex items-center shrink-0">
+                    <div className="ml-[30px] md:ml-0 h-9 flex items-center shrink-0">
                       <span
-                        className={`h-[12px] w-[50px] rounded-full ${CATEGORY_COLOR[task.category] || "bg-transparent"}`}
+                        className={`h-[12px] w-[36px] md:w-[50px] rounded-full ${CATEGORY_COLOR[task.category] || "bg-transparent"}`}
                       />
                     </div>
 
@@ -520,7 +521,7 @@ const ChecklistContent = ({ eventId }) => {
                     />
 
                     {/* Avatar Stack */}
-                    <div className="h-[32px] w-[200px] pt-[2px] flex items-center -space-x-3">
+                    <div className={`h-[32px] md:w-[200px] pt-[2px] items-center -space-x-3 ${task.collaborators?.length ? "flex" : "hidden md:flex"}`}>
                       {task.collaborators && task.collaborators.length > 0 && (
                         <>
                           {task.collaborators.slice(0, 3).map((col, idx) => (
@@ -545,7 +546,7 @@ const ChecklistContent = ({ eventId }) => {
                       type="button"
                       title="Delete task"
                       onClick={() => setDeleteTask({ id: taskId, title: task.title })}
-                      className="shrink-0 h-9 w-9 rounded-md grid place-items-center text-[#71717A] hover:text-[#E40000] hover:bg-red-50 transition-colors cursor-pointer"
+                      className="ml-auto md:ml-0 shrink-0 h-9 w-9 rounded-md grid place-items-center text-[#71717A] hover:text-[#E40000] hover:bg-red-50 transition-colors cursor-pointer"
                     >
                       <Trash2 size={18} />
                     </button>
@@ -578,17 +579,17 @@ const ChecklistContent = ({ eventId }) => {
       {/* =============== Delete confirmation ================  */}
       {deleteTask && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 md:p-0"
           onClick={() => setDeleteTask(null)}
         >
           <div
-            className="w-[480px] rounded-[28px] bg-white pt-[70px] pb-[40px] shadow-xl flex flex-col items-center gap-[45px]"
+            className="w-full max-w-[480px] rounded-[28px] bg-white pt-10 pb-8 md:pt-[70px] md:pb-[40px] shadow-xl flex flex-col items-center gap-8 md:gap-[45px]"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="text-[24px] font-[700] px-[60px] text-center break-words">
+            <div className="text-[20px] md:text-[24px] font-[700] px-6 md:px-[60px] text-center break-words max-w-full">
               Are you sure you want to delete &quot;{deleteTask.title}&quot;?
             </div>
-            <div className="flex gap-[80px]">
+            <div className="flex gap-4 md:gap-[80px]">
               <button
                 onClick={() => setDeleteTask(null)}
                 className="rounded-full text-[20px] bg-[#999999] px-6 py-2 text-white w-[120px] cursor-pointer"
@@ -621,13 +622,13 @@ const ChecklistContent = ({ eventId }) => {
       )}
 
       {taskList.length === 0 && masterList.length === 0 && !loading && !masterLoading && (
-        <div className="flex flex-col items-center justify-center py-24 w-full mt-10">
+        <div className="flex flex-col items-center justify-center py-12 md:py-24 w-full mt-6 md:mt-10 text-center">
           <img
             src="/image/Events_checklist.svg"
             alt="No Checklist Info"
             className="w-[80px] h-[80px] mb-6 object-contain"
           />
-          <div className="text-[24px] font-semibold mb-2">No information yet</div>
+          <div className="text-[20px] md:text-[24px] font-semibold mb-2">No information yet</div>
           <div className="text-gray-500 text-[16px] font-normal">
             Looks like no information about Checklist yet
           </div>

@@ -59,7 +59,7 @@ function AddMemberControl({ groupName, contacts, onAddMember }) {
               </div>
               <span className="truncate">{c.name}</span>
               {c.groups?.length > 0 && (
-                <span className="text-[11px] text-[#9ca3af] ml-auto whitespace-nowrap">in {c.groups.join(", ")}</span>
+                <span className="text-[11px] text-[#9ca3af] ml-auto whitespace-nowrap max-md:max-w-[45%] max-md:truncate">in {c.groups.join(", ")}</span>
               )}
             </button>
           ))}
@@ -157,24 +157,24 @@ export default function GroupsModal({
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40" onClick={onClose}>
       <div
-        className="bg-white rounded-[16px] w-full max-w-[620px] mx-4 shadow-xl flex flex-col max-h-[90vh]"
+        className="bg-white rounded-[16px] w-full max-w-[620px] mx-4 shadow-xl flex flex-col max-h-[90dvh] md:max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-start justify-between px-7 pt-6 pb-4 border-b border-[#f1f5f9]">
+        <div className="flex items-start justify-between gap-3 px-5 pt-5 md:px-7 md:pt-6 pb-4 border-b border-[#f1f5f9]">
           <div>
             <h2 className="text-[22px] font-bold text-[#1a1a2e] leading-tight">Groups</h2>
             <p className="text-[13px] text-[#888] mt-0.5">
               {groups.length} groups · {contacts.length} contacts
             </p>
           </div>
-          <button onClick={onClose} className="text-[#999] hover:text-[#333] transition-colors cursor-pointer mt-1">
+          <button onClick={onClose} aria-label="Close" className="text-[#999] hover:text-[#333] transition-colors cursor-pointer mt-1 max-md:p-2 max-md:-m-2">
             <FiX className="text-[20px]" />
           </button>
         </div>
 
         {/* Scrollable body */}
-        <div className="flex-1 overflow-y-auto px-7 py-5">
+        <div className="flex-1 overflow-y-auto px-5 md:px-7 py-5">
           {/* Create a group */}
           <div className="bg-[#eff6ff] rounded-[12px] p-4 mb-5">
             <label className="block text-[14px] font-bold text-[#2563eb] mb-2">Create a group</label>
@@ -184,12 +184,12 @@ export default function GroupsModal({
                 onChange={(e) => setNewGroupName(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleCreate()}
                 placeholder="e.g., Cluster3 Network"
-                className="flex-1 h-[42px] px-3 rounded-[8px] border border-[#d1d5db] bg-white text-[13px] text-[#111] outline-none focus:border-[#2563eb] transition-colors placeholder:text-[#9ca3af]"
+                className="flex-1 min-w-0 h-[42px] px-3 rounded-[8px] border border-[#d1d5db] bg-white text-[16px] md:text-[13px] text-[#111] outline-none focus:border-[#2563eb] transition-colors placeholder:text-[#9ca3af]"
               />
               <button
                 onClick={handleCreate}
                 disabled={!newGroupName.trim() || creating}
-                className={`px-5 h-[42px] rounded-[8px] text-[13px] font-semibold whitespace-nowrap transition-colors ${
+                className={`px-4 md:px-5 h-[42px] rounded-[8px] text-[13px] font-semibold whitespace-nowrap transition-colors ${
                   newGroupName.trim() && !creating
                     ? "bg-[#2563eb] text-white hover:bg-[#1d4ed8] cursor-pointer"
                     : "bg-[#e5e7eb] text-[#9ca3af] cursor-not-allowed"
@@ -209,16 +209,16 @@ export default function GroupsModal({
                 .sort((a, b) => a.name.localeCompare(b.name));
               return (
                 <div key={groupName} className="border border-[#e5e7eb] rounded-[12px] p-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-[15px] font-bold text-[#1a1a2e]">{groupName}</h3>
-                    <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="min-w-0 truncate text-[15px] font-bold text-[#1a1a2e]">{groupName}</h3>
+                    <div className="flex items-center gap-2 shrink-0">
                       <span className="text-[13px] text-[#9ca3af]">
                         {members.length} member{members.length === 1 ? "" : "s"}
                       </span>
                       <button
                         onClick={() => openDeleteGroup(groupName, members.length)}
                         title="Delete group"
-                        className="text-red-500 hover:bg-red-50 rounded-[6px] p-1.5 cursor-pointer transition-colors"
+                        className="text-red-500 hover:bg-red-50 rounded-[6px] p-2.5 md:p-1.5 cursor-pointer transition-colors"
                       >
                         <FiTrash2 className="text-[15px]" />
                       </button>
@@ -229,16 +229,16 @@ export default function GroupsModal({
                     {members.map((m) => (
                       <div
                         key={m.id}
-                        className="flex items-center gap-1.5 bg-[#eff6ff] rounded-full pl-1 pr-2 py-1 text-[13px] font-medium text-[#1a1a2e]"
+                        className="flex items-center gap-1.5 max-w-full bg-[#eff6ff] rounded-full pl-1 pr-2 py-1 text-[13px] font-medium text-[#1a1a2e]"
                       >
                         <div className="w-6 h-6 min-w-[24px] rounded-full bg-[#6366F1] text-white grid place-items-center text-[10px] font-bold">
                           {initials(m.name)}
                         </div>
-                        {m.name}
+                        <span className="min-w-0 truncate">{m.name}</span>
                         <button
                           onClick={() => openRemove(groupName, m)}
                           title="Remove from group"
-                          className="text-[#6b7280] hover:text-red-500 cursor-pointer ml-0.5"
+                          className="text-[#6b7280] hover:text-red-500 cursor-pointer ml-0.5 shrink-0 max-md:p-1 max-md:-m-1"
                         >
                           <FiX className="text-[13px]" />
                         </button>
@@ -260,7 +260,7 @@ export default function GroupsModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end px-7 py-4 border-t border-[#f1f5f9]">
+        <div className="flex items-center justify-end px-5 md:px-7 py-4 border-t border-[#f1f5f9]">
           <button
             onClick={onClose}
             className="px-6 h-[42px] rounded-[8px] bg-[#2563eb] text-white text-[13px] font-semibold hover:bg-[#1d4ed8] cursor-pointer"
@@ -279,7 +279,7 @@ export default function GroupsModal({
           }}
         >
           <div
-            className="bg-white rounded-[16px] w-full max-w-[360px] mx-4 shadow-xl p-6"
+            className="bg-white rounded-[16px] w-full max-w-[360px] mx-4 shadow-xl p-5 md:p-6"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-[16px] font-bold text-[#1a1a2e] mb-1.5">Remove from group?</h3>
@@ -318,7 +318,7 @@ export default function GroupsModal({
           }}
         >
           <div
-            className="bg-white rounded-[16px] w-full max-w-[380px] mx-4 shadow-xl p-6"
+            className="bg-white rounded-[16px] w-full max-w-[380px] mx-4 shadow-xl p-5 md:p-6"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center gap-2 mb-1.5">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import { FiMail, FiPhone, FiBriefcase, FiShield, FiHash, FiCopy, FiCheck, FiArrowLeft, FiChevronDown } from "react-icons/fi";
@@ -33,13 +33,13 @@ const InfoRow = ({ icon: Icon, label, value, copyable = false }) => {
   };
 
   return (
-    <div className="flex items-center gap-4 py-4 border-b border-[#EAEEF2] last:border-b-0">
+    <div className="flex items-center gap-3 sm:gap-4 py-4 border-b border-[#EAEEF2] last:border-b-0">
       <div className="w-[42px] h-[42px] rounded-xl bg-[#F2F7FF] text-[#0B57D0] flex items-center justify-center shrink-0">
         <Icon className="text-xl" />
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-[14px] text-[#777777]">{label}</p>
-        <p className="text-[18px] font-semibold text-[#333333] break-words">{value || "—"}</p>
+        <p className="text-[16px] sm:text-[18px] font-semibold text-[#333333] break-words">{value || "—"}</p>
       </div>
       {copyable && value && (
         <button
@@ -57,6 +57,12 @@ const InfoRow = ({ icon: Icon, label, value, copyable = false }) => {
   );
 };
 
+// localStorage only exists in the browser: read it via useSyncExternalStore so the server
+// render ("") and the first client render match (no hydration mismatch), then update
+const subscribeNoop = () => () => {};
+const getStoredClusterCode = () => localStorage.getItem("networkClusterCode") || "";
+const getServerClusterCode = () => "";
+
 // Current role next to the name. With more than one role it opens a menu to switch roles.
 const RoleSwitcher = ({ roles, selectedRole, onSwitch }) => {
   const [open, setOpen] = useState(false);
@@ -72,7 +78,7 @@ const RoleSwitcher = ({ roles, selectedRole, onSwitch }) => {
   }
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className="relative w-fit">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
@@ -87,7 +93,7 @@ const RoleSwitcher = ({ roles, selectedRole, onSwitch }) => {
       {open && (
         <ul
           role="listbox"
-          className="absolute right-0 top-full mt-2 z-20 min-w-[200px] rounded-xl bg-white border border-[#EAEEF2] shadow-[0px_4px_16px_0px_#0000001a] py-1.5"
+          className="absolute left-0 sm:left-auto sm:right-0 top-full mt-2 z-20 min-w-[200px] rounded-xl bg-white border border-[#EAEEF2] shadow-[0px_4px_16px_0px_#0000001a] py-1.5"
         >
           {roles.map((role) => {
             const active = role === selectedRole;
@@ -163,13 +169,12 @@ const MyProfilePage = () => {
     setSwitchedRole(null);
     router.replace(ROLE_HOME[role] ?? "/dashboard");
   };
-  const networkClusterCode =
-    user?.networkClusterDetails?.networkClusterCode ||
-    (typeof window !== "undefined" ? localStorage.getItem("networkClusterCode") : "");
+  const storedClusterCode = useSyncExternalStore(subscribeNoop, getStoredClusterCode, getServerClusterCode);
+  const networkClusterCode = user?.networkClusterDetails?.networkClusterCode || storedClusterCode;
 
   return (
-    <div className="p-6 bg-white font-nunito">
-      <div className="flex items-center gap-4 mb-6">
+    <div className="pt-5 pb-20 md:p-6 bg-white font-nunito">
+      <div className="flex items-center gap-2 md:gap-4 mb-5 md:mb-6">
         <button
           onClick={() => router.push("/dashboard/profile")}
           aria-label="Back"
@@ -178,29 +183,30 @@ const MyProfilePage = () => {
           <FiArrowLeft className="text-2xl" />
         </button>
         <div>
-          <h2 className="font-heading text-[32px] leading-[136%] font-bold text-[#333333] mb-1">My Profile</h2>
-          <p className="text-[#777777] font-medium text-[18px] leading-[136%]">Your account details</p>
+          <h2 className="font-heading text-[24px] md:text-[32px] leading-[136%] font-bold text-[#333333] mb-1">My Profile</h2>
+          <p className="text-[#777777] font-medium text-[16px] md:text-[18px] leading-[136%]">Your account details</p>
         </div>
       </div>
 
       <div className="max-w-[800px] mx-auto">
 
-      <div className="rounded-[22px] bg-white border border-[#EAEEF2] p-6 md:p-8">
-        <div className="flex items-center gap-5 pb-6 border-b border-[#EAEEF2]">
+      <div className="rounded-[22px] bg-white border border-[#EAEEF2] p-4 sm:p-6 md:p-8">
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-4 sm:gap-5 pb-5 sm:pb-6 border-b border-[#EAEEF2]">
           <img
             src={profile.dpURL || "/logo/user-icon.svg"}
             alt={fullName}
             width={96}
             height={96}
-            className="w-[96px] h-[96px] rounded-full object-cover bg-[#CCCCCC] border border-[#D4DFF1]"
+            className="w-[72px] h-[72px] sm:w-[96px] sm:h-[96px] shrink-0 rounded-full object-cover bg-[#CCCCCC] border border-[#D4DFF1]"
           />
           <div className="min-w-0 flex-1">
-            <h3 className="text-[26px] font-bold text-[#333333] capitalize">{fullName}</h3>
+            <h3 className="text-[22px] sm:text-[26px] font-bold text-[#333333] capitalize break-words">{fullName}</h3>
             {titles.length > 0 && (
-              <p className="text-[16px] text-[#666666]">{titles.join(" | ")}</p>
+              <p className="text-[15px] sm:text-[16px] text-[#666666]">{titles.join(" | ")}</p>
             )}
           </div>
-          <div className="shrink-0">
+          {/* Own line on phones so the name isn't squeezed; right side from sm up */}
+          <div className="basis-full sm:basis-auto shrink-0">
             <RoleSwitcher roles={roleKeys} selectedRole={selectedRole} onSwitch={handleRoleSwitch} />
           </div>
         </div>

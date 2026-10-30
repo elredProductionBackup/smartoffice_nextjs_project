@@ -16,13 +16,13 @@ export default function DateTimeRangePicker({
     <div className="flex flex-col">
       <label className="text-[16px] mb-[6px] block text-[#333333] font-[700]">Date & Time</label>
 
-      <div className="flex items-center justify-between gap-[8px]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-[8px]">
         <div className="flex gap-[5px] flex-1">
             <DateInput value={startDate} onChange={onStartDateChange} />
             <TimeInput value={startTime} onChange={onStartTimeChange} />
         </div>
 
-        <span className="text-[15px] font-[500]">to</span>
+        <span className="text-[15px] font-[500] self-center sm:self-auto">to</span>
 
         <div className="flex gap-[5px] flex-1">
             <DateInput value={endDate} onChange={onEndDateChange} right={true}/>

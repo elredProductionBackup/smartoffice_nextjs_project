@@ -31,10 +31,10 @@ export default function ActionHeader({
   
 
   return (
-    <div className="flex items-center justify-between mb-[20px] mx-[30px]">
+    <div className="flex flex-col items-start gap-3 md:flex-row md:items-center md:justify-between md:gap-0 mb-4 md:mb-[20px] mx-4 md:mx-[30px]">
       {/* LEFT */}
-      <div className="flex items-center gap-[20px]">
-        <h2 className="text-[24px] font-[700] text-[#666]">
+      <div className="flex flex-wrap md:flex-nowrap items-center gap-3 md:gap-[20px]">
+        <h2 className="text-[20px] md:text-[24px] font-[700] text-[#666]">
           Action Items
         </h2>
 
@@ -71,11 +71,11 @@ export default function ActionHeader({
       </div>
 
       {/* RIGHT */}
-      <div className="flex items-center gap-[4px]">
+      <div className="flex flex-wrap md:flex-nowrap items-center gap-[4px] w-full md:w-auto">
         {/* Search */}
         <div
           className={`flex items-center bg-[#D3E3FD] rounded-[4px] overflow-hidden transition-all duration-300 mr-[6px]
-          ${searchOpen ? "w-[300px]" : "w-[40px]"}`}
+          ${searchOpen ? "w-full mr-0 mb-1 md:mb-0 md:mr-[6px] md:w-[300px]" : "w-[40px]"}`}
         >
           <button
             onClick={onSearchOpen}
@@ -91,7 +91,7 @@ export default function ActionHeader({
                 value={searchValue}
                 onChange={(e) => onSearchChange(e.target.value)}
                 placeholder="Search item"
-                className="flex-1 bg-transparent outline-none text-[14px] px-[6px]"
+                className="flex-1 min-w-0 bg-transparent outline-none text-[16px] md:text-[14px] px-[6px]"
               />
               <button
                 onClick={onSearchClose}

@@ -34,9 +34,9 @@ const ReadOnlyReminderRow = ({ reminder }) => {
       <div className="w-full flex gap-[10px] items-start">
         <div className="flex-1 flex flex-col gap-[10px]">
           {/* Top Row */}
-          <div className="flex gap-[5px]">
-            {/* Audience */}
-            <div className="flex-[2.5]">
+          <div className="flex flex-wrap sm:flex-nowrap gap-[5px]">
+            {/* Audience (full row on phones, date + time share the next row) */}
+            <div className="flex-[2.5] max-sm:basis-full">
               <div
                 className="w-full h-[50px] pl-[16px] pr-[10px] bg-[#F6F6F6]
                            border-[1.4px] border-[#EAEAEA]

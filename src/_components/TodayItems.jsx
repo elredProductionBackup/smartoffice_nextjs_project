@@ -40,7 +40,7 @@ const autoResize = (e) => {
     <div className="flex flex-col gap-[20px] w-full">
       {/* Show input only when adding */}
       {adding && (
-        <div className="flex gap-[14px] border-b border-[#D4DFF1] pb-[20px]">
+        <div className="flex gap-[14px] border-b border-[#D4DFF1] pb-4 md:pb-[20px]">
           <div className="h-[18px] w-[18px] rounded-[4px] border-2 border-[#666] mt-[6px]" />
 
           <textarea
@@ -56,7 +56,7 @@ const autoResize = (e) => {
               }
             }}
             placeholder="Add an action item"
-            className="bg-transparent outline-none resize-none text-[20px] w-[55%] leading-[1.3] max-h-[200px] overflow-y-auto"
+            className="bg-transparent outline-none resize-none text-[18px] md:text-[20px] flex-1 md:flex-none md:w-[55%] leading-[1.3] max-h-[200px] overflow-y-auto"
           />
         </div>
       )}

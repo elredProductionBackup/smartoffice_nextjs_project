@@ -47,23 +47,24 @@ export default function ChangeRoleModal({ user, onClose, onSave }) {
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 font-nunito p-4"
       onMouseDown={(e) => e.target === e.currentTarget && !saving && onClose()}
     >
-      <div className="w-full max-w-[520px] max-h-[calc(100vh-32px)] bg-white rounded-[20px] shadow-xl flex flex-col overflow-hidden">
-        <div className="flex items-start justify-between px-7 pt-6 pb-4 shrink-0">
+      <div className="w-full max-w-[520px] max-h-[calc(100dvh-32px)] md:max-h-[calc(100vh-32px)] bg-white rounded-[20px] shadow-xl flex flex-col overflow-hidden">
+        <div className="flex items-start justify-between gap-3 px-5 pt-5 md:px-7 md:pt-6 pb-4 shrink-0">
           <div>
-            <h3 className="text-[24px] font-semibold text-[#1E293B]">Change role</h3>
+            <h3 className="text-[22px] md:text-[24px] font-semibold text-[#1E293B]">Change role</h3>
             <p className="text-[15px] text-[#64748B]">{user.name}</p>
           </div>
           <button
             type="button"
             onClick={onClose}
             disabled={saving}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-[#1E293B] hover:bg-[#F1F5F9] transition cursor-pointer"
+            aria-label="Close"
+            className="w-10 h-10 md:w-8 md:h-8 shrink-0 rounded-full flex items-center justify-center text-[#1E293B] hover:bg-[#F1F5F9] transition cursor-pointer"
           >
             <FiX className="text-[20px]" />
           </button>
         </div>
 
-        <div className="flex-1 min-h-0 overflow-y-auto px-7 pb-5">
+        <div className="flex-1 min-h-0 overflow-y-auto px-5 md:px-7 pb-5">
           <span className="block text-[14px] font-semibold text-[#64748B] mb-2">Roles</span>
           <div className="space-y-2">
             {Object.entries(ROLES).filter(([key]) => API_ROLES[key]).map(([key, role]) => {
@@ -125,7 +126,7 @@ export default function ChangeRoleModal({ user, onClose, onSave }) {
           )}
         </div>
 
-        <div className="flex items-center justify-between gap-3 px-7 py-4 border-t border-[#E2E8F0] shrink-0">
+        <div className="flex flex-wrap items-center justify-between gap-3 px-5 md:px-7 py-4 border-t border-[#E2E8F0] shrink-0">
           <span className={`text-[13px] ${saveError ? "font-semibold text-[#DC2626]" : "text-[#B45309]"}`}>
             {saveError ||
               (roles.length === 0
@@ -134,7 +135,7 @@ export default function ChangeRoleModal({ user, onClose, onSave }) {
                   ? "Pick at least one portfolio."
                   : "")}
           </span>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 ml-auto">
             <button
               type="button"
               onClick={onClose}

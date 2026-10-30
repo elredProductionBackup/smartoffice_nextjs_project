@@ -12,8 +12,6 @@
         ...(networkClusterCode && { networkClusterCode }),
       };
 
-      console.log("Submitting event payload:", fullPayload);
-
       Object.entries(fullPayload).forEach(([k, v]) => {
         if (v instanceof File) formData.append(k, v);
         else if (Array.isArray(v) || typeof v === "object")

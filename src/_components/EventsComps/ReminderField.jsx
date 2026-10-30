@@ -9,13 +9,13 @@ const ReminderField = ({ reminders = [] }) => {
   return (
     <div className="space-y-2">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
         <label className="text-[16px] block text-[#333333] font-[700]">
           Reminder
         </label>
         <button
           type="button"
-          className="text-[18px] block text-[#0B57D0] font-[700] cursor-pointer"
+          className="text-[16px] sm:text-[18px] block text-[#0B57D0] font-[700] cursor-pointer"
           onClick={() =>
             dispatch(openEventFormModal({ type: "REMINDER" }))
           }

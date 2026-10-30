@@ -10,10 +10,12 @@ import { isValidEmail } from "@/utils/isValidEmail";
 import useGlobalLoader from "@/store/useGlobalLoader";
 import GuestRoute from "@/_components/GuestRoute";
 import RoleSelection from "@/_components/RoleSelection";
+import { CLUSTER_PARAM, getStoredClusterCode } from "@/utils/shareLink";
 
 const Login = () => {
   const params = useSearchParams();
-  const code = params.get("networkClusterCode");
+  // Shared / invite links carry the cluster code; fall back to the last one used on this device
+  const code = params.get(CLUSTER_PARAM) || getStoredClusterCode() || null;
 
   const { showLoader, hideLoader } = useGlobalLoader.getState();
 
@@ -48,18 +50,17 @@ const Login = () => {
           "userEmail",
           res?.data?.result?.[0]?.email
         );
-      } else if (res?.status === 500) {
+      } else {
+        // 500 / unknown email / any other failure: show the inline error instead of doing nothing
         setInvalidEmail(true);
       }
     } catch (error) {
       setInvalidEmail(true);
-      console.log(error);
+      console.error(error);
     } finally {
       hideLoader();
     }
   };
-
-  console.log('main: pretest')
 
   if (showRoles) {
     return <RoleSelection />;
@@ -67,9 +68,16 @@ const Login = () => {
 
   return (
     <GuestRoute>
-      <div className="h-screen flex items-center justify-center">
+      <div className="min-h-dvh flex items-center justify-center py-10">
         <div className="w-full sm:max-w-lg mx-5 flex flex-col items-center">
-          <Image src={'/logo/smart-networks.svg'} alt="smart-office" className="mb-15" width={239} height={62}/>
+          <Image
+            src="/logo/smart-networks.svg"
+            alt="Smart Networks"
+            className="mb-10 sm:mb-15 w-[190px] sm:w-[239px] h-auto"
+            width={239}
+            height={62}
+            priority
+          />
 
           {login ? (
             <LoginComponent

@@ -15,8 +15,8 @@ export default function BudgetPieChartTooltip({ active, payload, totalBudget = 0
   const amount = (totalBudget * percent) / 100;
 
   return (
-    <div className="bg-white rounded-xl px-4 py-3 shadow-[0_4px_16px_rgba(0,0,0,0.12)] font-nunito min-w-[140px]">
-      <p className="text-[14px] font-bold text-[#333333] leading-snug mb-1">{name}</p>
+    <div className="bg-white rounded-xl px-4 py-3 shadow-[0_4px_16px_rgba(0,0,0,0.12)] font-nunito min-w-[140px] max-w-[calc(100vw-48px)]">
+      <p className="text-[14px] font-bold text-[#333333] leading-snug mb-1 break-words">{name}</p>
       <p className="text-[16px] font-semibold text-[#2B7FFF] leading-tight mb-1">
         {formatIndianCurrency(amount)}
       </p>

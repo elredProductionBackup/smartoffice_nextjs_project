@@ -23,13 +23,13 @@ const ShimmerRow = () => {
 
 const ActionableShimmer = () => {
   return (
-    <div className="flex flex-col px-[30px]">
+    <div className="flex flex-col px-4 md:px-[30px]">
       
       {/* Header shimmer */}
       <div className="h-[56px] pb-[14px] flex items-start ">
         <div className="flex-3 flex items-center gap-[20px]">
             <div className="h-[20px] w-[150px] rounded-full bg-[#D4DFF1] animate-pulse"></div>
-            <div className="h-[36] w-[50px] rounded-full bg-[#D4DFF1] animate-pulse"></div>
+            <div className="hidden sm:block h-[36] w-[50px] rounded-full bg-[#D4DFF1] animate-pulse"></div>
         </div>
         <div className="flex-1 flex items-center gap-[4px] justify-end">
             <div className="h-[32px] w-[40px] rounded-[4px] bg-[#D4DFF1] animate-pulse mr-[6px]"></div>

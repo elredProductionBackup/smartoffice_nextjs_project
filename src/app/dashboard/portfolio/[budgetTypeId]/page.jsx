@@ -39,6 +39,29 @@ const formatEventDate = (startDateTime, endDateTime) => {
 
 const formatRupees = (value) => `₹${formatCompactAmount(value)}`;
 
+// Feature / Featured toggle (shared by the table row and the phone card)
+const FeatureButton = ({ isPastEvent, isFeatured, onToggle }) => (
+  <TitleTooltipHover title={isPastEvent ? "Past Events can't be featured" : ""}>
+    <button
+      type="button"
+      disabled={isPastEvent}
+      onClick={(e) => {
+        e.stopPropagation();
+        if (isPastEvent) return;
+        onToggle();
+      }}
+      className={`flex items-center gap-1.5 font-bold text-[15px] font-nunito bg-transparent border-0 p-0 outline-none transition-all duration-200 ${
+        isPastEvent
+          ? "text-[#cccccc] cursor-not-allowed"
+          : `cursor-pointer hover:opacity-85 ${isFeatured ? "text-[#F59E0B]" : "text-[#666666]"}`
+      }`}
+    >
+      {isFeatured ? <FaStar className="text-[18px]" /> : <FaRegStar className="text-[18px]" />}
+      <span>{isFeatured ? "Featured" : "Feature"}</span>
+    </button>
+  </TitleTooltipHover>
+);
+
 const PortfolioDetailPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -122,12 +145,31 @@ const PortfolioDetailPage = () => {
     });
   };
 
+  // Month headers: show a label above the first event of each month
   let lastMonthLabel = null;
+  const rows = events.map((event) => {
+    const monthLabel = moment(event.startDateTime).format("MMMM, YYYY");
+    const showMonthHeader = monthLabel !== lastMonthLabel;
+    lastMonthLabel = monthLabel;
+    return {
+      event,
+      monthLabel,
+      showMonthHeader,
+      isFeatured: !!featured[event.eventId],
+      isPastEvent: moment(event.startDateTime).isBefore(moment()),
+    };
+  });
+
+  const emptyState = loading ? (
+    <div className="text-center py-12 text-[#777777] font-nunito">Loading events…</div>
+  ) : events.length === 0 ? (
+    <div className="text-center py-12 text-[#777777] font-nunito">No events in this portfolio yet.</div>
+  ) : null;
 
   return (
-    <div className="p-6 min-h-screen bg-white">
+    <div className="pt-4 pb-24 md:p-6 md:min-h-screen bg-white">
       {/* Header section with back arrow */}
-      <div className="flex flex-col gap-1 mb-6">
+      <div className="flex flex-col gap-1 mb-5 md:mb-6">
         <div className="flex items-center gap-3">
           <button
             onClick={() =>
@@ -137,20 +179,83 @@ const PortfolioDetailPage = () => {
                   : "/dashboard/finance"
               )
             }
-            className="text-[#333333] hover:opacity-80 transition-opacity flex items-center justify-center cursor-pointer border-0 bg-transparent p-0 outline-none"
+            aria-label="Back"
+            className="text-[#333333] hover:opacity-80 transition-opacity flex items-center justify-center shrink-0 cursor-pointer border-0 bg-transparent p-0 outline-none"
           >
-            <FaArrowLeft size={32} />
+            <FaArrowLeft className="text-[24px] md:text-[32px]" />
           </button>
-          <h1 className="font-heading font-bold text-[32px] leading-[136%] text-[#333333] tracking-normal">
+          <h1 className="font-heading font-bold text-[24px] md:text-[32px] leading-[136%] text-[#333333] tracking-normal">
             {portfolioName} Portfolio
           </h1>
         </div>
-        <p className="font-nunito font-medium text-[18px] leading-[136%] text-[#777777] tracking-normal pl-11">
+        <p className="font-nunito font-medium text-[15px] md:text-[18px] leading-[136%] text-[#777777] tracking-normal pl-9 md:pl-11">
           All events in this portfolio
         </p>
       </div>
 
-      <div className="event-div w-full min-h-full h-auto rounded-[20px] bg-[#F2F7FF] p-[30px] mb-2 overflow-x-auto">
+      {/* Phones: one card per event */}
+      <div className="md:hidden rounded-[16px] bg-[#F2F7FF] p-3">
+        {emptyState ??
+          rows.map(({ event, monthLabel, showMonthHeader, isFeatured, isPastEvent }) => (
+            <React.Fragment key={event.eventId}>
+              {showMonthHeader && (
+                <div className="text-[15px] font-bold text-[#333333] font-nunito px-1 pt-2 pb-2">{monthLabel}</div>
+              )}
+              <div
+                onClick={() => router.push(`/dashboard/events/${event.eventId}`)}
+                className="bg-white rounded-[12px] p-3.5 mb-2.5 cursor-pointer active:bg-[#EBF3FF] font-nunito"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-[44px] h-[44px] rounded-full overflow-hidden shrink-0 bg-gray-200">
+                    {event.eventImage && (
+                      <Image
+                        src={event.eventImage}
+                        alt={event.eventName}
+                        width={44}
+                        height={44}
+                        className="w-full h-full object-cover"
+                      />
+                    )}
+                  </div>
+                  <div className="flex flex-col min-w-0 flex-1">
+                    <span className="text-[#333333] font-semibold text-[16px] leading-[136%] truncate">
+                      {event.eventName}
+                    </span>
+                    <span className="text-[#666666] text-[12px] leading-[136%] truncate">
+                      {formatEventDate(event.startDateTime, event.endDateTime)} · {event.eventLocation?.location || "-"}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="mt-3 grid grid-cols-3 gap-2 text-[13px]">
+                  <div className="min-w-0">
+                    <div className="text-[11px] text-[#777777] font-semibold">Budget</div>
+                    <div className="text-[#0B57D0] font-bold text-[15px]">{formatRupees(event.eventBudget)}</div>
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[11px] text-[#777777] font-semibold">Expenses</div>
+                    <div className="text-[#43AE34] font-bold text-[15px]">{formatRupees(event.eventExpenseAmount)}</div>
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[11px] text-[#777777] font-semibold">Attendees</div>
+                    <div className="text-[#333333] font-semibold text-[15px]">{event.NumberOfattendees ?? 0}</div>
+                  </div>
+                </div>
+
+                <div className="mt-3 pt-3 border-t border-[#E8EEF8] flex items-center justify-between gap-3">
+                  <FeatureButton
+                    isPastEvent={isPastEvent}
+                    isFeatured={isFeatured}
+                    onToggle={() => toggleFeature(event.eventId)}
+                  />
+                  {isPastEvent && <span className="text-[12px] text-[#999999] text-right">Past Events can&apos;t be featured</span>}
+                </div>
+              </div>
+            </React.Fragment>
+          ))}
+      </div>
+
+      <div className="event-div hidden md:block w-full min-h-full h-auto rounded-[20px] bg-[#F2F7FF] p-[30px] mb-2 overflow-x-auto">
         <div className="min-w-[950px]">
           {/* Table Header */}
           <div
@@ -167,18 +272,8 @@ const PortfolioDetailPage = () => {
           </div>
 
           {/* Table Body */}
-          {loading ? (
-            <div className="text-center py-12 text-[#777777] font-nunito">Loading events…</div>
-          ) : events.length === 0 ? (
-            <div className="text-center py-12 text-[#777777] font-nunito">No events in this portfolio yet.</div>
-          ) : (
-            events.map((event) => {
-              const monthLabel = moment(event.startDateTime).format("MMMM, YYYY");
-              const showMonthHeader = monthLabel !== lastMonthLabel;
-              lastMonthLabel = monthLabel;
-              const isFeatured = !!featured[event.eventId];
-              const isPastEvent = moment(event.startDateTime).isBefore(moment());
-
+          {emptyState ??
+            rows.map(({ event, monthLabel, showMonthHeader, isFeatured, isPastEvent }) => {
               return (
                 <React.Fragment key={event.eventId}>
                   {showMonthHeader && (
@@ -243,31 +338,16 @@ const PortfolioDetailPage = () => {
 
                     {/* Actions */}
                     <div className="flex items-center justify-start gap-6 pl-4">
-                      <TitleTooltipHover title={isPastEvent ? "Past Events can't be featured" : ""}>
-                        <button
-                          type="button"
-                          disabled={isPastEvent}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (isPastEvent) return;
-                            toggleFeature(event.eventId);
-                          }}
-                          className={`flex items-center gap-1.5 font-bold text-[15px] font-nunito bg-transparent border-0 p-0 outline-none transition-all duration-200 ${
-                            isPastEvent
-                              ? "text-[#cccccc] cursor-not-allowed"
-                              : `cursor-pointer hover:opacity-85 ${isFeatured ? "text-[#F59E0B]" : "text-[#666666]"}`
-                          }`}
-                        >
-                          {isFeatured ? <FaStar className="text-[18px]" /> : <FaRegStar className="text-[18px]" />}
-                          <span>{isFeatured ? "Featured" : "Feature"}</span>
-                        </button>
-                      </TitleTooltipHover>
+                      <FeatureButton
+                        isPastEvent={isPastEvent}
+                        isFeatured={isFeatured}
+                        onToggle={() => toggleFeature(event.eventId)}
+                      />
                     </div>
                   </div>
                 </React.Fragment>
               );
-            })
-          )}
+            })}
         </div>
       </div>
     </div>

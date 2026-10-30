@@ -44,11 +44,11 @@ export default function MemberDetailsModal({
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center"
+      className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
       onClick={onClose}
     >
       <div
-        className="bg-white w-[650px] h-[1050px] max-h-[90vh] rounded-[20px] p-[40px] relative flex flex-col gap-[18px] overflow-y-auto"
+        className="bg-white w-full max-w-[650px] md:h-[1050px] max-h-[90dvh] md:max-h-[90vh] rounded-[20px] p-6 md:p-[40px] relative flex flex-col gap-[18px] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* {!avatarLoaded && member.avatar && <MembersDetailsShimmer/>} */}
@@ -56,30 +56,31 @@ export default function MemberDetailsModal({
         {/* {avatarLoaded && <> */}
         <button
           onClick={onClose}
-          className="absolute h-[24px] w-[24px] bg-[#EEEEEE] rounded-full right-[40px] top-[40px] grid place-items-center cursor-pointer"
+          aria-label="Close"
+          className="absolute h-8 w-8 md:h-[24px] md:w-[24px] bg-[#EEEEEE] rounded-full right-5 top-5 md:right-[40px] md:top-[40px] grid place-items-center cursor-pointer"
         >
           <span className="akar-icons--cross small-cross"></span>
         </button>
 
         {/* Header */}
-        <div className="flex flex-col gap-[20px] items-start">
+        <div className="flex flex-col gap-4 md:gap-[20px] items-start">
           {member.avatar ? (
             <Image
               src={member.avatar}
               alt=""
               width={100}
               height={100}
-              className="rounded-full max-h-[100] object-cover"
+              className="w-[80px] h-[80px] md:w-[100px] md:h-[100px] rounded-full max-h-[100] object-cover"
             />
           ) : (
-            <div className="min-w-[100px] h-[100px] bg-[#D4DFF1] grid place-items-center text-[42px] font-semibold rounded-full">
+            <div className="min-w-[80px] h-[80px] text-[34px] md:min-w-[100px] md:h-[100px] md:text-[42px] bg-[#D4DFF1] grid place-items-center font-semibold rounded-full">
               {member.name?.slice(0, 1)}
             </div>
           )}
 
           <div className="w-full flex flex-col items-start gap-[6px]">
-            <div className="w-full flex items-center justify-between">
-              <h2 className="text-[32px] text-[#333333] font-semibold">
+            <div className="w-full flex items-center justify-between gap-3 md:gap-0">
+              <h2 className="text-[24px] md:text-[32px] text-[#333333] font-semibold min-w-0 break-words">
                 {member.name}
               </h2>
               {showLogisticsDetails ? (
@@ -107,7 +108,7 @@ export default function MemberDetailsModal({
             {/* Title tool tip  */}
             <div className="relative flex" ref={tooltipRef}>
               <p
-                className={`text-[20px] text-[#666666] font-medium capitalize ${formattedTitles.length > 2 && "cursor-pointer"}`}
+                className={`text-[16px] md:text-[20px] text-[#666666] font-medium capitalize ${formattedTitles.length > 2 ?"cursor-pointer" : ""}`}
                 onClick={() => setTooltipOpen((prev) => !prev)}
               >
                 {display}
@@ -115,7 +116,7 @@ export default function MemberDetailsModal({
 
               {tooltipOpen && formattedTitles.length > 2 && (
                 <div
-                  className="absolute z-50 w-max min-w-[200px] bg-[#ffffff] text-[#333] text-[16px] font-medium p-[10px] rounded-[20px] whitespace-nowrap top-full right-[0%] flex flex-col gap-[4px] mt-1"
+                  className="absolute z-50 w-max min-w-[200px] bg-[#ffffff] text-[#333] text-[16px] font-medium p-[10px] rounded-[20px] whitespace-nowrap top-full left-0 md:left-auto md:right-[0%] flex flex-col gap-[4px] mt-1"
                   style={{ boxShadow: `0px 4px 4px 0px #99999940` }}
                 >
                   {formattedTitles.map((title, index) => {
@@ -134,7 +135,7 @@ export default function MemberDetailsModal({
 
             {formatLocation(member.location) && (
               <div className="flex items-center gap-[8px] text-[16px] text-[#666666] font-semibold">
-                <span className="h-[24px] w-[24px] rounded-full bg-[#E6EBF2] grid place-items-center">
+                <span className="h-[24px] w-[24px] shrink-0 rounded-full bg-[#E6EBF2] grid place-items-center">
                   <span className="weui--location-outlined"></span>
                 </span>
                 {formatLocation(member.location)}
@@ -144,12 +145,12 @@ export default function MemberDetailsModal({
         </div>
 
         {/* Details */}
-        <div className="grid grid-cols-2 gap-x-10 gap-y-[40px] text-base text-[#333333]">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-6 md:gap-y-[40px] text-base text-[#333333]">
           {/* Email (LEFT column) */}
-          <div className="flex flex-col gap-[12px] justify-self-start">
-            <span className="text-[20px] font-bold uppercase">Email</span>
-            <span className="flex gap-[8px] text-[#666666] text-[16px] font-semibold">
-              <span className="h-[24px] w-[24px] rounded-full bg-[#E6EBF2] grid place-items-center">
+          <div className="flex flex-col gap-[12px] justify-self-start min-w-0 md:min-w-auto">
+            <span className="text-[18px] md:text-[20px] font-bold uppercase">Email</span>
+            <span className="flex gap-[8px] text-[#666666] text-[16px] font-semibold break-all md:break-normal">
+              <span className="h-[24px] w-[24px] shrink-0 rounded-full bg-[#E6EBF2] grid place-items-center">
                 <span className="oui--email small-icon"></span>
               </span>
               {member.email}
@@ -157,8 +158,8 @@ export default function MemberDetailsModal({
           </div>
 
           {/* Phone (RIGHT column – block aligned right) */}
-          <div className="flex flex-col gap-[12px] justify-self-end w-[230px]">
-            <span className="text-[20px] font-bold uppercase">Phone</span>
+          <div className="flex flex-col gap-[12px] sm:justify-self-end sm:w-[230px]">
+            <span className="text-[18px] md:text-[20px] font-bold uppercase">Phone</span>
             <div className="flex items-center gap-2">
               <span className="flex gap-[8px] text-[#666666] text-[16px] font-semibold">
                 <span className="h-[24px] w-[24px] rounded-full bg-[#E6EBF2] grid place-items-center">
@@ -171,7 +172,7 @@ export default function MemberDetailsModal({
 
           {/* Spouse (LEFT column) */}
           <div className="flex flex-col gap-[12px] justify-self-start text-[#333333] ">
-            <span className="text-[20px] font-bold uppercase">
+            <span className="text-[18px] md:text-[20px] font-bold uppercase">
               Spouse Name
             </span>
             <span className="text-[16px] font-semibold">
@@ -181,8 +182,8 @@ export default function MemberDetailsModal({
 
           {/* Children (RIGHT column – block aligned right) */}
           {!hideChildren && (
-            <div className="flex flex-col gap-[12px] justify-self-end text-[#333333] w-[230px]">
-              <span className="text-[20px] font-bold uppercase">
+            <div className="flex flex-col gap-[12px] sm:justify-self-end text-[#333333] sm:w-[230px]">
+              <span className="text-[18px] md:text-[20px] font-bold uppercase">
                 Children Name
               </span>
               <span className="text-[16px] font-semibold">
@@ -197,10 +198,10 @@ export default function MemberDetailsModal({
         {/* Divider and logistics details only when requested (e.g. LogisticsContent) */}
         {showLogisticsDetails && (
           <>
-            <div className="w-full h-px bg-[#E6EBF2] my-[32px]" />
+            <div className="w-full h-px bg-[#E6EBF2] my-4 md:my-[32px]" />
 
             {/* Logistics-style details (pickup, travel etc.) */}
-            <div className="grid grid-cols-2 gap-x-10 gap-y-[24px] text-base text-[#333333]">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-[24px] text-base text-[#333333]">
               <div className="flex flex-col gap-[8px]">
                 <span className="text-[18px] font-bold uppercase">Pickup</span>
                 <span className="text-[16px] font-semibold text-[#666666]">
@@ -267,16 +268,14 @@ export default function MemberDetailsModal({
 
         {/* Documents */}
         <div className="flex flex-col gap-[12px]">
-          <div className="text-[20px] font-bold uppercase">
+          <div className="text-[18px] md:text-[20px] font-bold uppercase">
             Documents Uploaded
           </div>{" "}
           {member?.documents?.length ? (
-            <div className="flex gap-[20px]">
+            <div className="flex flex-wrap md:flex-nowrap gap-[20px]">
               {member.documents.map((item, index) => {
                 const imageSrc =
                   item.docType === "pdf" ? item?.pdfPreview : item?.fileUrl;
-                console.log(imageSrc);
-
                 const hasImage = imageSrc && imageSrc.trim() !== "";
 
                 return (
@@ -323,11 +322,15 @@ export default function MemberDetailsModal({
           reveals the underlying modal content when scrolled to the end */}
       {activeDoc && (
         <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-[20px]"
-          onClick={() => setActiveDoc(null)}
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4 md:p-[20px]"
+          onClick={(e) => {
+            // Don't let the click reach the member popup's backdrop (that would close it too)
+            e.stopPropagation();
+            setActiveDoc(null);
+          }}
         >
           <div
-            className="flex flex-col bg-[#111] w-full max-w-[700px] h-full max-h-[90vh] rounded-[20px] relative p-[40px] overflow-y-auto"
+            className="flex flex-col bg-[#111] w-full max-w-[700px] h-full max-h-[90dvh] md:max-h-[90vh] rounded-[20px] relative p-5 md:p-[40px] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="actions-nested-popup sticky top-0 z-10 flex gap-[20px] items-center justify-end">
@@ -350,7 +353,7 @@ export default function MemberDetailsModal({
               </button>
             </div>
             {/* Image */}
-            <div className="image-box flex flex-col gap-[20px] flex-1 items-center justify-center px-[30px] text-[#FFFFFF] font-medium">
+            <div className="image-box flex flex-col gap-[20px] flex-1 items-center justify-center px-0 md:px-[30px] text-[#FFFFFF] font-medium">
               <Image
                 src={
                   activeDoc.docType === "pdf"
@@ -369,7 +372,10 @@ export default function MemberDetailsModal({
       )}
 
       {isExportDetailsOpen && (
-        <ExportDetailsPopup onClose={() => setIsExportDetailsOpen(false)} />
+        // Wrapper keeps clicks inside the export popup (incl. its backdrop) from closing this popup
+        <div className="contents" onClick={(e) => e.stopPropagation()}>
+          <ExportDetailsPopup onClose={() => setIsExportDetailsOpen(false)} />
+        </div>
       )}
     </div>
   );

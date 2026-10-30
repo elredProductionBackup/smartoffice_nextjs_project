@@ -36,6 +36,8 @@ export default function MultiStatusSelect({ value = [], onChange, options, label
 
   return (
     <div ref={ref} className="relative shrink-0">
+      {/* Phones: dim the page behind the bottom sheet */}
+      {open && <div className="md:hidden fixed inset-0 z-[94] bg-black/30" aria-hidden="true" onClick={() => setOpen(false)} />}
       <button
         type="button"
         aria-haspopup="listbox"
@@ -55,10 +57,12 @@ export default function MultiStatusSelect({ value = [], onChange, options, label
         )}
       </button>
 
+      {/* Phones: a bottom sheet (the icon can sit near the left edge, so an anchored menu would spill off-screen) */}
       {open && (
         <div
-          className={`absolute right-0 z-20 w-max min-w-[260px] rounded-[20px] bg-white p-3 ${
-            openUp ? "bottom-full mb-2" : "top-full mt-2"
+          className={`max-md:fixed max-md:inset-x-3 max-md:bottom-3 max-md:z-[95] max-md:max-h-[70dvh] max-md:overflow-y-auto
+            md:absolute md:right-0 md:z-20 md:w-max md:min-w-[260px] rounded-[20px] bg-white p-3 ${
+            openUp ? "md:bottom-full md:mb-2" : "md:top-full md:mt-2"
           }`}
           style={{ boxShadow: "0px 4px 4px 0px #99999940" }}
         >
@@ -83,7 +87,7 @@ export default function MultiStatusSelect({ value = [], onChange, options, label
                 role="option"
                 aria-selected={isSelected}
                 onClick={() => toggle(o.value)}
-                className="flex items-center justify-between gap-4 rounded-[8px] px-2 py-2 text-[14px] text-[#333] cursor-pointer select-none hover:bg-[#F2F7FF]"
+                className="flex items-center justify-between gap-4 rounded-[8px] px-2 py-3 md:py-2 text-[15px] md:text-[14px] text-[#333] cursor-pointer select-none hover:bg-[#F2F7FF]"
               >
                 <span className="flex items-center gap-2">
                   <span className={`h-2 w-2 rounded-full shrink-0 ${o.dotClassName}`} />

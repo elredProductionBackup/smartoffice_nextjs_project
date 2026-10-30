@@ -160,7 +160,7 @@ function WhatsAppCell({ value, onSave }) {
           if (e.key === "Escape") setEditing(false);
         }}
         placeholder="+91 98765 43210"
-        className="w-[170px] h-9 px-3 rounded-lg border border-[#0B57D0] text-[15px] text-[#1E293B] outline-none"
+        className="w-[170px] h-9 px-3 rounded-lg border border-[#0B57D0] text-[16px] md:text-[15px] text-[#1E293B] outline-none"
       />
     );
   }
@@ -423,6 +423,32 @@ export default function UserManagementPage() {
 
   if (!isAdmin) return null;
 
+  // Row actions, shared by the desktop table and the phone cards
+  const menuItemsFor = (u, isMe) =>
+    u.status === "invited"
+      ? [
+          { label: "Resend invite", icon: FiSend, onClick: () => resendInvite(u) },
+          { label: "Cancel invite", icon: FiXCircle, danger: true, onClick: () => setCancelInviteUserId(u.id) },
+        ]
+      : [
+          { label: "Edit", icon: FiEdit2, onClick: () => setEditUserId(u.id) },
+          // You can't change your own role
+          !isMe && { label: "Change role", icon: FiShield, onClick: () => setRoleUserId(u.id) },
+          !isMe &&
+            (u.status === "active"
+              ? {
+                  label: "Deactivate",
+                  icon: FiUserX,
+                  danger: true,
+                  onClick: () => setDeactivateUserId(u.id),
+                }
+              : {
+                  label: "Activate",
+                  icon: FiUserCheck,
+                  onClick: () => setActivation(u, true),
+                }),
+        ].filter(Boolean);
+
   const chipClass = (active) =>
     `inline-flex items-center gap-1.5 h-8 px-3.5 rounded-full border text-[14px] font-bold transition cursor-pointer ${
       active
@@ -431,42 +457,143 @@ export default function UserManagementPage() {
     }`;
 
   return (
-    <div className="h-[calc(100vh-120px)] my-5 flex flex-col font-nunito">
-      <h2 className="font-heading text-[32px] leading-[136%] font-bold text-[#333333]">User Management</h2>
+    <div className="md:h-[calc(100vh-120px)] my-5 pb-20 md:pb-0 flex flex-col font-nunito">
+      <h2 className="font-heading text-[24px] md:text-[32px] leading-[136%] font-bold text-[#333333]">User Management</h2>
 
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-3 mt-5 shrink-0">
-        <div className="relative w-[300px] max-w-full">
+      <div className="flex flex-wrap items-center gap-3 mt-4 md:mt-5 shrink-0">
+        <div className="relative flex-1 min-w-0 md:flex-initial md:min-w-auto md:w-[300px] max-w-full">
           <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8] text-[16px]" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by name or email"
-            className="w-full h-10 pl-10 pr-4 rounded-xl bg-white border border-[#E2E8F0] text-[15px] text-[#1E293B] placeholder:text-[#94A3B8] outline-none focus:border-[#0B57D0] transition"
+            className="w-full h-10 pl-10 pr-4 rounded-xl bg-white border border-[#E2E8F0] text-[16px] md:text-[15px] text-[#1E293B] placeholder:text-[#94A3B8] outline-none focus:border-[#0B57D0] transition"
           />
         </div>
 
-        <button type="button" onClick={() => setRoleFilter("all")} className={chipClass(roleFilter === "all")}>
-          All <span className="font-semibold opacity-60">{counts.all}</span>
-        </button>
-        {Object.entries(ROLES).map(([key, role]) => (
-          <button key={key} type="button" onClick={() => setRoleFilter(key)} className={chipClass(roleFilter === key)}>
-            {role.plural} <span className="font-semibold opacity-60">{counts[key]}</span>
+        {/* Role chips: one scrollable row on phones; plain toolbar items from md up */}
+        <div className="order-3 w-full flex gap-2 overflow-x-auto whitespace-nowrap [scrollbar-width:none] md:order-none md:contents">
+          <button type="button" onClick={() => setRoleFilter("all")} className={`shrink-0 md:shrink ${chipClass(roleFilter === "all")}`}>
+            All <span className="font-semibold opacity-60">{counts.all}</span>
           </button>
-        ))}
+          {Object.entries(ROLES).map(([key, role]) => (
+            <button key={key} type="button" onClick={() => setRoleFilter(key)} className={`shrink-0 md:shrink ${chipClass(roleFilter === key)}`}>
+              {role.plural} <span className="font-semibold opacity-60">{counts[key]}</span>
+            </button>
+          ))}
+        </div>
 
         <button
           type="button"
           onClick={() => setIsInviteOpen(true)}
-          className="ml-auto inline-flex items-center gap-1.5 h-9 px-4 rounded-full bg-[#1D72E8] text-white text-[14px] font-bold hover:bg-[#0B57D0] transition cursor-pointer"
+          className="order-2 md:order-none ml-auto inline-flex items-center gap-1.5 h-10 md:h-9 px-4 rounded-full bg-[#1D72E8] text-white text-[14px] font-bold hover:bg-[#0B57D0] transition cursor-pointer"
         >
           <FiUserPlus className="text-[16px]" />
           Invite user
         </button>
       </div>
 
+      {/* Phone: one card per user (same data and actions as the table) */}
+      <div className="md:hidden mt-4 flex flex-col gap-3">
+        {loading ? (
+          <div className="rounded-[20px] border border-[#E2E8F0] bg-white text-center py-12 text-[15px] text-[#777777]">
+            Loading users...
+          </div>
+        ) : loadError ? (
+          <div className="rounded-[20px] border border-[#E2E8F0] bg-white text-center py-12 px-4 text-[15px] text-[#777777]">
+            Couldn&apos;t load users.{" "}
+            <button type="button" onClick={retryUsers} className="font-bold text-[#0B57D0] hover:underline cursor-pointer">
+              Try again
+            </button>
+          </div>
+        ) : visibleUsers.length === 0 ? (
+          <div className="rounded-[20px] border border-[#E2E8F0] bg-white text-center py-12 px-4 text-[15px] text-[#777777]">
+            {users.length === 0 ? "No users in this network yet." : "No users match your search."}
+          </div>
+        ) : (
+          visibleUsers.map((u) => {
+            const isMe = isMeUser(u);
+            const status = STATUS[u.status];
+            const badges = roleBadges(u);
+            return (
+              <div
+                key={u.id}
+                onClick={() => setDetailsUserId(u.id)}
+                className="rounded-[20px] border border-[#E2E8F0] bg-white p-4 cursor-pointer active:bg-[#FAFCFF]"
+              >
+                <div className="flex items-start gap-3">
+                  <div
+                    className={`w-11 h-11 rounded-full text-white text-[14px] font-bold flex items-center justify-center shrink-0 ${
+                      u.status === "deactivated" ? "opacity-50" : ""
+                    }`}
+                    style={{ backgroundColor: u.color }}
+                  >
+                    {getInitials(u.name)}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p
+                      className={`flex flex-wrap items-center gap-x-2 text-[17px] font-semibold break-words ${
+                        u.status === "deactivated" ? "text-[#94A3B8]" : "text-[#1E293B]"
+                      }`}
+                    >
+                      <span className="min-w-0 break-words">{u.name}</span>
+                      {isMe && (
+                        <span className="px-1.5 py-0.5 rounded-md bg-[#E3EDFD] text-[#0B57D0] text-[12px] font-bold">
+                          You
+                        </span>
+                      )}
+                    </p>
+                    <span className="flex items-center gap-1.5 mt-0.5 text-[13px] text-[#94A3B8]">
+                      <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
+                      {status.label}
+                    </span>
+                  </div>
+                  <div className="shrink-0 -mr-1" onClick={(e) => e.stopPropagation()}>
+                    <RowMenu items={menuItemsFor(u, isMe)} />
+                  </div>
+                </div>
+
+                {/* Role names shown inline (the desktop hover tooltip doesn't work on touch) */}
+                {badges.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-3">
+                    {badges.map((b) => (
+                      <span key={b.key} className={`px-2.5 py-0.5 rounded-full text-[12px] font-bold ${b.className}`}>
+                        {b.label}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between gap-3 mt-3 pt-3 border-t border-[#E2E8F0]">
+                  <span className="text-[14px]">
+                    {u.openApprovals > 0 ? (
+                      <span className="text-[#1E293B]">
+                        <b>{u.openApprovals}</b> waiting
+                      </span>
+                    ) : (
+                      <span className="text-[#94A3B8]">None</span>
+                    )}
+                  </span>
+                  <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+                    <WhatsAppCell value={u.whatsapp} onSave={(whatsapp) => saveWhatsApp(u, whatsapp)} />
+                    <a
+                      href={`mailto:${u.email}`}
+                      title={u.email}
+                      className="w-10 h-10 bg-[#E6EBF2] rounded-full flex items-center justify-center cursor-pointer shrink-0"
+                    >
+                      <span className="oui--email"></span>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
       {/* Table */}
-      <div className="flex-1 min-h-0 mt-5 rounded-[20px] border border-[#E2E8F0] overflow-auto bg-white">
+      <div className="hidden md:block flex-1 min-h-0 mt-5 rounded-[20px] border border-[#E2E8F0] overflow-auto bg-white">
         <table className="w-full min-w-[900px] table-fixed border-collapse">
           {/* Fixed widths keep the columns evenly spread and the menu tight to Contact */}
           <colgroup>
@@ -508,7 +635,7 @@ export default function UserManagementPage() {
                 </td>
               </tr>
             ) : (
-              visibleUsers.map((u, i) => {
+              visibleUsers.map((u) => {
                 const isMe = isMeUser(u);
                 const status = STATUS[u.status];
                 return (
@@ -576,33 +703,7 @@ export default function UserManagementPage() {
                     </td>
 
                     <td className="pl-2 pr-5 py-4 text-right" onClick={(e) => e.stopPropagation()}>
-                      <RowMenu
-                        items={
-                          u.status === "invited"
-                            ? [
-                                { label: "Resend invite", icon: FiSend, onClick: () => resendInvite(u) },
-                                { label: "Cancel invite", icon: FiXCircle, danger: true, onClick: () => setCancelInviteUserId(u.id) },
-                              ]
-                            : [
-                                { label: "Edit", icon: FiEdit2, onClick: () => setEditUserId(u.id) },
-                                // You can't change your own role
-                                !isMe && { label: "Change role", icon: FiShield, onClick: () => setRoleUserId(u.id) },
-                                !isMe &&
-                                  (u.status === "active"
-                                    ? {
-                                        label: "Deactivate",
-                                        icon: FiUserX,
-                                        danger: true,
-                                        onClick: () => setDeactivateUserId(u.id),
-                                      }
-                                    : {
-                                        label: "Activate",
-                                        icon: FiUserCheck,
-                                        onClick: () => setActivation(u, true),
-                                      }),
-                              ].filter(Boolean)
-                        }
-                      />
+                      <RowMenu items={menuItemsFor(u, isMe)} />
                     </td>
                   </tr>
                 );

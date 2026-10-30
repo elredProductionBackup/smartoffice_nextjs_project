@@ -139,22 +139,23 @@ export default function InviteUserModal({ users, onClose, onInvite }) {
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 font-nunito p-4"
       onMouseDown={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="w-full max-w-[800px] max-h-[calc(100vh-32px)] bg-white rounded-[20px] shadow-xl flex flex-col overflow-hidden">
+      <div className="w-full max-w-[800px] max-h-[calc(100dvh-32px)] md:max-h-[calc(100vh-32px)] bg-white rounded-[20px] shadow-xl flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-8 pt-7 pb-4 shrink-0">
-          <h3 className="text-[26px] font-semibold text-[#1E293B]">Invite a user</h3>
+        <div className="flex items-center justify-between px-5 pt-5 md:px-8 md:pt-7 pb-4 shrink-0">
+          <h3 className="text-[22px] md:text-[26px] font-semibold text-[#1E293B]">Invite a user</h3>
           <button
             type="button"
             onClick={onClose}
-            className="w-9 h-9 rounded-full flex items-center justify-center text-[#1E293B] hover:bg-[#F1F5F9] transition cursor-pointer"
+            aria-label="Close"
+            className="w-10 h-10 md:w-9 md:h-9 rounded-full flex items-center justify-center text-[#1E293B] hover:bg-[#F1F5F9] transition cursor-pointer"
           >
             <FiX className="text-[22px]" />
           </button>
         </div>
 
         {/* Body */}
-        <div className="flex-1 min-h-0 overflow-y-auto px-8 pb-6">
-          <div className="grid grid-cols-2 gap-4">
+        <div className="flex-1 min-h-0 overflow-y-auto px-5 md:px-8 pb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <label className="block">
               <span className={labelClass}>
                 Full name <span className="text-[#DC2626]">*</span>
@@ -235,9 +236,9 @@ export default function InviteUserModal({ users, onClose, onInvite }) {
             Portfolios{" "}
             {!isPortfolio && <span className="font-normal text-[#94A3B8]">(for Portfolio Officers)</span>}
           </span>
-              <div className={`grid grid-cols-3 gap-2.5 transition ${isPortfolio ? "" : "opacity-60"}`}>
+              <div className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 transition ${isPortfolio ? "" : "opacity-60"}`}>
                 {loadingTypes && !budgetTypes?.length && (
-                  <p className={`${hintClass} col-span-3`}>Loading portfolios...</p>
+                  <p className={`${hintClass} col-span-full`}>Loading portfolios...</p>
                 )}
                 {budgetTypes?.map((p) => {
                   const isOn = portfolios.includes(p.budgetTypeId);
@@ -272,7 +273,7 @@ export default function InviteUserModal({ users, onClose, onInvite }) {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between gap-4 px-8 py-4 border-t border-[#E2E8F0] shrink-0">
+        <div className="flex flex-col items-stretch sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 px-5 md:px-8 py-4 border-t border-[#E2E8F0] shrink-0">
           {sendError ? (
             <span role="alert" className="text-[15px] font-semibold text-[#DC2626]">{sendError}</span>
           ) : blocker && hasStarted ? (
@@ -280,7 +281,7 @@ export default function InviteUserModal({ users, onClose, onInvite }) {
           ) : (
             <span className="text-[15px] text-[#64748B]">They&apos;ll get an email invite to join Prive Network.</span>
           )}
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center justify-end gap-3 shrink-0">
             <button
               type="button"
               onClick={onClose}

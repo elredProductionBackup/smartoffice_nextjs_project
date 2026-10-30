@@ -1,38 +1,14 @@
-// "use client";
-// import { useEffect, useState } from "react";
-// import { useRouter } from "next/navigation";
-
-// export default function ProtectedRoute({ children }) {
-//   const router = useRouter();
-//   const [checked, setChecked] = useState(false);
-
-//   useEffect(() => {
-//     const token = localStorage.getItem("token");
-
-//     if (!token) {
-//       router.replace("/");
-//     } else {
-//       setChecked(true);
-//     }
-//   }, [router]);
-
-//   if (!checked) {
-//     return (
-//       <div className="h-screen flex items-center justify-center">
-//         Loading...
-//       </div>
-//     );
-//   }
-
-//   return children;
-// }
-
 "use client";
 
 import { useEffect, useState } from "react";
 import { usePathname, useRouter, notFound } from "next/navigation";
-import { useSelector } from "react-redux";
-import { selectIsAdminRole, selectIsFinanceOfficer, selectIsLearningOfficer } from "@/store/auth/authSlice";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  logout,
+  selectIsAdminRole,
+  selectIsFinanceOfficer,
+  selectIsLearningOfficer,
+} from "@/store/auth/authSlice";
 import {
   ADMIN_HOME,
   ADMIN_ONLY_ROUTES,
@@ -42,10 +18,23 @@ import {
   isFinanceManagerRouteAllowed,
   isLearningOfficerRouteAllowed,
 } from "@/utils/routeAccess";
+import {
+  buildLoginUrl,
+  getClusterCodeFromUrl,
+  getCurrentPath,
+  getStoredClusterCode,
+} from "@/utils/shareLink";
+
+const FullPageLoader = () => (
+  <div className="h-dvh flex items-center justify-center">
+    <div className="w-10 h-10 border-4 border-[#0B57D0] border-t-transparent rounded-full animate-spin" aria-label="Loading" />
+  </div>
+);
 
 export default function ProtectedRoute({ children }) {
   const router = useRouter();
   const pathname = usePathname();
+  const dispatch = useDispatch();
 
   const { isAuthenticated, user, selectedRole } = useSelector((state) => state.auth);
   const isAdmin = user?.userType?.toLowerCase() === "admin";
@@ -61,14 +50,38 @@ export default function ProtectedRoute({ children }) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    // Not logged in until a role has been picked on the role screen
-    if (!isAuthenticated || !selectedRole) {
-      router.replace("/");
+    const urlClusterCode = getClusterCodeFromUrl();
+    const storedClusterCode = getStoredClusterCode();
+    const isLoggedIn = isAuthenticated && !!selectedRole;
+
+    // Shared link for a different network cluster than the one this session belongs to:
+    // sign out and send the user to that cluster's login, then back to the shared page.
+    if (
+      isLoggedIn &&
+      urlClusterCode &&
+      storedClusterCode &&
+      urlClusterCode.toLowerCase() !== storedClusterCode.toLowerCase()
+    ) {
+      const redirect = getCurrentPath();
+      dispatch(logout());
+      router.replace(buildLoginUrl({ clusterCode: urlClusterCode, redirect }));
+      return;
+    }
+
+    // Not logged in until a role has been picked on the role screen.
+    // Keep the cluster code + the page that was opened so a shared link still works after login.
+    if (!isLoggedIn) {
+      router.replace(
+        buildLoginUrl({
+          clusterCode: urlClusterCode || storedClusterCode,
+          redirect: getCurrentPath(),
+        })
+      );
       return;
     }
 
     setReady(true);
-  }, [isAuthenticated, selectedRole, router]);
+  }, [isAuthenticated, selectedRole, router, dispatch]);
 
   useEffect(() => {
     if (ready && isFinanceManagerBlocked) {
@@ -100,12 +113,7 @@ export default function ProtectedRoute({ children }) {
   }
 
   if (!ready || !isLoggedIn || isFinanceManagerBlocked || isLearningOfficerBlocked || isAdminBlocked) {
-    return (
-      <div className="h-screen flex items-center justify-center">
-        Loading...
-        {/* <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" /> */}
-      </div>
-    );
+    return <FullPageLoader />;
   }
 
   return children;
