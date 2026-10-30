@@ -33,7 +33,7 @@ export default function DeleteMediaConfirm({ payload }) {
       // ✅ close AFTER success
       dispatch(closeTopEventsModal());
     } catch (err) {
-      console.log("Delete failed:", err);
+      console.error("Delete failed:", err);
     } finally {
       setLoading(false);
     }
@@ -41,18 +41,18 @@ export default function DeleteMediaConfirm({ payload }) {
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center"
+      className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
       onClick={() => !loading && dispatch(closeTopEventsModal())}
     >
       <div
-        className="w-[480px] rounded-[28px] bg-white pt-[70px] pb-[40px] shadow-xl flex flex-col items-center gap-[45px]"
+        className="w-full max-w-[480px] max-h-[90dvh] overflow-y-auto rounded-[28px] bg-white pt-10 pb-8 sm:pt-[70px] sm:pb-[40px] shadow-xl flex flex-col items-center gap-8 sm:gap-[45px]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="text-[24px] font-[700] px-[100px] text-center">
+        <div className="text-[20px] sm:text-[24px] font-[700] px-6 sm:px-[100px] text-center">
           Are you sure you want to delete this item?
         </div>
 
-        <div className="flex gap-[80px]">
+        <div className="flex gap-4 sm:gap-[80px]">
           {/* Cancel */}
           <button
             onClick={() => dispatch(closeTopEventsModal())}

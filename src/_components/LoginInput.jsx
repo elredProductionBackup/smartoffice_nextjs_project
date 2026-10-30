@@ -13,9 +13,13 @@ const LoginInput = ({ email, setEmail, invalidEmail, setInvalidEmail }) => {
             email: value,
           }));
         }}
-        type="text"
+        type="email"
+        inputMode="email"
+        autoCapitalize="none"
+        autoCorrect="off"
+        spellCheck={false}
         placeholder="Your email ID"
-        autoComplete="off"
+        autoComplete="email"
         className={`border ${invalidEmail?'border-[#F12632]':'border-[#E1E2E6]'} w-full h-[55px] bg-[#F2F6FC] rounded-lg outline-none px-5 text-base font-medium text-[#333333]`}
       />
 
@@ -25,7 +29,7 @@ const LoginInput = ({ email, setEmail, invalidEmail, setInvalidEmail }) => {
       </div>
 
       {/* Bottom spacing */}
-      <div className="mb-10" />
+      <div className="mb-8 sm:mb-10" />
     </div>
   );
 };

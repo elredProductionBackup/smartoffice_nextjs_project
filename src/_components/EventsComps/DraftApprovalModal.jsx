@@ -10,38 +10,39 @@ const DraftApprovalModal = ({ onConfirmCreate, onSendForApproval,submitting }) =
   if (type !== "APPROVAL") return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center" onClick={()=> dispatch(closeEventFormModal())}>
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={()=> dispatch(closeEventFormModal())}>
       <div
-        className="w-[480px] bg-white rounded-[30px] px-[40px] py-[40px] text-center relative flex flex-col items-center gap-[12px]"
+        className="w-full max-w-[480px] max-h-[90dvh] overflow-y-auto bg-white rounded-[30px] px-5 py-8 sm:px-[40px] sm:py-[40px] text-center relative flex flex-col items-center gap-[12px]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* TITLE */}
-        <h2 className="text-[#333] text-[24px] font-[700]">
+        <h2 className="text-[#333] text-[20px] sm:text-[24px] font-[700]">
           Do you want to save this event as Draft
         </h2>
 
-        <p className="text-[#666] text-[20px] font-[500] mb-[24px]">
+        <p className="text-[#666] text-[20px] font-[500] mb-3 sm:mb-[24px]">
           {/* You can send it for approval. */}
         </p>
 
         {/* ACTION BUTTONS */}
-        <div className="flex justify-center gap-[30px]">
+        <div className="w-full sm:w-auto flex flex-col sm:flex-row justify-center gap-3 sm:gap-[30px]">
           <button
             onClick={() => {
               dispatch(closeEventFormModal());
             }}
-            className="px-[16px] min-w-[184px] py-[8px] whitespace-nowrap rounded-[100px] bg-[#999999] text-white cursor-pointer text-[20px] font-[500]"
+            className="px-[16px] sm:min-w-[184px] py-[8px] whitespace-nowrap rounded-[100px] bg-[#999999] text-white cursor-pointer text-[18px] sm:text-[20px] font-[500]"
           >
             No, create event
           </button>
 
           <button
+            disabled={submitting}
             onClick={async () => {
               await onSendForApproval();
               dispatch(closeEventFormModal());
             }}
-            className="px-[16px] min-w-[187px] py-[8px] whitespace-nowrap rounded-[100px] text-white transition
-              bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)] text-[20px] font-[500] cursor-pointer flex items-center justify-center"
+            className="px-[16px] sm:min-w-[187px] min-h-[46px] sm:min-h-0 py-[8px] whitespace-nowrap rounded-[100px] text-white transition
+              bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)] text-[18px] sm:text-[20px] font-[500] cursor-pointer flex items-center justify-center disabled:cursor-not-allowed"
           >
             {submitting?<div className="w-[20px] h-[20px] border-2 border-[white] border-t-transparent rounded-full animate-spin" />:'Save as draft'}
           </button>

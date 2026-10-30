@@ -172,7 +172,7 @@ const FinanceBudgetPage = () => {
   }, []);
 
   return (
-    <div className="p-6">
+    <div className="pt-4 pb-24 md:p-6">
       {showAddBudget && (
         <AddBudgetFinance
           portfolios={categories}
@@ -183,13 +183,13 @@ const FinanceBudgetPage = () => {
 
       {/* ── Header Banner ── */}
       <div
-        className="rounded-[20px] px-7 py-6 mb-6"
+        className="rounded-[20px] px-4 py-5 md:px-7 md:py-6 mb-5 md:mb-6"
         style={{ background: 'linear-gradient(135deg, #3b63e8, #2445cc)' }}
       >
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-6 md:mb-8">
           <button
             onClick={() => router.push('/dashboard/finance')}
-            className="flex items-center gap-2 text-white text-[14px] font-medium px-5 py-2.5 rounded-full cursor-pointer border-none"
+            className="flex items-center gap-2 text-white text-[13px] md:text-[14px] font-medium px-3.5 md:px-5 py-2.5 rounded-full cursor-pointer border-none"
             style={{ background: 'rgba(255,255,255,0.18)' }}
           >
             <FiArrowLeft />
@@ -198,45 +198,45 @@ const FinanceBudgetPage = () => {
 
           <button
             onClick={() => setShowAddBudget(true)}
-            className="flex items-center gap-2 bg-white text-[#2445cc] text-[15px] font-semibold px-5 py-2.5 rounded-full cursor-pointer border-none hover:opacity-90 transition-opacity"
+            className="flex items-center gap-2 bg-white text-[#2445cc] text-[14px] md:text-[15px] font-semibold px-4 md:px-5 py-2.5 rounded-full cursor-pointer border-none hover:opacity-90 transition-opacity"
           >
             <FiPlus />
             Add Budget
           </button>
         </div>
 
-        <div className="flex items-end justify-between">
-          <h1 className="font-heading text-white text-[34px] font-bold m-0 leading-none">
+        <div className="flex flex-col items-start gap-4 lg:flex-row lg:items-end lg:justify-between lg:gap-0">
+          <h1 className="font-heading text-white text-[26px] md:text-[34px] font-bold m-0 leading-none">
             Budget Management
           </h1>
 
-          <div className="flex gap-3">
+          <div className="grid grid-cols-3 gap-2 w-full sm:flex sm:w-auto sm:gap-3">
             {/* Dynamic Total Assigned */}
             <div
-              className="rounded-[14px] px-7 py-4 text-center min-w-[160px]"
+              className="rounded-[14px] px-2 py-3 sm:px-7 sm:py-4 text-center min-w-0 sm:min-w-[160px]"
               style={{ background: 'rgba(255,255,255,0.15)' }}
             >
-              <div className="text-white/75 text-[13px] font-medium mb-1.5">Total Assigned</div>
+              <div className="text-white/75 text-[11px] sm:text-[13px] leading-tight sm:leading-normal font-medium mb-1.5">Total Assigned</div>
               <TitleTooltipHover title={formatExactRupees(totalAssigned)}>
-                <div className="text-white text-[22px] font-bold leading-none">{formatRupees(totalAssigned)}</div>
+                <div className="text-white text-[18px] sm:text-[22px] font-bold leading-none">{formatRupees(totalAssigned)}</div>
               </TitleTooltipHover>
             </div>
             <div
-              className="rounded-[14px] px-7 py-4 text-center min-w-[160px]"
+              className="rounded-[14px] px-2 py-3 sm:px-7 sm:py-4 text-center min-w-0 sm:min-w-[160px]"
               style={{ background: 'rgba(255,255,255,0.15)' }}
             >
-              <div className="text-white/75 text-[13px] font-medium mb-1.5">Total Used</div>
+              <div className="text-white/75 text-[11px] sm:text-[13px] leading-tight sm:leading-normal font-medium mb-1.5">Total Used</div>
               <TitleTooltipHover title={formatExactRupees(totalUsed)}>
-                <div className="text-white text-[22px] font-bold leading-none">{formatRupees(totalUsed)}</div>
+                <div className="text-white text-[18px] sm:text-[22px] font-bold leading-none">{formatRupees(totalUsed)}</div>
               </TitleTooltipHover>
             </div>
             <div
-              className="rounded-[14px] px-7 py-4 text-center min-w-[160px]"
+              className="rounded-[14px] px-2 py-3 sm:px-7 sm:py-4 text-center min-w-0 sm:min-w-[160px]"
               style={{ background: 'rgba(255,255,255,0.15)' }}
             >
-              <div className="text-white/75 text-[13px] font-medium mb-1.5">Total Remaining</div>
+              <div className="text-white/75 text-[11px] sm:text-[13px] leading-tight sm:leading-normal font-medium mb-1.5">Total Remaining</div>
               <TitleTooltipHover title={formatExactRupees(totalRemaining)}>
-                <div className="text-white text-[22px] font-bold leading-none">{formatRupees(totalRemaining)}</div>
+                <div className="text-white text-[18px] sm:text-[22px] font-bold leading-none">{formatRupees(totalRemaining)}</div>
               </TitleTooltipHover>
             </div>
           </div>
@@ -275,7 +275,7 @@ const FinanceBudgetPage = () => {
               >
                 {/* Header row */}
                 <div
-                  className="flex items-center px-6 py-5 cursor-pointer"
+                  className="flex flex-wrap md:flex-nowrap items-center px-4 py-4 md:px-6 md:py-5 cursor-pointer"
                   onClick={() => toggle(item.budgetTypeId)}
                 >
                   <FiChevronRight
@@ -284,7 +284,7 @@ const FinanceBudgetPage = () => {
                   />
 
                   <div className="flex-1 min-w-0">
-                    <div className="text-[18px] font-semibold" style={{ color: s.text }}>
+                    <div className="text-[16px] md:text-[18px] font-semibold" style={{ color: s.text }}>
                       {item.portfolioName}
                     </div>
                     <div className="text-[13px] text-slate-400 mt-0.5">
@@ -292,31 +292,31 @@ const FinanceBudgetPage = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center">
-                    <div className="text-right w-[130px] shrink-0 pr-6">
-                      <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-1">
+                  <div className="grid grid-cols-3 w-full mt-3 pl-[34px] md:pl-0 md:mt-0 md:w-auto md:flex md:items-center">
+                    <div className="text-left md:text-right md:w-[130px] min-w-0 shrink-0 pr-2 md:pr-6">
+                      <div className="text-[10px] md:text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-1">
                         Assigned Budget
                       </div>
                       <TitleTooltipHover title={formatExactRupees(assigned)}>
-                        <div className="text-[20px] font-bold" style={{ color: s.text }}>
+                        <div className="text-[16px] md:text-[20px] font-bold" style={{ color: s.text }}>
                           {formatRupees(assigned)}
                         </div>
                       </TitleTooltipHover>
                     </div>
-                    <div className="text-right w-[130px] shrink-0 border-l border-slate-200 px-6">
-                      <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-1">
+                    <div className="text-left md:text-right md:w-[130px] min-w-0 shrink-0 border-l border-slate-200 px-2 md:px-6">
+                      <div className="text-[10px] md:text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-1">
                         Used
                       </div>
                       <TitleTooltipHover title={formatExactRupees(used)}>
-                        <div className="text-[20px] font-bold text-[#6366f1]">{formatRupees(used)}</div>
+                        <div className="text-[16px] md:text-[20px] font-bold text-[#6366f1]">{formatRupees(used)}</div>
                       </TitleTooltipHover>
                     </div>
-                    <div className="text-right w-[130px] shrink-0 border-l border-slate-200 pl-6">
-                      <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-1">
+                    <div className="text-left md:text-right md:w-[130px] min-w-0 shrink-0 border-l border-slate-200 pl-2 md:pl-6">
+                      <div className="text-[10px] md:text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-1">
                         Remaining
                       </div>
                       <TitleTooltipHover title={formatExactRupees(remaining)}>
-                        <div className="text-[20px] font-bold text-[#059669]">{formatRupees(remaining)}</div>
+                        <div className="text-[16px] md:text-[20px] font-bold text-[#059669]">{formatRupees(remaining)}</div>
                       </TitleTooltipHover>
                     </div>
                   </div>
@@ -331,10 +331,13 @@ const FinanceBudgetPage = () => {
                   <div className="border-t bg-white pb-5 rounded-b-[16px] overflow-hidden" style={{ borderColor: s.border }}>
 
                     {/* ── EVENT RELATED ── */}
-                    <div className="px-6 pt-4 pb-1">
+                    <div className="px-4 md:px-6 pt-4 pb-1">
                       <div className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Event Related</div>
                     </div>
 
+                    {/* Event table: scrolls sideways below lg */}
+                    <div className="overflow-x-auto">
+                    <div className="min-w-[720px] lg:min-w-0">
                     {/* Event table header */}
                     <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr] gap-4 px-6 py-3 border-b border-slate-100">
                       {['Event Name', 'Date', 'Assigned Budget', 'Used Budget', 'Remaining', 'Status'].map((col) => (
@@ -399,16 +402,20 @@ const FinanceBudgetPage = () => {
                         </div>
                       </>
                     )}
+                    </div>
+                    </div>
 
                     {/* ── GENERAL ── */}
-                    <div className="flex items-center gap-4 px-6 pt-5 pb-1">
+                    <div className="flex items-center gap-4 px-4 md:px-6 pt-5 pb-1">
                       <div className="flex-1 border-t border-slate-200" />
                       <div className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">General</div>
                       <div className="flex-1 border-t border-slate-200" />
                     </div>
 
                     {/* General table — rounded bordered card */}
-                    <div className="mx-6 border border-slate-200 rounded-[12px] overflow-hidden">
+                    <div className="mx-4 md:mx-6 border border-slate-200 rounded-[12px] overflow-hidden">
+                    <div className="overflow-x-auto">
+                    <div className="min-w-[680px] lg:min-w-0">
 
                       {/* Header */}
                       <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1.5fr_1.5fr] gap-4 px-5 py-3 bg-slate-50 border-b border-slate-200">
@@ -456,6 +463,8 @@ const FinanceBudgetPage = () => {
                         <div /><div /><div />
                       </div>
 
+                    </div>
+                    </div>
                     </div>
 
                   </div>

@@ -20,6 +20,19 @@ export default function ModalHeader({
     setValue(title);
   }, [title]);
 
+// Declared before the effect below that calls it
+const autoResize = () => {
+  const el = textareaRef.current;
+  if (!el) return;
+
+  el.style.height = "auto";
+
+  const lineHeight = 44; 
+  const maxHeight = lineHeight * 4;
+
+  el.style.height = Math.min(el.scrollHeight, maxHeight) + "px";
+};
+
 useEffect(() => {
   if (isEditing && textareaRef.current) {
     const el = textareaRef.current;
@@ -34,19 +47,6 @@ useEffect(() => {
     el.scrollTop = el.scrollHeight;
   }
 }, [isEditing]);
-
-
-const autoResize = () => {
-  const el = textareaRef.current;
-  if (!el) return;
-
-  el.style.height = "auto";
-
-  const lineHeight = 44; 
-  const maxHeight = lineHeight * 4;
-
-  el.style.height = Math.min(el.scrollHeight, maxHeight) + "px";
-};
 
   const save = () => {
     if (value.trim()) {
@@ -86,14 +86,14 @@ useEffect(() => {
 }, [title, isEditing]);
 
   return (
-    <div className="flex flex-col gap-[20px] pt-[40px] px-[20px] pb-[20px] sticky top-[0px] bg-white z-[10]">
+    <div className="flex flex-col gap-4 md:gap-[20px] pt-6 md:pt-[40px] px-4 md:px-[20px] pb-4 md:pb-[20px] sticky top-[0px] bg-white z-[10]">
       <div className="flex justify-between items-start">
         {/* TITLE */}
         {!isEditing ? (
           <TitleTooltipHover title={isOverflowing ? title : ""}>
             <h2
               ref={titleRef}
-              className="text-[32px] font-[700] leading-[44px] text-[#333] mr-[36px] line-clamp-4 break-words"
+              className="text-[24px] leading-[32px] md:text-[32px] md:leading-[44px] font-[700] text-[#333] mr-[36px] line-clamp-4 break-words"
             >
               {formatText(title)}
             </h2>
@@ -118,7 +118,7 @@ useEffect(() => {
               if (e.key === "Escape") cancel();
             }}
             className="
-              text-[32px] font-[700] leading-[44px] text-[#333]
+              text-2xl leading-[32px] md:text-[32px] md:leading-[44px] font-[700] text-[#333]
               border-none outline-none bg-transparent w-full
               resize-none overflow-hidden max-h-[176px] mr-[36px]
             "
@@ -126,10 +126,10 @@ useEffect(() => {
         )}
 
         {/* ACTIONS */}
-        <div className="absolute right-[20px] top-[40px] flex flex-col gap-[40px]">
+        <div className="absolute right-4 top-6 md:right-[20px] md:top-[40px] flex flex-col gap-[40px]">
           <button
             onClick={onClose}
-            className="h-[24px] min-w-[24px] rounded-full grid place-items-center bg-[#eee] text-[#999999] cursor-pointer"
+            className="h-8 min-w-8 md:h-[24px] md:min-w-[24px] rounded-full grid place-items-center bg-[#eee] text-[#999999] cursor-pointer"
           >
             <span className="akar-icons--cross small-cross" />
           </button>

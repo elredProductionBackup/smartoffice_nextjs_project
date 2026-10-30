@@ -70,13 +70,14 @@ const handleDelete = async () => {
 };
 
   return (
-    <div className="w-[600px] flex flex-col bg-white rounded-[14px] shadow-xl px-[40px]  relative flex flex-col gap-[24px] h-[637px] max-h-[90vh] overflow-y-auto">
-       <div className="pt-[40px] flex items-center justify-between w-[100%] sticky top-[0px] bg-[white]">
-         <h3 className="text-[32px] font-[700] text-[#333]">Master Checklist</h3>
+    <div className="w-[calc(100vw-32px)] max-w-[600px] flex flex-col bg-white rounded-[14px] shadow-xl px-5 md:px-[40px] relative gap-5 md:gap-[24px] h-[637px] max-h-[85dvh] md:max-h-[90vh] overflow-y-auto">
+       <div className="pt-6 md:pt-[40px] flex items-center justify-between w-[100%] sticky top-[0px] bg-[white] z-[1]">
+         <h3 className="text-[24px] md:text-[32px] font-[700] text-[#333] pr-10 md:pr-0">Master Checklist</h3>
 
          <button
            onClick={onClose}
-           className="absolute right-[0px] top-[40px] h-[24px] w-[24px] rounded-full bg-[#EEEEEE] flex items-center justify-center text-[#999999] cursor-pointer"
+           aria-label="Close"
+           className="absolute right-[0px] top-7 md:top-[40px] h-[24px] w-[24px] rounded-full bg-[#EEEEEE] flex items-center justify-center text-[#999999] cursor-pointer"
          >
            <span className="akar-icons--cross small-cross"></span>
          </button>
@@ -88,7 +89,7 @@ const handleDelete = async () => {
           <div className="bg-[#D3E3FD] h-[60px] w-[60px] rounded-full grid place-items-center">
             <Image src={`/logo/no-checklist.svg`} alt="No Checklist" height={36} width={36}/>
           </div>
-          <p className="text-[20px] text-[#333] font-[600]">
+          <p className="text-[18px] md:text-[20px] text-[#333] font-[600] text-center">
             No master checklist created
           </p>
           <button
@@ -118,18 +119,18 @@ const handleDelete = async () => {
                 key={index}
                 className="flex justify-between items-center gap-[16px]"
               >
-                <span className="text-[20px] font-[500] flex-1 min-w-0 break-words">
+                <span className="text-[16px] md:text-[20px] font-[500] flex-1 min-w-0 break-words">
                   {item.label}
                 </span>
-                <div className="flex items-center gap-[12px] shrink-0">
+                <div className="flex items-center gap-2 md:gap-[12px] shrink-0">
                   <span
-                    className={`h-[12px] w-[50px] rounded-full ${difficultyColor[item.difficulty]}`}
+                    className={`h-[12px] w-[36px] md:w-[50px] rounded-full ${difficultyColor[item.difficulty]}`}
                   />
                   <button
                     type="button"
                     title="Edit"
                     onClick={() => openEdit(item, index)}
-                    className="h-[32px] w-[32px] rounded-full grid place-items-center text-[#0B57D0] hover:bg-[#D3E3FD] transition-colors cursor-pointer"
+                    className="h-9 w-9 md:h-[32px] md:w-[32px] rounded-full grid place-items-center text-[#0B57D0] hover:bg-[#D3E3FD] transition-colors cursor-pointer"
                   >
                     <FiEdit2 className="text-[16px]" />
                   </button>
@@ -137,7 +138,7 @@ const handleDelete = async () => {
                     type="button"
                     title="Delete"
                     onClick={() => setDeleteIndex(index)}
-                    className="h-[32px] w-[32px] rounded-full grid place-items-center text-[#E53935] hover:bg-red-50 transition-colors cursor-pointer"
+                    className="h-9 w-9 md:h-[32px] md:w-[32px] rounded-full grid place-items-center text-[#E53935] hover:bg-red-50 transition-colors cursor-pointer"
                   >
                     <FiTrash2 className="text-[16px]" />
                   </button>
@@ -146,7 +147,7 @@ const handleDelete = async () => {
             ))}
           </div>
 
-          <div className="bg-[white] w-[100%] sticky bottom-[0px] pt-[10px] pb-[40px]">
+          <div className="bg-[white] w-[100%] sticky bottom-[0px] pt-[10px] pb-6 md:pb-[40px]">
           <button
             onClick={openAdd}
             className="self-start py-[8px] px-[20px] text-[20px] rounded-full bg-gradient-to-r from-[#5597ED] to-[#00449C] text-white cursor-pointer "
@@ -160,17 +161,17 @@ const handleDelete = async () => {
       {/* DELETE CONFIRM */}
       {deleteIndex !== null && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 md:p-0"
           onClick={() => !deleting && setDeleteIndex(null)}
         >
           <div
-            className="w-[480px] rounded-[28px] bg-white pt-[70px] pb-[40px] shadow-xl flex flex-col items-center gap-[45px]"
+            className="w-full max-w-[480px] rounded-[28px] bg-white pt-10 pb-8 md:pt-[70px] md:pb-[40px] shadow-xl flex flex-col items-center gap-8 md:gap-[45px]"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="text-[24px] font-[700] px-[60px] text-center">
+            <div className="text-[20px] md:text-[24px] font-[700] px-6 md:px-[60px] text-center break-words max-w-full">
               Are you sure you want to delete &quot;{checklist[deleteIndex]?.label}&quot;?
             </div>
-            <div className="flex gap-[80px]">
+            <div className="flex gap-4 md:gap-[80px]">
               <button
                 onClick={() => setDeleteIndex(null)}
                 disabled={deleting}

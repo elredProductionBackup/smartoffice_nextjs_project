@@ -163,10 +163,10 @@ const formatText = (text = "") => {
   });
 };
   return (
-    <div className="flex items-start justify-between gap-[20px] border-b border-[#D4DFF1] pb-[20px] last:border-b-0 relative cursor-pointer" onClick={()=>{ if (item.isOptimistic) return; openTaskModal(actionableId)}}>
+    <div className="flex flex-wrap md:flex-nowrap items-start justify-between gap-x-3 gap-y-2 md:gap-[20px] border-b border-[#D4DFF1] pb-4 md:pb-[20px] last:border-b-0 relative cursor-pointer" onClick={()=>{ if (item.isOptimistic) return; openTaskModal(actionableId)}}>
 
       {/* LEFT */}
-      <div className={`flex w-[55%] items-start ${canEditOrDelete || isCompleted? 'gap-[14px]':''} pr-[40px]`}>
+      <div className={`order-1 md:order-none flex flex-1 min-w-0 md:flex-none md:w-[55%] items-start ${canEditOrDelete || isCompleted? 'gap-[14px]':''} md:pr-[40px]`}>
         {/* Checkbox */}
         <div className="h-[30px] flex items-center" >
         {item.isOptimistic ?<span className="loader"></span>:
@@ -187,7 +187,7 @@ const formatText = (text = "") => {
 
         {/* Text */}
         <div
-          className={`flex flex-col text-[20px] font-medium mt-[5px] gap-[6px] text-[#333333] `} >
+          className={`flex flex-col min-w-0 text-[16px] md:text-[20px] font-medium mt-[5px] gap-[6px] text-[#333333]`} >
           <div>
             <div
               ref={textRef}
@@ -215,19 +215,19 @@ const formatText = (text = "") => {
         {/* </TitleTooltipHover> */}
 
           {subTask.length > 0 && (
-            <ul className="ml-[30px] flex flex-col gap-[8px] list-disc text-[20px] font-[500] text-[#333333]">
+            <ul className="ml-5 md:ml-[30px] flex flex-col gap-[8px] list-disc text-[16px] md:text-[20px] font-[500] text-[#333333]">
               {subTask.slice(0, 2).map((sub, index) => {
                 const isLastVisible = index === 1 && subTask.length > 2;
                 return (
                   <li key={`preview-${sub._id}`} className={`leading-[20px] ${sub?.isCompleted ? "line-through" : ""}`}>
-                    <div className="flex items-center gap-[60px]">
+                    <div className="flex items-center gap-3 md:gap-[60px]">
                       {/* TEXT */}
                       <span className={`line-clamp-1 ${!isLastVisible && 'flex-1'}`}>
                         {sub.title}
                       </span>
 
                       {isLastVisible && (
-                        <span className="flex items-center gap-[6px] text-[16px] font-[700] text-[#333] whitespace-nowrap">
+                        <span className="flex items-center gap-[6px] text-[14px] md:text-[16px] font-[700] text-[#333] whitespace-nowrap">
                           <span className="text-[#999]"></span>
                           +{subTask.length - 2} subtask{subTask.length - 2 > 1 ? "s" : ""}
                         </span>
@@ -239,10 +239,10 @@ const formatText = (text = "") => {
             </ul>
           )}
 
-          {item.isOptimistic &&  <div className="h-[12px] w-[200px] rounded-full bg-[#E1E8F6]" />}
+          {item.isOptimistic &&  <div className="h-[12px] w-[200px] max-w-full rounded-full bg-[#E1E8F6]" />}
 
          {!item.isOptimistic && createdBy && dueTime && (
-            <div className="text-[16px] font-[600] text-[#666666]">
+            <div className="text-[14px] md:text-[16px] font-[600] text-[#666666]">
               <span className="capitalize">{createdBy?.name}</span> | {dueTime.toLowerCase()} IST
             </div>
           )}
@@ -251,9 +251,9 @@ const formatText = (text = "") => {
 
       {/* RIGHT — Date + Avatars */}
       {(dueDate || collaborators.length > 0) && (
-        <div className="flex items-center gap-[60px] flex-1">
+        <div className={`order-3 md:order-none w-full md:w-auto flex items-center gap-4 md:gap-[60px] md:flex-1 ${canEditOrDelete || isCompleted ? "pl-8" : ""} md:pl-0`}>
           {dueDate && (
-            <div className="text-[16px] font-[600] text-[#333333] whitespace-nowrap">
+            <div className="text-[14px] md:text-[16px] font-[600] text-[#333333] whitespace-nowrap">
              {!today && moment(dueDate).format("DD MMM YYYY")}
             </div>
           )}
@@ -282,7 +282,7 @@ const formatText = (text = "") => {
       )}
 
       {past && canEditOrDelete && <button
-              className="flex items-center justify-end gap-[6px] w-[180px] px-[14px] text-[18px] font-[500] text-[#666666] cursor-pointer"
+              className="order-2 md:order-none flex items-center justify-end gap-[6px] w-auto md:w-[180px] px-1 md:px-[14px] text-[18px] font-[500] text-[#666666] cursor-pointer"
               onClick={(e) => {
                 e.stopPropagation();
                 openDeleteModal(actionableId)
@@ -294,8 +294,8 @@ const formatText = (text = "") => {
 
       {/* Menu — ENABLED for both Today & Past */}
       {!isCompleted && canEditOrDelete &&
-      <div className="relative" ref={menuRef}>
-        <div className="h-[24px] w-[24px] rounded-[8px] hover:bg-[#D3E3FD] grid place-items-center">
+      <div className="order-2 md:order-none relative" ref={menuRef}>
+        <div className="h-8 w-8 md:h-[24px] md:w-[24px] rounded-[8px] hover:bg-[#D3E3FD] grid place-items-center">
           <BsThreeDotsVertical
           size={20}
           className={`text-gray-500  ${item.isOptimistic ? 'opacity-50':'cursor-pointer'}`}

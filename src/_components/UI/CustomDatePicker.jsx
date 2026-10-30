@@ -75,10 +75,10 @@ export default function CustomDatePicker({ value, onChange, compact = false, ope
           className={
             openUp
               ? `fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-3xl z-[10010] font-sans ${
-                  compact ? 'w-[260px] p-3' : 'w-[336px] p-5'
+                  compact ? 'w-[260px] p-3' : 'w-[336px] max-w-[calc(100vw-32px)] p-5'
                 }`
               : `absolute top-[calc(100%+6px)] left-0 bg-white rounded-3xl z-9999 font-sans ${
-                  compact ? 'w-[260px] p-3' : 'w-[336px] p-5'
+                  compact ? 'w-[260px] p-3' : 'w-[336px] max-w-[calc(100vw-32px)] p-5'
                 }`
           }
           style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}

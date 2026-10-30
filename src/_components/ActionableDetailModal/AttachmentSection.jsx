@@ -37,9 +37,9 @@ export default function AttachmentSection({
   };
 
   return (
-    <div className="flex flex-col gap-[12px] pt-[20px] px-[20px]">
+    <div className="flex flex-col gap-[12px] pt-[20px] px-4 md:px-[20px]">
       <div className="flex justify-between items-center">
-        <span className="flex items-center gap-[10px] text-[20px] text-[#333333]">
+        <span className="flex items-center gap-[10px] text-[18px] md:text-[20px] text-[#333333]">
           <span className="uppercase font-[700]">Attachments</span>
 
           <span className="text-[14px] font-[500]">
@@ -51,7 +51,7 @@ export default function AttachmentSection({
           <button
             disabled={task.attachments?.length >= 10 || showInput}
             onClick={() => setShowInput(true)}
-            className={`w-[24px] h-[24px] rounded-full flex items-center justify-center text-white text-[24px]
+            className={`w-[24px] h-[24px] shrink-0 rounded-full flex items-center justify-center text-white text-[24px]
               ${
                 (task.attachments?.length || 0) >= 10
                   ? "cursor-not-allowed bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)] opacity-50"
@@ -80,7 +80,7 @@ export default function AttachmentSection({
             onChange={(e) => setAttachmentUrl(e.target.value)}
             onBlur={commitAdd}
             onKeyDown={(e) => e.key === "Enter" && commitAdd()}
-            className="flex-1 outline-none text-[16px] font-[600] mr-[90px]"
+            className="flex-1 min-w-0 outline-none text-[16px] font-[600] mr-4 md:mr-[90px]"
           />
         </div>
       )}

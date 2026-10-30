@@ -16,12 +16,12 @@ const EventActionConfirmModal = ({
         role="alertdialog"
         aria-modal="true"
         aria-labelledby="confirm-modal-title"
-        className="bg-white shadow-xl flex flex-col items-center relative w-full max-w-[480px] rounded-[32px] px-10 pt-11 pb-10"
+        className="bg-white shadow-xl flex flex-col items-center relative w-full max-w-[480px] max-h-[90dvh] overflow-y-auto rounded-[28px] sm:rounded-[32px] px-6 pt-9 pb-8 sm:px-10 sm:pt-11 sm:pb-10"
         onClick={(e) => e.stopPropagation()}
       >
         <h2
           id="confirm-modal-title"
-          className="font-[700] text-[24px] leading-[130%] text-center text-[#333] font-['Nunito_Sans']"
+          className="font-[700] text-[20px] sm:text-[24px] leading-[130%] text-center text-[#333] font-['Nunito_Sans']"
         >
           {title}
         </h2>
@@ -30,7 +30,7 @@ const EventActionConfirmModal = ({
           <p className="mt-3 text-[15px] leading-6 text-center text-[#666666] font-nunito">{message}</p>
         )}
 
-        <div className="mt-9 flex gap-4 w-full max-w-[340px]">
+        <div className="mt-7 sm:mt-9 flex gap-3 sm:gap-4 w-full max-w-[340px]">
           <button
             onClick={onCancel}
             disabled={isLoading}

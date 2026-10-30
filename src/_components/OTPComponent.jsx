@@ -40,38 +40,31 @@ const OTPComponent = ({ email, length = 6, networkClusterCode, data, onVerified 
       showLoader();
 
       const res = await verifyOtp(data);
-      // console.log(res, "response");
-      // Now using Redux Reducers for it
-      // localStorage.setItem('networkData',JSON.stringify(res?.data?.result?.[0]))
-      // localStorage.setItem('token',res?.data?.result?.[0]?.token)
-      // localStorage.setItem('networkClusterCode',res?.data?.result?.[0]?.networkClusterCode)
 
       if (res?.data?.success) {
-          const user = res?.data?.result?.[0];
-          dispatch(setAuth(user));
+        const user = res?.data?.result?.[0];
+        dispatch(setAuth(user));
 
-          if (onVerified) {
-            hideLoader();
-            onVerified(user);
-            return;
-          }
-
-          router.push("/dashboard");
+        if (onVerified) {
+          hideLoader();
+          onVerified(user);
           return;
-      }
+        }
 
-      if (res?.data?.errorCode === -1) {
-        setError(true);
-        setOtp(Array(length).fill(""));
-        hideLoader();
+        router.push("/dashboard");
         return;
       }
+
+      // Wrong / expired OTP (errorCode -1) or any other failure: let the user retry
+      setError(true);
+      setOtp(Array(length).fill(""));
+      hideLoader();
     } catch (err) {
       console.error("Verify OTP error:", err);
       setError(true);
       setOtp(Array(length).fill(""));
-      hideLoader()
-    } 
+      hideLoader();
+    }
   };
 
   return (
@@ -81,12 +74,12 @@ const OTPComponent = ({ email, length = 6, networkClusterCode, data, onVerified 
       <Description
         description={CONSTANTS.OTP_TITLE}
         email={maskEmail(email)}
-        margin="mb-10"
+        margin="mb-8 sm:mb-10"
       />
 
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-lg flex flex-col gap-10"
+        className="w-full max-w-lg flex flex-col gap-8 sm:gap-10"
       >
         <OtpInput
           length={length}

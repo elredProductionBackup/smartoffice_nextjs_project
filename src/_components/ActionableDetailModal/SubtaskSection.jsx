@@ -23,16 +23,16 @@ export default function SubtaskSection({
   };
 
   return (
-    <div className="flex flex-col gap-[12px] pt-[20px] px-[20px]">
-      <div className="flex justify-between items-center">
-        <span className="flex items-center gap-[10px] text-[20px] text-[#333333]">
+    <div className="flex flex-col gap-[12px] pt-[20px] px-4 md:px-[20px]">
+      <div className="flex justify-between items-center gap-3">
+        <span className="flex flex-wrap items-center gap-x-[10px] gap-y-1 text-[18px] md:text-[20px] text-[#333333]">
            <span className="uppercase font-[700]">Subtask</span> <span className="text-[14px] font-[500]">(Max. 10 subtask can be added)</span>
         </span>
         {canEditOrDelete && 
           <button
             disabled={task.subTask?.length >= 10 || showInput}
             onClick={() => setShowInput(true)}
-            className={`w-[24px] h-[24px] rounded-full flex items-center justify-center text-white text-[24px] 
+            className={`w-[24px] h-[24px] shrink-0 rounded-full flex items-center justify-center text-white text-[24px] 
                 ${
                   (task.subTask?.length || 0) >= 10
                     ? "cursor-not-allowed bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)] opacity-50"
@@ -49,7 +49,6 @@ export default function SubtaskSection({
               {/* Disabled checkbox */}
               <div className="h-[30px] flex items-center" >
                 <div
-                onClick={() => onToggleSubtask(task?.actionableId, subtask)}
                   className={`h-[18px] w-[18px] rounded-[4px] border-[2px] flex items-center justify-center cursor-pointer border-[#999999] bg-transparent`}
                 >
                 </div>
@@ -63,7 +62,7 @@ export default function SubtaskSection({
                 onChange={(e) => setValue(e.target.value)}
                 onBlur={commitAdd} 
                  onKeyDown={(e) => e.key === "Enter" && commitAdd()}
-                className="flex-1 outline-none text-[16px] font-[600] mr-[90px]"
+                className="flex-1 min-w-0 outline-none text-[16px] font-[600] mr-4 md:mr-[90px]"
               />
             </div>
       )}

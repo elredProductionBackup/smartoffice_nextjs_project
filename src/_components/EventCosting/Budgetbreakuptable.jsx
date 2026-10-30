@@ -119,7 +119,8 @@ export function BudgetBreakupTable({
                     {!readOnly && (
                     <button
                       onClick={() => onRemoveSection(section.id)}
-                      className="text-gray-300 hover:text-red-500 transition-colors"
+                      className="text-gray-300 hover:text-red-500 transition-colors p-1 -m-1 md:p-0 md:m-0"
+                      aria-label="Remove category"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -139,7 +140,7 @@ export function BudgetBreakupTable({
                           onChange={(e) => onSubItemFieldChange(si.expenseId, si.subItemId, "description", e.target.value)}
                           readOnly={readOnly}
                           placeholder="—"
-                          className="w-full text-sm italic text-gray-600 bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-400 focus:outline-none px-0 py-0.5 transition-colors placeholder:not-italic placeholder:text-gray-400"
+                          className="w-full text-base md:text-sm italic text-gray-600 bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-400 focus:outline-none px-0 py-0.5 transition-colors placeholder:not-italic placeholder:text-gray-400"
                         />
                       </td>
                       {versions.map((v) => {
@@ -156,7 +157,7 @@ export function BudgetBreakupTable({
                                 placeholder="Qty"
                                 onChange={(e) => onVersionValueChange(v.id, vKey, "qty", parseFloat(e.target.value) || 0)}
                                 readOnly={readOnly}
-                                className="w-full text-sm text-right bg-transparent border border-transparent rounded hover:border-gray-300 focus:border-blue-400 focus:bg-white focus:outline-none px-1 py-0.5 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                className="w-full text-base md:text-sm text-right bg-transparent border border-transparent rounded hover:border-gray-300 focus:border-blue-400 focus:bg-white focus:outline-none px-1 py-0.5 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                               />
                             </td>
                             <td className="py-1 px-2 border-b border-gray-100">
@@ -167,7 +168,7 @@ export function BudgetBreakupTable({
                                 placeholder="Amt"
                                 onChange={(e) => onVersionValueChange(v.id, vKey, "unitCost", parseFloat(e.target.value) || 0)}
                                 readOnly={readOnly}
-                                className="w-full text-sm text-right bg-transparent border border-transparent rounded hover:border-gray-300 focus:border-blue-400 focus:bg-white focus:outline-none px-1 py-0.5 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                className="w-full text-base md:text-sm text-right bg-transparent border border-transparent rounded hover:border-gray-300 focus:border-blue-400 focus:bg-white focus:outline-none px-1 py-0.5 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                               />
                             </td>
                             <td className="py-1 px-3 border-b border-gray-100 text-right text-sm font-medium text-gray-700">
@@ -255,7 +256,8 @@ export function BudgetBreakupTable({
                       {!readOnly && (
                       <button
                         onClick={() => onRemoveItem(section.id, item.id)}
-                        className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500 transition-colors"
+                        className="opacity-100 md:opacity-0 md:group-hover:opacity-100 text-gray-300 hover:text-red-500 transition-colors p-1 -m-1 md:p-0 md:m-0"
+                        aria-label="Remove item"
                       >
                         <X className="w-3.5 h-3.5" />
                       </button>
@@ -269,7 +271,7 @@ export function BudgetBreakupTable({
                 <tr className="bg-gray-50/50">
                   <td colSpan={3 * versions.length + 4} className="py-1.5 px-4 border-b border-gray-100">
                     {addItemSectionId === section.id ? (
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 max-w-[calc(100vw-80px)] sm:max-w-[calc(100vw-130px)] md:max-w-[calc(100vw-270px)] lg:max-w-none">
                         <input
                           type="text"
                           value={newItemDesc}
@@ -279,7 +281,7 @@ export function BudgetBreakupTable({
                             if (e.key === "Escape") setAddItemSectionId(null);
                           }}
                           placeholder="Item description..."
-                          className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          className="flex-1 min-w-0 px-2 py-1 text-base md:text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                           autoFocus
                         />
                         <button

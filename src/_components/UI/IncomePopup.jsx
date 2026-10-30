@@ -83,7 +83,6 @@ export default function IncomePopup({ onClose, onIncomeChange }) {
       setLoading(true);
       try {
         const result = await getIncome();
-        console.log('getIncome result:', result);
         const list = result?.result || [];
         setSources(list.map(mapIncomeRecord));
       } catch (error) {
@@ -97,6 +96,7 @@ export default function IncomePopup({ onClose, onIncomeChange }) {
   const totalIncome = sources.reduce((acc, s) => acc + Number(s.amount), 0);
 
   const handleAddSource = async () => {
+    if (submitting) return; // Enter key can fire again while the request is in flight
     if (!form.type || !form.amount || isNaN(Number(form.amount))) return;
 
     setSubmitting(true);
@@ -110,7 +110,6 @@ export default function IncomePopup({ onClose, onIncomeChange }) {
         incomeDate,
         incomeRemarks: form.description || '',
       });
-      console.log('addIncome result:', result);
 
       // `result.result` may contain more than the just-created record (e.g. the
       // full income list), so pick the most recently created one rather than
@@ -144,8 +143,7 @@ export default function IncomePopup({ onClose, onIncomeChange }) {
     setDeleteStatus('deleting');
     setDeleteError('');
     try {
-      const result = await deleteIncome(pendingDelete.id);
-      console.log('deleteIncome result:', result);
+      await deleteIncome(pendingDelete.id);
       setSources((prev) => prev.filter((s) => s.id !== pendingDelete.id));
       onIncomeChange?.();
 
@@ -177,7 +175,7 @@ export default function IncomePopup({ onClose, onIncomeChange }) {
 
       {/* ── Modal ── */}
       <div
-        className="fixed z-9999 flex flex-col overflow-hidden bg-white rounded-[20px] w-[800px] h-[900px] max-w-[95vw] max-h-[92vh] font-nunito"
+        className="fixed z-9999 flex flex-col overflow-hidden bg-white rounded-[20px] w-[calc(100vw-32px)] md:w-[800px] h-[900px] max-w-[95vw] max-h-[90dvh] md:max-h-[92vh] font-nunito"
         style={{
           top: '50%',
           left: '50%',
@@ -187,18 +185,19 @@ export default function IncomePopup({ onClose, onIncomeChange }) {
       >
         {/* ── Header ── */}
         <div
-          className="flex items-center justify-between px-6 pt-5 pb-5"
+          className="flex items-center justify-between gap-3 px-4 pt-4 pb-4 md:px-6 md:pt-5 md:pb-5"
           style={{ background: 'linear-gradient(135deg,#f0fdf4,#e8f8f0)' }}
         >
           <div className="flex items-center gap-2.5">
-            <h2 className="m-0 text-[30px] font-bold text-[#333333]">
+            <h2 className="m-0 text-[22px] md:text-[30px] font-bold text-[#333333]">
               Income Management
             </h2>
           </div>
 
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-lg bg-black/5 text-slate-500 text-base cursor-pointer border-none transition-colors duration-200 hover:bg-black/10 hover:text-slate-700"
+            aria-label="Close"
+            className="w-10 h-10 md:w-8 md:h-8 shrink-0 flex items-center justify-center rounded-lg bg-black/5 text-slate-500 text-base cursor-pointer border-none transition-colors duration-200 hover:bg-black/10 hover:text-slate-700"
             style={{ background: undefined }}
           >
             <FiX />
@@ -207,21 +206,21 @@ export default function IncomePopup({ onClose, onIncomeChange }) {
 
         {/* ── Total Income Banner ── */}
         <div
-          className="px-6 py-3.5 flex items-center justify-between border-b border-slate-100"
+          className="px-4 md:px-6 py-3.5 flex items-center justify-between gap-3 border-b border-slate-100"
           style={{ background: 'linear-gradient(135deg,#f0fdf4,#e8f8f0)' }}
         >
           <div>
             <div className="text-[16px] text-[#727272] font-bold tracking-[-1px] mb-0.5">
               Total Income 2026
             </div>
-            <div className="text-[34px] tracking-[-2px] font-extrabold text-[#0B57D0]">
+            <div className="text-[28px] md:text-[34px] tracking-[-2px] font-extrabold text-[#0B57D0]">
               ₹{formatRupees(totalIncome)}
             </div>
           </div>
 
           <button
             onClick={() => setShowForm(true)}
-            className="flex items-center text-white text-[16px] font-medium rounded-full px-4 py-[9px] border-none cursor-pointer whitespace-nowrap transition-opacity duration-200 hover:opacity-90"
+            className="flex items-center text-white text-[14px] md:text-[16px] font-medium rounded-full px-3.5 md:px-4 py-[9px] shrink-0 border-none cursor-pointer whitespace-nowrap transition-opacity duration-200 hover:opacity-90"
             style={{
               background: 'linear-gradient(135deg,#5597ED,#00449C)',
               boxShadow: '0 2px 8px rgba(85,151,237,0.3)',
@@ -233,7 +232,7 @@ export default function IncomePopup({ onClose, onIncomeChange }) {
 
         {notice && (
           <div className="fixed inset-0 z-10000 flex items-center justify-center pointer-events-none">
-            <div className="flex flex-col items-center gap-3 bg-white rounded-2xl shadow-2xl px-12 py-10 min-w-[280px]">
+            <div className="flex flex-col items-center gap-3 bg-white rounded-2xl shadow-2xl px-8 py-8 md:px-12 md:py-10 min-w-[260px] md:min-w-[280px] mx-4">
               {notice.type === 'success' ? (
                 <FiCheckCircle className="text-[56px] text-[#16a34a]" />
               ) : (
@@ -253,20 +252,20 @@ export default function IncomePopup({ onClose, onIncomeChange }) {
         {/* ── Scrollable Body ── */}
         {/* scrollbar-hide: scrollbarWidth (Firefox) + ::-webkit-scrollbar (Chrome) kept as inline/style-tag */}
         <div
-          className="flex-1 overflow-y-auto px-6 py-4"
+          className="flex-1 overflow-y-auto px-4 md:px-6 py-4"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           <style>{`.income-scroll::-webkit-scrollbar { display: none; }`}</style>
 
           {/* ── Add New Income Source Form ── */}
           {showForm && (
-            <div className="bg-[#f0f4ff] border border-[#c7d7fb] rounded-[14px] p-[18px] mb-[18px]">
+            <div className="bg-[#f0f4ff] border border-[#c7d7fb] rounded-[14px] p-3.5 md:p-[18px] mb-[18px]">
               <div className="text-[16px] leading-[136%] font-bold text-[#0B57D0] mb-3.5">
                 Add New Income Source
               </div>
 
               {/* Row 1 */}
-              <div className="grid grid-cols-2 gap-3 mb-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
                 <div>
                   <label className="block text-[14px] font-bold text-[#333333] mb-1">
                     Income Type
@@ -278,7 +277,7 @@ export default function IncomePopup({ onClose, onIncomeChange }) {
                     value={form.type}
                     onChange={handleFormChange}
                     onKeyDown={(e) => e.key === 'Enter' && handleAddSource()}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-[0.84rem] text-slate-800 bg-white outline-none"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-[16px] md:text-[0.84rem] text-slate-800 bg-white outline-none"
                   />
                 </div>
                 <div>
@@ -293,13 +292,13 @@ export default function IncomePopup({ onClose, onIncomeChange }) {
                     value={form.amount}
                     onChange={handleFormChange}
                     onKeyDown={(e) => e.key === 'Enter' && handleAddSource()}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-[0.84rem] text-slate-800 bg-white outline-none"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-[16px] md:text-[0.84rem] text-slate-800 bg-white outline-none"
                   />
                 </div>
               </div>
 
               {/* Row 2 */}
-              <div className="grid grid-cols-2 gap-3 mb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                 <div>
                   <label className="block text-[14px] font-bold text-[#333333] mb-1">
                     Date
@@ -320,7 +319,7 @@ export default function IncomePopup({ onClose, onIncomeChange }) {
                     value={form.description}
                     onChange={handleFormChange}
                     onKeyDown={(e) => e.key === 'Enter' && handleAddSource()}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-[0.84rem] text-slate-800 bg-white outline-none"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-[16px] md:text-[0.84rem] text-slate-800 bg-white outline-none"
                   />
                 </div>
               </div>
@@ -330,14 +329,14 @@ export default function IncomePopup({ onClose, onIncomeChange }) {
                 <button
                   onClick={handleAddSource}
                   disabled={submitting}
-                  className="bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)] text-white border-none rounded-full w-40 h-[35px] tracking-[-2%] font-medium text-[16px] leading-[100%] cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)] text-white border-none rounded-full flex-1 sm:flex-none sm:w-40 h-[35px] tracking-[-2%] font-medium text-[16px] leading-[100%] cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {submitting ? 'Adding…' : 'Add Source'}
                 </button>
                 <button
                   onClick={() => { setShowForm(false); setForm(EMPTY_FORM); }}
                   disabled={submitting}
-                  className="text-white bg-[#999999] rounded-full w-40 h-[35px] leading-[100%] tracking-[-2%] font-medium text-[16px] cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="text-white bg-[#999999] rounded-full flex-1 sm:flex-none sm:w-40 h-[35px] leading-[100%] tracking-[-2%] font-medium text-[16px] cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   Cancel
                 </button>
@@ -365,8 +364,8 @@ export default function IncomePopup({ onClose, onIncomeChange }) {
                       key={src.id}
                       className="group bg-white border border-slate-200 rounded-xl px-4 py-3.5 flex items-center justify-between gap-3"
                     >
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2.5 mb-1">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 mb-1">
                           {/* Tag color is dynamic runtime value — must be inline */}
                           <span
                             className="rounded-full px-3 py-0.5 text-[0.75rem] font-semibold whitespace-nowrap"
@@ -395,7 +394,8 @@ export default function IncomePopup({ onClose, onIncomeChange }) {
                         <button
                           type="button"
                           onClick={() => setPendingDelete(src)}
-                          className="opacity-0 group-hover:opacity-100 w-6 h-6 rounded-md flex items-center justify-center bg-red-50 hover:bg-red-100 text-red-500 cursor-pointer border-none transition-all duration-150"
+                          aria-label="Delete income source"
+                          className="opacity-100 md:opacity-0 md:group-hover:opacity-100 w-8 h-8 md:w-6 md:h-6 rounded-md flex items-center justify-center bg-red-50 hover:bg-red-100 text-red-500 cursor-pointer border-none transition-all duration-150"
                         >
                           <FiX className="w-3.5 h-3.5" />
                         </button>
@@ -409,17 +409,17 @@ export default function IncomePopup({ onClose, onIncomeChange }) {
         </div>
 
         {/* ── Footer ── */}
-        <div className="px-6 pt-3.5 pb-5 border-t border-slate-100 bg-white">
+        <div className="px-4 md:px-6 pt-3.5 pb-4 md:pb-5 border-t border-slate-100 bg-white">
           <div className="flex gap-2.5 justify-center">
             <button
               onClick={onClose}
-              className="text-white border-none rounded-full font-medium text-[20px] tracking-[-2%] leading-[100%] cursor-pointer transition-opacity duration-200 hover:opacity-90 h-[43px] w-[180px] bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)]"
+              className="text-white border-none rounded-full font-medium text-[18px] md:text-[20px] tracking-[-2%] leading-[100%] cursor-pointer transition-opacity duration-200 hover:opacity-90 h-[43px] flex-1 sm:flex-none sm:w-[180px] bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)]"
             >
               Export
             </button>
             <button
               onClick={onClose}
-              className="text-white border-none rounded-full font-medium text-[20px] tracking-[-2%] leading-[100%] cursor-pointer transition-opacity duration-200 hover:opacity-80 h-[43px] w-[180px] bg-[#999999]"
+              className="text-white border-none rounded-full font-medium text-[18px] md:text-[20px] tracking-[-2%] leading-[100%] cursor-pointer transition-opacity duration-200 hover:opacity-80 h-[43px] flex-1 sm:flex-none sm:w-[180px] bg-[#999999]"
             >
               Cancel
             </button>
@@ -429,14 +429,14 @@ export default function IncomePopup({ onClose, onIncomeChange }) {
 
       {pendingDelete && (
         <div
-          className="fixed inset-0 z-10000 flex items-center justify-center bg-black/40"
+          className="fixed inset-0 z-10000 flex items-center justify-center bg-black/40 p-4"
           onClick={(e) => {
             e.stopPropagation();
             if (deleteStatus === 'idle') setPendingDelete(null);
           }}
         >
           <div
-            className="bg-white rounded-[16px] w-full max-w-[360px] mx-4 shadow-xl p-6"
+            className="bg-white rounded-[16px] w-full max-w-[360px] shadow-xl p-5 md:p-6"
             onClick={(e) => e.stopPropagation()}
           >
             {deleteStatus === 'idle' && (

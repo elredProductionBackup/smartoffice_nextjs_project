@@ -460,11 +460,30 @@ function ShimmerRows({ canEdit }) {
   ));
 }
 
-// First load: the table frame with shimmer rows
+// Phone version of the shimmer rows, laid out like the attendee cards
+function ShimmerCards({ canEdit }) {
+  return SHIMMER_WIDTHS.map(([name, title, company], i) => (
+    <li key={i} aria-hidden className="flex gap-3 px-4 py-3.5 border-b border-[#F5F6F8] last:border-0">
+      {canEdit && <Bone className="mt-2.5 w-[18px] h-[18px] rounded-[5px] shrink-0" />}
+      <Bone className="w-10 h-10 rounded-full shrink-0" />
+      <div className="flex-1 min-w-0 space-y-2 pt-0.5">
+        <Bone className={`h-3.5 ${name}`} />
+        <Bone className={`h-3 ${title}`} />
+        <Bone className={`h-3 ${company}`} />
+        <Bone className="h-8 w-32 rounded-lg" />
+      </div>
+    </li>
+  ));
+}
+
+// First load: the table frame with shimmer rows (cards on phones)
 function TableSkeleton({ canEdit }) {
   return (
     <div className="rounded-2xl border border-[#F0F1F3] bg-white overflow-hidden" aria-hidden>
-      <table className="w-full table-fixed border-collapse">
+      <ul className="md:hidden">
+        <ShimmerCards canEdit={canEdit} />
+      </ul>
+      <table className="hidden md:table w-full table-fixed border-collapse">
         <tbody>
           <ShimmerRows canEdit={canEdit} />
         </tbody>
@@ -797,6 +816,38 @@ const Attendees = ({ eventId }) => {
     email: m.email || "",
   });
 
+  // Three-dot menu for a row (table) or card (phones)
+  const rowMenuItems = (member) => [
+    {
+      // Joined attendees' details come from their app profile
+      label: member.appStatus === "joined" ? "Edit in app profile" : "Edit details",
+      icon: FiEdit2,
+      disabled: member.appStatus === "joined",
+      onClick: () => setEditing(member),
+    },
+    {
+      label: "Copy WhatsApp number",
+      icon: FiCopy,
+      disabled: !member.phoneNumber,
+      onClick: () => copyToClipboard(member.phoneNumber, "WhatsApp number"),
+    },
+    {
+      label: "Copy email",
+      icon: FiCopy,
+      disabled: !member.email,
+      onClick: () => copyToClipboard(member.email, "Email"),
+    },
+    {
+      // Self-registered app members can only leave from the app
+      label: isSelfRegistered(member) ? "Registered in app" : "Remove",
+      icon: FiTrash2,
+      danger: true,
+      divider: true,
+      disabled: isSelfRegistered(member),
+      onClick: () => askRemove([member]),
+    },
+  ];
+
   const openDetails = (member) =>
     dispatch(openEventsModal({ type: "ATTENDEE_POPUP", payload: formatMember(member) }));
 
@@ -918,7 +969,7 @@ const Attendees = ({ eventId }) => {
   );
 
   const actions = canEdit && (
-    <div className="flex items-center gap-2.5">
+    <div className="flex flex-wrap items-center justify-center gap-2.5">
       <button type="button" onClick={() => setShowUploadModal(true)} className={secondaryBtn}>
         <FiUpload className="text-[16px]" />
         Upload sheet
@@ -933,7 +984,7 @@ const Attendees = ({ eventId }) => {
   // Also covers the server render, so browser-only attendees never cause a hydration mismatch
   if (!isMembersFetched) {
     return (
-      <div className="flex flex-col gap-5 py-6 font-nunito" aria-busy="true">
+      <div className="flex flex-col gap-5 pt-6 pb-24 md:pb-6 font-nunito" aria-busy="true">
         <TableSkeleton canEdit={canEdit} />
       </div>
     );
@@ -943,12 +994,12 @@ const Attendees = ({ eventId }) => {
   // Only once the unfiltered list has actually come back empty, never mid-switch
   if (isMembersFetched && !isSwitching && !filtersActive && membersList.length === 0) {
     return (
-      <div className="flex flex-col gap-5 py-6 font-nunito">
-        <div className="flex flex-col items-center justify-center text-center rounded-2xl border border-dashed border-[#E5E7EB] px-6 py-16">
+      <div className="flex flex-col gap-5 pt-6 pb-24 md:pb-6 font-nunito">
+        <div className="flex flex-col items-center justify-center text-center rounded-2xl border border-dashed border-[#E5E7EB] px-5 py-12 md:px-6 md:py-16">
           <div className="w-16 h-16 rounded-full bg-[#EEF5FF] text-[#147BFF] grid place-items-center">
             <UserSearch size={28} strokeWidth={1.75} />
           </div>
-          <h3 className="mt-5 font-heading text-[24px] font-semibold text-[#111]">No attendees yet</h3>
+          <h3 className="mt-5 font-heading text-[20px] md:text-[24px] font-semibold text-[#111]">No attendees yet</h3>
           <p className="mt-2 max-w-[460px] text-[15px] leading-[24px] text-[#6B7280]">
             Add people one at a time, or upload a sheet with everyone&apos;s details. On published events, anyone
             whose mobile matches an app account is linked automatically.
@@ -961,17 +1012,17 @@ const Attendees = ({ eventId }) => {
   }
 
   return (
-    <div className="flex flex-col gap-5 py-6 font-nunito">
+    <div className="flex flex-col gap-5 pt-6 pb-24 md:pb-6 font-nunito">
       {/* Toolbar: search on the left, filters and actions on the right */}
       <div className="flex flex-wrap items-center gap-3">
-        <div className="relative w-[280px] max-w-full">
+        <div className="relative w-full sm:w-[280px] max-w-full">
           <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] text-[16px]" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search name, company or number"
             aria-label="Search attendees"
-            className="w-full h-10 pl-10 pr-9 rounded-full bg-[#F7F8FA] border border-transparent text-[14px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:bg-white focus:border-[#147BFF] transition"
+            className="w-full h-10 pl-10 pr-9 rounded-full bg-[#F7F8FA] border border-transparent text-[16px] md:text-[14px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:bg-white focus:border-[#147BFF] transition"
           />
           {search && (
             <button
@@ -995,25 +1046,154 @@ const Attendees = ({ eventId }) => {
           </button>
         )}
 
-        <div className="ml-auto flex flex-wrap items-center gap-3">
-          <Segmented
-            label="Attendance"
-            options={FILTERS.map((f) => ({ key: f.key, label: f.label, count: f.key === "all" ? allCount : counts[f.key] }))}
-            value={filter}
-            onChange={setFilter}
-          />
-          <AppStatusFilter value={appFilter} onChange={setAppFilter} counts={counts} />
+        {/* On phones the filter chips get their own scrollable row and the icon buttons sit on the right */}
+        <div className="ml-auto flex flex-wrap items-center justify-end md:justify-normal gap-3 max-w-full">
+          <div className="flex max-w-full overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <Segmented
+              label="Attendance"
+              options={FILTERS.map((f) => ({ key: f.key, label: f.label, count: f.key === "all" ? allCount : counts[f.key] }))}
+              value={filter}
+              onChange={setFilter}
+            />
+          </div>
+          {/* Last on phones so its right-aligned menu has room to open leftwards */}
+          <div className="order-last md:order-none">
+            <AppStatusFilter value={appFilter} onChange={setAppFilter} counts={counts} />
+          </div>
           {toolbarActions && (
             <>
-              <span className="mx-1 h-6 w-px bg-[#E5E7EB]" aria-hidden />
+              <span className="hidden md:block mx-1 h-6 w-px bg-[#E5E7EB]" aria-hidden />
               {toolbarActions}
             </>
           )}
         </div>
       </div>
 
+      {/* Phones: one card per attendee, same data and handlers as the table rows */}
+      <div className="md:hidden rounded-2xl border border-[#F0F1F3] bg-white overflow-hidden">
+        {canEdit && visibleMembers.length > 0 && !isSwitching && (
+          <div className="flex items-center gap-3 px-4 py-3 border-b border-[#F0F1F3] text-[12px] font-bold uppercase tracking-[1.2px] text-[#6B7280]">
+            <Checkbox
+              checked={allSelected}
+              indeterminate={!allSelected && selectedVisible.length > 0}
+              onChange={toggleAll}
+              label="Select all attendees"
+            />
+            Attendee
+          </div>
+        )}
+        <ul aria-busy={isSwitching}>
+          {isSwitching ? (
+            <ShimmerCards canEdit={canEdit} />
+          ) : visibleMembers.length === 0 ? (
+            <li className="px-5 py-12 flex flex-col items-center text-center">
+              <div className="w-12 h-12 rounded-full bg-[#F3F4F6] grid place-items-center text-[#9CA3AF]">
+                <FiSearch className="text-[20px]" />
+              </div>
+              <p className="mt-3 text-[16px] font-semibold text-[#111]">No one matches</p>
+              <p className="mt-1 text-[14px] text-[#6B7280]">Try another name or number, or clear the filters.</p>
+              <button type="button" onClick={clearFilters} className={`${secondaryBtn} mt-4`}>
+                Clear filters
+              </button>
+            </li>
+          ) : (
+            visibleMembers.map((member, i) => {
+              const id = member.id;
+              const fullName = `${member.firstName || ""} ${member.lastName || ""}`.trim() || "No Name";
+              const titles = formatTitles(member.title);
+              const status = statusOf(member);
+              const phoneDigits = (member.phoneNumber || "").replace(/\D/g, "");
+              const isSelected = selected.includes(id);
+              const isDeactivated = member.appStatus === "deregistered";
+              // Pending / deactivated shown as a small label, since the dot's tooltip needs hover
+              const appStatus = member.appStatus !== "joined" ? APP_STATUS[member.appStatus] : null;
+
+              return (
+                <li
+                  key={id || i}
+                  onClick={() => openDetails(member)}
+                  className={`flex gap-3 px-4 py-3.5 border-b border-[#F5F6F8] last:border-0 cursor-pointer transition-colors ${
+                    isSelected ? "bg-[#F5F9FF]" : "active:bg-[#FAFAFB]"
+                  }`}
+                >
+                  {canEdit && (
+                    <div
+                      className="-mx-2 px-2 pt-[11px] pb-2 self-start"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleRow(id);
+                      }}
+                    >
+                      <Checkbox checked={isSelected} onChange={() => toggleRow(id)} label={`Select ${fullName}`} />
+                    </div>
+                  )}
+                  <div className={`shrink-0 ${isDeactivated ? "opacity-50 grayscale" : ""}`}>
+                    <Avatar src={member.dpURL} name={fullName} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className={`truncate text-[15px] font-semibold ${isDeactivated ? "text-[#9CA3AF]" : "text-[#111]"}`}>
+                          {fullName}
+                        </p>
+                        {titles && <p className="truncate text-[13px] text-[#9CA3AF]">{titles}</p>}
+                        {member.companyName && <p className="truncate text-[13px] text-[#374151]">{member.companyName}</p>}
+                        {appStatus && (
+                          <span className="mt-1 inline-flex items-center gap-1.5 text-[12px] font-medium text-[#6B7280]">
+                            <span className={`w-1.5 h-1.5 rounded-full ${appStatus.dot}`} />
+                            {appStatus.label}
+                          </span>
+                        )}
+                      </div>
+                      {canEdit && (
+                        <div className="-mr-2 -mt-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                          <RowMenu items={rowMenuItems(member)} />
+                        </div>
+                      )}
+                    </div>
+
+                    {(member.phoneNumber || member.email) && (
+                      <div className="mt-2 flex flex-col gap-1 min-w-0 text-[13px]" onClick={(e) => e.stopPropagation()}>
+                        {member.phoneNumber && (
+                          <a
+                            href={phoneDigits ? `https://wa.me/${phoneDigits}` : undefined}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 w-fit max-w-full py-0.5 text-[#374151]"
+                          >
+                            <FaWhatsapp className="shrink-0 text-[14px] opacity-60" />
+                            <span className="truncate">{member.phoneNumber}</span>
+                          </a>
+                        )}
+                        {member.email && (
+                          <a
+                            href={`mailto:${member.email}`}
+                            className="inline-flex items-center gap-1.5 w-fit max-w-full py-0.5 text-[#374151]"
+                          >
+                            <FiMail className="shrink-0 text-[14px] opacity-60" />
+                            <span className="truncate">{member.email}</span>
+                          </a>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="mt-2.5 w-fit" onClick={(e) => e.stopPropagation()}>
+                      {canEdit ? (
+                        <AttendanceSelect value={status} onChange={(value) => markAttendance([id], value)} />
+                      ) : (
+                        <AttendanceBadge value={status} />
+                      )}
+                    </div>
+                  </div>
+                </li>
+              );
+            })
+          )}
+        </ul>
+      </div>
+
       {/* Table */}
-      <div className="rounded-2xl border border-[#F0F1F3] bg-white overflow-x-auto">
+      <div className="hidden md:block rounded-2xl border border-[#F0F1F3] bg-white overflow-x-auto">
         <table className="w-full min-w-[920px] table-fixed border-collapse">
           <colgroup>
             {/* Attendee, company and contact split the remaining width equally */}
@@ -1150,38 +1330,7 @@ const Attendees = ({ eventId }) => {
                     {canEdit && (
                       <td className="pr-4 py-3.5" onClick={(e) => e.stopPropagation()}>
                         <div className="flex justify-end">
-                          <RowMenu
-                            items={[
-                              {
-                                // Joined attendees' details come from their app profile
-                                label: member.appStatus === "joined" ? "Edit in app profile" : "Edit details",
-                                icon: FiEdit2,
-                                disabled: member.appStatus === "joined",
-                                onClick: () => setEditing(member),
-                              },
-                              {
-                                label: "Copy WhatsApp number",
-                                icon: FiCopy,
-                                disabled: !member.phoneNumber,
-                                onClick: () => copyToClipboard(member.phoneNumber, "WhatsApp number"),
-                              },
-                              {
-                                label: "Copy email",
-                                icon: FiCopy,
-                                disabled: !member.email,
-                                onClick: () => copyToClipboard(member.email, "Email"),
-                              },
-                              {
-                                // Self-registered app members can only leave from the app
-                                label: isSelfRegistered(member) ? "Registered in app" : "Remove",
-                                icon: FiTrash2,
-                                danger: true,
-                                divider: true,
-                                disabled: isSelfRegistered(member),
-                                onClick: () => askRemove([member]),
-                              },
-                            ]}
-                          />
+                          <RowMenu items={rowMenuItems(member)} />
                         </div>
                       </td>
                     )}
@@ -1200,10 +1349,21 @@ const Attendees = ({ eventId }) => {
         <div
           role="toolbar"
           aria-label="Bulk actions"
-          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1 rounded-full bg-[#111] pl-5 pr-2 py-2 text-white shadow-[0_12px_32px_rgba(17,17,17,0.25)]"
+          className="fixed bottom-24 left-4 right-4 md:bottom-6 md:left-1/2 md:right-auto md:-translate-x-1/2 z-40 flex flex-wrap md:flex-nowrap items-center justify-center gap-1 rounded-2xl md:rounded-full bg-[#111] px-2 md:pl-5 md:pr-2 py-2 text-white shadow-[0_12px_32px_rgba(17,17,17,0.25)]"
         >
-          <span className="mr-2 text-[14px] font-semibold whitespace-nowrap">{selectedVisible.length} selected</span>
-          <span className="mx-1 h-5 w-px bg-white/20" aria-hidden />
+          {/* Phones: count + close on the first line, the actions wrap underneath */}
+          <div className="flex items-center justify-between w-full md:w-auto pl-2 md:pl-0 md:mr-2">
+            <span className="text-[14px] font-semibold whitespace-nowrap">{selectedVisible.length} selected</span>
+            <button
+              type="button"
+              onClick={() => setSelected([])}
+              aria-label="Clear selection"
+              className="md:hidden w-9 h-9 grid place-items-center rounded-full hover:bg-white/10 transition-colors cursor-pointer"
+            >
+              <X size={16} />
+            </button>
+          </div>
+          <span className="hidden md:block mx-1 h-5 w-px bg-white/20" aria-hidden />
           <button type="button" onClick={() => markAttendance(selectedVisible, "yes")} className={bulkBtn}>
             <CircleCheck size={16} className="text-[#4ADE80]" />
             Attended
@@ -1218,7 +1378,7 @@ const Attendees = ({ eventId }) => {
           </button>
           {selectedRemovable.length > 0 && (
             <>
-              <span className="mx-1 h-5 w-px bg-white/20" aria-hidden />
+              <span className="hidden md:block mx-1 h-5 w-px bg-white/20" aria-hidden />
               <button type="button" onClick={() => askRemove(selectedRemovable)} className={`${bulkBtn} text-[#FCA5A5]`}>
                 <FiTrash2 className="text-[15px]" />
                 Remove{selectedRemovable.length < selectedVisible.length ? ` ${selectedRemovable.length}` : ""}
@@ -1229,7 +1389,7 @@ const Attendees = ({ eventId }) => {
             type="button"
             onClick={() => setSelected([])}
             aria-label="Clear selection"
-            className="ml-1 w-9 h-9 grid place-items-center rounded-full hover:bg-white/10 transition-colors cursor-pointer"
+            className="hidden md:grid ml-1 w-9 h-9 place-items-center rounded-full hover:bg-white/10 transition-colors cursor-pointer"
           >
             <X size={16} />
           </button>

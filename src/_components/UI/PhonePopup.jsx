@@ -46,7 +46,7 @@ const PhonePopup = ({
       {/* Popup */}
       {isOpen && (
         <div
-          className={`w-[250px] bg-white z-30 p-5 rounded-[20px] absolute shadow-[0px_3px_4px_rgba(190,190,190,0.25)]
+          className={`w-[250px] max-w-[calc(100vw-32px)] bg-white z-30 p-5 rounded-[20px] absolute shadow-[0px_3px_4px_rgba(190,190,190,0.25)]
           ${openUpwards ? "bottom-12" : "top-12"} -right-2`}
           onClick={(e) => e.stopPropagation()}
         >

@@ -1,23 +1,24 @@
 import { useDispatch, useSelector } from "react-redux";
 import { closeEventFormModal } from "@/store/events/eventsUiSlice";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
-const LocationModal = ({ form, setForm, setErrors }) => {
-  const dispatch = useDispatch();
+const LocationModal = (props) => {
   const { type } = useSelector((s) => s.eventsUi.eventFormModal);
 
-  const [location, setLocation] = useState("");
+  if (type !== "LOCATION") return null;
+
+  // Mounted fresh on every open, so the draft starts from the saved location
+  return <LocationModalContent {...props} />;
+};
+
+const LocationModalContent = ({ form, setForm, setErrors }) => {
+  const dispatch = useDispatch();
+
+  /* Init location */
+  const [location, setLocation] = useState(form.location || "");
   const originalLocation = (form.location || "").trim();
   const currentLocation = location.trim();
   const hasChanged = currentLocation !== originalLocation;
-
-  /* Init location */
-  useEffect(() => {
-    if (type !== "LOCATION") return;
-    setLocation(form.location || "");
-  }, [type]);
-
-  if (type !== "LOCATION") return null;
 
   /* Actions */
   const handleSave = () => {
@@ -37,16 +38,16 @@ const LocationModal = ({ form, setForm, setErrors }) => {
   /* UI */
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center"
+      className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4"
       onClick={() => dispatch(closeEventFormModal())}
     >
       <div
-        className="w-[560px] bg-white rounded-[20px] overflow-y-auto flex flex-col max-h-[85vh] px-[30px] relative"
+        className="w-full max-w-[560px] bg-white rounded-[20px] overflow-y-auto flex flex-col max-h-[85dvh] px-5 sm:px-[30px] relative"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="sticky top-[0px] pt-[30px] pb-[20px] z-[2] bg-white">
-          <h2 className="text-[24px] font-[700]">Event location</h2>
+        <div className="sticky top-[0px] pt-6 pb-4 sm:pt-[30px] sm:pb-[20px] z-[2] bg-white">
+          <h2 className="text-[20px] sm:text-[24px] font-[700]">Event location</h2>
         </div>
 
         {/* Body */}
@@ -76,10 +77,10 @@ const LocationModal = ({ form, setForm, setErrors }) => {
         </div>
 
         {/* Footer */}
-        <div className="bg-white flex justify-center gap-[60px] sticky bottom-[0px] pt-[20px] pb-[30px]">
+        <div className="bg-white flex justify-center gap-4 sm:gap-[60px] sticky bottom-[0px] pt-4 pb-6 sm:pt-[20px] sm:pb-[30px]">
           <button
             onClick={() => dispatch(closeEventFormModal())}
-            className="w-[120px] py-[8px] rounded-[20px] bg-[#999999] text-white cursor-pointer"
+            className="w-[120px] py-[10px] sm:py-[8px] rounded-[20px] bg-[#999999] text-white cursor-pointer"
           >
             Cancel
           </button>
@@ -87,7 +88,7 @@ const LocationModal = ({ form, setForm, setErrors }) => {
           <button
             onClick={handleSave}
             disabled={!currentLocation || !hasChanged}
-            className={`w-[120px] py-[8px] rounded-[20px] text-white transition
+            className={`w-[120px] py-[10px] sm:py-[8px] rounded-[20px] text-white transition
               bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)]
               ${
                 currentLocation && hasChanged

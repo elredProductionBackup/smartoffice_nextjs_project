@@ -263,22 +263,22 @@ export default function ContactsModal({
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40" onClick={onClose}>
       <div
-        className="bg-white rounded-[16px] w-full max-w-[620px] mx-4 shadow-xl flex flex-col max-h-[90vh]"
+        className="bg-white rounded-[16px] w-full max-w-[620px] mx-4 shadow-xl flex flex-col max-h-[90dvh] md:max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-start justify-between px-7 pt-6 pb-4 border-b border-[#f1f5f9]">
+        <div className="flex items-start justify-between gap-3 px-5 pt-5 md:px-7 md:pt-6 pb-4 border-b border-[#f1f5f9]">
           <div>
             <h2 className="text-[22px] font-bold text-[#1a1a2e] leading-tight">Contacts</h2>
             <p className="text-[13px] text-[#888] mt-0.5">{entries.length} saved</p>
           </div>
-          <button onClick={onClose} className="text-[#999] hover:text-[#333] transition-colors cursor-pointer mt-1">
+          <button onClick={onClose} aria-label="Close" className="text-[#999] hover:text-[#333] transition-colors cursor-pointer mt-1 max-md:p-2 max-md:-m-2">
             <FiX className="text-[20px]" />
           </button>
         </div>
 
         {/* Scrollable body */}
-        <div className="flex-1 overflow-y-auto px-7 py-5">
+        <div className="flex-1 overflow-y-auto px-5 md:px-7 py-5">
           {/* Add form */}
           {!isManageMode && (
             <div className="bg-[#eff6ff] rounded-[12px] p-4 mb-5">
@@ -290,14 +290,14 @@ export default function ContactsModal({
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="Kavita Menon"
-                  className={`w-full h-[42px] px-3 rounded-[8px] border bg-white text-[13px] text-[#111] outline-none transition-colors placeholder:text-[#9ca3af] ${
+                  className={`w-full h-[42px] px-3 rounded-[8px] border bg-white text-base md:text-[13px] text-[#111] outline-none transition-colors placeholder:text-[#9ca3af] ${
                     nameError ? "border-red-400 focus:border-red-400" : "border-[#d1d5db] focus:border-[#2563eb]"
                   }`}
                 />
                 {nameError && <p className="text-[11px] text-red-600 mt-1">{nameError}</p>}
               </div>
 
-              <div className="grid grid-cols-2 gap-4 mb-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-3">
                 <div>
                   <label className="block text-[13px] font-semibold text-[#333] mb-1.5">Email <span className="text-red-500">*</span></label>
                   <input
@@ -305,7 +305,7 @@ export default function ContactsModal({
                     onChange={(e) => setEmail(e.target.value)}
                     onBlur={() => setEmailTouched(true)}
                     placeholder="name@company.in"
-                    className={`w-full h-[42px] px-3 rounded-[8px] border bg-white text-[13px] text-[#111] outline-none transition-colors placeholder:text-[#9ca3af] ${
+                    className={`w-full h-[42px] px-3 rounded-[8px] border bg-white text-base md:text-[13px] text-[#111] outline-none transition-colors placeholder:text-[#9ca3af] ${
                       emailError ? "border-red-400 focus:border-red-400" : "border-[#d1d5db] focus:border-[#2563eb]"
                     }`}
                   />
@@ -317,7 +317,7 @@ export default function ContactsModal({
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="+91 98765 43210"
-                    className={`w-full h-[42px] px-3 rounded-[8px] border bg-white text-[13px] text-[#111] outline-none transition-colors placeholder:text-[#9ca3af] ${
+                    className={`w-full h-[42px] px-3 rounded-[8px] border bg-white text-base md:text-[13px] text-[#111] outline-none transition-colors placeholder:text-[#9ca3af] ${
                       phoneError ? "border-red-400 focus:border-red-400" : "border-[#d1d5db] focus:border-[#2563eb]"
                     }`}
                   />
@@ -407,7 +407,7 @@ export default function ContactsModal({
                       <p className="text-[14px] font-semibold text-[#1a1a2e] truncate">{c.name}</p>
                       {subtext && <p className="text-[12px] text-[#888] truncate">{subtext}</p>}
                     </div>
-                    <span className="text-[11px] font-medium text-[#2563eb] bg-[#eff6ff] rounded-full px-2.5 py-0.5 whitespace-nowrap">
+                    <span className="max-w-[96px] sm:max-w-none truncate text-[11px] font-medium text-[#2563eb] bg-[#eff6ff] rounded-full px-2.5 py-0.5 whitespace-nowrap">
                       {c.group || "Ungrouped"}
                     </span>
                     <button
@@ -417,7 +417,7 @@ export default function ContactsModal({
                         setPendingDelete(c);
                       }}
                       title="Delete contact"
-                      className="text-red-500 hover:bg-red-50 rounded-[6px] p-1.5 cursor-pointer transition-colors"
+                      className="text-red-500 hover:bg-red-50 rounded-[6px] p-2.5 md:p-1.5 cursor-pointer transition-colors shrink-0"
                     >
                       <FiTrash2 className="text-[15px]" />
                     </button>
@@ -433,7 +433,7 @@ export default function ContactsModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end px-7 py-4 border-t border-[#f1f5f9]">
+        <div className="flex items-center justify-end px-5 md:px-7 py-4 border-t border-[#f1f5f9]">
           <button
             onClick={onClose}
             className="px-6 h-[42px] rounded-[8px] bg-[#2563eb] text-white text-[13px] font-semibold hover:bg-[#1d4ed8] cursor-pointer"
@@ -452,7 +452,7 @@ export default function ContactsModal({
           }}
         >
           <div
-            className="bg-white rounded-[16px] w-full max-w-[360px] mx-4 shadow-xl p-6"
+            className="bg-white rounded-[16px] w-full max-w-[360px] mx-4 shadow-xl p-5 md:p-6"
             onClick={(e) => e.stopPropagation()}
           >
             {deleteStatus === "idle" && (
@@ -514,7 +514,7 @@ export default function ContactsModal({
           }}
         >
           <div
-            className="bg-white rounded-[16px] w-full max-w-[380px] mx-4 shadow-xl p-6"
+            className="bg-white rounded-[16px] w-full max-w-[380px] mx-4 shadow-xl p-5 md:p-6"
             onClick={(e) => e.stopPropagation()}
           >
             {deleteAllStatus === "idle" && (
@@ -564,7 +564,7 @@ export default function ContactsModal({
 
       {(addStatus === "adding" || addStatus === "added") && (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-[16px] w-full max-w-[360px] mx-4 shadow-xl p-6">
+          <div className="bg-white rounded-[16px] w-full max-w-[360px] mx-4 shadow-xl p-5 md:p-6">
             {addStatus === "adding" && (
               <div className="flex flex-col items-center py-3 gap-3">
                 <div className="w-8 h-8 border-[3px] border-[#2563eb] border-t-transparent rounded-full animate-spin" />

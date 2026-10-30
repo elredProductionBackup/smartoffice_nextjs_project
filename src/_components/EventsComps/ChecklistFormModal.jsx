@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 export default function ChecklistFormModal({ mode, item, index, onSubmit, onClose }) {
-  const [original, setOriginal] = useState({ label: "", difficulty: "" });
   const [label, setLabel] = useState(item?.label || "");
   const [difficulty, setDifficulty] = useState(
     item?.difficulty || ""
@@ -18,14 +17,11 @@ export default function ChecklistFormModal({ mode, item, index, onSubmit, onClos
     );
   };
   
-    useEffect(() => {
-    if (mode === "edit" && item) {
-      setOriginal({
-        label: item.label || "",
-        difficulty: item.difficulty || "",
-      });
-    }
-  }, [mode, item]);
+  // Values the edit started from (derived from props instead of copied into state by an effect)
+  const original =
+    mode === "edit" && item
+      ? { label: item.label || "", difficulty: item.difficulty || "" }
+      : { label: "", difficulty: "" };
 
   const isChanged =
   label.trim() !== original.label.trim() ||
@@ -35,8 +31,8 @@ export default function ChecklistFormModal({ mode, item, index, onSubmit, onClos
   !difficulty || !label.trim() || (mode === "edit" && !isChanged);
 
   return (
-    <div className="w-[520px] bg-white rounded-[14px] shadow-xl p-[40px] flex flex-col gap-[20px]">
-        <h3 className="text-[24px] font-[700]">
+    <div className="w-[calc(100vw-32px)] max-w-[520px] max-h-[90dvh] md:max-h-none overflow-y-auto bg-white rounded-[14px] shadow-xl p-6 md:p-[40px] flex flex-col gap-4 md:gap-[20px]">
+        <h3 className="text-[20px] md:text-[24px] font-[700]">
             {mode === "add" ? "Add new item" : "Update item"}
         </h3>
 
@@ -44,11 +40,11 @@ export default function ChecklistFormModal({ mode, item, index, onSubmit, onClos
             value={label}
             onChange={(e) => setLabel(e.target.value)}
             placeholder="Enter name"
-            className="border border-[#CCCCCC] rounded-[8px] px-[20px] py-[10px] outline-none"
+            className="border border-[#CCCCCC] rounded-[8px] px-4 md:px-[20px] py-[10px] outline-none"
         />
 
     <div className="flex flex-col gap-[14px]">
-    <p className="text-[18px] font-[700]">
+    <p className="text-[16px] md:text-[18px] font-[700]">
         Choose difficulty level
     </p>
 
@@ -64,7 +60,7 @@ export default function ChecklistFormModal({ mode, item, index, onSubmit, onClos
             key={d.key}
             type="button"
             onClick={() => setDifficulty(d.key)}
-            className={`flex items-center justify-between cursor-pointer`}
+            className={`flex items-center justify-between gap-3 min-h-[36px] md:min-h-0 cursor-pointer`}
         >
             {/* LEFT */}
             <div className="flex items-center gap-[12px]">
@@ -80,20 +76,20 @@ export default function ChecklistFormModal({ mode, item, index, onSubmit, onClos
             >
             </div>
 
-            <span className="text-[20px] font-[500]">
+            <span className="text-[17px] md:text-[20px] font-[500] text-left">
                 {d.label}
             </span>
             </div>
 
             <span
-            className={`h-[12px] w-[50px] rounded-full ${d.color}`}
+            className={`h-[12px] w-[50px] shrink-0 rounded-full ${d.color}`}
             />
         </button>
         );
     })}
     </div>
 
-      <div className="flex justify-center gap-[80px] mt-[10px]">
+      <div className="flex justify-center gap-4 md:gap-[80px] mt-[10px]">
         <button onClick={onClose} className="rounded-full text-[20px] bg-[#999999] px-6 py-2 text-white w-[120px] cursor-pointer" >Cancel</button>
         <button
             onClick={handleSubmit}

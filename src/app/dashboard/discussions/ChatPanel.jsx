@@ -3,6 +3,7 @@
 import { memo, useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
+  FiArrowLeft,
   FiCheck,
   FiCheckSquare,
   FiChevronDown,
@@ -181,7 +182,7 @@ function PresenceStack({ topic }) {
 
 /* ─── Header ───────────────────────────────────────────── */
 
-function TopicHeader({ topic }) {
+function TopicHeader({ topic, onBack }) {
   const dispatch = useDispatch();
   const me = useMe();
   const onlineSet = useOnlineSet();
@@ -214,22 +215,37 @@ function TopicHeader({ topic }) {
   const menuItem = "w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left text-[15px] font-semibold transition cursor-pointer";
 
   return (
-    <div className="flex items-center justify-between gap-4 px-7 py-5 border-b border-[#DCE5F3] shrink-0">
-      <div className="min-w-0">
-        <h3 className="text-[24px] font-semibold text-[#1E293B] truncate">{topic.title}</h3>
-        <p className="text-[15px] text-[#64748B] truncate">{subtitle}</p>
+    <div className="flex items-center justify-between gap-2 md:gap-4 px-3 py-3 md:px-7 md:py-5 border-b border-[#DCE5F3] shrink-0">
+      {/* Back to the topic list: only where the list and chat are not side by side */}
+      {onBack && (
+        <button
+          type="button"
+          onClick={onBack}
+          aria-label="Back to topics"
+          className="lg:hidden w-10 h-10 -ml-1 rounded-full flex items-center justify-center text-[#1E293B] hover:bg-white transition cursor-pointer shrink-0"
+        >
+          <FiArrowLeft className="text-[20px]" />
+        </button>
+      )}
+      <div className="min-w-0 flex-1">
+        <h3 className="text-[18px] md:text-[24px] font-semibold text-[#1E293B] truncate">{topic.title}</h3>
+        <p className="text-[13px] md:text-[15px] text-[#64748B] truncate">{subtitle}</p>
       </div>
 
-      <div className="flex items-center gap-3 shrink-0">
-        <PresenceStack topic={topic} />
+      <div className="flex items-center gap-1.5 md:gap-3 shrink-0">
+        {/* The subtitle already carries the people/online counts on phones */}
+        <div className="hidden sm:block">
+          <PresenceStack topic={topic} />
+        </div>
 
         <button
           type="button"
           onClick={() => setEditing(true)}
-          className="inline-flex items-center gap-2 h-10 px-5 rounded-full border border-[#0B57D0] text-[#0B57D0] text-[15px] font-bold bg-white hover:bg-[#D3E3FD]/50 transition cursor-pointer"
+          aria-label="Add people"
+          className="inline-flex items-center justify-center gap-2 h-10 w-10 md:w-auto md:px-5 rounded-full border border-[#0B57D0] text-[#0B57D0] text-[15px] font-bold bg-white hover:bg-[#D3E3FD]/50 transition cursor-pointer"
         >
           <FiUserPlus className="text-[17px]" />
-          Add people
+          <span className="hidden md:inline">Add people</span>
         </button>
 
         <div ref={menuRef} className="relative">
@@ -300,6 +316,9 @@ function TopicHeader({ topic }) {
 }
 
 /* ─── Messages ─────────────────────────────────────────── */
+
+// Touch screens have no hover, so tapping a message focuses it and shows its toolbar instead
+const TOUCH_GROUP = "outline-none [@media(hover:none)]:cursor-pointer";
 
 const MessageRow = memo(function MessageRow({ id, prevId, highlighted }) {
   const dispatch = useDispatch();
@@ -410,7 +429,7 @@ const MessageRow = memo(function MessageRow({ id, prevId, highlighted }) {
         {confirmDialog}
         {divider}
         <div className="flex flex-col items-end">
-          <div className="group relative max-w-[60%] min-w-[200px]">
+          <div tabIndex={-1} className={`group relative max-w-[85%] md:max-w-[60%] min-w-[200px] ${TOUCH_GROUP}`}>
             {toolbar}
             {body}
           </div>
@@ -426,12 +445,12 @@ const MessageRow = memo(function MessageRow({ id, prevId, highlighted }) {
       {divider}
       <div className="flex gap-3">
         <Avatar person={author || { userCode: m.by, name: "" }} />
-        <div className="max-w-[60%] min-w-0">
+        <div className="max-w-[80%] md:max-w-[60%] min-w-0">
           <p className="text-[15px] mb-1.5">
             <span className="font-bold text-[#1E293B]">{author?.name || "Former member"}</span>{" "}
             <span className="text-[13px] text-[#64748B]">{roleLabel(author, portfolioNames)}</span>
           </p>
-          <div className="group relative">
+          <div tabIndex={-1} className={`group relative ${TOUCH_GROUP}`}>
             {toolbar}
             {body}
           </div>
@@ -529,7 +548,7 @@ function MessageList({ topicId }) {
   }
 
   return (
-    <div ref={scrollRef} onScroll={onScroll} style={{ overflowAnchor: "none" }} className="flex-1 min-h-0 overflow-y-auto px-7 py-5">
+    <div ref={scrollRef} onScroll={onScroll} style={{ overflowAnchor: "none" }} className="flex-1 min-h-0 overflow-y-auto px-4 py-4 md:px-7 md:py-5">
       {content}
     </div>
   );
@@ -708,7 +727,7 @@ function Composer({ topic }) {
         rows={2}
         maxLength={4000}
         placeholder="Write a message, or drop files here"
-        className="w-full resize-none px-5 pt-4 text-[16px] text-[#1E293B] placeholder:text-[#94A3B8] outline-none bg-transparent"
+        className="w-full resize-none px-4 md:px-5 pt-4 text-[16px] text-[#1E293B] placeholder:text-[#94A3B8] outline-none bg-transparent"
       />
 
       {attachments.items.length > 0 && (
@@ -728,7 +747,7 @@ function Composer({ topic }) {
 
       {needApproval && (
         <div className="mx-4 mt-1 pt-4 pb-1 border-t border-[#E2E8F0]">
-          <div className="grid grid-cols-[1fr_0.85fr_1.5fr] gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_0.85fr_1.5fr] gap-3 md:gap-4">
             <div className="min-w-0">
               <span className="block text-[14px] font-bold text-[#475569] mb-1.5">Approval from</span>
               <PersonSelect people={approvers} value={ask.to} onChange={setAskField("to")} />
@@ -790,8 +809,8 @@ function Composer({ topic }) {
         </div>
       )}
 
-      <div className="flex items-center justify-between px-4 pb-3.5 pt-1">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-4 pb-3.5 pt-1">
+        <div className="flex items-center gap-2 md:gap-3">
           <button
             type="button"
             title="Attach files"
@@ -814,7 +833,7 @@ function Composer({ topic }) {
           <button
             type="button"
             onClick={() => setNeedApproval((v) => !v)}
-            className={`inline-flex items-center gap-2 h-9 px-4 rounded-full border text-[15px] font-bold transition cursor-pointer ${
+            className={`inline-flex items-center gap-2 h-9 px-3 md:px-4 rounded-full border text-[14px] md:text-[15px] font-bold transition cursor-pointer ${
               needApproval ? "bg-[#D3E3FD] border-[#B6CFF5] text-[#0B57D0]" : "bg-white border-[#E2E8F0] text-[#475569] hover:border-[#B6CFF5]"
             }`}
           >
@@ -826,7 +845,7 @@ function Composer({ topic }) {
           type="button"
           onClick={send}
           disabled={!canSend}
-          className="inline-flex items-center gap-2 h-11 px-6 rounded-full bg-[#1D72E8] text-white text-[16px] font-bold hover:bg-[#0B57D0] transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-2 h-11 px-5 md:px-6 rounded-full bg-[#1D72E8] text-white text-[16px] font-bold hover:bg-[#0B57D0] transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <FiSend className="text-[17px]" />
           Send
@@ -838,15 +857,16 @@ function Composer({ topic }) {
 
 /* ─── Panel ────────────────────────────────────────────── */
 
-export default function ChatPanel({ topicId }) {
+// onBack (optional): shown as a back arrow below lg, where the chat covers the topic list
+export default function ChatPanel({ topicId, onBack }) {
   const topic = useSelector((s) => s.discussions.topicsMap[topicId]);
   if (!topic) return null;
 
   return (
     <div className="flex flex-col h-full min-h-0">
-      <TopicHeader topic={topic} />
+      <TopicHeader topic={topic} onBack={onBack} />
       <MessageList topicId={topicId} />
-      <div className="px-7 pb-6 pt-1 shrink-0">
+      <div className="px-4 pb-3 md:px-7 md:pb-6 pt-1 shrink-0">
         <TypingLine topicId={topicId} />
         <Composer topic={topic} />
       </div>

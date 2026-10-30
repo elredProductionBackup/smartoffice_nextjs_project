@@ -1,7 +1,7 @@
 "use client";
 
 import React, { Suspense, useEffect, useRef, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { FiClock, FiCheckCircle, FiXCircle, FiFileText, FiChevronRight, FiInbox, FiLoader } from 'react-icons/fi';
 import moment from 'moment';
 import ReviewApprovalModal from './ReviewApprovalModal';
@@ -92,15 +92,15 @@ const CARD_THEMES = {
 const StatCard = ({ label, value, sublabel, Icon, theme }) => {
   const t = CARD_THEMES[theme];
   return (
-    <div className={`${t.bg} border ${t.border} rounded-[20px] p-6 font-nunito shadow-[0px_1px_3px_0px_#0000001A,0px_0px_4px_-1px_#8B878733]`}>
-      <div className="flex items-center gap-3 mb-4">
-        <div className={`w-[42px] h-[42px] rounded-xl ${t.iconBg} text-white flex items-center justify-center shrink-0`}>
-          <Icon className="text-2xl" />
+    <div className={`${t.bg} border ${t.border} rounded-[20px] p-4 md:p-6 font-nunito shadow-[0px_1px_3px_0px_#0000001A,0px_0px_4px_-1px_#8B878733]`}>
+      <div className="flex items-center gap-2.5 md:gap-3 mb-3 md:mb-4">
+        <div className={`w-9 h-9 md:w-[42px] md:h-[42px] rounded-xl ${t.iconBg} text-white flex items-center justify-center shrink-0`}>
+          <Icon className="text-xl md:text-2xl" />
         </div>
-        <span className="text-[#4b5563] font-medium text-lg">{label}</span>
+        <span className="text-[#4b5563] font-medium text-[15px] leading-tight md:leading-normal md:text-lg">{label}</span>
       </div>
-      <div className={`text-[32px] font-bold ${t.text} mb-1 leading-none tabular-nums`}>{value}</div>
-      <div className="text-[#777777] text-[14px]">{sublabel}</div>
+      <div className={`text-[28px] md:text-[32px] font-bold ${t.text} mb-1 leading-none tabular-nums`}>{value}</div>
+      <div className="text-[#777777] text-[13px] md:text-[14px]">{sublabel}</div>
     </div>
   );
 };
@@ -109,12 +109,13 @@ const TAB_KEYS = TABS.map((t) => t.key);
 
 const ApprovalsContent = () => {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
 
   // Tab and page live in the URL (?tab=approved&page=2) so they survive a refresh.
   const urlTab = searchParams.get('tab');
   const activeTab = TAB_KEYS.includes(urlTab) ? urlTab : 'pending';
-  const urlPage = Number(searchParams.get('page')) || 1;
+  const urlPage = Math.floor(Number(searchParams.get('page'))) || 1;
 
   const updateParams = (updates) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -122,7 +123,8 @@ const ApprovalsContent = () => {
       if (value == null) params.delete(key);
       else params.set(key, String(value));
     });
-    router.replace(`?${params.toString()}`, { scroll: false });
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   };
 
   const setCurrentPage = (page) => updateParams({ page: page > 1 ? page : null });
@@ -250,14 +252,41 @@ const ApprovalsContent = () => {
     reloadCurrentPage();
   };
 
+  // Loading / error / empty state, shared by the table (md+) and the phone card list
+  const listStatus = loading ? (
+    <div className="flex items-center justify-center gap-2 py-20 text-[14px] font-semibold text-[#64748B]">
+      <FiLoader className="w-5 h-5 animate-spin" />
+      Loading requests...
+    </div>
+  ) : error ? (
+    <div className="flex flex-col items-center justify-center gap-3 py-20 text-center">
+      <span className="text-[15px] font-bold text-[#B91C1C]">{error}</span>
+      <button
+        type="button"
+        onClick={reloadCurrentPage}
+        className="px-4 py-2 border border-[#E2E8F0] rounded-xl text-[14px] font-semibold text-[#333333] bg-white hover:bg-slate-50 transition-all cursor-pointer"
+      >
+        Retry
+      </button>
+    </div>
+  ) : rows.length === 0 ? (
+    <div className="flex flex-col items-center justify-center gap-3 py-20 text-center">
+      <div className="w-12 h-12 rounded-2xl bg-[#F1F5F9] flex items-center justify-center">
+        <FiInbox className="w-6 h-6 text-[#94A3B8]" />
+      </div>
+      <span className="text-[15px] font-bold text-[#334155]">No requests to show</span>
+      <span className="text-[13px] text-[#94A3B8] font-medium">New requests will appear here.</span>
+    </div>
+  ) : null;
+
   return (
-    <div className="p-6 bg-white font-nunito">
-      <div className="mb-6">
-        <h2 className="font-heading text-[32px] leading-[136%] font-bold text-[#333333] mb-1">Approvals</h2>
-        <p className="text-[#777777] font-medium text-[18px] leading-[136%]">Review and manage pending approvals</p>
+    <div className="pt-4 pb-24 md:p-6 bg-white font-nunito">
+      <div className="mb-5 md:mb-6">
+        <h2 className="font-heading text-[26px] md:text-[32px] leading-[136%] font-bold text-[#333333] mb-1">Approvals</h2>
+        <p className="text-[#777777] font-medium text-[15px] md:text-[18px] leading-[136%]">Review and manage pending approvals</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 md:gap-5 mb-6 md:mb-8">
         <StatCard label="Pending Approval" value={counts.pending ?? '—'} sublabel="Awaiting review" Icon={FiClock} theme="amber" />
         <StatCard label="Approved" value={counts.approved ?? '—'} sublabel="Approved requests" Icon={FiCheckCircle} theme="green" />
         <StatCard label="Rejected" value={counts.rejected ?? '—'} sublabel="Rejected requests" Icon={FiXCircle} theme="red" />
@@ -265,9 +294,9 @@ const ApprovalsContent = () => {
       </div>
 
       {/* Approval requests table — same layout as the All Expenses table on /dashboard/expense-records */}
-      <div className="rounded-[22px] bg-white overflow-hidden p-6 md:p-8 border border-[#EAEEF2] mb-[20px]">
+      <div className="rounded-[22px] bg-white overflow-hidden p-4 sm:p-6 md:p-8 border border-[#EAEEF2] mb-[20px]">
         <div className="flex items-center gap-2.5">
-          <h2 className="font-nunito font-bold text-[20px] text-[#1E293B]">Approval Requests</h2>
+          <h2 className="font-nunito font-bold text-[18px] md:text-[20px] text-[#1E293B]">Approval Requests</h2>
           {counts.all != null && (
             <span className="inline-flex items-center h-6 px-2.5 rounded-full bg-[#F1F5F9] text-[12px] font-bold text-[#64748B]">
               {counts.all}
@@ -276,7 +305,7 @@ const ApprovalsContent = () => {
         </div>
 
         {/* Tabs — same underline style as the events page tabs (action-tabs / tab-item in globals.css) */}
-        <div className="action-tabs flex items-center gap-[10px] relative text-[#666666] mt-5 mb-2">
+        <div className="action-tabs flex items-center gap-1 md:gap-[10px] relative text-[#666666] mt-4 md:mt-5 mb-2 overflow-x-auto md:overflow-visible whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {TABS.map((tab) => {
             const isActive = activeTab === tab.key;
             return (
@@ -284,7 +313,7 @@ const ApprovalsContent = () => {
                 key={tab.key}
                 type="button"
                 onClick={() => handleTabChange(tab.key)}
-                className={`tab-item relative inline-flex items-center gap-2 px-[20px] py-[5px] cursor-pointer text-[20px] font-[700] transition ${
+                className={`tab-item relative shrink-0 inline-flex items-center gap-2 px-3 md:px-[20px] py-[5px] cursor-pointer text-[16px] md:text-[20px] font-[700] transition ${
                   isActive ? 'bordered text-[#0B57D0]' : ''
                 }`}
               >
@@ -303,7 +332,58 @@ const ApprovalsContent = () => {
           })}
         </div>
 
-        <div className="overflow-x-auto pb-3 [scrollbar-width:thin] [scrollbar-color:#AEB9C8_transparent] [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-[#AEB9C8] [&::-webkit-scrollbar-thumb]:rounded-full">
+        {/* Phones: stacked cards (same data + handlers as the table rows) */}
+        <div className="md:hidden">
+          {listStatus ?? (
+            <ul className="flex flex-col">
+              {rows.map((a) => {
+                const badge = STATUS_BADGE[a.status] ?? STATUS_BADGE.pending;
+                return (
+                  <li key={a.id} className="py-4 border-b border-[#EBEFF4] last:border-b-0 text-[14px] text-[#334155]">
+                    <div className="flex items-start justify-between gap-3">
+                      <span className="min-w-0 truncate font-bold text-[15px] text-[#0B57D0] capitalize" title={a.request}>
+                        {a.request}
+                      </span>
+                      <span className="shrink-0 font-bold text-[15px] text-[#0F172A] tabular-nums">{formatAmount(a.amount)}</span>
+                    </div>
+                    <div className="mt-0.5 text-[13px] text-[#64748B] truncate">
+                      {a.type} · {a.date ? moment(a.date).format('DD MMM YYYY') : '—'}
+                      {a.relatedEvent ? ` · ${a.relatedEvent}` : ''}
+                    </div>
+                    <div className="mt-3 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-[12px] font-semibold font-nunito whitespace-nowrap ${badge.className}`}>
+                          {badge.label}
+                        </span>
+                        {a.billUrl && (
+                          <a
+                            href={a.billUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 text-[#0B57D0] font-semibold text-[13px] hover:underline whitespace-nowrap"
+                          >
+                            <FiFileText className="w-4 h-4 shrink-0" />
+                            View Bill
+                          </a>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleReview(a)}
+                        className="shrink-0 inline-flex items-center gap-1 bg-[#2B7FFF] hover:bg-[#1a6fe6] active:scale-[0.97] text-white font-nunito font-semibold text-[13px] px-3.5 py-2 rounded-md transition-all cursor-pointer border-0 outline-none whitespace-nowrap"
+                      >
+                        Review
+                        <FiChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+
+        <div className="hidden md:block overflow-x-auto pb-3 [scrollbar-width:thin] [scrollbar-color:#AEB9C8_transparent] [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-[#AEB9C8] [&::-webkit-scrollbar-thumb]:rounded-full">
           <div className="min-w-[1100px]">
             {/* Header row */}
             <div
@@ -316,31 +396,7 @@ const ApprovalsContent = () => {
             </div>
 
             {/* Body */}
-            {loading ? (
-              <div className="flex items-center justify-center gap-2 py-20 text-[14px] font-semibold text-[#64748B]">
-                <FiLoader className="w-5 h-5 animate-spin" />
-                Loading requests...
-              </div>
-            ) : error ? (
-              <div className="flex flex-col items-center justify-center gap-3 py-20 text-center">
-                <span className="text-[15px] font-bold text-[#B91C1C]">{error}</span>
-                <button
-                  type="button"
-                  onClick={reloadCurrentPage}
-                  className="px-4 py-2 border border-[#E2E8F0] rounded-xl text-[14px] font-semibold text-[#333333] bg-white hover:bg-slate-50 transition-all cursor-pointer"
-                >
-                  Retry
-                </button>
-              </div>
-            ) : rows.length === 0 ? (
-              <div className="flex flex-col items-center justify-center gap-3 py-20 text-center">
-                <div className="w-12 h-12 rounded-2xl bg-[#F1F5F9] flex items-center justify-center">
-                  <FiInbox className="w-6 h-6 text-[#94A3B8]" />
-                </div>
-                <span className="text-[15px] font-bold text-[#334155]">No requests to show</span>
-                <span className="text-[13px] text-[#94A3B8] font-medium">New requests will appear here.</span>
-              </div>
-            ) : (
+            {listStatus ??
               rows.map((a) => {
                 const badge = STATUS_BADGE[a.status] ?? STATUS_BADGE.pending;
                 return (
@@ -388,14 +444,13 @@ const ApprovalsContent = () => {
                     </div>
                   </div>
                 );
-              })
-            )}
+              })}
           </div>
         </div>
 
         {/* Pagination */}
         {!loading && !error && totalCount > 0 && (
-          <div className="flex flex-col sm:flex-row items-center justify-between border-t border-[#F1F5F9] pt-6 mt-6 gap-4 font-nunito">
+          <div className="flex flex-col sm:flex-row items-center justify-between border-t border-[#F1F5F9] pt-4 mt-4 md:pt-6 md:mt-6 gap-3 md:gap-4 font-nunito">
             <span className="text-[14px] text-[#777777] font-medium">
               Showing{' '}
               <span className="font-bold text-[#334155]">

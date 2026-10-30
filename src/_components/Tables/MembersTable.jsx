@@ -87,11 +87,11 @@ export default function MembersTable({ data = [], total, documents = false, curr
   if (loading) return <MembersTableShimmer />;
 
   return (
-    <div className="flex-1 min-h-0 mt-[20px] rounded-[20px] bg-[#F2F7FF]  overflow-y-auto relative flex flex-col">
+    <div className="flex-1 min-h-0 mt-[20px] rounded-[20px] bg-[#F2F7FF] md:overflow-y-auto relative flex flex-col">
 
       {/* Table Header */}
       <div
-        className={`flex items-center font-bold text-lg text-[#333333] px-[30px] pt-[30px] sticky top-0 bg-[#F2F7FF] py-3 pt-6 z-10`}
+        className={`hidden md:flex items-center font-bold text-lg text-[#333333] px-[30px] pt-[30px] sticky top-0 bg-[#F2F7FF] py-3 pt-6 z-10`}
       >
         <div className="flex-3">Name/Title</div>
         {documents && <div className="text-center">Documents</div>}
@@ -100,7 +100,7 @@ export default function MembersTable({ data = [], total, documents = false, curr
 
       {/* Empty State */}
       {isEmpty && !loading && (
-        <div className="flex flex-col justify-center items-center h-[calc(100vh-340px)] text-center">
+        <div className="flex flex-col justify-center items-center px-4 py-16 md:py-0 md:h-[calc(100vh-340px)] text-center">
           <div className="h-[80px] w-[80px] rounded-full bg-[#D3E3FD] grid place-items-center mb-[30px]">
             <Image
               src={isSearching ? '/logo/no-search.svg' : '/logo/no-member.svg'}
@@ -112,7 +112,7 @@ export default function MembersTable({ data = [], total, documents = false, curr
 
           {isSearching ? (
             <>
-              <div className="mb-3 text-2xl font-semibold text-[#333333]">
+              <div className="mb-3 text-xl md:text-2xl font-semibold text-[#333333]">
                 No search result found
               </div>
               <div className="text-base font-normal text-[#666666]">
@@ -121,7 +121,7 @@ export default function MembersTable({ data = [], total, documents = false, curr
             </>
           ) : (
             <>
-              <div className="mb-3 text-2xl font-semibold text-[#333333]">
+              <div className="mb-3 text-xl md:text-2xl font-semibold text-[#333333]">
                 No {tab === "nonBoard" ? "non-boarded members" : tab} yet
               </div>
               <div className="text-base font-normal text-[#666666]">
@@ -145,9 +145,10 @@ export default function MembersTable({ data = [], total, documents = false, curr
 
           return (
             <div
-              key={index}
+              key={member.id ?? index}
               className={`
-                  flex flex-1 items-center py-[20px] px-[30px]
+                  flex flex-col items-stretch gap-3 py-4 px-4
+                  md:flex-row md:flex-1 md:items-center md:gap-0 md:py-[20px] md:px-[30px]
                   bg-[#F2F7FF] cursor-pointer transition-all duration-200
 
                   hover:bg-[#E7F0FF]
@@ -163,7 +164,7 @@ export default function MembersTable({ data = [], total, documents = false, curr
             >
 
               {/* LEFT - Name + title */}
-              <div className="flex flex-3 items-center gap-4">
+              <div className="flex md:flex-3 items-center gap-4 min-w-0 md:min-w-auto">
                 {member.avatar ? (
                   <Image
                     src={member?.avatar}
@@ -177,14 +178,14 @@ export default function MembersTable({ data = [], total, documents = false, curr
                     {member.name?.slice(0, 1)}
                   </div>
                 )}
-                <div>
-                  <p className="font-semibold text-xl text-[#333333]">
+                <div className="min-w-0 md:min-w-auto">
+                  <p className="font-semibold text-lg md:text-xl text-[#333333] break-words">
                     {member.name}
                   </p>
                   {/* Title tool tip  */}
                   <div className="relative inline-block" >
                     <p
-                      className="text-[20px] text-[#666666] font-[500] capitalize cursor-pointer"
+                      className="text-[16px] md:text-[20px] text-[#666666] font-[500] capitalize cursor-pointer"
                       onClick={(e) => {
 
 
@@ -204,13 +205,13 @@ export default function MembersTable({ data = [], total, documents = false, curr
                       <div id={`tooltip-${member.id}`}
                         className="absolute z-50 w-max min-w-[200px] bg-[#ffffff] text-[#333]
                                 text-[16px] font-[500] p-[10px] rounded-[20px]
-                                whitespace-nowrap top-[calc(100%+8px)] right-0
+                                whitespace-nowrap top-[calc(100%+8px)] left-0 md:left-auto md:right-0
                                 flex flex-col gap-[4px]"
                         style={{ boxShadow: "0px 4px 4px 0px #99999940" }}
                       >
                         {/* Arrow */}
                         <div
-                          className="absolute w-[16px] h-[8px] bg-[#ffffff] right-4 top-[-8px]"
+                          className="absolute w-[16px] h-[8px] bg-[#ffffff] left-4 md:left-auto md:right-4 top-[-8px]"
                           style={{
                             clipPath: "polygon(50% 0%, 0% 100%, 100% 100%)",
                           }}
@@ -239,7 +240,7 @@ export default function MembersTable({ data = [], total, documents = false, curr
               )}
 
               {/* RIGHT - Action Icons */}
-              <div className="flex flex-1  gap-4 text-[#666666]">
+              <div className="flex md:flex-1 gap-4 pl-16 md:pl-0 text-[#666666]">
                 {/* WhatsApp */}
                 <Link
                   href={`https://wa.me/${member?.phone}`}
@@ -265,15 +266,16 @@ export default function MembersTable({ data = [], total, documents = false, curr
                 {/* PHONE ICON + POPUP */}
                 <div
                   className="w-10 h-10 bg-[#E6EBF2] rounded-full flex items-center justify-center cursor-pointer relative"
-                  onClick={(e) => showPhoneDetails(e, member)} ref={phonePopupRef}
+                  onClick={(e) => showPhoneDetails(e, member)}
+                  ref={openPhoneFor === member.id ? phonePopupRef : undefined}
                 >
                   {/* <FaPhone size={24} color="#666666" /> */}
                   <span className="proicons--call"></span>
                   {/* PHONE POPUP */}
                   {openPhoneFor === member.id && (
                     <div
-                      className={`w-[250px] bg-white z-30 p-5 rounded-[20px] absolute w-52 shadow-[0px_3px_4px_rgba(190,190,190,0.25)]
-                      ${openUpwards ? "bottom-12" : "top-12"} -right-2`} ref={phonePopupRef}
+                      className={`w-[250px] max-w-[calc(100vw-48px)] bg-white z-30 p-5 rounded-[20px] absolute w-52 shadow-[0px_3px_4px_rgba(190,190,190,0.25)]
+                      ${openUpwards ? "bottom-12" : "top-12"} -right-2`}
                       onClick={(e) => e.stopPropagation()}
                     >
                       <div
@@ -285,7 +287,7 @@ export default function MembersTable({ data = [], total, documents = false, curr
                         Phone
                       </div>
 
-                      <div className="min-w-[180px] flex gap-2.5 items-center justify-between">
+                      <div className="md:min-w-[180px] flex gap-2.5 items-center justify-between">
                         <div className="flex items-center gap-[6px] hover:underline" onClick={(e) => handleCopyPhone(e, member.phone, member.id)}>
                           <div className="bg-[#E6EBF2] rounded-full h-8 w-8 flex items-center justify-center">
                             <Image src={callIcon} alt="call" width={20} />

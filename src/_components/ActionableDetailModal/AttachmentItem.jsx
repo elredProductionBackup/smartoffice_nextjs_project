@@ -57,14 +57,14 @@ export default function AttachmentItem({
           onKeyDown={(e) =>
             e.key === "Enter" && onCommitEdit(attachment._id)
           }
-          className="flex-1 bg-transparent outline-none text-[16px] font-[600] mr-[22px]"
+          className="flex-1 min-w-0 bg-transparent outline-none text-[16px] font-[600] mr-3 md:mr-[22px]"
         />
       ) : (
         <a
           href={attachment.url}
           target="_blank"
           rel="noopener noreferrer"
-          className={`flex-1 text-[16px] font-[600] line-clamp-1 mr-[22px] text-[#00449C] underline hover:opacity-80 ${
+          className={`flex-1 min-w-0 text-[16px] font-[600] line-clamp-1 mr-3 md:mr-[22px] text-[#00449C] underline hover:opacity-80 ${
             attachment.isCompleted ? "line-through" : ""
           }`}
         >
@@ -74,7 +74,7 @@ export default function AttachmentItem({
 
       {/* ACTION ICONS */}
       {canEditOrDelete && (
-        <div className="flex gap-[10px]">
+        <div className="flex shrink-0 gap-[10px]">
           <button
             disabled={attachment?.isOptimistic}
             onClick={() => {

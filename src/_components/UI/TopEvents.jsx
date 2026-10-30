@@ -44,7 +44,7 @@ const EventCard = ({ eventId, title, date, location, portfolio, budget, onClick,
   return (
     <div
       onClick={() => onClick(eventId)}
-      className="group relative bg-[#f3f7fd] border border-[#e2e8f2] rounded-[10px] p-6 min-h-[162px] w-[400px] cursor-pointer hover:shadow-md hover:border-[#c5d5f0] transition-all duration-200"
+      className="group relative bg-[#f3f7fd] border border-[#e2e8f2] rounded-[10px] p-4 md:p-6 min-h-[162px] w-full md:w-[400px] min-w-0 cursor-pointer hover:shadow-md hover:border-[#c5d5f0] transition-all duration-200"
     >
       <button
         type="button"
@@ -53,29 +53,29 @@ const EventCard = ({ eventId, title, date, location, portfolio, budget, onClick,
           onRemove(eventId, title);
         }}
         title="Remove from Top Upcoming Events"
-        className="absolute top-3 right-3 w-6 h-6 rounded-full bg-white border border-[#e2e8f2] text-[#777777] flex items-center justify-center opacity-0 group-hover:opacity-100 hover:text-[#e11d48] hover:border-[#e11d48] transition-all duration-150 cursor-pointer"
+        className="absolute top-3 right-3 w-8 h-8 md:w-6 md:h-6 rounded-full bg-white border border-[#e2e8f2] text-[#777777] flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 hover:text-[#e11d48] hover:border-[#e11d48] transition-all duration-150 cursor-pointer"
       >
         <FiX className="text-[14px]" />
       </button>
 
-      <h3 className="text-[#333333] font-bold text-[20px] leading-[136%] mb-2 pr-6 truncate" title={title}>{title}</h3>
+      <h3 className="text-[#333333] font-bold text-[18px] md:text-[20px] leading-[136%] mb-2 pr-8 md:pr-6 truncate" title={title}>{title}</h3>
 
       <div className='flex flex-col gap-1.5'>
-        <div className="flex items-center gap-2 text-[#777777] text-[15px] ">
-          <FiCalendar className="text-[18px]" />
+        <div className="flex items-center gap-2 text-[#777777] text-[14px] md:text-[15px]">
+          <FiCalendar className="text-[18px] shrink-0" />
           <span>{date}</span>
         </div>
 
-        <div className="flex items-center gap-2 text-[#777777] text-[15px] ">
-          <FiMapPin className="text-[18px]" />
+        <div className="flex items-center gap-2 text-[#777777] text-[14px] md:text-[15px]">
+          <FiMapPin className="text-[18px] shrink-0" />
           <span>{location}</span>
         </div>
 
         <hr className="border-[#e2e8f2]" />
 
-        <div className="flex justify-between items-center">
-          <span className="text-[#666666] text-[14px]">{portfolio}</span>
-          <span className="text-[#1b64df] font-bold text-[16px]">{budget}</span>
+        <div className="flex justify-between items-center gap-3">
+          <span className="text-[#666666] text-[14px] min-w-0">{portfolio}</span>
+          <span className="text-[#1b64df] font-bold text-[16px] shrink-0">{budget}</span>
         </div>
       </div>
     </div>
@@ -137,15 +137,15 @@ const TopEvents = () => {
   };
 
   return (
-    <div className="mt-8 pb-4">
-      <h2 className="text-[24px] leading-[136%] font-bold text-[#333333] mb-4 font-nunito">Top Upcoming Events</h2>
+    <div className="mt-6 md:mt-8 pb-4">
+      <h2 className="text-[20px] md:text-[24px] leading-[136%] font-bold text-[#333333] mb-4 font-nunito">Top Upcoming Events</h2>
 
       {!loading && events.length === 0 && (
         <p className="text-gray-500 font-nunito italic">No upcoming events to display.</p>
       )}
 
       {events.length > 0 && (
-        <div className="flex flex-wrap gap-6">
+        <div className="flex flex-col md:flex-row md:flex-wrap gap-3 md:gap-6">
           {events.map((event) => (
             <EventCard
               key={event.eventId}
@@ -164,11 +164,11 @@ const TopEvents = () => {
 
       {confirmTarget && (
         <div
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40"
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 p-4"
           onClick={() => setConfirmTarget(null)}
         >
           <div
-            className="bg-white rounded-[16px] w-full max-w-[380px] mx-4 shadow-xl p-6"
+            className="bg-white rounded-[16px] w-full max-w-[380px] shadow-xl p-5 md:p-6"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-[16px] font-bold text-[#1a1a2e] mb-1.5">Remove from Top Upcoming Events?</h3>

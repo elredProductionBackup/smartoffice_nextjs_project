@@ -33,13 +33,13 @@ const AddBudgets = ({ isOpen, onClose, onSave }) => {
       onClick={onClose}
     >
       <div 
-        className="bg-white rounded-[20px] p-[30px] sm:p-[40px] w-[95%] max-w-[500px] shadow-2xl max-h-[90vh] flex flex-col"
+        className="bg-white rounded-[20px] p-5 sm:p-[40px] w-[95%] max-w-[500px] shadow-2xl max-h-[90dvh] md:max-h-[90vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-[24px] font-[700] text-[#333333] mb-[20px] shrink-0">Enter budget</h2>
+        <h2 className="text-[20px] sm:text-[24px] font-[700] text-[#333333] mb-4 sm:mb-[20px] shrink-0">Enter budget</h2>
         
         <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-          <div className="flex flex-col gap-6 py-2">
+          <div className="flex flex-col gap-4 sm:gap-6 py-2">
             {[
               { label: 'Learning', key: 'learning' },
               { label: 'Engagement', key: 'engagement' },
@@ -64,7 +64,7 @@ const AddBudgets = ({ isOpen, onClose, onSave }) => {
           </div>
         </div>
 
-        <div className="flex justify-between mt-8 sm:mt-12 px-2 shrink-0">
+        <div className="flex justify-between gap-3 mt-6 sm:mt-12 px-2 shrink-0">
           <button
             onClick={onClose}
             className="w-[110px] sm:w-[120px] h-[43px] rounded-full bg-[#9CA3AF] text-white text-[20px] sm:text-[22px] font-[600] transition-opacity hover:opacity-90 active:scale-95"

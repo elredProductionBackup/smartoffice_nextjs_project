@@ -18,8 +18,8 @@ const PortfolioCard = ({ id, title, budget, expense, percentage, color }) => {
   ];
 
   return (
-    <Link href={`/dashboard/portfolio/${id}`} className="border border-gray-100 h-[380px] w-[230px] rounded-[10px] p-5 shadow-[0px_0px_6px_0px_#00000012] bg-white flex flex-col items-center shrink-0 cursor-pointer hover:shadow-md transition-shadow duration-200 no-underline">
-      <h3 className="text-[#333333] font-bold text-[20px] leading-[136%] text-center w-full flex  justify-center mb-4 min-h-[58px]">{title}</h3>
+    <Link href={`/dashboard/portfolio/${id}`} className="border border-gray-100 h-[350px] md:h-[380px] w-[200px] md:w-[230px] rounded-[10px] p-4 md:p-5 shadow-[0px_0px_6px_0px_#00000012] bg-white flex flex-col items-center shrink-0 cursor-pointer hover:shadow-md transition-shadow duration-200 no-underline">
+      <h3 className="text-[#333333] font-bold text-[18px] md:text-[20px] leading-[136%] text-center w-full flex justify-center mb-3 md:mb-4 min-h-[50px] md:min-h-[58px]">{title}</h3>
 
       <div className="w-[153px] h-[153px] mb-4 relative flex items-center justify-center">
         {isEmpty ? (
@@ -53,7 +53,7 @@ const PortfolioCard = ({ id, title, budget, expense, percentage, color }) => {
         )}
       </div>
 
-      <div className="text-center text-[16px] text-[#666666] mb-2 space-y-1 font-regular leading-[136%] w-full">
+      <div className="text-center text-[15px] md:text-[16px] text-[#666666] mb-2 space-y-1 font-regular leading-[136%] w-full">
         <div>Budget: ₹{formatCompactAmount(budget)}</div>
         <div>Expense: ₹{formatCompactAmount(expense)}</div>
       </div>
@@ -83,10 +83,10 @@ const PortfolioCards = () => {
   }));
 
   return (
-    <div className="mt-8">
-      <h2 className="text-[24px] leading-[136%] font-bold text-[#333333] mb-4 font-nunito">Portfolio Overview</h2>
+    <div className="mt-6 md:mt-8">
+      <h2 className="text-[20px] md:text-[24px] leading-[136%] font-bold text-[#333333] mb-4 font-nunito">Portfolio Overview</h2>
       <div
-        className="flex flex-row overflow-x-auto gap-5 pb-4 scrollbar-none"
+        className="flex flex-row overflow-x-auto gap-3 md:gap-5 pb-4 scrollbar-none"
         style={{
           msOverflowStyle: 'none',
           scrollbarWidth: 'none',

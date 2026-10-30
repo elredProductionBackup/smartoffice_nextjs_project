@@ -1,5 +1,5 @@
 import { useDispatch, useSelector } from "react-redux";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { closeEventFormModal } from "@/store/events/eventsUiSlice";
 import { DateInput } from "@/_components/UI/DateInput";
 import { TimeInput } from "@/_components/UI/TimeInput";
@@ -37,11 +37,38 @@ const createDefaultReminder = () => ({
 
 /*  Component  */
 
-const ReminderModal = ({ form, setForm }) => {
-  const dispatch = useDispatch();
+// Builds the editable drafts from the reminders saved on the form
+const toDraftReminders = (reminders) =>
+  reminders?.length
+    ? reminders.map((r) => {
+        const d = new Date(r.datetime);
+        return {
+          id: r.id,
+          audience: r.audience,
+          date: d,
+          time: {
+            hour: String(d.getHours()).padStart(2, "0"),
+            minute: String(d.getMinutes()).padStart(2, "0"),
+          },
+          note: r.note,
+        };
+      })
+    : [createDefaultReminder()];
+
+const ReminderModal = (props) => {
   const { type } = useSelector((s) => s.eventsUi.eventFormModal);
 
-  const [draftReminders, setDraftReminders] = useState([]);
+  if (type !== "REMINDER") return null;
+
+  // Mounted fresh on every open, so the drafts start from the saved reminders
+  return <ReminderModalContent {...props} />;
+};
+
+const ReminderModalContent = ({ form, setForm }) => {
+  const dispatch = useDispatch();
+
+  /* Init reminders */
+  const [draftReminders, setDraftReminders] = useState(() => toDraftReminders(form.reminder));
   const [openDropdownId, setOpenDropdownId] = useState(null);
 
   const dropdownRef = useRef(null);
@@ -49,33 +76,6 @@ const ReminderModal = ({ form, setForm }) => {
   useOutsideClick(dropdownRef, () => {
     if (openDropdownId) setOpenDropdownId(null);
   });
-
-  /* Init reminders */
-  useEffect(() => {
-    if (type !== "REMINDER") return;
-
-    if (form.reminder?.length) {
-      setDraftReminders(
-        form.reminder.map((r) => {
-          const d = new Date(r.datetime);
-          return {
-            id: r.id,
-            audience: r.audience,
-            date: d,
-            time: {
-              hour: String(d.getHours()).padStart(2, "0"),
-              minute: String(d.getMinutes()).padStart(2, "0"),
-            },
-            note: r.note,
-          };
-        })
-      );
-    } else {
-      setDraftReminders([createDefaultReminder()]);
-    }
-  }, [type]);
-
-  if (type !== "REMINDER") return null;
 
   /* Actions */
 
@@ -134,16 +134,16 @@ const isFormValid =
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center"
+      className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4"
       onClick={() => dispatch(closeEventFormModal())}
     >
       <div
-        className="w-[560px] bg-white rounded-[20px] overflow-y-auto flex flex-col  max-h-[85vh] px-[30px]  relative"
+        className="w-full max-w-[560px] bg-white rounded-[20px] overflow-y-auto flex flex-col  max-h-[85dvh] px-4 sm:px-[30px]  relative"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="sticky top-[0px] pt-[30px] pb-[20px] z-[2] bg-[white]">
-          <h2 className="text-[24px] font-[700]">Reminders</h2>
+        <div className="sticky top-[0px] pt-6 pb-4 sm:pt-[30px] sm:pb-[20px] z-[2] bg-[white]">
+          <h2 className="text-[20px] sm:text-[24px] font-[700]">Reminders</h2>
         </div>
 
         {/* Body */}
@@ -160,9 +160,9 @@ const isFormValid =
               <div className="w-full flex gap-[10px] items-start">
                 <div className="flex-1 flex flex-col gap-[10px]">
                   {/* Top Row */}
-                  <div className="flex gap-[5px]">
-                    {/* Audience */}
-                    <div className="relative flex-[2.5]" ref={openDropdownId === r.id ? dropdownRef : null}>
+                  <div className="flex flex-wrap sm:flex-nowrap gap-[5px]">
+                    {/* Audience (full row on phones, date + time share the next row) */}
+                    <div className="relative flex-[2.5] max-sm:basis-full" ref={openDropdownId === r.id ? dropdownRef : null}>
                       <button  
                         type="button"
                         onClick={() =>
@@ -261,24 +261,24 @@ const isFormValid =
 
           <button
             onClick={addReminder}
-            className="text-start text-[#0B57D0] font-[600] text-[18px] mt-[10px] ml-[10px] cursor-pointer mb-[60px]"
+            className="text-start text-[#0B57D0] font-[600] text-[18px] mt-[10px] ml-[10px] cursor-pointer mb-6 sm:mb-[60px]"
           >
             Add reminder
           </button>
         </div>
 
         {/* Footer */}
-        <div className="bg-[#fff] flex justify-center w-[100%] gap-[60px] sticky bottom-[0px] pt-[20px] pb-[30px]">
+        <div className="bg-[#fff] flex justify-center w-[100%] gap-4 sm:gap-[60px] sticky bottom-[0px] pt-4 pb-6 sm:pt-[20px] sm:pb-[30px]">
           <button
             onClick={() => dispatch(closeEventFormModal())}
-            className="w-[120px] py-[8px] rounded-[20px] bg-[#999999] text-white cursor-pointer"
+            className="w-[120px] py-[10px] sm:py-[8px] rounded-[20px] bg-[#999999] text-white cursor-pointer"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
             disabled={!isFormValid}
-            className={`w-[120px] py-[8px] rounded-[20px] text-white transition bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)] 
+            className={`w-[120px] py-[10px] sm:py-[8px] rounded-[20px] text-white transition bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)] 
               ${
                 isFormValid
                   ? " cursor-pointer"

@@ -35,7 +35,7 @@ const Field = ({ id, label, required, optional, error, inputRef, ...inputProps }
       ref={inputRef}
       autoComplete="off"
       aria-invalid={!!error}
-      className={`w-full rounded-xl border bg-white px-3 py-2.5 text-[15px] text-[#1E293B] outline-none placeholder:text-[#94A3B8] ${
+      className={`w-full rounded-xl border bg-white px-3 py-2.5 text-base md:text-[15px] text-[#1E293B] outline-none placeholder:text-[#94A3B8] ${
         error ? "border-[#DC2626]" : "border-[#E2E8F0] focus:border-[#0B57D0]"
       }`}
       {...inputProps}
@@ -55,10 +55,14 @@ const AddAttendeeModal = ({ onClose, onSubmit, initialValues }) => {
   const [message, setMessage] = useState("");
   const [formError, setFormError] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const refs = { name: useRef(null), whatsapp: useRef(null), email: useRef(null) };
+  const nameRef = useRef(null);
+  const whatsappRef = useRef(null);
+  const emailRef = useRef(null);
+  // Only used in handlers/effects (never during render)
+  const refFor = (field) => ({ name: nameRef, whatsapp: whatsappRef, email: emailRef })[field];
 
   useEffect(() => {
-    refs.name.current?.focus();
+    nameRef.current?.focus();
     const onKey = (e) => e.key === "Escape" && onClose();
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
@@ -80,7 +84,7 @@ const AddAttendeeModal = ({ onClose, onSubmit, initialValues }) => {
     setErrors(found);
 
     const firstBad = ["name", "whatsapp", "email"].find((k) => found[k]);
-    if (firstBad) return refs[firstBad].current?.focus();
+    if (firstBad) return refFor(firstBad).current?.focus();
 
     setSubmitting(true);
     setFormError("");
@@ -89,15 +93,15 @@ const AddAttendeeModal = ({ onClose, onSubmit, initialValues }) => {
       if (addAnother) {
         setValues(EMPTY);
         setMessage(typeof note === "string" ? note : `Added ${data.name}`);
-        refs.name.current?.focus();
+        nameRef.current?.focus();
       } else {
         onClose();
       }
     } catch (err) {
       console.error("Add attendee error:", err);
-      if (err?.field && refs[err.field]) {
+      if (err?.field && refFor(err.field)) {
         setErrors({ [err.field]: err.message });
-        refs[err.field].current?.focus();
+        refFor(err.field).current?.focus();
       } else if (err?.message && err.message !== "Duplicate attendee") {
         setFormError(err.message);
       }
@@ -108,17 +112,17 @@ const AddAttendeeModal = ({ onClose, onSubmit, initialValues }) => {
 
   return (
     <div
-      className="fixed inset-0 z-[200] grid place-items-center bg-[rgba(20,30,55,0.35)] p-5"
+      className="fixed inset-0 z-[200] grid place-items-center bg-[rgba(20,30,55,0.35)] p-4 md:p-5"
       onMouseDown={(e) => e.target === e.currentTarget && onClose()}
     >
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="add-attendee-title"
-        className="flex max-h-full w-full max-w-[560px] flex-col overflow-hidden rounded-[18px] bg-white shadow-[0_20px_50px_rgba(30,50,90,0.12)]"
+        className="flex max-h-[calc(100dvh-32px)] md:max-h-full w-full max-w-[560px] flex-col overflow-hidden rounded-[18px] bg-white shadow-[0_20px_50px_rgba(30,50,90,0.12)]"
       >
-        <div className="flex items-center justify-between gap-3 px-6 pt-[22px] pb-1.5">
-          <h3 id="add-attendee-title" className="text-[22px] font-semibold text-[#1E293B]">
+        <div className="flex items-center justify-between gap-3 px-5 md:px-6 pt-5 md:pt-[22px] pb-1.5">
+          <h3 id="add-attendee-title" className="text-[20px] md:text-[22px] font-semibold text-[#1E293B]">
             {isEdit ? "Edit attendee" : "Add attendee"}
           </h3>
           <button
@@ -132,7 +136,7 @@ const AddAttendeeModal = ({ onClose, onSubmit, initialValues }) => {
         </div>
 
         <form noValidate onSubmit={handleSubmit} className="contents">
-          <div className="flex-1 overflow-auto px-6 pt-3 pb-1.5">
+          <div className="flex-1 overflow-auto px-5 md:px-6 pt-3 pb-1.5">
             <div className="mb-3.5">
               <Field
                 id="attendee-name"
@@ -143,7 +147,7 @@ const AddAttendeeModal = ({ onClose, onSubmit, initialValues }) => {
                 value={values.name}
                 onChange={handleChange}
                 error={errors.name}
-                inputRef={refs.name}
+                inputRef={nameRef}
               />
             </div>
             <div className="mb-3.5 grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -175,7 +179,7 @@ const AddAttendeeModal = ({ onClose, onSubmit, initialValues }) => {
                 value={values.whatsapp}
                 onChange={handleChange}
                 error={errors.whatsapp}
-                inputRef={refs.whatsapp}
+                inputRef={whatsappRef}
               />
               <Field
                 id="attendee-email"
@@ -187,12 +191,12 @@ const AddAttendeeModal = ({ onClose, onSubmit, initialValues }) => {
                 value={values.email}
                 onChange={handleChange}
                 error={errors.email}
-                inputRef={refs.email}
+                inputRef={emailRef}
               />
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5 border-t border-[#E2E8F0] px-6 pt-3.5 pb-5">
+          <div className="flex flex-wrap items-center gap-2.5 border-t border-[#E2E8F0] px-5 md:px-6 pt-3.5 pb-5">
             <button
               type="button"
               onClick={onClose}
@@ -208,7 +212,7 @@ const AddAttendeeModal = ({ onClose, onSubmit, initialValues }) => {
                 type="submit"
                 data-more="true"
                 disabled={submitting}
-                className="inline-flex items-center gap-[7px] whitespace-nowrap h-9 rounded-full border border-[#0B57D0] bg-white px-4 text-[14px] font-bold text-[#0B57D0] transition hover:bg-[#D3E3FD]/50 disabled:cursor-not-allowed disabled:opacity-45 cursor-pointer"
+                className="inline-flex flex-1 sm:flex-none items-center justify-center gap-[7px] whitespace-nowrap h-10 sm:h-9 rounded-full border border-[#0B57D0] bg-white px-4 text-[14px] font-bold text-[#0B57D0] transition hover:bg-[#D3E3FD]/50 disabled:cursor-not-allowed disabled:opacity-45 cursor-pointer"
               >
                 Save and add another
               </button>
@@ -216,7 +220,7 @@ const AddAttendeeModal = ({ onClose, onSubmit, initialValues }) => {
             <button
               type="submit"
               disabled={submitting}
-              className="inline-flex items-center gap-[7px] whitespace-nowrap h-9 rounded-full bg-[#1D72E8] px-4 text-[14px] font-bold text-white transition hover:bg-[#0B57D0] disabled:cursor-not-allowed disabled:opacity-45 cursor-pointer"
+              className="inline-flex flex-1 sm:flex-none items-center justify-center gap-[7px] whitespace-nowrap h-10 sm:h-9 rounded-full bg-[#1D72E8] px-4 text-[14px] font-bold text-white transition hover:bg-[#0B57D0] disabled:cursor-not-allowed disabled:opacity-45 cursor-pointer"
             >
               {isEdit ? "Save changes" : "Add attendee"}
             </button>

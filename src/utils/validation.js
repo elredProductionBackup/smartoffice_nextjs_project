@@ -17,24 +17,17 @@ export const isValidURL = (url) => {
 
 export const isValidImageFile = (file) => {
   if (!(file instanceof File)) {
-    console.log("Not a File instance:", file);
     return { valid: false, reason: "type" };
   }
 
   const allowedTypes = ["image/jpeg", "image/png", "image/jpg"];
   const maxSize = 2 * 1024 * 1024; 
 
-  console.log("File type:", file.type);
-  console.log("File size (bytes):", file.size);
-  console.log("Max allowed size (bytes):", maxSize);
-
   if (!allowedTypes.includes(file.type)) {
-    console.log("Invalid file type");
     return { valid: false, reason: "type" };
   }
 
   if (file.size > maxSize) {
-    console.log("File is too large");
     return { valid: false, reason: "size" };
   }
 

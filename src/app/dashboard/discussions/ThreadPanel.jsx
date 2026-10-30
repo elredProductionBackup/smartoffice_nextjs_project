@@ -49,7 +49,11 @@ const ReplyRow = memo(function ReplyRow({ id }) {
   };
 
   return (
-    <div className={`group relative flex gap-2.5 rounded-xl px-1.5 py-1 -mx-1.5 hover:bg-white/60 ${r.pending ? "opacity-70" : ""}`}>
+    // Focusable so a tap shows the reply toolbar on touch screens (no hover there)
+    <div
+      tabIndex={-1}
+      className={`group relative flex gap-2.5 rounded-xl px-1.5 py-1 -mx-1.5 hover:bg-white/60 outline-none [@media(hover:none)]:cursor-pointer ${r.pending ? "opacity-70" : ""}`}
+    >
       {confirmDialog}
       {live && !editing && (
         <MessageToolbar
@@ -156,16 +160,16 @@ export default function ThreadPanel({ messageId, initialDraft = "" }) {
 
   return (
     <div className="flex flex-col h-full min-h-0">
-      <div className="flex items-start justify-between gap-3 px-5 py-5 border-b border-[#DCE5F3] shrink-0">
+      <div className="flex items-start justify-between gap-3 px-4 py-4 md:px-5 md:py-5 border-b border-[#DCE5F3] shrink-0">
         <div className="min-w-0">
-          <h3 className="text-[24px] font-semibold text-[#1E293B]">Replies</h3>
+          <h3 className="text-[20px] md:text-[24px] font-semibold text-[#1E293B]">Replies</h3>
           <p className="text-[15px] text-[#64748B] truncate">{topic.title}</p>
         </div>
         <button
           type="button"
           title="Close replies"
           onClick={() => dispatch(closeThread())}
-          className="w-9 h-9 rounded-full flex items-center justify-center text-[#1E293B] hover:bg-white transition cursor-pointer shrink-0"
+          className="w-10 h-10 md:w-9 md:h-9 rounded-full flex items-center justify-center text-[#1E293B] hover:bg-white transition cursor-pointer shrink-0"
         >
           <FiX className="text-[20px]" />
         </button>

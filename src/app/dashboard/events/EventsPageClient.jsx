@@ -26,6 +26,7 @@ export default function EventsPageClient() {
   const {
     groupedEvents, page, limit, search, activeTab, loading, error
   } = useSelector((state) => state.events);
+  const total = useSelector((state) => state.events.total);
 
   useEffect(() => {
     if (activeTab !== tab) {
@@ -41,17 +42,21 @@ export default function EventsPageClient() {
 
 
   return (
-    <div className="h-[calc(100vh-120px)] my-5 flex flex-col">
+    <div className="mt-4 mb-20 md:my-5 md:h-[calc(100vh-120px)] flex flex-col">
       <EventsHeader />
 
-      <ActionableTabs
-        tabs={EVENT_TABS}
-        defaultTab="upcomming"
-        events={true}
-        labelClassName="font-heading font-normal"
-      />
+      {/* Phones: tabs scroll sideways and the tab-row "Create event" button is
+          swapped for the one in EventsHeader, so it never scrolls off-screen */}
+      <div className="max-md:overflow-x-auto max-md:overflow-y-hidden max-md:pb-px max-md:whitespace-nowrap max-md:[scrollbar-width:none] max-md:[&>.action-tabs]:w-max max-md:[&>.action-tabs]:min-w-full max-md:[&_.tab-item]:text-[17px] max-md:[&_.tab-item]:px-[12px] max-md:[&_.action-tabs>button:not(.tab-item)]:hidden">
+        <ActionableTabs
+          tabs={EVENT_TABS}
+          defaultTab="upcomming"
+          events={true}
+          labelClassName="font-heading font-normal"
+        />
+      </div>
 
-      <div className="flex-1 flex flex-col min-h-0 bg-[#F2F7FF] pt-[30px] mt-[20px] rounded-[20px] overflow-hidden">
+      <div className="min-h-[60dvh] md:min-h-0 flex-1 flex flex-col bg-[#F2F7FF] pt-4 md:pt-[30px] mt-4 md:mt-[20px] rounded-[20px] overflow-hidden">
         <EventsList
           events={groupedEvents}
           loading={loading}
@@ -60,7 +65,7 @@ export default function EventsPageClient() {
           isDraft={tab === "draft"}
         />
          <Pagination
-          total={useSelector((state) => state.events.total)}
+          total={total}
           currentPage={urlPage}
           perPage={limit}
           itemLength={groupedEvents.length===0}

@@ -76,7 +76,7 @@ export function useMembersData({
     return () => {
       isMounted = false;
     };
-  }, [tab, page, search, limit]);
+  }, [tab, page, search, searchBy, limit]);
 
   return { data, total, loading };
 }

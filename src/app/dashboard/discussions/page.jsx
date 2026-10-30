@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { FiMessageSquare, FiPlus, FiSearch, FiX } from "react-icons/fi";
 import NewTopicModal from "./NewTopicModal";
@@ -105,6 +105,10 @@ export default function DiscussionsPage() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [isNewTopicOpen, setIsNewTopicOpen] = useState(false);
+  // Phones and tablets (< lg) show one pane at a time: the list, or the topic the user tapped.
+  // The page auto-opens the newest topic for the desktop layout, so on small screens the chat only
+  // shows once the user picks a topic; if that topic goes away (left/deleted) they land on the list.
+  const [mobileTopicId, setMobileTopicId] = useState(null);
 
   // Who "me" is, for own messages, reactions and approvals: adminDetail.userCode,
   // or the admin whose email matches the logged-in user once the admins list is in
@@ -132,10 +136,51 @@ export default function DiscussionsPage() {
     if (socketStatus === "connected") dispatch(joinTopicRooms(topicIds));
   }, [dispatch, socketStatus, topicIds]);
 
+  // Deep link (e.g. from the dashboard Approvals card): ?topicId=…&messageId=…
+  const deepLinkRef = useRef(null);
+  const [focusMessageId, setFocusMessageId] = useState(null);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const topicId = params.get("topicId");
+    if (topicId) deepLinkRef.current = { topicId, messageId: params.get("messageId") };
+  }, []);
+
   // Open the newest topic on load, and the next one if the open topic goes away
   useEffect(() => {
+    if (deepLinkRef.current) return; // a linked topic is about to open instead
     if (topicsFetched && !activeTopicId && topicIds.length) dispatch(openTopic(topicIds[0]));
   }, [dispatch, topicsFetched, activeTopicId, topicIds]);
+
+  // Once topics are in, open the linked topic (full screen on phones) and remember the message to show
+  useEffect(() => {
+    const link = deepLinkRef.current;
+    if (!link || !topicsFetched) return;
+    deepLinkRef.current = null;
+
+    if (topicIds.includes(link.topicId)) {
+      setMobileTopicId(link.topicId);
+      dispatch(openTopic(link.topicId));
+      if (link.messageId) setFocusMessageId(link.messageId);
+    } else if (!activeTopicId && topicIds.length) {
+      dispatch(openTopic(topicIds[0])); // linked topic not available: fall back to the newest
+    }
+  }, [dispatch, topicsFetched, topicIds, activeTopicId]);
+
+  // Scroll the linked message into view (and flash it) once the topic's messages have loaded
+  const activeMessageCount = useSelector((s) => s.discussions.messageIds[s.discussions.activeTopicId]?.length || 0);
+  useEffect(() => {
+    if (!focusMessageId || !activeMessageCount) return;
+    const timer = setTimeout(() => {
+      const el = document.getElementById(`msg-${focusMessageId}`);
+      if (el) {
+        el.scrollIntoView({ block: "center", behavior: "smooth" });
+        el.classList.add("rounded-xl", "ring-2", "ring-[#0B57D0]/40", "bg-[#EEF4FF]");
+        setTimeout(() => el.classList.remove("ring-2", "ring-[#0B57D0]/40", "bg-[#EEF4FF]"), 2500);
+      }
+      setFocusMessageId(null);
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [focusMessageId, activeMessageCount]);
 
   // Back on the tab: clear the unread badge of the topic on screen
   useEffect(() => {
@@ -157,7 +202,15 @@ export default function DiscussionsPage() {
     return () => clearTimeout(t);
   }, [dispatch, notice]);
 
-  const handleOpen = useCallback((id) => dispatch(openTopic(id)), [dispatch]);
+  const handleOpen = useCallback(
+    (id) => {
+      setMobileTopicId(id);
+      dispatch(openTopic(id));
+    },
+    [dispatch]
+  );
+  const closeMobileTopic = useCallback(() => setMobileTopicId(null), []);
+  const mobileChatOpen = hasActiveTopic && mobileTopicId === activeTopicId;
 
   const visibleTopics = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -177,9 +230,9 @@ export default function DiscussionsPage() {
   const status = STATUS_DOT[socketStatus];
 
   return (
-    <div className="h-[calc(100vh-120px)] my-5 flex flex-col font-nunito">
+    <div className="h-[calc(100dvh-72px)] mt-3 md:h-[calc(100vh-120px)] md:my-5 flex flex-col font-nunito">
       <div className="flex items-center gap-4">
-        <h2 className="font-heading text-[32px] leading-[136%] font-bold text-[#333333]">Discussions</h2>
+        <h2 className="font-heading text-[24px] md:text-[32px] leading-[136%] font-bold text-[#333333]">Discussions</h2>
         {/* {status && (
           <span className="inline-flex items-center gap-2 text-[13px] font-semibold text-[#64748B]" title="Live updates">
             <span className={`w-2 h-2 rounded-full ${status.color}`} />
@@ -188,9 +241,9 @@ export default function DiscussionsPage() {
         )} */}
       </div>
 
-      <div className="flex-1 flex gap-6 min-h-0 mt-[20px]">
+      <div className="flex-1 flex gap-6 min-h-0 mt-3 md:mt-[20px]">
         {/* Topics */}
-        <div className="w-[340px] shrink-0 bg-[#F2F7FF] rounded-[20px] flex flex-col min-h-0">
+        <div className="w-full lg:w-[340px] shrink-0 bg-[#F2F7FF] rounded-t-[20px] md:rounded-[20px] flex flex-col min-h-0">
           <div className="px-5 pt-6 pb-3 shrink-0">
             <div className="flex items-center justify-between">
               <h3 className="text-[24px] font-semibold text-[#1E293B]">Topics</h3>
@@ -211,7 +264,7 @@ export default function DiscussionsPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search topics"
-                className="w-full h-11 pl-10 pr-3 rounded-xl bg-white border border-[#E2E8F0] text-[15px] text-[#1E293B] placeholder:text-[#94A3B8] outline-none focus:border-[#0B57D0] transition"
+                className="w-full h-11 pl-10 pr-3 rounded-xl bg-white border border-[#E2E8F0] text-[16px] md:text-[15px] text-[#1E293B] placeholder:text-[#94A3B8] outline-none focus:border-[#0B57D0] transition"
               />
             </div>
 
@@ -234,7 +287,8 @@ export default function DiscussionsPage() {
             </div>
           </div>
 
-          <div className="flex-1 min-h-0 overflow-y-auto px-3 pb-3 space-y-1">
+          {/* pb-24 below lg keeps the last topic clear of the floating assistant button */}
+          <div className="flex-1 min-h-0 overflow-y-auto px-3 pb-24 lg:pb-3 space-y-1">
             {/* Skeleton until the first answer: before it, "no topics" would be a guess */}
             {!topicsFetched ? (
               <TopicListSkeleton />
@@ -265,10 +319,16 @@ export default function DiscussionsPage() {
           </div>
         </div>
 
-        {/* Conversation */}
-        <div className="flex-1 min-w-0 bg-[#F2F7FF] rounded-[20px] overflow-hidden">
+        {/* Conversation: below lg it opens full screen over the list (back button returns to it).
+            While closed it is invisible rather than display:none, so the open topic keeps its layout
+            and the message list can scroll to the newest message before it is shown. */}
+        <div
+          className={`fixed inset-0 z-[60] h-dvh ${
+            mobileChatOpen ? "" : "invisible"
+          } lg:visible lg:static lg:z-auto lg:h-auto flex-1 min-w-0 bg-[#F2F7FF] lg:rounded-[20px] overflow-hidden`}
+        >
           {hasActiveTopic ? (
-            <ChatPanel key={activeTopicId} topicId={activeTopicId} />
+            <ChatPanel key={activeTopicId} topicId={activeTopicId} onBack={closeMobileTopic} />
           ) : !topicsFetched || (topics.length > 0 && !topicsError) ? (
             // Still loading, or the first topic is about to open
             <ChatSkeleton />
@@ -287,20 +347,30 @@ export default function DiscussionsPage() {
 
         {/* Replies */}
         {hasActiveTopic && thread && (
-          <div className="w-[340px] shrink-0 bg-[#F2F7FF] rounded-[20px] overflow-hidden">
+          // Below lg: full-screen overlay on phones, a side sheet on tablets
+          <div
+            className={`fixed inset-0 z-[60] h-dvh ${mobileChatOpen ? "" : "max-lg:hidden"} md:left-auto md:w-[420px] md:shadow-[-8px_0_24px_rgba(15,23,42,0.12)] lg:static lg:z-auto lg:h-auto lg:w-[340px] lg:shadow-none shrink-0 bg-[#F2F7FF] lg:rounded-[20px] overflow-hidden`}
+          >
             <ThreadPanel key={`${thread.messageId}-${thread.draft}`} messageId={thread.messageId} initialDraft={thread.draft} />
           </div>
         )}
       </div>
 
       {isNewTopicOpen && (
-        <NewTopicModal onClose={() => setIsNewTopicOpen(false)} onCreated={(id) => id && dispatch(openTopic(id))} />
+        <NewTopicModal
+          onClose={() => setIsNewTopicOpen(false)}
+          onCreated={(id) => {
+            if (!id) return;
+            setMobileTopicId(id);
+            dispatch(openTopic(id));
+          }}
+        />
       )}
 
       {(lastError || notice) && (
         <div
           role="status"
-          className={`fixed bottom-6 right-6 z-50 max-w-[380px] flex items-start gap-3 px-4 py-3 rounded-xl shadow-[0_8px_24px_rgba(15,23,42,0.16)] text-[14px] font-semibold ${
+          className={`fixed top-4 left-4 right-4 md:top-auto md:left-auto md:bottom-6 md:right-6 z-[70] lg:z-50 md:max-w-[380px] flex items-start gap-3 px-4 py-3 rounded-xl shadow-[0_8px_24px_rgba(15,23,42,0.16)] text-[14px] font-semibold ${
             lastError ? "bg-[#FEF2F2] text-[#B91C1C] border border-[#FECACA]" : "bg-white text-[#1E293B] border border-[#E2E8F0]"
           }`}
         >

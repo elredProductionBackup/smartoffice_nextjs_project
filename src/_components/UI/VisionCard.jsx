@@ -73,11 +73,11 @@ const SingleVisionCard = ({
           ? { boxShadow: `0 0 0 2.5px ${hoverColor}, 0px 4px 16px 0px #0000001A`, transform: 'scale(1.02)' }
           : {}
       }
-      className={`${bgClass} border ${borderClass} rounded-[20px] p-6 shadow-[0px_1px_3px_0px_#0000001A,0px_0px_4px_-1px_#8B878733] transition-all duration-200 ${
+      className={`${bgClass} border ${borderClass} rounded-[20px] p-4 md:p-6 shadow-[0px_1px_3px_0px_#0000001A,0px_0px_4px_-1px_#8B878733] transition-all duration-200 ${
         clickable ? 'cursor-pointer' : ''
       }`}
     >
-      <div className="flex items-center gap-3 mb-4">
+      <div className="flex items-center gap-3 mb-3 md:mb-4">
         <div
           className={`w-[42px] h-[42px] rounded-xl ${iconBgClass} text-white flex items-center justify-center`}
         >
@@ -88,7 +88,7 @@ const SingleVisionCard = ({
       {loading ? (
         <div className="h-[32px] w-[140px] rounded-[10px] bg-black/10 animate-pulse mb-1" />
       ) : (
-        <div className={`text-[32px] font-bold ${textColorClass} mb-1 leading-none`}>
+        <div className={`text-[28px] md:text-[32px] font-bold ${textColorClass} mb-1 leading-none`}>
           {amount}
         </div>
       )}
@@ -103,17 +103,18 @@ const VisionCards = () => {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  const fetchReport = async () => {
-    try {
-      const result = await getFinanceDashboardReport();
-      const data = Array.isArray(result?.result) ? result.result[0] : result?.result;
-      setReport(data || null);
-    } catch (error) {
-      console.error('Failed to fetch finance dashboard report:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const fetchReport = () =>
+    getFinanceDashboardReport()
+      .then((result) => {
+        const data = Array.isArray(result?.result) ? result.result[0] : result?.result;
+        setReport(data || null);
+      })
+      .catch((error) => {
+        console.error('Failed to fetch finance dashboard report:', error);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
 
   useEffect(() => {
     fetchReport();
@@ -134,7 +135,7 @@ const VisionCards = () => {
 
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-6">
         {cardsData.map((card) => (
           <SingleVisionCard
             key={card.id}

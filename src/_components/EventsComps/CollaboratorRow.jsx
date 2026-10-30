@@ -44,21 +44,21 @@ const CollaboratorRow = ({
   );
 
   return (
-    <div ref={wrapperRef} className="flex gap-[20px] items-center relative">
-      <div className="relative flex-1 flex items-center">
+    <div ref={wrapperRef} className="flex gap-2 sm:gap-[20px] items-center relative">
+      <div className="relative flex-1 min-w-0 flex items-center">
         {isSelected ? (
           // Selected pill
           <div className="w-full h-[50px] pl-[50px] pr-[20px] bg-[#F6F6F6] border border-[#EAEAEA] rounded-lg flex items-center">
             <div className="absolute left-[20px] flex items-center text-[#999]">
               <span className="la--handshake-solid text-[20px]" />
             </div>
-            <div className="flex items-center gap-[6px] border border-[#B1B1B1] rounded-full px-[5px] py-[4px] h-[32px] w-fit">
+            <div className="flex items-center gap-[6px] border border-[#B1B1B1] rounded-full px-[5px] py-[4px] h-[32px] w-fit max-w-full min-w-0">
               {avatar ? (
                 <Image src={avatar} alt="Avatar" width={24} height={24} />
               ) : (
                 <div className="h-[24px] w-[24px] rounded-full bg-[#CCCCCC]" />
               )}
-              <span className="text-[14px] font-[500]">{name}</span>
+              <span className="text-[14px] font-[500] truncate">{name}</span>
 
               <button
                 type="button"
@@ -140,7 +140,7 @@ const CollaboratorRow = ({
         <button
           type="button"
           onClick={onRemove}
-          className="text-[#999] hover:text-red-500 mt-[4px]"
+          className="text-[#999] hover:text-red-500 mt-[4px] max-sm:p-1"
         >
           ✕
         </button>

@@ -1,10 +1,10 @@
 const Description = ({ description, margin, email }) => {
   return (
     <div
-      className={`${margin} text-lg font-normal text-[#333] flex flex-col items-center justify-center`}
+      className={`${margin} text-base sm:text-lg font-normal text-[#333] flex flex-col items-center justify-center text-center`}
     >
       <div>{description}</div>
-      <div>{email}</div>
+      <div className="break-all">{email}</div>
     </div>
   );
 };

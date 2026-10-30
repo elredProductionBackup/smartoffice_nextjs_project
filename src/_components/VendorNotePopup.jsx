@@ -9,28 +9,28 @@ export default function VendorNotePopup() {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[999]">
-      <div className="bg-white w-[520px] rounded-3xl p-8 relative">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[999] p-4">
+      <div className="bg-white w-full max-w-[520px] max-h-[90dvh] overflow-y-auto rounded-3xl p-5 md:p-8 relative">
         {/* Close */}
         <button
           onClick={closePopup}
-          className="absolute top-6 right-6 text-gray-500 hover:text-black"
+          className="absolute top-4 right-4 md:top-6 md:right-6 text-gray-500 hover:text-black"
         >
           <IoClose size={28} />
         </button>
 
         {/* Title */}
-        <div className="text-2xl font-semibold mb-6">Edit the note</div>
+        <div className="text-xl md:text-2xl font-semibold mb-6 pr-10">Edit the note</div>
 
         {/* Textarea */}
         <textarea
-          className="w-full h-40 border border-blue-400 rounded-xl p-4 text-lg outline-none"
+          className="w-full h-40 border border-blue-400 rounded-xl p-4 text-base md:text-lg outline-none"
           value={activeNote.note}
           onChange={(e) => updateNote(e.target.value)}
         />
 
         {/* Button */}
-        <div className="flex justify-center mt-8">
+        <div className="flex justify-center mt-6 md:mt-8">
           <button
             onClick={closePopup}
             className="px-10 py-3 rounded-full text-white text-lg font-semibold bg-gradient-to-r from-blue-400 to-blue-800"

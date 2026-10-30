@@ -93,9 +93,10 @@ export default function Calendar({
 
 const containerClass =
   mode === "popup"
-    ? `absolute z-50 top-[calc(100%+20px)] ${right ? "right-0" : ""}`
+    ? // Phones: centred in the viewport so the popup can't run off-screen; sm+: anchored under the trigger as before
+      `fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 sm:absolute sm:left-auto sm:translate-x-0 sm:translate-y-0 sm:top-[calc(100%+20px)] ${right ? "sm:right-0" : ""}`
     : mode === "fullscreen"
-    ? "fixed inset-0 z-[999] flex items-center justify-center bg-black/40"
+    ? "fixed inset-0 z-[999] flex items-center justify-center bg-black/40 px-4"
     : "relative";
 
   const canGoPrevMonth =
@@ -108,10 +109,10 @@ const containerClass =
   return (
     <div className={`${containerClass}`}>
       {mode === "popup" && (
-        <div className={`absolute top-[-8px] ${right?'right-8':'left-8'} h-4 w-4 rotate-45 bg-white border-l-2 border-t-2 border-[#F3F4F6]`} />
+        <div className={`hidden sm:block absolute top-[-8px] ${right?'right-8':'left-8'} h-4 w-4 rotate-45 bg-white border-l-2 border-t-2 border-[#F3F4F6]`} />
       )}
 
-      <div className={`${mode === "popup"?'w-[350px] border-[2.5px]  px-[14px]':'w-[100%]  px-9'} bg-white rounded-2xl border-[1.27px] border-[#F3F4F6] py-6 ${mode === "fullscreen"?'max-w-[416px]':''}`}
+      <div className={`${mode === "popup"?'w-[350px] max-w-[calc(100vw-32px)] border-[2.5px]  px-[14px] shadow-[0_8px_32px_rgba(0,0,0,0.18)] sm:shadow-none':'w-[100%] px-2 sm:px-9'} bg-white rounded-2xl border-[1.27px] border-[#F3F4F6] py-6 ${mode === "fullscreen"?'max-w-[416px]':''}`}
         ref={calendarRef}
         onClick={(e) => e.stopPropagation()}>
         {/*  HEADER  */}
@@ -202,7 +203,7 @@ const containerClass =
                     onClick={() => {
                         if (isDisabled) return;
                         onChange?.(dateObj);
-                    }} className={`mx-auto h-11 w-11 rounded-lg
+                    }} className={`mx-auto h-9 w-9 sm:h-11 sm:w-11 rounded-lg
                         ${
                         isSelected
                             ? "bg-blue-700 text-white"

@@ -85,16 +85,16 @@ export default function ReviewApprovalModal({ approval, detailsLoading, detailsE
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 font-nunito" onClick={handleClose}>
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 p-4 font-nunito" onClick={handleClose}>
       <div
-        className="bg-white rounded-2xl w-full max-w-[640px] mx-4 shadow-xl flex flex-col max-h-[90vh] overflow-hidden"
+        className="bg-white rounded-2xl w-full max-w-[640px] shadow-xl flex flex-col max-h-[90dvh] md:max-h-[90vh] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Fixed header */}
-        <div className="flex items-start justify-between gap-3 px-7 pt-5 pb-4 border-b border-[#F1F5F9] shrink-0">
+        <div className="flex items-start justify-between gap-3 px-5 md:px-7 pt-5 pb-4 border-b border-[#F1F5F9] shrink-0">
           <div className="min-w-0">
             <p className="text-[13px] font-bold uppercase tracking-wide text-[#64748B]">Expense Approval</p>
-            <h3 className="text-[26px] font-bold text-[#0F172A] leading-tight mt-1 capitalize break-words">{approval.request}</h3>
+            <h3 className="text-[22px] md:text-[26px] font-bold text-[#0F172A] leading-tight mt-1 capitalize break-words">{approval.request}</h3>
             <span className={`inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 rounded-full border text-[14px] font-semibold ${pill.className}`}>
               <pill.Icon className="w-3.5 h-3.5" />
               {pill.label}
@@ -103,7 +103,8 @@ export default function ReviewApprovalModal({ approval, detailsLoading, detailsE
           <button
             type="button"
             onClick={handleClose}
-            className="text-[#94A3B8] hover:text-[#334155] transition-colors cursor-pointer bg-transparent border-0 p-1 shrink-0"
+            aria-label="Close"
+            className="text-[#94A3B8] hover:text-[#334155] transition-colors cursor-pointer bg-transparent border-0 p-2 -mr-1 md:p-1 md:mr-0 shrink-0"
           >
             <FiX className="w-5 h-5" />
           </button>
@@ -112,15 +113,15 @@ export default function ReviewApprovalModal({ approval, detailsLoading, detailsE
         {/* Scrollable body */}
         <div className="flex-1 overflow-y-auto">
           {detailsLoading && (
-            <div className="flex items-center gap-2 px-7 pt-4 text-[14px] font-semibold text-[#64748B]">
+            <div className="flex items-center gap-2 px-5 md:px-7 pt-4 text-[14px] font-semibold text-[#64748B]">
               <FiLoader className="w-4 h-4 animate-spin" />
               Loading full details...
             </div>
           )}
           {!detailsLoading && detailsError && (
-            <p className="px-7 pt-4 text-[14px] text-[#B91C1C]">{detailsError}</p>
+            <p className="px-5 md:px-7 pt-4 text-[14px] text-[#B91C1C]">{detailsError}</p>
           )}
-          <div className="grid grid-cols-2 gap-x-6 gap-y-5 px-7 py-5 border-b border-[#F1F5F9]">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 sm:gap-y-5 px-5 md:px-7 py-5 border-b border-[#F1F5F9]">
             <InfoItem Icon={FaRupeeSign} label="Amount" value={formatAmount(approval.amount)} />
             <InfoItem Icon={FiUser} label="Submitted By" value={approval.submittedBy} />
             <InfoItem Icon={FiCalendar} label="Submitted Date" value={formatDate(approval.date)} />
@@ -129,7 +130,7 @@ export default function ReviewApprovalModal({ approval, detailsLoading, detailsE
             <InfoItem Icon={FiClipboard} label="Related Event" value={approval.relatedEvent} />
           </div>
 
-          <div className="px-7 py-5 border-b border-[#F1F5F9]">
+          <div className="px-5 md:px-7 py-5 border-b border-[#F1F5F9]">
             <SectionTitle Icon={FiFileText}>Expense Details</SectionTitle>
             <div className="flex flex-col gap-4">
               <DetailField label="Description">
@@ -143,7 +144,7 @@ export default function ReviewApprovalModal({ approval, detailsLoading, detailsE
               </DetailField>
               <DetailField label="Bill">
                 {approval.billUrl ? (
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <a
                       href={approval.billUrl}
                       target="_blank"
@@ -177,7 +178,7 @@ export default function ReviewApprovalModal({ approval, detailsLoading, detailsE
             </div>
           </div>
 
-          <div className="px-7 py-5">
+          <div className="px-5 md:px-7 py-5">
             <SectionTitle Icon={FiClock}>Activity Timeline</SectionTitle>
             <ol className="relative flex flex-col gap-4 pl-5">
               <span className="absolute left-[5px] top-1.5 bottom-1.5 w-px bg-[#E2E8F0]" />
@@ -193,7 +194,7 @@ export default function ReviewApprovalModal({ approval, detailsLoading, detailsE
         </div>
 
         {/* Fixed footer */}
-        <div className="px-7 py-4 border-t border-[#F1F5F9] shrink-0">
+        <div className="px-5 md:px-7 py-4 border-t border-[#F1F5F9] shrink-0">
           {isPending && rejecting && (
             <div className="mb-4">
               <label htmlFor="reject-reason" className="block text-[14px] font-semibold text-[#334155] mb-1.5">
@@ -208,7 +209,7 @@ export default function ReviewApprovalModal({ approval, detailsLoading, detailsE
                 onChange={(e) => setRejectReason(e.target.value)}
                 disabled={!!submitting}
                 placeholder="Tell the requester why this expense is being rejected"
-                className="w-full resize-none rounded-xl border border-[#E2E8F0] px-3.5 py-2.5 text-[15px] text-[#0F172A] placeholder:text-[#94A3B8] outline-none focus:border-[#FCA5A5] focus:ring-[3px] focus:ring-[#FEE2E2] disabled:bg-[#F8FAFC]"
+                className="w-full resize-none rounded-xl border border-[#E2E8F0] px-3.5 py-2.5 text-[16px] md:text-[15px] text-[#0F172A] placeholder:text-[#94A3B8] outline-none focus:border-[#FCA5A5] focus:ring-[3px] focus:ring-[#FEE2E2] disabled:bg-[#F8FAFC]"
               />
             </div>
           )}
@@ -220,7 +221,7 @@ export default function ReviewApprovalModal({ approval, detailsLoading, detailsE
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 h-12 rounded-xl border border-[#E2E8F0] text-[16px] font-semibold text-[#334155] bg-white hover:bg-slate-50 transition-colors cursor-pointer"
+                className="flex-1 h-12 rounded-xl border border-[#E2E8F0] text-[15px] md:text-[16px] font-semibold text-[#334155] bg-white hover:bg-slate-50 transition-colors cursor-pointer"
               >
                 Close
               </button>
@@ -230,7 +231,7 @@ export default function ReviewApprovalModal({ approval, detailsLoading, detailsE
                   type="button"
                   onClick={cancelReject}
                   disabled={!!submitting}
-                  className="flex-1 h-12 rounded-xl border border-[#E2E8F0] text-[16px] font-semibold text-[#334155] bg-white hover:bg-slate-50 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="flex-1 h-12 rounded-xl border border-[#E2E8F0] text-[15px] md:text-[16px] font-semibold text-[#334155] bg-white hover:bg-slate-50 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   Cancel
                 </button>
@@ -238,7 +239,7 @@ export default function ReviewApprovalModal({ approval, detailsLoading, detailsE
                   type="button"
                   onClick={() => submit('reject')}
                   disabled={!trimmedReason || !!submitting}
-                  className="flex-1 inline-flex items-center justify-center gap-2 h-12 rounded-xl text-[16px] font-semibold text-white bg-[#DC2626] hover:bg-[#B91C1C] transition-colors cursor-pointer border-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 inline-flex items-center justify-center gap-1.5 md:gap-2 px-2 h-12 rounded-xl text-[15px] md:text-[16px] font-semibold text-white bg-[#DC2626] hover:bg-[#B91C1C] transition-colors cursor-pointer border-0 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {submitting === 'reject' ? <FiLoader className="w-4 h-4 animate-spin" /> : <FiXCircle className="w-4 h-4" />}
                   Submit Rejection
@@ -250,7 +251,7 @@ export default function ReviewApprovalModal({ approval, detailsLoading, detailsE
                   type="button"
                   onClick={() => { setRejecting(true); setError(''); }}
                   disabled={!!submitting}
-                  className="flex-1 inline-flex items-center justify-center gap-2 h-12 rounded-xl border border-[#FCA5A5] text-[16px] font-semibold text-[#B91C1C] bg-white hover:bg-[#FEF2F2] transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="flex-1 inline-flex items-center justify-center gap-1.5 md:gap-2 px-2 h-12 rounded-xl border border-[#FCA5A5] text-[15px] md:text-[16px] font-semibold text-[#B91C1C] bg-white hover:bg-[#FEF2F2] transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   <FiXCircle className="w-4 h-4" />
                   Reject
@@ -259,7 +260,7 @@ export default function ReviewApprovalModal({ approval, detailsLoading, detailsE
                   type="button"
                   onClick={() => submit('approve')}
                   disabled={!!submitting}
-                  className="flex-1 inline-flex items-center justify-center gap-2 h-12 rounded-xl text-[16px] font-semibold text-white bg-[#0F9D58] hover:bg-[#0B8043] transition-colors cursor-pointer border-0 disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="flex-1 inline-flex items-center justify-center gap-1.5 md:gap-2 px-2 h-12 rounded-xl text-[15px] md:text-[16px] font-semibold text-white bg-[#0F9D58] hover:bg-[#0B8043] transition-colors cursor-pointer border-0 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {submitting === 'approve' ? <FiLoader className="w-4 h-4 animate-spin" /> : <FiCheckCircle className="w-4 h-4" />}
                   Approve

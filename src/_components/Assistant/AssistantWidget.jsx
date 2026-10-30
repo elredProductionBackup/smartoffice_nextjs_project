@@ -211,7 +211,7 @@ export default function AssistantWidget() {
         <div
           role="dialog"
           aria-label="Actionable assistant"
-          className="fixed bottom-24 right-4 sm:right-6 z-50 flex h-[520px] max-h-[calc(100vh-120px)] w-[calc(100vw-32px)] sm:w-[360px] flex-col overflow-hidden rounded-[20px] border border-[#D3E3FD] bg-white shadow-xl"
+          className="fixed bottom-24 right-4 sm:right-6 z-50 flex h-[520px] max-h-[calc(100dvh-120px)] md:max-h-[calc(100vh-120px)] w-[calc(100vw-32px)] sm:w-[360px] flex-col overflow-hidden rounded-[20px] border border-[#D3E3FD] bg-white shadow-xl"
         >
           <div className="flex items-center justify-between bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)] px-4 py-3 text-white">
             <span className="font-semibold">Assistant</span>
@@ -292,7 +292,7 @@ export default function AssistantWidget() {
               placeholder={listening ? "Recording… tap mic to send" : "Type or speak a command"}
               aria-label="Command"
               maxLength={1000}
-              className="flex-1 rounded-full bg-[#F4F5F7] px-4 py-2 text-[14px] outline-none"
+              className="flex-1 min-w-0 rounded-full bg-[#F4F5F7] px-4 py-2 text-[16px] md:text-[14px] outline-none"
             />
             {voiceSupported && (
               <button

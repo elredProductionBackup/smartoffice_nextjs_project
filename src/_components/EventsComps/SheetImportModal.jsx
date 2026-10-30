@@ -122,18 +122,18 @@ const SheetImportModal = ({ file, onClose, onBack, onImport, onImported }) => {
 
   return (
     <div
-      className="fixed inset-0 z-[200] grid place-items-center bg-[rgba(20,30,55,0.35)] p-5"
+      className="fixed inset-0 z-[200] grid place-items-center bg-[rgba(20,30,55,0.35)] p-4 md:p-5"
       onMouseDown={(e) => e.target === e.currentTarget && !submitting && onClose()}
     >
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="sheet-import-title"
-        className="flex max-h-full w-full max-w-[880px] flex-col overflow-hidden rounded-[18px] bg-white shadow-[0_20px_50px_rgba(30,50,90,0.12)] font-nunito"
+        className="flex max-h-[calc(100dvh-32px)] md:max-h-full w-full max-w-[880px] flex-col overflow-hidden rounded-[18px] bg-white shadow-[0_20px_50px_rgba(30,50,90,0.12)] font-nunito"
       >
-        <div className="flex items-start justify-between gap-3 px-[30px] pt-7">
+        <div className="flex items-start justify-between gap-3 px-5 pt-5 md:px-[30px] md:pt-7">
           <div className="min-w-0">
-            <h3 id="sheet-import-title" className="text-[24px] font-semibold text-[#1E293B]">
+            <h3 id="sheet-import-title" className="text-[20px] md:text-[24px] font-semibold text-[#1E293B]">
               {title}
             </h3>
             <p className="mt-1 truncate text-[15px] text-[#475569]">{subtitle}</p>
@@ -149,7 +149,7 @@ const SheetImportModal = ({ file, onClose, onBack, onImport, onImported }) => {
           </button>
         </div>
 
-        <div className="flex-1 overflow-auto px-[30px] pt-5 pb-5">
+        <div className="flex-1 overflow-auto px-5 md:px-[30px] pt-5 pb-5">
           {parseError ? (
             <div className="flex items-start gap-2.5 rounded-xl border border-[#FECACA] bg-[#FEF6F6] px-4 py-3 text-[15px] font-semibold text-[#B91C1C]">
               <FiAlertCircle className="mt-0.5 shrink-0 text-[18px]" />
@@ -182,7 +182,7 @@ const SheetImportModal = ({ file, onClose, onBack, onImport, onImported }) => {
                       <select
                         value={match[f.key] ?? -1}
                         onChange={(e) => setMatch((prev) => ({ ...prev, [f.key]: Number(e.target.value) }))}
-                        className={`w-full appearance-none rounded-xl border bg-white py-2.5 pl-3 pr-10 text-[15px] text-[#1E293B] outline-none cursor-pointer ${
+                        className={`w-full appearance-none rounded-xl border bg-white py-2.5 pl-3 pr-10 text-base md:text-[15px] text-[#1E293B] outline-none cursor-pointer ${
                           f.required && !nameMapped ? "border-[#DC2626]" : "border-[#E2E8F0] focus:border-[#0B57D0]"
                         }`}
                       >
@@ -263,7 +263,7 @@ const SheetImportModal = ({ file, onClose, onBack, onImport, onImported }) => {
           )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5 border-t border-[#E2E8F0] px-[30px] pt-4 pb-5">
+        <div className="flex flex-wrap items-center gap-2.5 border-t border-[#E2E8F0] px-5 md:px-[30px] pt-4 pb-5">
           {result ? (
             <button type="button" onClick={onClose} className={`${btnFill} ml-auto`}>
               Done
@@ -311,7 +311,7 @@ function ImportResult({ result }) {
   const { addedCount, joined, failed } = result;
   return (
     <>
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-2 md:gap-3">
         <Stat label="Added" value={addedCount} className="text-[#137333]" />
         <Stat label="Linked to app" value={joined.length} className="text-[#0B57D0]" />
         <Stat label="Skipped" value={failed.length} className={failed.length ? "text-[#B91C1C]" : "text-[#475569]"} />
@@ -326,7 +326,7 @@ function ImportResult({ result }) {
           <p className="mt-0.5 text-[13px] text-[#64748B]">Matched by mobile number. Check none of these are a mistyped number.</p>
           <ul className="mt-2 divide-y divide-[#E2E8F0] rounded-xl border border-[#E2E8F0]">
             {joined.map((j) => (
-              <li key={j.index} className="flex items-center gap-3 px-4 py-2.5 text-[14px]">
+              <li key={j.index} className="flex flex-wrap md:flex-nowrap items-center gap-x-3 gap-y-0.5 px-4 py-2.5 text-[14px]">
                 <span className="w-[64px] shrink-0 text-[#94A3B8]">Row {j.line}</span>
                 <span className="font-semibold text-[#1E293B]">{j.name}</span>
                 <span className="text-[#94A3B8]">→ linked to</span>
@@ -347,9 +347,9 @@ function ImportResult({ result }) {
           <p className="mt-0.5 text-[13px] text-[#64748B]">Fix these in the sheet and upload just those rows again.</p>
           <ul className="mt-2 divide-y divide-[#E2E8F0] rounded-xl border border-[#E2E8F0]">
             {failed.map((f) => (
-              <li key={f.index} className="flex items-start gap-3 px-4 py-2.5 text-[14px]">
+              <li key={f.index} className="flex flex-wrap md:flex-nowrap items-start gap-x-3 gap-y-0.5 px-4 py-2.5 text-[14px]">
                 <span className="w-[64px] shrink-0 text-[#94A3B8]">Row {f.line}</span>
-                <span className="w-[180px] shrink-0 truncate font-semibold text-[#1E293B]">{f.name || "No name"}</span>
+                <span className="w-[calc(100%-76px)] md:w-[180px] shrink-0 truncate font-semibold text-[#1E293B]">{f.name || "No name"}</span>
                 <span className="text-[#B91C1C]">{f.reason}</span>
               </li>
             ))}
@@ -367,8 +367,8 @@ function ImportResult({ result }) {
 }
 
 const Stat = ({ label, value, className }) => (
-  <div className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-4 py-3">
-    <p className={`text-[26px] font-bold ${className}`}>{value}</p>
+  <div className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 md:px-4 py-3">
+    <p className={`text-[22px] md:text-[26px] font-bold ${className}`}>{value}</p>
     <p className="text-[13px] font-semibold text-[#64748B]">{label}</p>
   </div>
 );

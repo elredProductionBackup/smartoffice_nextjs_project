@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_REGEX = /^\+?[0-9]{7,15}$/; // checked after spaces/dashes are stripped
@@ -19,15 +19,18 @@ const AddAllianceModal = ({ isOpen, onClose, onDone, title, fields = [], initial
   const [saving, setSaving] = useState(false);
   const [submitError, setSubmitError] = useState("");
 
-  useEffect(() => {
+  // Reset the form each time the popup opens (done while rendering, not in an effect,
+  // so the first frame already shows the right values)
+  const [wasOpen, setWasOpen] = useState(isOpen);
+  if (wasOpen !== isOpen) {
+    setWasOpen(isOpen);
     if (isOpen) {
       setForm(initialForm());
       setErrors({});
       setSaving(false);
       setSubmitError("");
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen]);
+  }
 
   if (!isOpen) return null;
 
@@ -91,14 +94,14 @@ const AddAllianceModal = ({ isOpen, onClose, onDone, title, fields = [], initial
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-[2px]">
-      <div className="bg-white rounded-[28px] w-[500px] max-h-[90vh] overflow-y-auto p-10 shadow-xl relative animate-in fade-in zoom-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-[2px] p-4">
+      <div className="bg-white rounded-[28px] w-full max-w-[500px] max-h-[90dvh] md:max-h-[90vh] overflow-y-auto p-6 md:p-10 shadow-xl relative animate-in fade-in zoom-in duration-200">
         {/* Header */}
         <div className="mb-[20px]">
-          <h2 className="text-[24px] font-bold text-[#333]">{title}</h2>
+          <h2 className="text-[22px] md:text-[24px] font-bold text-[#333]">{title}</h2>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-5 md:space-y-6">
           {fields.map(({ key, label, placeholder, type = "text", required = true, maxLength }) => (
             <div key={key}>
               <label className="block text-[16px] font-bold text-[#333] mb-3">
@@ -127,7 +130,7 @@ const AddAllianceModal = ({ isOpen, onClose, onDone, title, fields = [], initial
         )}
 
         {/* Buttons */}
-        <div className={`flex gap-6 justify-center ${submitError ? "mt-6" : "mt-12"}`}>
+        <div className={`flex gap-4 md:gap-6 justify-center ${submitError ? "mt-6" : "mt-8 md:mt-12"}`}>
           <button
             onClick={onClose}
             disabled={saving}

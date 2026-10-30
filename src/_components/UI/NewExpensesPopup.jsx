@@ -17,8 +17,10 @@ function CustomSelectDropdown({ value, onChange, options, placeholder, loading =
     const handler = (e) => {
       if (ref.current && !ref.current.contains(e.target)) setOpen(false);
     };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    // Capture phase: the modal stops mousedown propagation, so a bubbling
+    // listener never heard clicks elsewhere in the form and the list stayed open.
+    document.addEventListener('mousedown', handler, true);
+    return () => document.removeEventListener('mousedown', handler, true);
   }, []);
 
   const isPlaceholder = !value;
@@ -33,10 +35,10 @@ function CustomSelectDropdown({ value, onChange, options, placeholder, loading =
         type="button"
         onClick={() => !disabled && setOpen((o) => !o)}
         disabled={disabled}
-        className="w-full flex items-center justify-between px-4 py-3 border border-gray-300 rounded-[14px] bg-white text-[15px] cursor-pointer outline-none text-left focus:border-[#1A73E8] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+        className="w-full flex items-center justify-between px-4 py-3 border border-gray-300 rounded-[14px] bg-white text-[16px] md:text-[15px] cursor-pointer outline-none text-left focus:border-[#1A73E8] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
         style={{ color: isPlaceholder ? '#94a3b8' : '#1e293b' }}
       >
-        <span>{loading ? 'Loading...' : displayLabel}</span>
+        <span className="min-w-0 truncate md:whitespace-normal">{loading ? 'Loading...' : displayLabel}</span>
         {loading ? (
           <FiLoader className="ml-2 shrink-0 text-slate-400 animate-spin" />
         ) : (
@@ -339,7 +341,7 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
 
       {/* Modal Dialog */}
       <div
-        className="fixed z-[9999] flex flex-col bg-white rounded-3xl w-[600px] max-h-[85vh] font-sans overflow-hidden"
+        className="fixed z-[9999] flex flex-col bg-white rounded-3xl w-[calc(100vw-32px)] md:w-[600px] max-h-[85dvh] md:max-h-[85vh] font-sans overflow-hidden"
         style={{
           top: '50%',
           left: '50%',
@@ -350,22 +352,23 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
         onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-8 pt-6 pb-4 border-b border-[#F1F3F5] shrink-0">
-          <h2 className="text-[22px] font-bold text-[#1F1F1F]">
+        <div className="flex items-center justify-between gap-3 px-5 pt-5 md:px-8 md:pt-6 pb-4 border-b border-[#F1F3F5] shrink-0">
+          <h2 className="text-[20px] md:text-[22px] font-bold text-[#1F1F1F]">
             {initialData ? 'Edit Expense' : 'Add New Expense'}
           </h2>
           <button
             onClick={onClose}
             type="button"
             disabled={saving}
-            className="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-50 hover:bg-gray-100 text-gray-500 cursor-pointer border-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="Close"
+            className="w-10 h-10 md:w-8 md:h-8 shrink-0 flex items-center justify-center rounded-lg bg-gray-50 hover:bg-gray-100 text-gray-500 cursor-pointer border-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <FiX className="w-5 h-5" />
           </button>
         </div>
 
         {/* Scrollable Form Container */}
-        <div className="flex-1 overflow-y-auto px-8 py-6 flex flex-col gap-5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        <div className="flex-1 overflow-y-auto px-5 py-5 md:px-8 md:py-6 flex flex-col gap-4 md:gap-5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
 
           {/* Expense Description */}
           <div className="flex flex-col gap-1.5">
@@ -375,7 +378,7 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
               placeholder="e.g., Office supplies purchase"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full border border-gray-300 rounded-[14px] px-4 py-3 text-[15px] text-slate-800 bg-white outline-none focus:border-[#1A73E8] transition-colors"
+              className="w-full border border-gray-300 rounded-[14px] px-4 py-3 text-[16px] md:text-[15px] text-slate-800 bg-white outline-none focus:border-[#1A73E8] transition-colors"
             />
           </div>
 
@@ -432,7 +435,7 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
                 value={totalAmount}
                 onChange={(e) => handleTotalAmountChange(e.target.value)}
                 onWheel={(e) => e.target.blur()}
-                className="w-full border border-gray-300 rounded-[14px] px-4 py-3 text-[15px] text-slate-800 bg-white outline-none focus:border-[#1A73E8] transition-colors"
+                className="w-full border border-gray-300 rounded-[14px] px-4 py-3 text-[16px] md:text-[15px] text-slate-800 bg-white outline-none focus:border-[#1A73E8] transition-colors"
               />
             </div>
           </div>
@@ -446,7 +449,7 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
               placeholder="Add comments or notes"
               value={remark}
               onChange={(e) => setRemark(e.target.value)}
-              className="w-full resize-none border border-gray-300 rounded-[14px] px-4 py-3 text-[15px] text-slate-800 bg-white outline-none focus:border-[#1A73E8] transition-colors"
+              className="w-full resize-none border border-gray-300 rounded-[14px] px-4 py-3 text-[16px] md:text-[15px] text-slate-800 bg-white outline-none focus:border-[#1A73E8] transition-colors"
             />
             {remark.trim().length === 1 && (
               <p className="text-[12px] text-red-500">Remark must be at least 2 characters</p>
@@ -471,7 +474,7 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
               className="border-2 border-dashed border-[#C8D3E3] rounded-[14px] px-4 py-5 flex flex-col items-center justify-center gap-2 cursor-pointer bg-slate-50 hover:bg-slate-100 transition-colors"
             >
               <FiUpload className="w-5 h-5 text-slate-500" />
-              <span className="text-[14px] font-medium text-slate-700">
+              <span className="text-[14px] font-medium text-slate-700 max-w-full text-center [overflow-wrap:anywhere]">
                 {fileName ? `Selected: ${fileName}` : 'Click to upload or drag and drop'}
               </span>
               <input
@@ -509,8 +512,8 @@ export default function NewExpensesPopup({ onClose, onSave, initialData }) {
 
       {/* Success Confirmation */}
       {showSuccess && (
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-[20px] w-full max-w-[360px] mx-4 shadow-xl p-6 flex flex-col items-center gap-3">
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-white rounded-[20px] w-full max-w-[360px] shadow-xl p-6 flex flex-col items-center gap-3">
             <FiCheckCircle className="text-[40px] text-green-500" />
             <p className="text-[16px] font-bold text-[#1F1F1F]">
               {initialData ? 'Expense updated successfully' : 'Expense added successfully'}

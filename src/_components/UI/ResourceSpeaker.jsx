@@ -1,8 +1,14 @@
-import { useRef, useState } from "react";
+import { useMemo, useRef } from "react";
 import { IoClose } from "react-icons/io5";
 
 export function ResourceSpeaker({ value, onChange, errors = {} }) {
   const fileRef = useRef(null);
+
+  // One object URL per picked file (it used to be re-created on every render)
+  const imageSrc = useMemo(
+    () => (value.image instanceof File ? URL.createObjectURL(value.image) : value.image),
+    [value.image]
+  );
 
   const updateSpeaker = (key, val) => {
     onChange({
@@ -34,7 +40,7 @@ export function ResourceSpeaker({ value, onChange, errors = {} }) {
 
       <div className="flex gap-[10px] relative">
         {/* Left fields */}
-        <div className="flex-1 flex flex-col gap-[10px]">
+        <div className="flex-1 min-w-0 flex flex-col gap-[10px]">
           {/* Name */}
           <div className="relative flex items-center">
             <div className="absolute left-[20px] text-[#999999]  flex items-center">
@@ -69,18 +75,12 @@ export function ResourceSpeaker({ value, onChange, errors = {} }) {
         {/* Upload photo */}
         <div
           onClick={() => fileRef.current.click()}
-          className="relative w-[120px] h-[140px] border border-dashed border-[#EAEAEA] rounded-lg bg-[#F6F6F6] flex flex-col items-center justify-center gap-1 cursor-pointer"
+          className="relative shrink-0 w-[96px] h-[120px] sm:w-[120px] sm:h-[140px] border border-dashed border-[#EAEAEA] rounded-lg bg-[#F6F6F6] flex flex-col items-center justify-center gap-1 cursor-pointer"
         >
           {value.image ? (
             <>
               <img
-                src={
-                  value.image
-                    ? value.image instanceof File
-                      ? URL.createObjectURL(value.image)
-                      : value.image
-                    : "/placeholder.png"
-                }
+                src={imageSrc || "/placeholder.png"}
                 alt=""
                 className="w-full h-full object-cover rounded-lg"
               />
