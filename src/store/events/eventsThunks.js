@@ -376,6 +376,8 @@ export const fetchEventChecklist = createAsyncThunk(
       return {
         list,
         total: list.length,
+        // Per-difficulty totals/completed counts (master + event checklist) computed by the API
+        checklistSummary: allRes?.data?.checklistSummary || null,
         eventId, // pass eventId to the slicer
       };
     } catch (err) {
