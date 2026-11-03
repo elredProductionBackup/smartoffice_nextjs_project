@@ -5,15 +5,11 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { FiCheckSquare, FiDollarSign, FiHome, FiSend, FiX } from "react-icons/fi";
-import { HiOutlineChatBubbleLeftRight } from "react-icons/hi2";
-import { LuUserCog } from "react-icons/lu";
-import { FaFileInvoiceDollar } from "react-icons/fa6";
-import dashboardLogo from "@/assets/logo/mage_dashboard.svg";
-import memberLogo from "@/assets/logo/tdesign_member.svg";
-import eventsLogo from "@/assets/logo/events.svg";
-import actionableLogo from "@/assets/logo/actionable.svg";
-import alliancesLogo from "@/assets/logo/la_handshake.svg";
+import { FiX } from "react-icons/fi";
+import {
+  BadgeCheck, CalendarDays, ChevronDown, ChevronUp, Handshake, House, LayoutDashboard, ListChecks, MessagesSquare,
+  PanelLeftClose, PanelLeftOpen, ReceiptText, Send, UserCog, Users, Wallet,
+} from "lucide-react";
 import Header from "@/_components/Header";
 import ProtectedRoute from "@/_components/ProtectedRoute";
 import AssistantWidget from "@/_components/Assistant/AssistantWidget";
@@ -21,41 +17,50 @@ import useGlobalLoader from "@/store/useGlobalLoader";
 import { selectIsFinanceOfficer, selectIsLearningOfficer } from "@/store/auth/authSlice";
 import { ShareableUrlSync } from "@/hooks/useShareableUrl";
 
-const ADMIN_MENU = [
-  { name: "Dashboard", path: "/dashboard/profile", logo: dashboardLogo },
-  { name: "Events", path: "/dashboard/events", logo: eventsLogo },
-  { name: "Actionable", path: "/dashboard/actionable", logo: actionableLogo },
-  { name: "Expense Records", path: "/dashboard/expense-records", icon: <FaFileInvoiceDollar className="text-[22px]" /> },
-  { name: "Members", path: "/dashboard/members?tab=member", logo: memberLogo },
-  { name: "Vendor/Resources", path: "/dashboard/alliances?tab=vendors", logo: alliancesLogo },
-  { name: "Discussions", path: "/dashboard/discussions", icon: <HiOutlineChatBubbleLeftRight className="text-[24px]" /> },
-  { name: "User Management", path: "/dashboard/user-management", icon: <LuUserCog className="text-[23px]" /> },
-];
+// `group` sets the section heading; sections appear in the order their first item does
+const NAV = {
+  dashboard: { name: "Dashboard", path: "/dashboard/profile", icon: LayoutDashboard, group: "Overview" },
+  events: { name: "Events", path: "/dashboard/events", icon: CalendarDays, group: "Operations" },
+  actionable: { name: "Actionable", path: "/dashboard/actionable", icon: ListChecks, group: "Operations" },
+  expenses: { name: "Expense Records", path: "/dashboard/expense-records", icon: ReceiptText, group: "Operations" },
+  members: { name: "Members", path: "/dashboard/members?tab=member", icon: Users, group: "Community" },
+  alliances: { name: "Vendor/Resources", path: "/dashboard/alliances?tab=vendors", icon: Handshake, group: "Community" },
+  discussions: { name: "Discussions", path: "/dashboard/discussions", icon: MessagesSquare, group: "Community" },
+  userManagement: { name: "User Management", path: "/dashboard/user-management", icon: UserCog, group: "Manage" },
+};
 
-const USER_MENU = [
-  { name: "Dashboard", path: "/dashboard/profile", logo: dashboardLogo },
-  { name: "Actionable", path: "/dashboard/actionable", logo: actionableLogo },
-  { name: "Expense Records", path: "/dashboard/expense-records", icon: <FaFileInvoiceDollar className="text-[22px]" /> },
-  { name: "Discussions", path: "/dashboard/discussions", icon: <HiOutlineChatBubbleLeftRight className="text-[24px]" /> },
-];
+const ADMIN_MENU = [NAV.dashboard, NAV.events, NAV.actionable, NAV.expenses, NAV.discussions];
+
+const USER_MENU = [NAV.dashboard, NAV.actionable, NAV.expenses, NAV.discussions];
 
 const LEARNING_OFFICER_MENU = [
-  { name: "Dashboard", path: "/dashboard/portfolio-officer", logo: dashboardLogo },
-  { name: "Actionable", path: "/dashboard/actionable", logo: actionableLogo },
-  { name: "Events", path: "/dashboard/events", logo: eventsLogo },
-  { name: "Vendor/Resources", path: "/dashboard/alliances?tab=vendors", logo: alliancesLogo },
-  { name: "Discussions", path: "/dashboard/discussions", icon: <HiOutlineChatBubbleLeftRight className="text-[24px]" /> },
+  { ...NAV.dashboard, path: "/dashboard/portfolio-officer" },
+  NAV.actionable, NAV.events, NAV.alliances, NAV.discussions,
 ];
 
 const FINANCE_MANAGER_MENU = [
-  { name: "Home", path: "/dashboard/profile", icon: <FiHome className="text-[22px]" /> },
-  { name: "Finance", path: "/dashboard/finance", icon: <FiDollarSign className="text-[22px]" /> },
-  { name: "Actionable", path: "/dashboard/actionable", logo: actionableLogo },
-  { name: "Approvals", path: "/dashboard/approvals", icon: <FiCheckSquare className="text-[22px]" /> },
-  { name: "Discussions", path: "/dashboard/discussions", icon: <HiOutlineChatBubbleLeftRight className="text-[24px]" /> },
+  { name: "Home", path: "/dashboard/profile", icon: House, group: "Overview" },
+  { name: "Finance", path: "/dashboard/finance", icon: Wallet, group: "Finance" },
+  { ...NAV.actionable, group: "Finance" },
+  { name: "Approvals", path: "/dashboard/approvals", icon: BadgeCheck, group: "Finance" },
+  NAV.discussions,
 ];
 
-const SEND_BULK_ITEM = { name: "Send Bulk", path: "/dashboard/send-bulk", icon: <FiSend className="text-[22px]" /> };
+const SEND_BULK_ITEM = { name: "Send Bulk", path: "/dashboard/send-bulk", icon: Send, group: "Community" };
+
+// Admin-only items tucked behind the "See more" toggle
+const ADMIN_MORE_MENU = [NAV.members, NAV.alliances, NAV.userManagement, SEND_BULK_ITEM];
+
+const COLLAPSED_KEY = "sidebarCollapsed";
+
+const groupMenu = (items) => {
+  const groups = new Map();
+  items.forEach((item) => {
+    if (!groups.has(item.group)) groups.set(item.group, []);
+    groups.get(item.group).push(item);
+  });
+  return [...groups].map(([title, groupItems]) => ({ title, items: groupItems }));
+};
 
 const basePathOf = (url) => url.split("?")[0];
 
@@ -64,7 +69,6 @@ const isActive = (pathname, item) => {
   return pathname === basePath || pathname.startsWith(`${basePath}/`);
 };
 
-const MenuIcon = ({ item }) => (item.icon ? item.icon : <Image src={item.logo} alt="" aria-hidden="true" />);
 
 export default function DashboardLayout({ children }) {
   const pathname = usePathname();
@@ -74,10 +78,40 @@ export default function DashboardLayout({ children }) {
   const isLearningOfficer = useSelector(selectIsLearningOfficer);
   const network = user?.networkClusterDetails;
 
+  const moreItems = isAdmin && !isFinanceManager && !isLearningOfficer ? ADMIN_MORE_MENU : [];
+  const moreActive = moreItems.some((item) => isActive(pathname, item));
+  // null = not toggled yet, so the list starts open when the current page is one of the hidden items
+  const [showMore, setShowMore] = useState(null);
+  const moreOpen = showMore ?? moreActive;
+  const toggleMore = () => {
+    setTooltip(null);
+    setShowMore(!moreOpen);
+  };
+
   // Tooltip is fixed-positioned so the scrollable sidebar doesn't clip it
   const [tooltip, setTooltip] = useState(null);
   // Mobile navigation drawer
   const [drawerOpen, setDrawerOpen] = useState(false);
+  // Desktop sidebar width preference. ProtectedRoute renders on the client only, so reading storage here is safe.
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem(COLLAPSED_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleCollapsed = () => {
+    setTooltip(null);
+    setCollapsed((prev) => {
+      try {
+        localStorage.setItem(COLLAPSED_KEY, prev ? "0" : "1");
+      } catch {
+        // Storage blocked: the preference just won't persist
+      }
+      return !prev;
+    });
+  };
 
   useEffect(() => {
     useGlobalLoader.getState().hideLoader();
@@ -88,6 +122,8 @@ export default function DashboardLayout({ children }) {
   if (lastPath !== pathname) {
     setLastPath(pathname);
     setDrawerOpen(false);
+    // Reveal the hidden items when navigating to one of them from elsewhere
+    if (moreActive) setShowMore(true);
   }
 
   // Close drawer with Escape and stop the page behind it from scrolling
@@ -117,9 +153,63 @@ export default function DashboardLayout({ children }) {
         ? ADMIN_MENU
         : USER_MENU;
 
-  const showSendBulk = !isFinanceManager && !isLearningOfficer;
+  // Admins reach Send Bulk through "See more" instead
+  const showSendBulk = !isFinanceManager && !isLearningOfficer && moreItems.length === 0;
   const menu = showSendBulk ? [...baseMenu, SEND_BULK_ITEM] : baseMenu;
-  const sidebarCount = menu.length;
+  const menuGroups = groupMenu(menu);
+
+  const moreLabel = moreOpen ? "See less" : "See more";
+  const MoreIcon = moreOpen ? ChevronUp : ChevronDown;
+
+  const renderDesktopItem = (item) => {
+    const active = isActive(pathname, item);
+    const Icon = item.icon;
+    return (
+      <li key={item.path}>
+        <Link
+          href={item.path}
+          aria-label={collapsed ? item.name : undefined}
+          aria-current={active ? "page" : undefined}
+          onMouseEnter={collapsed ? (e) => showTooltip(e, item.name) : undefined}
+          onMouseLeave={hideTooltip}
+          onClick={hideTooltip}
+          className={`flex items-center gap-3 h-11 rounded-xl text-[15px] whitespace-nowrap transition-colors ${
+            collapsed ? "justify-center" : "px-3"
+          } ${
+            active
+              ? "bg-[#E8F0FE] text-[#0B57D0] font-bold"
+              : "text-[#3C4757] font-semibold hover:bg-[#F2F7FF] hover:text-[#0B57D0]"
+          }`}
+        >
+          <Icon size={20} strokeWidth={active ? 2.25 : 1.9} className="shrink-0" />
+          {!collapsed && <span className="truncate">{item.name}</span>}
+        </Link>
+      </li>
+    );
+  };
+
+  const renderMobileItem = (item) => {
+    const active = isActive(pathname, item);
+    const Icon = item.icon;
+    return (
+      <li key={item.path}>
+        <Link
+          href={item.path}
+          tabIndex={drawerOpen ? 0 : -1}
+          aria-current={active ? "page" : undefined}
+          onClick={() => setDrawerOpen(false)}
+          className={`flex items-center gap-3 h-12 px-3 rounded-xl text-[15px] transition-colors ${
+            active
+              ? "bg-[#E8F0FE] text-[#0B57D0] font-bold"
+              : "text-[#3C4757] font-semibold hover:bg-[#F2F7FF]"
+          }`}
+        >
+          <Icon size={20} strokeWidth={active ? 2.25 : 1.9} className="shrink-0" />
+          {item.name}
+        </Link>
+      </li>
+    );
+  };
 
   return (
     <ProtectedRoute>
@@ -129,39 +219,67 @@ export default function DashboardLayout({ children }) {
 
         {/* Main */}
         <div className="flex flex-1 min-h-0 overflow-hidden">
-          {/* Desktop / tablet icon rail */}
-          <div className="hidden md:block p-5 flex-shrink-0">
+          {/* Desktop / tablet sidebar: labelled sections, collapsible to an icon rail */}
+          <div className="hidden md:block p-5 pr-0 flex-shrink-0">
             <nav
               aria-label="Main"
-              className="w-21 bg-[#F2F7FF] h-full p-5 rounded-2xl overflow-y-auto overflow-x-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-              onScroll={hideTooltip}
+              className={`h-full flex flex-col bg-white border border-[#E5ECF6] rounded-[20px] shadow-[0px_1px_4px_0px_#0000000d] transition-[width] duration-200 ${
+                collapsed ? "w-[76px]" : "w-[248px]"
+              }`}
             >
-              {/* Spread items over the rail, but cap gaps at 40px so short menus don't over-stretch */}
-              <ul
-                className="flex flex-col justify-between gap-5"
-                style={{ minHeight: `min(100%, ${sidebarCount * 44 + (sidebarCount - 1) * 40}px)` }}
+              <div
+                className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-3 py-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                onScroll={hideTooltip}
               >
-                {menu.map((item) => {
-                  const active = isActive(pathname, item);
-                  return (
-                    <li key={item.path}>
-                      <Link
-                        href={item.path}
-                        aria-label={item.name}
-                        aria-current={active ? "page" : undefined}
-                        onMouseEnter={(e) => showTooltip(e, item.name)}
-                        onMouseLeave={hideTooltip}
-                        onClick={hideTooltip}
-                        className={`h-11 w-11 flex items-center justify-center rounded-md transition ${
-                          active ? "bg-[#D3E3FD] font-medium" : "hover:bg-blue-100"
-                        }`}
-                      >
-                        <MenuIcon item={item} />
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
+                {menuGroups.map((group, i) => (
+                  <div key={group.title} className={i > 0 ? "mt-4" : ""}>
+                    {collapsed ? (
+                      i > 0 && <div className="h-px bg-[#EDF1F6] mx-2 mb-4" />
+                    ) : (
+                      <p className="px-3 mb-1.5 text-[11px] font-bold uppercase tracking-[0.08em] text-[#6B7686] whitespace-nowrap">
+                        {group.title}
+                      </p>
+                    )}
+                    <ul className="flex flex-col gap-1">{group.items.map(renderDesktopItem)}</ul>
+                  </div>
+                ))}
+
+                {moreItems.length > 0 && (
+                  <>
+                    {moreOpen && <ul className="flex flex-col gap-1 mt-1">{moreItems.map(renderDesktopItem)}</ul>}
+                    <button
+                      type="button"
+                      onClick={toggleMore}
+                      aria-expanded={moreOpen}
+                      aria-label={collapsed ? moreLabel : undefined}
+                      onMouseEnter={collapsed ? (e) => showTooltip(e, moreLabel) : undefined}
+                      onMouseLeave={hideTooltip}
+                      className={`mt-1 w-full flex items-center gap-3 h-11 rounded-xl text-[14px] font-semibold text-[#6B7686] hover:bg-[#F2F7FF] hover:text-[#0B57D0] transition-colors cursor-pointer whitespace-nowrap ${
+                        collapsed ? "justify-center" : "px-3"
+                      }`}
+                    >
+                      <MoreIcon size={20} strokeWidth={1.9} className="shrink-0" />
+                      {!collapsed && moreLabel}
+                    </button>
+                  </>
+                )}
+              </div>
+
+              <div className="shrink-0 border-t border-[#EDF1F6] p-3">
+                <button
+                  type="button"
+                  onClick={toggleCollapsed}
+                  aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+                  onMouseEnter={collapsed ? (e) => showTooltip(e, "Expand sidebar") : undefined}
+                  onMouseLeave={hideTooltip}
+                  className={`w-full flex items-center gap-3 h-11 rounded-xl text-[14px] font-semibold text-[#6B7686] hover:bg-[#F2F7FF] hover:text-[#0B57D0] transition-colors cursor-pointer whitespace-nowrap ${
+                    collapsed ? "justify-center" : "px-3"
+                  }`}
+                >
+                  {collapsed ? <PanelLeftOpen size={20} strokeWidth={1.9} /> : <PanelLeftClose size={20} strokeWidth={1.9} />}
+                  {!collapsed && "Collapse"}
+                </button>
+              </div>
             </nav>
 
             {tooltip && (
@@ -222,29 +340,32 @@ export default function DashboardLayout({ children }) {
               </div>
             )}
 
-            <ul className="flex-1 overflow-y-auto px-3 py-4 flex flex-col gap-1">
-              {menu.map((item) => {
-                const active = isActive(pathname, item);
-                return (
-                  <li key={item.path}>
-                    <Link
-                      href={item.path}
-                      tabIndex={drawerOpen ? 0 : -1}
-                      aria-current={active ? "page" : undefined}
-                      onClick={() => setDrawerOpen(false)}
-                      className={`flex items-center gap-3 h-12 px-3 rounded-xl text-[15px] transition-colors ${
-                        active ? "bg-[#D3E3FD] text-[#0B57D0] font-semibold" : "text-[#333] hover:bg-[#F2F7FF]"
-                      }`}
-                    >
-                      <span className="w-8 h-8 flex items-center justify-center shrink-0 [&_img]:w-6 [&_img]:h-6">
-                        <MenuIcon item={item} />
-                      </span>
-                      {item.name}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
+            <div className="flex-1 overflow-y-auto px-3 py-4">
+              {menuGroups.map((group, i) => (
+                <div key={group.title} className={i > 0 ? "mt-4" : ""}>
+                  <p className="px-3 mb-1.5 text-[11px] font-bold uppercase tracking-[0.08em] text-[#6B7686]">
+                    {group.title}
+                  </p>
+                  <ul className="flex flex-col gap-1">{group.items.map(renderMobileItem)}</ul>
+                </div>
+              ))}
+
+              {moreItems.length > 0 && (
+                <>
+                  {moreOpen && <ul className="flex flex-col gap-1 mt-1">{moreItems.map(renderMobileItem)}</ul>}
+                  <button
+                    type="button"
+                    onClick={toggleMore}
+                    tabIndex={drawerOpen ? 0 : -1}
+                    aria-expanded={moreOpen}
+                    className="mt-1 w-full flex items-center gap-3 h-12 px-3 rounded-xl text-[15px] font-semibold text-[#6B7686] hover:bg-[#F2F7FF] transition-colors cursor-pointer"
+                  >
+                    <MoreIcon size={20} strokeWidth={1.9} className="shrink-0" />
+                    {moreLabel}
+                  </button>
+                </>
+              )}
+            </div>
           </nav>
         </div>
 

@@ -37,7 +37,7 @@ const removeFile = (id) => {
       {value.length === 0 && (
         <div
           onClick={() => inputRef.current.click()}
-          className="h-[120px] border-[1.4px] border-dashed border-[#CCCCCC] rounded-lg flex flex-col items-center justify-center gap-[5px] cursor-pointer bg-[#F6F6F6]"
+          className="h-[120px] border-[1.4px] border-dashed border-[#CCCCCC] rounded-lg flex flex-col items-center justify-center gap-[5px] cursor-pointer bg-[#F8FAFD]"
         >
           <button
               onClick={() => inputRef.current.click()}
@@ -59,7 +59,7 @@ const removeFile = (id) => {
             return (
               <div
                 key={item.id}
-                className="relative w-[80px] h-[100px] rounded-lg overflow-hidden border border-[#EAEAEA] bg-[#F6F6F6]"
+                className="relative w-[80px] h-[100px] rounded-lg overflow-hidden border border-[#E3EAF5] bg-[#F8FAFD]"
               >
                 <button
                   onClick={() => removeFile(item.id)}

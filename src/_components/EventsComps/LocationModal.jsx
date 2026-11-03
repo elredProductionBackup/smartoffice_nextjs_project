@@ -61,7 +61,7 @@ const LocationModalContent = ({ form, setForm, setErrors }) => {
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               placeholder="Enter location or Virtual link"
-              className="w-full h-[50px] px-4 bg-[#F6F6F6] border-[1.4px] border-[#EAEAEA] rounded-[8px] outline-none"
+              className="w-full h-[50px] px-4 bg-[#F8FAFD] border-[1.4px] border-[#E3EAF5] rounded-[8px] outline-none"
             />
           </div>
 

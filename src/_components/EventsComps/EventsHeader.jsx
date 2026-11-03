@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { openEventsModal } from "@/store/events/eventsUiSlice";
 import { useRouter } from "next/navigation";
 import { Award, ChevronDown, Inbox, ListChecks, Plus, Settings2, Wallet } from "lucide-react";
@@ -18,6 +18,7 @@ const pillClass = `${pillSize} border border-[#BCBCD9] bg-white hover:border-[#0
 export default function EventsHeader() {
   const dispatch = useDispatch();
   const router = useRouter();
+  const isPortfolioOfficer = useSelector((state) => state.auth.selectedRole) === "portfolioOfficer";
 
   const [setupOpen, setSetupOpen] = useState(false);
   const setupRef = useRef(null);
@@ -116,7 +117,7 @@ export default function EventsHeader() {
           className={`${pillSize} pl-[12px] lg:pl-[14px] bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)] text-white shadow-[0px_2px_8px_0px_#00449C40] hover:opacity-90 transition`}
         >
           <Plus size={20} strokeWidth={2.25} />
-          Create event
+          {isPortfolioOfficer ? "Propose event" : "Create event"}
         </button>
       </div>
     </div>

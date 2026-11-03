@@ -15,7 +15,7 @@ export default function DateTimeRangePicker({
 }) {
   return (
     <div className="flex flex-col">
-      <label className="text-[16px] mb-[6px] block text-[#333333] font-[700]">
+      <label className="text-[14px] mb-[6px] block text-[#333333] font-[700]">
         Date & Time
         {required && <span className="text-red-500 ml-0.5">*</span>}
       </label>
@@ -36,7 +36,7 @@ export default function DateTimeRangePicker({
 
       {error && <p className="relative -bottom-[5px] text-[12px] text-red-500">{error}</p>}
 
-      <div className="flex items-center gap-[6px] pl-[10px] text-[14px] text-[#666666] font-[600] mt-[10px]">
+      <div className="flex items-center gap-[6px] text-[13px] text-[#777777] font-[600] mt-[10px]">
         <span className="bi--globe"></span> Time zone – <span className="font-[700]">GMT+05:30 (Calcutta)</span>
       </div>
     </div>

@@ -77,12 +77,13 @@ export const validateEvent = (form) => {
     let nameError = "";
     let descError = "";
 
-    // ---- NAME ----
-    if (form.speaker.name) {
-      if (!isLengthValid(form.speaker.name, 3, 200)) {
-        nameError = "Resource name must be 3–200 characters";
-      }
+    // ---- NAME (required) ----
+    if (isEmpty(form.speaker.name)) {
+      nameError = "Resource/speaker name is required";
+    } else if (!isLengthValid(form.speaker.name, 3, 200)) {
+      nameError = "Resource name must be 3–200 characters";
     }
+    if (nameError) speakerErrors.name = true;
 
     // ---- DESCRIPTION ----
     if (form.speaker.description) {

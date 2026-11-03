@@ -30,7 +30,7 @@ const ReadOnlyReminderRow = ({ reminder }) => {
   const hasData = Boolean(reminder);
 
   return (
-    <div className="relative mt-[15px] border-b border-[#EAEAEA] pb-[8px]">
+    <div className="relative border-b border-[#E3EAF5] pb-[10px]">
       <div className="w-full flex gap-[10px] items-start">
         <div className="flex-1 flex flex-col gap-[10px]">
           {/* Top Row */}
@@ -38,8 +38,8 @@ const ReadOnlyReminderRow = ({ reminder }) => {
             {/* Audience (full row on phones, date + time share the next row) */}
             <div className="flex-[2.5] max-sm:basis-full">
               <div
-                className="w-full h-[50px] pl-[16px] pr-[10px] bg-[#F6F6F6]
-                           border-[1.4px] border-[#EAEAEA]
+                className="w-full h-[46px] pl-[16px] pr-[10px] bg-[#F8FAFD]
+                           border-[1.4px] border-[#E3EAF5]
                            rounded-[8px] flex items-center
                            font-[600]"
               >
@@ -54,8 +54,8 @@ const ReadOnlyReminderRow = ({ reminder }) => {
             {/* Date */}
             <div className="flex-1">
               <div
-                className="h-[50px] px-3 bg-[#F6F6F6] font-[600]
-                           border-[1.4px] border-[#EAEAEA]
+                className="h-[46px] px-3 bg-[#F8FAFD] font-[600]
+                           border-[1.4px] border-[#E3EAF5]
                            rounded-[8px] flex items-center"
               >
                 <span className={`whitespace-nowrap text-[#333]`}>
@@ -67,8 +67,8 @@ const ReadOnlyReminderRow = ({ reminder }) => {
             {/* Time */}
             <div className="w-[90px]">
               <div
-                className="h-[50px] px-3 bg-[#F6F6F6]
-                           border-[1.4px] border-[#EAEAEA] font-[600]
+                className="h-[46px] px-3 bg-[#F8FAFD]
+                           border-[1.4px] border-[#E3EAF5] font-[600]
                            rounded-[8px] flex items-center justify-center"
               >
                 <span className={`whitespace-nowrap text-[#333]`}>
@@ -84,7 +84,7 @@ const ReadOnlyReminderRow = ({ reminder }) => {
                 <span className="solar--chat-line-outline"></span> 
                 <div
                 className="w-full font-[500] line-clamp-1
-                            border-bottom-[1.4px] border-[#EAEAEA]
+                            border-bottom-[1.4px] border-[#E3EAF5]
                             rounded-[8px]"
                 >{reminder.note}
                 </div>
@@ -94,7 +94,7 @@ const ReadOnlyReminderRow = ({ reminder }) => {
                 <span className="solar--chat-line-outline"></span> 
                 <div
                 className="w-full font-[500] line-clamp-1
-                            border-bottom-[1.4px] border-[#EAEAEA]
+                            border-bottom-[1.4px] border-[#E3EAF5]
                             rounded-[8px]"
                 >Note or reminder will be filled here...
                 </div>

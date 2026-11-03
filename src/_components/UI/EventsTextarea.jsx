@@ -10,7 +10,7 @@ export function EventsTextarea({
   return (
     <div className="relative w-full" data-error={dataError?? ''}>
       {label && (
-        <label className="text-[16px] mb-[6px] block text-[#333333] font-[700]">
+        <label className="text-[14px] mb-[6px] block text-[#333333] font-[700]">
           {label}
           {required && <span className="text-red-500 ml-0.5">*</span>}
         </label>
@@ -27,7 +27,7 @@ export function EventsTextarea({
         <textarea
           {...props}
           rows={3}
-          className={`w-full bg-[#F6F6F6] border-[1.4px] border-[#EAEAEA] rounded-lg outline-none resize-none py-3 ${
+          className={`w-full bg-[#F8FAFD] border-[1.4px] border-[#E3EAF5] rounded-lg outline-none resize-none py-3 text-[15px] transition-colors focus:bg-white focus:border-[#0B57D0] ${
             icon ? "pl-[50px]" : "px-4"
           } ${error ? "border-red-500" : ""}`}
         />

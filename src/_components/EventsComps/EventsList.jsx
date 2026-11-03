@@ -16,7 +16,8 @@ const TASK_COLORS = {
   easy: "green",
 };
 
-// Difficulty progress circles for one event (shared by the table row and the phone card)
+// Difficulty progress circles for one event (shared by the table row and the phone card).
+// All three rings always show, matching the Event Checklist page.
 function TaskCircles({ event, eventTaskSummaries, className }) {
   return (
     <div className={className}>
@@ -26,8 +27,6 @@ function TaskCircles({ event, eventTaskSummaries, className }) {
           completed: 0,
           total: 0,
         };
-
-        if (taskData.total === 0) return null;
 
         return (
           <ProgressCircle

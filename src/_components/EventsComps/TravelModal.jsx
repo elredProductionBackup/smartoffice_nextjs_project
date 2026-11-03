@@ -308,7 +308,7 @@ useEffect(() => {
                 key={r.id || index}
                 className={`relative w-[100%] ${
                   index !== draft.reminders.length - 1
-                    ? "border-b border-[#EAEAEA] pb-[15px] mb-[15px]"
+                    ? "border-b border-[#E3EAF5] pb-[15px] mb-[15px]"
                     : "mb-[15px]"
                 }`}
               >
@@ -316,7 +316,7 @@ useEffect(() => {
                   <div className="flex-1 flex flex-col gap-[10px]">
                     {/* Date + Time */}
                     <div className="flex flex-wrap sm:flex-nowrap gap-[10px]">
-                      <div className="flex-[1.2] max-sm:basis-full bg-[#F6F6F6] border-[1.4px] border-[#EAEAEA] rounded-lg h-[50px] flex items-center pl-[20px] font-[600]">Reminder</div>
+                      <div className="flex-[1.2] max-sm:basis-full bg-[#F8FAFD] border-[1.4px] border-[#E3EAF5] rounded-lg h-[50px] flex items-center pl-[20px] font-[600]">Reminder</div>
                       <DateInput
                         value={r.date}
                         onChange={(date) =>
@@ -337,7 +337,7 @@ useEffect(() => {
                     {/* Notes */}
                     <textarea
                       rows={3}
-                      className="w-full bg-[#F6F6F6] border-[1.4px] border-[#EAEAEA]
+                      className="w-full bg-[#F8FAFD] border-[1.4px] border-[#E3EAF5]
                                 rounded-[8px] outline-none resize-none py-3 px-4"
                       placeholder="Add notes"
                       value={r.note}
@@ -407,8 +407,8 @@ const Input = ({ label, error, ...props }) => (
     <label className="text-[16px] font-[700] mb-[6px] block">{label}</label>
     <input
       {...props}
-      className={`w-full pl-[20px] bg-[#F6F6F6] border-[1.4px] rounded-lg outline-none h-[50px]
-        ${error ? "border-red-500" : "border-[#EAEAEA]"}`}
+      className={`w-full pl-[20px] bg-[#F8FAFD] border-[1.4px] rounded-lg outline-none h-[50px]
+        ${error ? "border-red-500" : "border-[#E3EAF5]"}`}
     />
     {error && <p className="absolute bottom-[-25px] text-red-500 text-[14px] mt-[4px]">{error}</p>}
   </div>

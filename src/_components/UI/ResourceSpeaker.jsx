@@ -1,7 +1,7 @@
 import { useMemo, useRef } from "react";
 import { IoClose } from "react-icons/io5";
 
-export function ResourceSpeaker({ value, onChange, errors = {} }) {
+export function ResourceSpeaker({ value, onChange, errors = {}, showLabel = true }) {
   const fileRef = useRef(null);
 
   // One object URL per picked file (it used to be re-created on every render)
@@ -33,10 +33,13 @@ export function ResourceSpeaker({ value, onChange, errors = {} }) {
   };
 
   return (
-    <div className="flex flex-col gap-[6px]">
-      <span className="text-[16px] font-[700] text-[#333333]">
-        Resource/speaker
-      </span>
+    <div className="flex flex-col gap-[6px]" data-error="speaker">
+      {showLabel && (
+        <span className="text-[14px] font-[700] text-[#333333]">
+          Resource/speaker
+          <span className="text-red-500 ml-0.5">*</span>
+        </span>
+      )}
 
       <div className="flex gap-[10px] relative">
         {/* Left fields */}
@@ -52,7 +55,9 @@ export function ResourceSpeaker({ value, onChange, errors = {} }) {
               onChange={(e) =>
                 updateSpeaker("name", e.target.value)
               }
-              className="h-[50px] w-full pl-[50px] pr-4 rounded-lg border-[1.4px] border-[#EAEAEA] bg-[#F6F6F6] outline-none"
+              className={`h-[46px] w-full pl-[50px] pr-4 rounded-lg border-[1.4px] bg-[#F8FAFD] outline-none transition-colors focus:bg-white focus:border-[#0B57D0] ${
+                errors?.name ? "border-red-500" : "border-[#E3EAF5]"
+              }`}
             />
           </div>
 
@@ -67,7 +72,7 @@ export function ResourceSpeaker({ value, onChange, errors = {} }) {
               onChange={(e) =>
                 updateSpeaker("description", e.target.value)
               }
-              className="w-full h-[80px] pl-[50px] pr-4 py-3 rounded-lg border-[1.4px] border-[#EAEAEA] bg-[#F6F6F6] outline-none resize-none overflow-auto"
+              className="w-full h-[80px] pl-[50px] pr-4 py-3 rounded-lg border-[1.4px] border-[#E3EAF5] bg-[#F8FAFD] outline-none transition-colors focus:bg-white focus:border-[#0B57D0] resize-none overflow-auto"
             />
           </div>
         </div>
@@ -75,7 +80,7 @@ export function ResourceSpeaker({ value, onChange, errors = {} }) {
         {/* Upload photo */}
         <div
           onClick={() => fileRef.current.click()}
-          className="relative shrink-0 w-[96px] h-[120px] sm:w-[120px] sm:h-[140px] border border-dashed border-[#EAEAEA] rounded-lg bg-[#F6F6F6] flex flex-col items-center justify-center gap-1 cursor-pointer"
+          className="relative shrink-0 w-[96px] h-[120px] sm:w-[120px] sm:h-[140px] border border-dashed border-[#E3EAF5] rounded-lg bg-[#F8FAFD] flex flex-col items-center justify-center gap-1 cursor-pointer"
         >
           {value.image ? (
             <>
@@ -87,6 +92,9 @@ export function ResourceSpeaker({ value, onChange, errors = {} }) {
 
               {/* Remove avatar */}
               <button
+                type="button"
+                title="Remove photo"
+                aria-label="Remove photo"
                 onClick={(e) => {
                   e.stopPropagation();
                   updateSpeaker("image", null);
@@ -116,13 +124,13 @@ export function ResourceSpeaker({ value, onChange, errors = {} }) {
           }
         />
       </div>
-        {errors && (
+        {errors?.main && (
         <p className="text-[12px] text-red-500">
           {errors.main}
         </p>
       )}
      {/* Weblinks */}
-    <div className="w-full mt-[4px] flex flex-col gap-[10px]">
+    <div className="w-full flex flex-col gap-[10px]">
       {(value.weblinks || []).map((link, index) => (
         <div key={index} className="w-full flex flex-col">
           
@@ -135,12 +143,15 @@ export function ResourceSpeaker({ value, onChange, errors = {} }) {
               placeholder="Weblink URL"
               value={link}
               onChange={(e) => updateWeblink(index, e.target.value)}
-              className={`h-[50px] w-full pl-[50px] pr-10 rounded-lg border-[1.4px] bg-[#F6F6F6] outline-none
-                ${errors.weblinks?.[index] ? "border-red-500" : "border-[#EAEAEA]"}`}
+              className={`h-[46px] w-full pl-[50px] pr-10 rounded-lg border-[1.4px] bg-[#F8FAFD] outline-none transition-colors focus:bg-white focus:border-[#0B57D0]
+                ${errors.weblinks?.[index] ? "border-red-500" : "border-[#E3EAF5]"}`}
             />
 
             {/* Remove weblink */}
             <button
+              type="button"
+              title="Remove weblink"
+              aria-label="Remove weblink"
               onClick={() => removeWeblink(index)}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-[#999999] cursor-pointer"
             >
@@ -160,7 +171,7 @@ export function ResourceSpeaker({ value, onChange, errors = {} }) {
       <button
         type="button"
         onClick={addWeblink}
-        className="text-[#0B57D0] ml-[10px] text-[18px] font-[600] text-left w-fit cursor-pointer"
+        className="text-[#0B57D0] text-[15px] font-bold hover:underline text-left w-fit cursor-pointer"
       >
         Add weblink
       </button>

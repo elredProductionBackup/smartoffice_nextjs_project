@@ -4,7 +4,8 @@ import { IoChevronDown } from "react-icons/io5";
 
 const POINTS = Array.from({ length: 10 }, (_, i) => i + 1);
 
-const PointDropdown = ({ value, onChange, dynamicPoints }) => {
+// `compact` is the small inline variant shown beside a field label
+const PointDropdown = ({ value, onChange, dynamicPoints, compact = false }) => {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -28,11 +29,15 @@ const options = isDynamic
   const selectedLabel = options.find((o) => o.value === value)?.label;
 
   return (
-    <div ref={ref} className="relative min-w-[110px] whitespace-nowrap">
+    <div ref={ref} className={`relative whitespace-nowrap ${compact ? "" : "min-w-[110px]"}`}>
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="relative h-[50px] min-w-[120px] px-3 bg-[#F6F6F6] border border-[#EAEAEA] rounded-lg w-full text-left whitespace-nowrap flex items-center justify-between cursor-pointer"
+        className={
+          compact
+            ? "h-[30px] pl-2.5 pr-2 bg-[#F2F5F9] rounded-lg text-[13px] font-medium text-[#4A5466] whitespace-nowrap flex items-center cursor-pointer"
+            : "relative h-[46px] min-w-[120px] px-3 bg-[#F8FAFD] border border-[#E3EAF5] rounded-lg w-full text-left whitespace-nowrap flex items-center justify-between cursor-pointer"
+        }
       >
         <span>
           {selectedLabel || (isDynamic ? "No Points" : "No Points")}
@@ -44,7 +49,7 @@ const options = isDynamic
       </button>
 
       {open && (
-        <div className="absolute z-20 mt-[6px] p-[8px] w-full bg-white rounded-[16px] shadow-lg border border-[#F2F6FC] max-h-[180px] overflow-y-auto flex flex-col">
+        <div className={`absolute z-20 mt-[6px] p-[8px] ${compact ? "right-0 min-w-[130px]" : "w-full"} bg-white rounded-[16px] shadow-lg border border-[#F2F6FC] max-h-[180px] overflow-y-auto flex flex-col`}>
           {isDynamic && options.length === 0 ? (
             <div className="py-[10px] text-[#999] text-sm w-[100%] whitespace-normal text-center">
               No points added

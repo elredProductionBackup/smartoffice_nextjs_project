@@ -160,7 +160,7 @@ const handlePointSave = async (rules) => {
                         placeholder="Point Name"
                         onChange={(e) => updateLabel(point.id, e.target.value)}
                         className={`flex-1 min-w-0 h-[48px] px-3 md:px-[20px] rounded-[4px] outline-none font-[500] border-[1.4px] border-[#CCCCCC] ${
-                        editMode ? "bg-[#fff]" : "bg-[#F6F6F6]"
+                        editMode ? "bg-[#fff]" : "bg-[#F8FAFD]"
                         }`}
                     />
                    <input
@@ -171,7 +171,7 @@ const handlePointSave = async (rules) => {
                       disabled={!editMode}
                       onChange={(e) => updateValue(point.id, e.target.value)}
                       className={`w-[64px] md:w-[80px] shrink-0 h-[48px] px-[10px] text-center font-[500] rounded-[4px] outline-none border-[1.4px] border-[#CCCCCC] ${
-                        editMode ? "bg-[#fff]" : "bg-[#F6F6F6]"
+                        editMode ? "bg-[#fff]" : "bg-[#F8FAFD]"
                       }`}
                     />
                     {editMode && localPoints.length !== 1 &&(

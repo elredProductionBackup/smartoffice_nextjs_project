@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { fetchCollaborators } from "@/store/events/eventsThunks";
 import CollaboratorRow from "./CollaboratorRow";
 
-export function Collaborators({ form, setForm }) {
+export function Collaborators({ form, setForm, showLabel = true }) {
   const collaborators = form.collaborators || [];
   const apiCollaborators = useSelector((s) => s.events.collaboratorsList) || [];
   const [query, setQuery] = useState("");
@@ -94,7 +94,7 @@ useEffect(() => {
 
   return (
     <div className="flex flex-col">
-      <label className="text-[16px] mb-[6px] font-[700] text-[#333]">Add collaborator</label>
+      {showLabel && <label className="text-[14px] mb-[6px] font-[700] text-[#333]">Add collaborator</label>}
 
       <div className="flex flex-col gap-[10px]">
         {collaborators.map((c, i) => (
@@ -117,7 +117,7 @@ useEffect(() => {
       <button
         type="button"
         onClick={addCollaborator}
-        className="text-[#0B57D0] text-[18px] mt-[10px] ml-[10px] font-[600] w-fit cursor-pointer"
+        className="text-[#0B57D0] text-[15px] mt-[10px] font-bold w-fit cursor-pointer hover:underline"
       >
         Add more
       </button>

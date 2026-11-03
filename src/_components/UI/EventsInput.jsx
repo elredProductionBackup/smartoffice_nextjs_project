@@ -1,7 +1,7 @@
 import Image from "next/image";
 
 const baseFieldClass =
-  "w-full bg-[#F6F6F6] border-[1.4px] border-[#EAEAEA] rounded-lg outline-none min-h-[50px]";
+  "w-full bg-[#F8FAFD] border-[1.4px] border-[#E3EAF5] rounded-lg outline-none min-h-[46px] text-[15px] transition-colors focus:bg-white focus:border-[#0B57D0]";
 
 const formatDate = (date) => {
   if (!date) return "-";
@@ -41,7 +41,7 @@ export function EventsInput({
   return (
     <div className="relative w-full" data-error={dataError?? ''}>
       {label && (
-        <label className="text-[16px] mb-[6px] block text-[#333] font-[700]">
+        <label className="text-[14px] mb-[6px] block text-[#333] font-[700]">
           {label}
           {required && <span className="text-red-500 ml-0.5">*</span>}
         </label>

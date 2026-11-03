@@ -1,15 +1,22 @@
 "use client";
 
+// Same fill/track colours as the rings on the Event Checklist page
 const COLORS = {
   red: "#F13C3F",
   yellow: "#FFAE3C",
   green: "#43AE34",
 };
 
+const TRACK_COLORS = {
+  red: "#F2BFC5",
+  yellow: "#F6E1C5",
+  green: "#A0C59C",
+};
+
 export default function ProgressCircle({ value, color = "green" }) {
   const [completed, total] = value.split("/").map(Number);
 
-  const size = 50;
+  const size = 55;
   const stroke = 5;
   const radius = (size - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -22,7 +29,7 @@ export default function ProgressCircle({ value, color = "green" }) {
   const dashOffset = circumference * (1 - percentage);
 
   return (
-    <div className="relative w-[50px] h-[50px]">
+    <div className="relative w-[55px] h-[55px] shrink-0">
       <svg width={size} height={size} className="-rotate-90">
         {/* Background track */}
         <circle
@@ -30,7 +37,7 @@ export default function ProgressCircle({ value, color = "green" }) {
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke={`${COLORS[color]}33`}
+          stroke={TRACK_COLORS[color]}
           strokeWidth={stroke}
         />
 
@@ -51,7 +58,7 @@ export default function ProgressCircle({ value, color = "green" }) {
       </svg>
 
       {/* Center Text */}
-      <div className="absolute inset-0 flex items-center justify-center text-[15px] font-[700] text-[#333]">
+      <div className="absolute inset-0 flex items-center justify-center text-[15px] font-[700] text-[#333] whitespace-nowrap">
         {value}
       </div>
     </div>

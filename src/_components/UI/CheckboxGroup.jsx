@@ -1,5 +1,6 @@
 import { BsCheck } from "react-icons/bs";
 
+// Multi-select shown as pill chips
 export function CheckboxGroup({
   label,
   options,
@@ -8,41 +9,42 @@ export function CheckboxGroup({
 }) {
   return (
     <div className="flex flex-col">
-      <p className="text-[16px] mb-[6px] block text-[#333333] font-[700]">
-        {label}
-      </p>
+      {label && (
+        <p className="text-[14px] mb-[8px] block text-[#333333] font-[700]">
+          {label}
+        </p>
+      )}
 
-      <div className="flex gap-4 flex-wrap">
+      <div className="flex gap-2.5 flex-wrap">
         {options.map((opt) => {
           const checked = value[opt.key];
 
           return (
-            <div
+            <button
               key={opt.key}
-              className="flex items-center gap-[6px] text-[18px] cursor-pointer"
+              type="button"
+              aria-pressed={checked}
               onClick={() =>
                 onChange({
                   ...value,
                   [opt.key]: !checked,
                 })
               }
+              className={`h-[42px] inline-flex items-center gap-2 pl-2.5 pr-4 rounded-full border-[1.4px] text-[15px] font-semibold cursor-pointer select-none transition-colors ${
+                checked
+                  ? "border-[#0B57D0] bg-[#F2F7FF] text-[#0B57D0]"
+                  : "border-[#E3EAF5] bg-white text-[#555555] hover:border-[#9DBBEB]"
+              }`}
             >
-              {/* Custom checkbox */}
-              <div
-                className={`m-[7px] h-[18px] w-[18px] rounded-[4px] border-[2px]
-                  flex items-center justify-center transition-colors
-                  ${
-                    checked
-                      ? "bg-[#147BFF] border-[#147BFF]"
-                      : "border-[#666666] bg-transparent"
-                  }`}
+              <span
+                className={`h-[20px] w-[20px] rounded-full flex items-center justify-center transition-colors ${
+                  checked ? "bg-[#0B57D0]" : "border-[2px] border-[#C9D4E5]"
+                }`}
               >
                 {checked && <BsCheck size={16} color="#fff" />}
-              </div>
-
-              {/* Label */}
-              <span className="select-none">{opt.label}</span>
-            </div>
+              </span>
+              {opt.label}
+            </button>
           );
         })}
       </div>

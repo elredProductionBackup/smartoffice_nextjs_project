@@ -153,7 +153,7 @@ const isFormValid =
               key={r.id}
               className={`w-full relative mt-[15px] ${
                 index !== draftReminders.length - 1
-                  ? "border-b border-[#EAEAEA] pb-[15px]"
+                  ? "border-b border-[#E3EAF5] pb-[15px]"
                   : ""
               }`}
             >
@@ -168,7 +168,7 @@ const isFormValid =
                         onClick={() =>
                           setOpenDropdownId(openDropdownId === r.id ? null : r.id)
                         }
-                        className="w-full h-[50px] pl-[16px] pr-[10px] bg-[#F6F6F6] border-[1.4px] border-[#EAEAEA]
+                        className="w-full h-[50px] pl-[16px] pr-[10px] bg-[#F8FAFD] border-[1.4px] border-[#E3EAF5]
                                   rounded-[8px] text-left whitespace-nowrap gap-[10px]
                                   flex items-center justify-between font-[500] cursor-pointer"
                       >
@@ -190,7 +190,7 @@ const isFormValid =
                       {openDropdownId === r.id && (
                         <div className="absolute top-full left-0 z-[9999] mt-2 p-[6px]
                                         w-full bg-white rounded-[16px]
-                                        border-[1.4px] border-[#EAEAEA] shadow-md">
+                                        border-[1.4px] border-[#E3EAF5] shadow-md">
                           {AUDIENCE_OPTIONS.map((opt) => {
                             const isActive = opt.value === r.audience;
 
@@ -239,7 +239,7 @@ const isFormValid =
                   {/* Notes */}
                   <textarea
                   rows={3}
-                    className="w-full bg-[#F6F6F6] border-[1.4px] border-[#EAEAEA] rounded-[8px] outline-none resize-none py-3 px-4"
+                    className="w-full bg-[#F8FAFD] border-[1.4px] border-[#E3EAF5] rounded-[8px] outline-none resize-none py-3 px-4"
                     placeholder="Add notes"
                     value={r.note}
                     onChange={(e) =>

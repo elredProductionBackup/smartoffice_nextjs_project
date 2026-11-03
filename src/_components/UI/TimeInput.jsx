@@ -22,7 +22,7 @@ export function TimeInput({ value, onChange, size }) {
       <button
         type="button"
         onClick={() => setOpen((p) => !p)}
-        className="h-[50px] w-full px-4 bg-[#F6F6F6] border-[1.4px] border-[#EAEAEA] rounded-lg font-[600] cursor-pointer"
+        className="h-[46px] w-full px-4 bg-[#F8FAFD] border-[1.4px] border-[#E3EAF5] rounded-lg text-[15px] font-[600] cursor-pointer"
       >
         {format24Hour(value) || "Time"}
       </button>

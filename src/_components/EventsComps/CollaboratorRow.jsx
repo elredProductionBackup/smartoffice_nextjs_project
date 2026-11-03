@@ -48,7 +48,7 @@ const CollaboratorRow = ({
       <div className="relative flex-1 min-w-0 flex items-center">
         {isSelected ? (
           // Selected pill
-          <div className="w-full h-[50px] pl-[50px] pr-[20px] bg-[#F6F6F6] border border-[#EAEAEA] rounded-lg flex items-center">
+          <div className="w-full h-[46px] pl-[50px] pr-[20px] bg-[#F8FAFD] border border-[#E3EAF5] rounded-lg flex items-center">
             <div className="absolute left-[20px] flex items-center text-[#999]">
               <span className="la--handshake-solid text-[20px]" />
             </div>
@@ -90,7 +90,7 @@ const CollaboratorRow = ({
               }}
               onFocus={() => setOpen(true)}
               placeholder="Officer or Day chair"
-              className="w-full h-[50px] pl-[50px] pr-[20px] bg-[#F6F6F6] border border-[#EAEAEA] rounded-lg outline-none"
+              className="w-full h-[46px] pl-[50px] pr-[20px] bg-[#F8FAFD] border border-[#E3EAF5] rounded-lg outline-none"
             />
 
             {open && (

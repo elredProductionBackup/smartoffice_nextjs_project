@@ -105,11 +105,24 @@ const calculateTaskSummary = (taskList = []) => {
   return summary;
 };
 
+// API checklistSummary { difficult, medium, easy } -> UI { hard, medium, easy }
+const mapChecklistSummary = (summary) => {
+  if (!summary) return null;
+  const pick = (s) => ({ completed: s?.completed || 0, total: s?.total || 0 });
+  return {
+    hard: pick(summary.difficult),
+    medium: pick(summary.medium),
+    easy: pick(summary.easy),
+  };
+};
+
 const updateSummaryInGroupedEvents = (state) => {
   if (!state.selectedEvent || !state.selectedEvent.id) return;
 
-  // Recalculate based on current checklist data
-  const newSummary = calculateTaskSummary(state.eventChecklist);
+  // Prefer the API summary (covers master + event checklist items); fall back to local data
+  const newSummary =
+    mapChecklistSummary(state.eventChecklistSummary) ||
+    calculateTaskSummary(state.eventChecklist);
 
   // Store it in a map keyed by eventId for isolated tracking
   state.eventTaskSummaries[state.selectedEvent.id] = newSummary;
@@ -143,7 +156,7 @@ const mapEventToUI = (event) => {
     location:
       event.eventLocation || "—",
 
-    tasks: event.tasks || null,
+    tasks: mapChecklistSummary(event.checklistSummary) || event.tasks || null,
   };
 };
 const groupEventsByMonth = (events = []) => {

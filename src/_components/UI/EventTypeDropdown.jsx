@@ -7,7 +7,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useBudgetTypeStore } from "@/store/useBudgetTypeStore";
 
 const baseFieldClass =
-  "flex-1 bg-[#F6F6F6] border-[1.4px] border-[#EAEAEA] rounded-lg outline-none h-[50px]";
+  "flex-1 bg-[#F8FAFD] border-[1.4px] border-[#E3EAF5] rounded-lg outline-none h-[46px] text-[15px]";
 
 export function EventTypeDropdown({
   value,     
@@ -54,7 +54,7 @@ export function EventTypeDropdown({
 
   return (
     <div ref={wrapperRef} className="relative w-full flex flex-col" data-error={dataError?? ''}>
-      <label className="text-[16px] mb-[6px] block text-[#333333] font-[700]">
+      <label className="text-[14px] mb-[6px] block text-[#333333] font-[700]">
         Type of event<span className="text-red-500 ml-0.5">*</span>
       </label>
 

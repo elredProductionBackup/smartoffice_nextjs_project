@@ -4,9 +4,9 @@ import { useEffect, useRef } from "react";
 import Image from "next/image";
 import { addToast } from "@/store/toastSlice";
 import { useDispatch } from "react-redux";
-import addIcon from "@/assets/logo/add.svg";
-import deleteIcon from "@/assets/logo/delete.svg";
+import { FiRefreshCw, FiTrash2, FiUploadCloud } from "react-icons/fi";
 
+// Portrait (3:4) cover image picker
 export const EventImage = ({ value, onChange, required = false }) => {
   const inputRef = useRef(null);
   const dispatch = useDispatch();
@@ -50,6 +50,11 @@ export const EventImage = ({ value, onChange, required = false }) => {
     inputRef.current?.click();
   };
 
+  const removeImage = () => {
+    onChange({ file: null, previewUrl: null });
+    if (inputRef.current) inputRef.current.value = "";
+  };
+
   useEffect(() => {
     return () => {
       if (value?.previewUrl) {
@@ -58,86 +63,68 @@ export const EventImage = ({ value, onChange, required = false }) => {
     };
   }, [value]);
 
-const isValidPreview =
-  (value?.file &&
-    ALLOWED_TYPES.includes(value.file.type) &&
-    value.file.size <= MAX_SIZE) ||
-  (!value?.file && typeof value?.previewUrl === "string");
+  const isValidPreview =
+    (value?.file &&
+      ALLOWED_TYPES.includes(value.file.type) &&
+      value.file.size <= MAX_SIZE) ||
+    (!value?.file && typeof value?.previewUrl === "string");
 
-        const imageSrc = value?.previewUrl;
-
+  const imageSrc = value?.previewUrl;
+  const hasImage = !!(imageSrc && isValidPreview);
 
   return (
-    <div className="lg:sticky lg:top-0 w-full lg:w-auto flex flex-col items-center gap-5 lg:gap-[30px]">
-      {/* Image Preview */}
-      <div className="relative w-full max-w-[300px] sm:max-w-[360px] lg:max-w-none lg:w-auto lg:h-[600px] aspect-[3/4] overflow-hidden rounded-[20px] bg-gray-200">
+    <div className="flex flex-col">
+      <label className="text-[14px] mb-[6px] block text-[#333333] font-[700]">
+        Cover image
+        {required && <span className="text-red-500 ml-0.5">*</span>}
+      </label>
 
-{imageSrc && isValidPreview ? (
-  <Image
-    src={imageSrc}
-    alt="event"
-    fill
-    sizes="(min-width: 1024px) 450px, 360px"
-    className="object-cover border-[1.4px] border-[#EAEAEA] rounded-[20px]"
-  />
-) : (
-         <div className="
-            flex flex-col h-full w-full items-center justify-center
-            rounded-[20px] border-[1.4px] border-[#EAEAEA]
-            bg-gradient-to-b from-[#999999] to-[#333333] gap-[20px]"
-        >
-          <Image src={`/logo/no-image.svg`} alt="Default Image" width={100} height={100}/>
-          <span className="text-white text-[18px] lg:text-[20px] font-[600]">
-            No event image
-          </span>
-        </div>
-
-
+      <div className="relative w-full aspect-[3/4] overflow-hidden rounded-[16px]">
+        {hasImage ? (
+          <Image
+            src={imageSrc}
+            alt="Event cover"
+            fill
+            sizes="240px"
+            className="object-cover"
+          />
+        ) : (
+          <button
+            type="button"
+            onClick={openGallery}
+            className="group h-full w-full flex flex-col items-center justify-center gap-3 px-4 text-center rounded-[16px] border-[1.6px] border-dashed border-[#BFD3F2] bg-[linear-gradient(160deg,#F7FAFF_0%,#E6EFFC_100%)] cursor-pointer transition-colors hover:border-[#0B57D0]"
+          >
+            <span className="w-[52px] h-[52px] rounded-full bg-white shadow-[0px_4px_16px_0px_#0B57D01f] text-[#0B57D0] flex items-center justify-center transition-transform group-hover:scale-105">
+              <FiUploadCloud className="text-[24px]" />
+            </span>
+            <span>
+              <span className="block text-[15px] font-bold text-[#333333]">Upload cover</span>
+              <span className="block mt-0.5 text-[12px] text-[#777777]">JPG or PNG, up to 2MB</span>
+            </span>
+          </button>
         )}
       </div>
 
-      {/* Controls */}
-      <div className="flex gap-4 lg:gap-[30px]">
-        {/* Add / Replace */}
-        <div
-          onClick={openGallery}
-          className="flex flex-col items-center gap-[12px] cursor-pointer w-[120px] "
-        >
-          <div className="h-[40px] w-[40px] rounded-full bg-[#147BFF1A] grid place-items-center">
-            <Image
-              src={addIcon}
-              alt="Add"
-              height={20}
-              width={20}
-            />
-          </div>
-          <span className="text-[15px] lg:text-[18px] font-[600] text-[#333333] text-center leading-[125%] font-nunito">
-            Add / Replace<br />image
-            {required && <span className="text-red-500 ml-0.5">*</span>}
-          </span>
+      {hasImage && (
+        <div className="flex gap-2 mt-2.5">
+          <button
+            type="button"
+            onClick={openGallery}
+            className="flex-1 h-[36px] inline-flex items-center justify-center gap-1.5 rounded-full bg-[#F2F7FF] text-[#0B57D0] text-[14px] font-semibold cursor-pointer transition-colors hover:bg-[#D3E3FD]"
+          >
+            <FiRefreshCw className="text-[13px]" />
+            Replace
+          </button>
+          <button
+            type="button"
+            onClick={removeImage}
+            aria-label="Remove cover image"
+            className="w-[36px] h-[36px] shrink-0 inline-flex items-center justify-center rounded-full bg-[#FFEBEB] text-[#E40000] cursor-pointer transition-colors hover:bg-[#FFD9D9]"
+          >
+            <FiTrash2 className="text-[14px]" />
+          </button>
         </div>
-
-        {/* Delete */}
-        <div
-          onClick={() => {
-            onChange({ file: null, previewUrl: null });
-            if (inputRef.current) inputRef.current.value = "";
-          }}
-          className="flex flex-col items-center gap-[12px] cursor-pointer w-[120px]"
-        >
-          <div className="h-[40px] w-[40px] rounded-full bg-[#FF00001A] grid place-items-center">
-            <Image
-              src={deleteIcon}
-              alt="Delete"
-              height={20}
-              width={20}
-            />
-          </div>
-          <span className="text-[15px] lg:text-[18px] font-[600] text-[#333333] text-center leading-[125%] font-nunito">
-            Delete<br />image
-          </span>
-        </div>
-      </div>
+      )}
 
       {/* Hidden File Input */}
       <input

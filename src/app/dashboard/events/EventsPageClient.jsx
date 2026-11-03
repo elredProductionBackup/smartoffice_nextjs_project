@@ -9,6 +9,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useEffect } from "react";
 import { fetchEvents } from "@/store/events/eventsThunks";
 import { setActiveTab,setPage  } from "@/store/events/eventsSlice";
+import { selectIsLearningOfficer } from "@/store/auth/authSlice";
 import Pagination from "@/_components/UI/Pagination";
 
 const EVENT_TABS = [
@@ -17,9 +18,14 @@ const EVENT_TABS = [
   { label: "Draft", value: "draft" },
 ];
 
+// Portfolio officers propose events instead of saving drafts
+const PORTFOLIO_OFFICER_TABS = EVENT_TABS.filter((t) => t.value !== "draft");
+
 export default function EventsPageClient() {
   const searchParams = useSearchParams();
-  const tab = searchParams.get("tab") || 'upcomming';
+  const isPortfolioOfficer = useSelector(selectIsLearningOfficer);
+  const urlTab = searchParams.get("tab") || 'upcomming';
+  const tab = isPortfolioOfficer && urlTab === "draft" ? "upcomming" : urlTab;
   const urlPage = Number(searchParams.get("page")) || 1;
   const dispatch = useDispatch();
 
@@ -48,7 +54,7 @@ export default function EventsPageClient() {
       {/* Phones: tabs scroll sideways. "Create event" lives in EventsHeader. */}
       <div className="max-md:overflow-x-auto max-md:overflow-y-hidden max-md:pb-px max-md:whitespace-nowrap max-md:[scrollbar-width:none] max-md:[&>.action-tabs]:w-max max-md:[&>.action-tabs]:min-w-full max-md:[&_.tab-item]:text-[17px] max-md:[&_.tab-item]:px-[12px]">
         <ActionableTabs
-          tabs={EVENT_TABS}
+          tabs={isPortfolioOfficer ? PORTFOLIO_OFFICER_TABS : EVENT_TABS}
           defaultTab="upcomming"
           labelClassName="font-heading font-normal"
         />
