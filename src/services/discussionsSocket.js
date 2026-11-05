@@ -1,5 +1,7 @@
 // services/discussionsSocket.js
-// One Socket.IO connection to the /discussions namespace, shared by the whole app.
+// One Socket.IO connection to the /discussions namespace, shared by the whole app:
+// the dashboard layout opens it (event request notifications) and Discussions adds its own listeners.
+// Features remove only their own listeners; the connection itself closes on logout.
 // The socket lives outside Redux because it is not serializable.
 import { io } from "socket.io-client";
 import api from "@/services/axios";
@@ -28,6 +30,10 @@ export const connectDiscussionsSocket = () => {
     auth: (cb) => cb({ token: getAccessToken() }),
     transports: ["websocket", "polling"],
     reconnectionDelayMax: 10000,
+  });
+  // A server-side kick doesn't auto-retry; reconnect for every feature using the socket
+  socket.on("disconnect", (reason) => {
+    if (reason === "io server disconnect") socket.connect();
   });
   return { socket, created: true };
 };

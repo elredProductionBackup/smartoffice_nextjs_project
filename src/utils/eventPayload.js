@@ -86,6 +86,87 @@ export const buildEventPayload = (form, isDraft = false, isEditMode= false) => {
   return payload;
 };
 
+// Fields for POST /smartOffice/eventRequest. Same field names as addEvents, minus what a request doesn't take:
+// no eventId / isDraft, and files only when a new File was picked (never an existing URL string).
+export const buildEventRequestPayload = (form) => {
+  const {
+    eventId, isDraft, eventImage, uploadResourceImageUrl, travelInfo, ...rest
+  } = buildEventPayload(form);
+
+  const t = form.travelInfo || {};
+  const hasTravel = !!(
+    t.venueLink || t.hotelLink || t.deadline || t.reminders?.length ||
+    Object.values(t.requiredInfo || {}).some(Boolean)
+  );
+  const budget = form.budget === "" || form.budget == null ? null : Number(form.budget);
+
+  return {
+    ...rest,
+    ...(eventImage instanceof File && { eventImage }),
+    ...(uploadResourceImageUrl instanceof File && { uploadResourceImageUrl }),
+    ...(hasTravel && { travelInfo }),
+    ...(budget !== null && !Number.isNaN(budget) && { eventBudget: budget }),
+  };
+};
+
+// Text/JSON fields of a request as the API stores them, for comparing before and after an edit.
+// Unlike buildEventRequestPayload, travelInfo and eventBudget are always present so clearing them shows up.
+const requestFieldsOf = (form) => {
+  const { eventId, isDraft, eventImage, uploadResourceImageUrl, ...rest } = buildEventPayload(form);
+  const budget = form.budget === "" || form.budget == null ? 0 : Number(form.budget);
+  return { ...rest, eventBudget: Number.isNaN(budget) ? 0 : budget };
+};
+
+// PATCH /eventRequest body: only what changed between the loaded form and the edited one.
+// - text/JSON fields that differ
+// - eventImage / uploadResourceImageUrl when a new File was picked
+// - removeResourceImage when the saved speaker image was taken off (the event image can only be replaced)
+// Returns {} when nothing changed (the API refuses an empty edit).
+export const buildEventRequestChanges = (originalForm, form) => {
+  const before = requestFieldsOf(originalForm);
+  const after = requestFieldsOf(form);
+  // The browser's zone is filled in fresh each time; only send it alongside a date change
+  const changes = {};
+  Object.keys(after).forEach((key) => {
+    if (key === "timeZone") return;
+    if (JSON.stringify(after[key]) !== JSON.stringify(before[key])) changes[key] = after[key];
+  });
+  if (changes.startDateTime || changes.endDateTime) changes.timeZone = after.timeZone;
+
+  if (form.image?.file instanceof File) changes.eventImage = form.image.file;
+
+  const speakerImage = form.speaker?.image;
+  if (speakerImage instanceof File) changes.uploadResourceImageUrl = speakerImage;
+  else if (!speakerImage && originalForm.speaker?.image) changes.removeResourceImage = true;
+
+  return changes;
+};
+
+// GET /eventRequest?eventRequestId= row -> create-page form. Requests store the addEvents fields flat
+// (resourceName, webLink...), so they're reshaped into the event shape mapDraftToForm already reads.
+export const mapRequestToForm = (r) => {
+  const urlOf = (v) => (typeof v === "string" ? v : v?.url || v?.fileUrl || "");
+  const resource = r.resource || {};
+  const form = mapDraftToForm({
+    ...r,
+    eventId: "",
+    isDraft: false,
+    eventType: { budgetTypeId: typeof r.eventType === "object" ? r.eventType?.budgetTypeId : r.eventType },
+    eventImage: urlOf(r.eventImage),
+    resource: {
+      resourceName: r.resourceName ?? resource.resourceName ?? "",
+      resourceDescription: r.resourceDescription ?? resource.resourceDescription ?? "",
+      webLink: r.webLink ?? resource.webLink ?? [],
+      uploadResourceImageUrl: urlOf(r.uploadResourceImageUrl ?? resource.uploadResourceImageUrl) || null,
+    },
+    attachment: [], // documents aren't editable on the form yet
+  });
+  return {
+    ...form,
+    budget: r.eventBudget === undefined || r.eventBudget === null ? "" : String(r.eventBudget),
+  };
+};
+
 export const mapDraftToForm = (event) => {
   return {
     eventId:event.eventId || "",

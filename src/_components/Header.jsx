@@ -2,8 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import bell from "@/assets/logo/bell.svg";
 import { useRouter } from "next/navigation";
+import NotificationsBell from "@/_components/Notifications/NotificationsBell";
+import { disconnectDiscussionsSocket } from "@/services/discussionsSocket";
+import { useNotificationsStore } from "@/store/useNotificationsStore";
 import { useDispatch, useSelector } from "react-redux";
 import { FiMenu } from "react-icons/fi";
 import { ArrowLeftRight, Check, ChevronDown, LogOut, UserRound } from "lucide-react";
@@ -82,6 +84,9 @@ const Header = ({ onMenuClick }) => {
     const networkClusterCode = getStoredClusterCode();
 
     dispatch(logout());
+    // The shared socket stays open across pages, so it is closed here, with the old account's notifications
+    disconnectDiscussionsSocket();
+    useNotificationsStore.getState().reset();
 
     setTimeout(() => {
       router.replace(buildLoginUrl({ clusterCode: networkClusterCode }));
@@ -138,14 +143,8 @@ const Header = ({ onMenuClick }) => {
             </div>
           )}
 
-          {/* Notification */}
-          <button
-            type="button"
-            aria-label="Notifications"
-            className="h-[36px] w-[36px] md:h-[40px] md:w-[40px] rounded-full bg-white border border-[#D5E2F6] flex items-center justify-center cursor-pointer hover:border-[#0B57D0] transition-colors shrink-0"
-          >
-            <Image src={bell} alt="" height={22} width={22} className="w-5 h-5 md:w-[22px] md:h-[22px]" />
-          </button>
+          {/* Notifications: badge, dropdown list, links to the request or event */}
+          <NotificationsBell />
 
           {/* Me dropdown */}
           <div ref={meRef} className="relative">

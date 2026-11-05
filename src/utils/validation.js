@@ -125,6 +125,21 @@ export const validateEvent = (form) => {
       errors.additionalNote = "Additional notes must be 5–400 characters";
   }
 
+  // ---------------- REMINDERS ----------------
+  // The server rejects a reminder that is in the past or not before the event starts
+  if (form.reminder?.length) {
+    const late = form.reminder.find((r) => r.datetime && !moment(r.datetime).isBefore(form.startDate));
+    const past = form.reminder.find((r) => r.datetime && moment(r.datetime).isBefore(now));
+    if (past) errors.reminder = "Reminders can't be in the past";
+    else if (late) errors.reminder = "Reminders must be before the event starts";
+  }
+
+  // ---------------- BUDGET ----------------
+  if (form.budget !== undefined && form.budget !== "") {
+    const amount = Number(form.budget);
+    if (Number.isNaN(amount) || amount < 0) errors.budget = "Enter a budget of 0 or more";
+  }
+
   return errors;
 };
 

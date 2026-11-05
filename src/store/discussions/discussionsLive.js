@@ -4,7 +4,6 @@
 // "open a topic" and polling thunks the page uses.
 import {
   connectDiscussionsSocket,
-  disconnectDiscussionsSocket,
   emitWithAck,
   getAccessToken,
   getDiscussionsSocket,
@@ -94,10 +93,21 @@ export const emitTyping = (topicId, isTyping, parentMessageId = null) => () => {
 
 /* ─── Connection ─── */
 
+// Removes this page's listeners again; set while Discussions is listening
+let detachDiscussions = null;
+
+// The socket is shared (the dashboard layout may already have opened it), so this only
+// adds the Discussions listeners and never relies on being the one that connected.
 export const startDiscussionsSocket = () => (dispatch, getState) => {
   if (!getAccessToken()) return; // the page falls back to polling
-  const { socket, created } = connectDiscussionsSocket();
-  if (!created) return;
+  if (detachDiscussions) return; // already listening
+  const { socket } = connectDiscussionsSocket();
+  const handlers = [];
+  const listen = (event, fn) => {
+    socket.on(event, fn);
+    handlers.push([event, fn]);
+  };
+  detachDiscussions = () => handlers.forEach(([event, fn]) => socket.off(event, fn));
 
   const ds = () => getState().discussions;
   const watching = (topicId) => ds().activeTopicId === topicId && isVisible();
@@ -108,12 +118,11 @@ export const startDiscussionsSocket = () => (dispatch, getState) => {
     later(`read:${topicId}`, 1500, () => {
       if (watching(topicId)) dispatch(markTopicRead({ topicId, silent: true }));
     });
-  const on = (event, handler) => socket.on(event, (payload) => handler(parse(payload)));
+  const on = (event, handler) => listen(event, (payload) => handler(parse(payload)));
 
   let connectedBefore = false;
-  dispatch(socketStatusChanged("connecting"));
 
-  socket.on("connect", () => {
+  const onConnect = () => {
     joined.clear(); // rooms are lost on every reconnect
     dispatch(socketStatusChanged("connected"));
     dispatch(joinTopicRooms(ds().topicIds));
@@ -126,13 +135,14 @@ export const startDiscussionsSocket = () => (dispatch, getState) => {
       if (thread) dispatch(fetchReplies({ messageId: thread.messageId, silent: true }));
     }
     connectedBefore = true;
-  });
-  socket.on("disconnect", (reason) => {
+  };
+  listen("connect", onConnect);
+  // A server-side kick is retried in discussionsSocket, for every feature on the socket
+  listen("disconnect", () => {
     joined.clear();
     dispatch(socketStatusChanged("disconnected"));
-    if (reason === "io server disconnect") socket.connect(); // server-side kick does not auto-retry
   });
-  socket.on("connect_error", () => dispatch(socketStatusChanged("error")));
+  listen("connect_error", () => dispatch(socketStatusChanged("error")));
 
   /* Messages */
   on("message:new", ({ topicId, message }) => {
@@ -192,13 +202,21 @@ export const startDiscussionsSocket = () => (dispatch, getState) => {
     // The server stops typing after 5 s; clear it here too in case that event is lost
     if (isTyping) later(`typing:${topicId}:${userCode}`, 6000, () => dispatch(typingUpdated({ topicId, userCode, isTyping: false })));
   });
+
+  // Already connected (opened by the layout): no "connect" event will come, so run it now
+  if (socket.connected) onConnect();
+  else dispatch(socketStatusChanged("connecting"));
 };
 
+// Leaving Discussions: drop its listeners and topic rooms, but keep the shared connection open
 export const stopDiscussionsSocket = () => (dispatch) => {
   timers.forEach(clearTimeout);
   timers.clear();
+  const socket = getDiscussionsSocket();
+  if (socket?.connected) joined.forEach((topicId) => socket.emit("topic:leave", { topicId }));
   joined.clear();
-  disconnectDiscussionsSocket();
+  detachDiscussions?.();
+  detachDiscussions = null;
   dispatch(socketStatusChanged("idle"));
 };
 

@@ -21,13 +21,20 @@ import moment from "moment";
 import DraftApprovalModal from "@/_components/EventsComps/DraftApprovalModal";
 import { useEventForm } from "@/hooks/useEventForm";
 import { clearFieldError, validateEvent } from "@/utils/validation";
-import { buildEventPayload, mapDraftToForm } from "@/utils/eventPayload";
+import {
+  buildEventPayload, buildEventRequestChanges, buildEventRequestPayload, mapDraftToForm, mapRequestToForm,
+} from "@/utils/eventPayload";
 import { submitEvent } from "@/services/events.service";
+import { createEventRequest, getEventRequests, updateEventRequest } from "@/services/eventRequest.service";
+import { MdCurrencyRupee } from "react-icons/md";
 import { mergeDateAndTime } from "@/utils/dateUtils";
 import { addToast } from "@/store/toastSlice";
 import { fetchEventDetails } from "@/store/events/eventsThunks";
 import SuccessPopup from "@/_components/ConfirmationPopups/SuccessPopup";
-import { FiArrowLeft, FiCheck, FiMapPin, FiPlus, FiSend, FiVideo } from "react-icons/fi";
+import { FiArrowLeft, FiCheck, FiEdit3, FiMapPin, FiPlus, FiSend, FiVideo } from "react-icons/fi";
+
+// A request can only be edited by its officer while it is in one of these
+const EDITABLE_REQUEST_STATUSES = ["pending", "changesRequested", "doneWithRequestedChanges"];
 
 // Optional parts of the form, added with the "+" chips under the required fields.
 // `reset` restores the field defaults when a block is removed, so hidden data is never submitted.
@@ -44,10 +51,20 @@ const OPTIONAL_BLOCKS = [
     }),
   },
   {
+    key: "budget",
+    label: "Budget",
+    title: "Estimated budget",
+    errorKey: "budget",
+    proposalOnly: true, // eventBudget is sent on event requests only
+    hasData: (f) => f.budget !== "" && f.budget != null,
+    reset: () => ({ budget: "" }),
+  },
+  {
     key: "reminder",
     label: "Reminder",
     title: "Reminder",
     modal: "REMINDER",
+    errorKey: "reminder",
     hasData: (f) => f.reminder.length > 0,
     reset: () => ({ reminder: [] }),
   },
@@ -132,6 +149,11 @@ const CreateEvent = () => {
   const searchParams = useSearchParams();
   const eventId = searchParams.get("id");
   const isEditMode = !!eventId;
+  // Editing an event request (from the Event Requests page) rather than an event
+  const requestId = eventId ? null : searchParams.get("requestId");
+  const isRequestEdit = !!requestId;
+  const [requestLoading, setRequestLoading] = useState(isRequestEdit);
+  const [loadedRequest, setLoadedRequest] = useState(null); // { status, requestedChanges, form }
   const formContainerRef = useRef(null);
   const { form, update,setForm,errors,setErrors , updateEventType } = useEventForm();
   const [submitting, setSubmitting] = useState(false);
@@ -149,9 +171,48 @@ const CreateEvent = () => {
 
   const hasCover = !!(form.image?.file || form.image?.previewUrl);
 
+  // Editing a live event is an update; anything else a portfolio officer submits is a proposal
+  // that goes to POST /eventRequest for admin review
+  const isUpdate = isEditMode && !form?.isDraft;
+  const isProposal = (isPortfolioOfficer && !isUpdate) || isRequestEdit;
+
   const getFormErrors = () => {
     const errs = validateEvent(form);
+    // The event request API takes 2–150 characters; validateEvent allows up to 200
+    const name = form.eventName.trim();
+    if (isProposal && !errs.eventName && (name.length < 2 || name.length > 150)) {
+      errs.eventName = "Event name must be 2–150 characters";
+    }
+    // A new request needs a jpg/png cover file (an old URL can't be sent); an edit keeps the saved one
+    if (isProposal && !isRequestEdit && !(form.image?.file instanceof File)) {
+      return { image: "Upload a cover image", ...errs };
+    }
     return hasCover ? errs : { image: "Upload a cover image", ...errs };
+  };
+
+  // POST /eventRequest, or PATCH with only the changed fields when editing one.
+  // Resolves true when the server accepted it.
+  const submitProposal = async () => {
+    let res;
+    if (isRequestEdit) {
+      const changes = buildEventRequestChanges(loadedRequest.form, form);
+      if (!Object.keys(changes).length) {
+        dispatch(addToast({ message: { title: "Nothing to update", descrip: "You haven't changed anything yet." }, type: "error" }));
+        return false;
+      }
+      res = await updateEventRequest({ eventRequestId: requestId, ...changes });
+    } else {
+      res = await createEventRequest(buildEventRequestPayload(form));
+    }
+    if (res?.data?.success) return true;
+    dispatch(addToast({
+      message: {
+        title: isRequestEdit ? "Couldn't update the proposal" : "Couldn't send the proposal",
+        descrip: res?.data?.message || "Please try again in a moment.",
+      },
+      type: "error",
+    }));
+    return false;
   };
 
   const handleCreateEvent = async (e, isDraft = false) => {
@@ -169,15 +230,16 @@ const CreateEvent = () => {
     try {
       isDraft ? setDraftSubmitting(true) : setSubmitting(true);
 
+      // Portfolio officers propose: the request goes to admin review, not straight to addEvents
+      if (!isDraft && isProposal) {
+        if (await submitProposal()) setProposalSent(true);
+        return;
+      }
+
       const payload = buildEventPayload(form, isDraft, isEditMode);
       const res = await submitEvent(payload);
 
       if (res?.success) {
-        // Portfolio officers propose: confirm it went to the admin instead of leaving straight away
-        if (!isDraft && isPortfolioOfficer && !(isEditMode && !form?.isDraft)) {
-          setProposalSent(true);
-          return;
-        }
         if (isDraft) {
           router.push("/dashboard/events?tab=draft");
           return;
@@ -247,7 +309,45 @@ const CreateEvent = () => {
     if (block.errorKey) clearFieldError(setErrors, block.errorKey);
   };
 
-  const loading = eventDetailsFormLoader?.[eventId];
+  const loading = eventDetailsFormLoader?.[eventId] || requestLoading;
+
+  // Load the request being edited. Anything that can't be edited goes back to the requests page.
+  useEffect(() => {
+    if (!requestId) return;
+    let cancelled = false;
+    const leave = (title, descrip) => {
+      dispatch(addToast({ message: { title, descrip }, type: "error" }));
+      router.replace("/dashboard/events/requests");
+    };
+
+    getEventRequests({ eventRequestId: requestId })
+      .then((res) => {
+        if (cancelled) return;
+        if (!res?.data?.success) throw new Error(res?.data?.message || "Couldn't load this request");
+        const result = res.data.result;
+        const row = Array.isArray(result)
+          ? result[0]
+          : result?.list?.[0] || result?.eventRequests?.[0] || result?.data?.[0] || result;
+        if (!row?.eventName) throw new Error("This request couldn't be found");
+        if (!EDITABLE_REQUEST_STATUSES.includes(row.status)) {
+          leave("Can't edit this request", "Only pending requests or ones sent back for changes can be edited.");
+          return;
+        }
+        const mapped = mapRequestToForm(row);
+        setForm(mapped);
+        setLoadedRequest({ status: row.status, requestedChanges: row.requestedChanges || "", form: mapped });
+        setBlocks(OPTIONAL_BLOCKS.filter((b) => b.hasData(mapped)).map((b) => b.key));
+        setLocationMode(looksLikeLink(mapped.location) ? "online" : "place");
+        setRequestLoading(false);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        console.error("Event request load error:", err);
+        leave("Couldn't open the request", err.message);
+      });
+
+    return () => { cancelled = true; };
+  }, [requestId, dispatch, router, setForm]);
 
   useEffect(() => {
     if (!eventId) return;
@@ -276,9 +376,9 @@ const CreateEvent = () => {
     );
   }
 
-  const isUpdate = isEditMode && !form?.isDraft;
-  const isProposal = isPortfolioOfficer && !isUpdate;
-  const submitLabel = isUpdate ? "Update event" : isProposal ? "Propose" : "Create event";
+  const submitLabel = isRequestEdit
+    ? loadedRequest?.status === "changesRequested" ? "Resubmit" : "Save changes"
+    : isUpdate ? "Update event" : isProposal ? "Propose" : "Create event";
   const busy = submitting || draftSubmitting;
 
   // Same checks as submit, run live to drive the progress ring
@@ -294,6 +394,11 @@ const CreateEvent = () => {
   ];
   const requiredDone = requiredChecks.filter(Boolean).length;
   const allRequiredDone = requiredDone === requiredChecks.length;
+
+  // "+" chips for blocks not on the form yet; Budget only applies to proposals
+  const availableBlocks = OPTIONAL_BLOCKS.filter(
+    (b) => !blocks.includes(b.key) && (!b.proposalOnly || isProposal)
+  );
 
   const activeLocationMode = LOCATION_MODES.find((m) => m.key === locationMode);
   const LocationIcon = activeLocationMode.Icon;
@@ -321,9 +426,28 @@ const CreateEvent = () => {
             </div>
           </>
         );
+      case "budget":
+        return (
+          <div data-error="budget">
+            <EventsInput
+              // Plain text (not type="number") so arrow keys / mouse wheel can't nudge the amount
+              type="text"
+              inputMode="decimal"
+              placeholder="Estimated cost of the event"
+              value={form.budget}
+              onChange={(e) => {
+                const v = e.target.value;
+                // digits with at most one decimal point and two decimal places
+                if (v === "" || /^\d*\.?\d{0,2}$/.test(v)) update("budget", v);
+              }}
+              icon={<MdCurrencyRupee className="text-[18px]" />}
+              error={errors.budget}
+            />
+          </div>
+        );
       case "reminder":
         return (
-          <>
+          <div data-error="reminder">
             <div className="flex flex-col gap-[6px]">
               {form.reminder.length > 0 ? (
                 form.reminder.map((r) => <ReadOnlyReminderRow key={r.id || r._id} reminder={r} />)
@@ -339,7 +463,8 @@ const CreateEvent = () => {
               <FiPlus />
               {form.reminder.length > 0 ? "Add/Edit reminder" : "Add reminder"}
             </button>
-          </>
+            {errors.reminder && <p className="mt-1 text-[13px] text-red-500">{errors.reminder}</p>}
+          </div>
         );
       case "collaborator":
         return <Collaborators showLabel={false} form={form} setForm={setForm} />;
@@ -387,9 +512,21 @@ const CreateEvent = () => {
           <FiArrowLeft className="text-[22px]" />
         </button>
         <h2 className="font-heading text-[28px] md:text-[34px] leading-[1.1] text-[#1B2230]">
-          {isUpdate ? "Update" : "Create"} event
+          {isRequestEdit ? "Edit proposal" : `${isUpdate ? "Update" : isProposal ? "Propose" : "Create"} event`}
         </h2>
       </div>
+
+      {/* What the admin asked for, kept in view while the officer makes the changes */}
+      {isRequestEdit && loadedRequest?.requestedChanges &&
+        ["changesRequested", "doneWithRequestedChanges"].includes(loadedRequest.status) && (
+        <div className="mb-5 flex items-start gap-3 rounded-[14px] bg-[#E8EEFE] border border-[#C7D5FB] px-4 py-3.5">
+          <FiEdit3 className="mt-0.5 shrink-0 text-[#3B63E8]" />
+          <div className="min-w-0">
+            <p className="text-[14px] font-bold text-[#1E3A8A]">Admin asked for these changes</p>
+            <p className="text-[14px] text-[#1E3A8A] whitespace-pre-wrap break-words">{loadedRequest.requestedChanges}</p>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,340px)_minmax(0,1fr)] xl:grid-cols-[minmax(0,400px)_minmax(0,1fr)] gap-5 lg:gap-7 items-start">
 
@@ -535,9 +672,9 @@ const CreateEvent = () => {
             );
           })}
 
-          {blocks.length < OPTIONAL_BLOCKS.length && (
+          {availableBlocks.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-4">
-              {OPTIONAL_BLOCKS.filter((b) => !blocks.includes(b.key)).map((block) => (
+              {availableBlocks.map((block) => (
                 <AddBlockPill key={block.key} label={block.label} onClick={() => addBlock(block)} />
               ))}
             </div>
@@ -553,14 +690,17 @@ const CreateEvent = () => {
                   : "Save a draft anytime and come back to finish it."}
               </p>
               <div className="flex gap-2 max-sm:ml-auto">
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={()=> dispatch(openEventFormModal({ type: "APPROVAL" }))}
-                  className="h-[46px] px-4 sm:px-5 text-[15px] font-semibold border-[1.4px] border-[#0B57D0] text-[#0B57D0] rounded-full whitespace-nowrap cursor-pointer transition-colors hover:bg-[#F2F7FF] disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  Save as draft
-                </button>
+                {/* The event request API has no drafts, so proposals can only be sent */}
+                {!isProposal && (
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={()=> dispatch(openEventFormModal({ type: "APPROVAL" }))}
+                    className="h-[46px] px-4 sm:px-5 text-[15px] font-semibold border-[1.4px] border-[#0B57D0] text-[#0B57D0] rounded-full whitespace-nowrap cursor-pointer transition-colors hover:bg-[#F2F7FF] disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    Save as draft
+                  </button>
+                )}
                 <button
                   type="button"
                   disabled={busy}
@@ -594,8 +734,15 @@ const CreateEvent = () => {
 
       <SuccessPopup
         isOpen={proposalSent}
-        title="Event proposal sent"
-        message="Your event details have been sent to the admin, and the event will be created shortly. You can track its progress on the Event Requests page."
+        title={
+          !isRequestEdit ? "Event proposal sent"
+            : loadedRequest?.status === "changesRequested" ? "Proposal resubmitted" : "Proposal updated"
+        }
+        message={
+          isRequestEdit
+            ? "The admin has been told about your changes and will review the updated proposal."
+            : "Your proposal has been sent to the admin for review. The event goes live once it's approved. You can track it on the Event Requests page."
+        }
         onClose={() => router.push("/dashboard/events/requests")}
       />
     </div>

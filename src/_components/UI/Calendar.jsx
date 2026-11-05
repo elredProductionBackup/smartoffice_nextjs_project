@@ -99,6 +99,8 @@ const containerClass =
     ? "fixed inset-0 z-[999] flex items-center justify-center bg-black/40 px-4"
     : "relative";
 
+  const isPopup = mode === "popup";
+
   const canGoPrevMonth =
   new Date(year, month - 1, 1) >=
   new Date(effectiveMinDate.getFullYear(), effectiveMinDate.getMonth(), 1);
@@ -112,11 +114,11 @@ const containerClass =
         <div className={`hidden sm:block absolute top-[-8px] ${right?'right-8':'left-8'} h-4 w-4 rotate-45 bg-white border-l-2 border-t-2 border-[#F3F4F6]`} />
       )}
 
-      <div className={`${mode === "popup"?'w-[350px] max-w-[calc(100vw-32px)] border-[2.5px]  px-[14px] shadow-[0_8px_32px_rgba(0,0,0,0.18)] sm:shadow-none':'w-[100%] px-2 sm:px-9'} bg-white rounded-2xl border-[1.27px] border-[#F3F4F6] py-6 ${mode === "fullscreen"?'max-w-[416px]':''}`}
+      <div className={`${isPopup?'w-[280px] max-w-[calc(100vw-32px)] border-[2.5px] px-3 py-3 text-sm shadow-[0_8px_32px_rgba(0,0,0,0.18)]':'w-[100%] px-2 sm:px-9 py-6'} bg-white rounded-2xl border-[1.27px] border-[#F3F4F6] ${mode === "fullscreen"?'max-w-[416px]':''}`}
         ref={calendarRef}
         onClick={(e) => e.stopPropagation()}>
         {/*  HEADER  */}
-        <div className="flex items-center justify-between mb-6 text-2xl">
+        <div className={`flex items-center justify-between ${isPopup ? "mb-3 text-lg" : "mb-6 text-2xl"}`}>
             {viewMode !== "date" && (
                 <button onClick={() => {
                         if (viewMode === "month") changeYear(-1);
@@ -130,7 +132,7 @@ const containerClass =
             )}
 
             <div className="flex items-center justify-between w-[100%] gap-3">
-                <div className={`cursor-pointer text-xl font-semibold select-none ${viewMode !== 'date' && 'flex-1 grid place-items-center'}`}
+                <div className={`cursor-pointer ${isPopup ? "text-base" : "text-xl"} font-semibold select-none ${viewMode !== 'date' && 'flex-1 grid place-items-center'}`}
                 onClick={() => {
                     if (mode === "inline") return;
                     if (viewMode === "date") setViewMode("month");
@@ -144,7 +146,7 @@ const containerClass =
 
                 {/* DATE VIEW INLINE ARROWS */}
                 {viewMode === "date" && (
-                <div className="flex items-center gap-6">
+                <div className={`flex items-center ${isPopup ? "gap-3" : "gap-6"}`}>
                     <button onClick={() => changeMonth(-1)} disabled={!canGoPrevMonth}
                         className={`cursor-pointer ${!canGoPrevMonth && "opacity-50 cursor-not-allowed"}`}>
                         <IoIosArrowBack />
@@ -173,14 +175,14 @@ const containerClass =
         {/*  DATE VIEW  */}
         {viewMode === "date" && (
           <>
-            <div className="grid grid-cols-7 text-center mb-4 text-gray-500 font-semibold">
+            <div className={`grid grid-cols-7 text-center text-gray-500 font-semibold ${isPopup ? "mb-1 text-xs" : "mb-4"}`}>
               {DAYS.map((d, idx) => (
                 <div key={idx}>{d}</div>
                 ))}
 
             </div>
 
-            <div className="grid grid-cols-7 gap-y-2 text-center">
+            <div className={`grid grid-cols-7 text-center ${isPopup ? "gap-y-1" : "gap-y-2"}`}>
               {[...Array(firstDay)].map((_, i) => (
                 <div key={i} className="text-gray-300 grid place-items-center">
                   {prevMonthDays - firstDay + i + 1}
@@ -203,7 +205,7 @@ const containerClass =
                     onClick={() => {
                         if (isDisabled) return;
                         onChange?.(dateObj);
-                    }} className={`mx-auto h-9 w-9 sm:h-11 sm:w-11 rounded-lg
+                    }} className={`mx-auto rounded-lg ${isPopup ? "h-8 w-8" : "h-9 w-9 sm:h-11 sm:w-11"}
                         ${
                         isSelected
                             ? "bg-blue-700 text-white"

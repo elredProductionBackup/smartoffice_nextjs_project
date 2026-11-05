@@ -13,6 +13,7 @@ import {
 import Header from "@/_components/Header";
 import ProtectedRoute from "@/_components/ProtectedRoute";
 import AssistantWidget from "@/_components/Assistant/AssistantWidget";
+import NotificationsLive from "@/_components/Notifications/NotificationsLive";
 import useGlobalLoader from "@/store/useGlobalLoader";
 import { selectIsFinanceOfficer, selectIsLearningOfficer } from "@/store/auth/authSlice";
 import { ShareableUrlSync } from "@/hooks/useShareableUrl";
@@ -370,6 +371,9 @@ export default function DashboardLayout({ children }) {
         </div>
 
         <AssistantWidget />
+
+        {/* Live event request notifications on every dashboard page */}
+        <NotificationsLive />
 
         {/* Keep the network cluster code in the address bar so any copied link opens the right cluster */}
         <Suspense fallback={null}>

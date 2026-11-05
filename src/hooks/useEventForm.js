@@ -61,6 +61,7 @@ export const useEventForm = () => {
     isDraft:false
   },
     additionalNote: "",
+    budget: "", // estimated budget (₹), sent as eventBudget on event requests
   });
 
 const update = (key, value) => {
