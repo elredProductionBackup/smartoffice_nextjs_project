@@ -6,7 +6,7 @@ import { FiMessageSquare, FiPlus, FiSearch, FiX } from "react-icons/fi";
 import NewTopicModal from "./NewTopicModal";
 import ChatPanel from "./ChatPanel";
 import ThreadPanel from "./ThreadPanel";
-import { PersonAvatar, useMe } from "./DiscussionShared";
+import { useMe } from "./DiscussionShared";
 import { ChatSkeleton, TopicListSkeleton } from "./DiscussionSkeletons";
 import {
   clearDiscussionError,
@@ -44,11 +44,11 @@ const TopicItem = memo(function TopicItem({ topic, active, onOpen }) {
       type="button"
       onClick={() => onOpen(topic.id)}
       className={`w-full text-left flex gap-3 px-4 py-3.5 rounded-2xl transition cursor-pointer ${
-        active ? "bg-white border border-[#E2E8F0]" : "border border-transparent hover:bg-white/60"
+        active
+          ? "bg-white border border-[#1D72E8]/50 shadow-[0_4px_14px_rgba(29,114,232,0.12)]"
+          : "bg-white border border-[#E2E8F0] shadow-[0_1px_3px_rgba(15,23,42,0.05)] hover:border-[#CBD5E1] hover:shadow-[0_4px_12px_rgba(15,23,42,0.08)]"
       }`}
     >
-      <PersonAvatar code={topic.createdBy || lastBy} className="w-8 h-8 text-[12px]" />
-
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
           <p className="min-w-0 font-bold text-[16px] leading-[140%] text-[#1E293B] truncate">{topic.title}</p>
@@ -246,7 +246,7 @@ export default function DiscussionsPage() {
         <div className="w-full lg:w-[340px] shrink-0 bg-[#F2F7FF] rounded-t-[20px] md:rounded-[20px] flex flex-col min-h-0">
           <div className="px-5 pt-6 pb-3 shrink-0">
             <div className="flex items-center justify-between">
-              <h3 className="text-[24px] font-semibold text-[#1E293B]">Topics</h3>
+              <h3 className="font-heading text-[24px] font-normal text-[#1E293B]">Topics</h3>
               <button
                 type="button"
                 onClick={() => setIsNewTopicOpen(true)}
@@ -288,7 +288,7 @@ export default function DiscussionsPage() {
           </div>
 
           {/* pb-24 below lg keeps the last topic clear of the floating assistant button */}
-          <div className="flex-1 min-h-0 overflow-y-auto px-3 pb-24 lg:pb-3 space-y-1">
+          <div className="flex-1 min-h-0 overflow-y-auto px-3 pb-24 lg:pb-3 space-y-2">
             {/* Skeleton until the first answer: before it, "no topics" would be a guess */}
             {!topicsFetched ? (
               <TopicListSkeleton />

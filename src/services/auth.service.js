@@ -64,6 +64,7 @@ export const updateNetworkClusterAdminDpURL = ({ userCode, image }) => {
   fd.append("image", image);
   return api.patch("/smartOffice/updateNetworkClusterAdminDpURL", fd, {
     headers: { "Content-Type": "multipart/form-data" },
+    skipAuthRedirect: true, // a rejected image shows an error, not a logout (see axios.js)
   });
 };
 

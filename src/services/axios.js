@@ -64,7 +64,12 @@ api.interceptors.response.use(
       response?.status !== 401 &&
       /not found/i.test(response?.data?.message || "");
 
-    if (!isNotFound && (response?.status === 401 || response?.data?.isAuth === false)) {
+    // Uploads opt out with `skipAuthRedirect`: the API answers a rejected file (e.g. wrong type)
+    // like an auth failure, which would log the user out. The caller shows the error instead;
+    // a truly expired token is still caught by the next normal request.
+    const skip = response?.config?.skipAuthRedirect;
+
+    if (!skip && !isNotFound && (response?.status === 401 || response?.data?.isAuth === false)) {
       handleSessionExpired();
     }
     return response; // always resolve

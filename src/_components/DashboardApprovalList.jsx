@@ -3,7 +3,7 @@
 import { memo, useCallback, useEffect } from 'react';
 import Link from 'next/link';
 import { useDispatch, useSelector } from 'react-redux';
-import { FiArrowRight, FiCheckSquare } from 'react-icons/fi';
+import { FiCheckSquare } from 'react-icons/fi';
 import { DASHBOARD_APPROVALS_LIMIT, fetchDashboardApprovals } from '@/store/dashboard/dashboardThunks';
 
 const DISCUSSIONS_PATH = '/dashboard/discussions';
@@ -27,34 +27,58 @@ const approvalHref = ({ topicId, messageId }) => {
 const formatAmount = (value) =>
   value === null || value === undefined || value === '' ? null : `₹${(Number(value) || 0).toLocaleString('en-IN')}`;
 
-const formatWhen = (iso) => {
+const formatDay = (iso) => {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+};
+
+const formatTime = (iso) => {
   if (!iso) return '';
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return '';
-  return d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 };
 
+// Same row layout as the Actionable card: bullet + title + "who | time" on the left, date on the right
 const ApprovalRow = memo(function ApprovalRow({ item }) {
   const amount = formatAmount(item.amount);
-  const meta = [item.requester, item.topicTitle, formatWhen(item.createdAt)].filter(Boolean).join(', ');
+  const who = item.requester || item.topicTitle;
+  const time = formatTime(item.createdAt);
   const status = STATUS[item.status] || STATUS.pending;
 
   return (
-    <li>
+    <li className="border-b border-[#D4DFF1] pb-4 md:pb-[20px] last:border-none">
       <Link
         href={approvalHref(item)}
-        className="w-full text-left flex items-start justify-between gap-3 rounded-xl bg-white px-3 py-3 md:px-4 border border-transparent hover:border-[#D3E3FD] no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb]"
+        className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between lg:gap-[34px] no-underline group focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb] rounded-md"
       >
-        <div className="min-w-0">
-          <div className="text-[14px] font-semibold text-slate-800 line-clamp-2 md:line-clamp-1 break-words">{item.text}</div>
-          {meta && <div className="text-[12px] text-slate-400 mt-0.5 truncate">{meta}</div>}
+        {/* Left */}
+        <div className="flex gap-3 min-w-0">
+          <div className="mt-[7px] h-[8px] min-w-[8px] rounded-full bg-[#333]" />
+          <div className="flex flex-col gap-[6px] min-w-0">
+            <p className="text-[16px] leading-[21px] font-[500] text-[#333] line-clamp-2 break-words group-hover:text-[#0B57D0]">
+              {item.text || '—'}
+            </p>
+            {(who || time) && (
+              <p className="text-[14px] text-[#666666] font-[600] truncate">
+                {who || '—'}{time && ` | ${time}`}
+              </p>
+            )}
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className={`text-[12px] font-medium px-2.5 py-0.5 rounded-full border ${status.className}`}>
+                {STATUS[item.status] ? status.label : item.status}
+              </span>
+              {amount && <span className="text-[14px] font-[600] text-[#333]">{amount}</span>}
+            </div>
+          </div>
         </div>
-        <div className="shrink-0 flex flex-col items-end gap-1">
-          <span className={`text-[12px] font-medium px-3 py-0.5 rounded-full border ${status.className}`}>
-            {STATUS[item.status] ? status.label : item.status}
-          </span>
-          {amount && <span className="text-[13px] font-semibold text-[#2563eb]">{amount}</span>}
-        </div>
+
+        {/* Right */}
+        <span className="pl-5 lg:pl-0 lg:w-[100px] shrink-0 text-[14px] text-[#333333] font-[600] whitespace-nowrap">
+          {formatDay(item.createdAt)}
+        </span>
       </Link>
     </li>
   );
@@ -76,13 +100,12 @@ const DashboardApprovalList = () => {
   return (
     <div className="flex flex-col rounded-2xl bg-[#F2F7FF] px-4 py-5 md:px-6 md:py-6 min-h-[260px] md:min-h-[500px] max-h-[500px]">
       <div className="flex items-center justify-between gap-3 mb-4 md:mb-[20px]">
-        <h3 className="text-[18px] md:text-[20px] font-[700] text-[#333]">Approvals</h3>
+        <h3 className="font-heading text-[18px] md:text-[20px] font-[700] text-[#333]">Approvals</h3>
         <Link
           href={DISCUSSIONS_PATH}
-          className="flex items-center gap-2 px-4 py-2 rounded-full bg-white text-[#2563eb] text-[14px] font-semibold hover:bg-[#dbeafe] transition-colors no-underline shrink-0"
+          className="shrink-0 text-[14px] font-[600] text-[#0B57D0] border border-[#0B57D0] px-[14px] py-[4px] rounded-full cursor-pointer no-underline"
         >
           View all
-          <FiArrowRight className="text-[15px]" />
         </Link>
       </div>
 
@@ -114,7 +137,7 @@ const DashboardApprovalList = () => {
           <p className="text-[14px] text-[#666666]">You don&apos;t have any approvals right now</p>
         </div>
       ) : (
-        <ul className="flex flex-col gap-[10px] overflow-y-auto list-none p-0 m-0">
+        <ul className="flex-1 min-h-0 flex flex-col gap-4 md:gap-[20px] overflow-y-auto list-none p-0 m-0">
           {approvals.map((item) => (
             <ApprovalRow key={item.id} item={item} />
           ))}

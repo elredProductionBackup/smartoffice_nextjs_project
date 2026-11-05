@@ -228,7 +228,7 @@ function TopicHeader({ topic, onBack }) {
         </button>
       )}
       <div className="min-w-0 flex-1">
-        <h3 className="text-[18px] md:text-[24px] font-semibold text-[#1E293B] truncate">{topic.title}</h3>
+        <h3 className="font-heading text-[18px] md:text-[24px] font-normal text-[#1E293B] truncate">{topic.title}</h3>
         <p className="text-[13px] md:text-[15px] text-[#64748B] truncate">{subtitle}</p>
       </div>
 

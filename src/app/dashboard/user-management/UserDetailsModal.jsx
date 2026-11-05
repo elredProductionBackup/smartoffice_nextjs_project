@@ -4,8 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { FiCamera } from "react-icons/fi";
 import { ROLES, STATUS } from "./constants";
 import UserAvatar from "./UserAvatar";
-
-const MAX_PHOTO_MB = 5;
+import { PHOTO_ACCEPT, validateProfilePhoto } from "@/utils/profilePhoto";
 
 // Profile popup, laid out like the Members details modal.
 // onChangePhoto(file) is async; when passed, clicking the avatar picks and uploads a new photo.
@@ -24,8 +23,8 @@ export default function UserDetailsModal({ user, isMe, onClose, onChangePhoto })
     const file = e.target.files?.[0];
     e.target.value = ""; // so picking the same file again still fires onChange
     if (!file) return;
-    if (!file.type.startsWith("image/")) return setPhotoError("Choose an image file.");
-    if (file.size > MAX_PHOTO_MB * 1024 * 1024) return setPhotoError(`Photo must be under ${MAX_PHOTO_MB} MB.`);
+    const invalid = validateProfilePhoto(file);
+    if (invalid) return setPhotoError(invalid);
 
     setPhotoError("");
     setUploading(true);
@@ -89,7 +88,7 @@ export default function UserDetailsModal({ user, isMe, onClose, onChangePhoto })
                   </span>
                 )}
               </button>
-              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={pickPhoto} />
+              <input ref={fileRef} type="file" accept={PHOTO_ACCEPT} className="hidden" onChange={pickPhoto} />
               {photoError && <span className="text-[13px] font-semibold text-[#DC2626]">{photoError}</span>}
             </div>
           ) : (

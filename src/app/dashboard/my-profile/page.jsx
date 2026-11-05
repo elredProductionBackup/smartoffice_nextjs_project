@@ -11,6 +11,7 @@ import { useOutsideClick } from "@/hooks/useOutsideClick";
 import { ROLE_HOME } from "@/utils/routeAccess";
 import useGlobalLoader from "@/store/useGlobalLoader";
 import SuccessPopup from "@/_components/ConfirmationPopups/SuccessPopup";
+import { PHOTO_ACCEPT, validateProfilePhoto } from "@/utils/profilePhoto";
 
 // "financeOfficer" -> "Finance Officer"
 const formatRole = (role = "") =>
@@ -20,7 +21,6 @@ const formatRole = (role = "") =>
 
 const capitalize = (str = "") => str.charAt(0).toUpperCase() + str.slice(1);
 
-const MAX_PHOTO_MB = 5;
 
 // Profile photo; clicking it picks a new image. onPick(file) is async and resolves once uploaded.
 const ProfilePhoto = ({ src, alt, onPick }) => {
@@ -32,8 +32,8 @@ const ProfilePhoto = ({ src, alt, onPick }) => {
     const file = e.target.files?.[0];
     e.target.value = ""; // so picking the same file again still fires onChange
     if (!file) return;
-    if (!file.type.startsWith("image/")) return setError("Choose an image file.");
-    if (file.size > MAX_PHOTO_MB * 1024 * 1024) return setError(`Photo must be under ${MAX_PHOTO_MB} MB.`);
+    const invalid = validateProfilePhoto(file);
+    if (invalid) return setError(invalid);
 
     setError("");
     setUploading(true);
@@ -82,7 +82,7 @@ const ProfilePhoto = ({ src, alt, onPick }) => {
           </span>
         )}
       </button>
-      <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleChange} />
+      <input ref={fileRef} type="file" accept={PHOTO_ACCEPT} className="hidden" onChange={handleChange} />
       {error && <span className="max-w-[140px] text-center text-[12px] font-semibold text-[#DC2626]">{error}</span>}
     </div>
   );
