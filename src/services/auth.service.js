@@ -53,6 +53,20 @@ export const resendNetworkClusterAdminInvite = ({ userCode }) =>
 export const removeNetworkClusterAdmin = ({ userCode }) =>
   api.delete("/smartOffice/removeNetworkClusterAdmin", { data: { userCode } });
 
+/**
+ * PATCH /smartOffice/updateNetworkClusterAdminDpURL  (multipart)
+ * Form: image (file), userCode (optional)
+ * With userCode it changes that admin's profile picture; without it, the logged-in admin's own.
+ */
+export const updateNetworkClusterAdminDpURL = ({ userCode, image }) => {
+  const fd = new FormData();
+  if (userCode) fd.append("userCode", userCode);
+  fd.append("image", image);
+  return api.patch("/smartOffice/updateNetworkClusterAdminDpURL", fd, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+};
+
 export const getAllNetworkClusterAdminDetails =({ networkClusterCode, role }) =>
   api.get("/smartOffice/getAllNetworkClusterAdminDetails", {
     params: { networkClusterCode, ...(role && { role }) },

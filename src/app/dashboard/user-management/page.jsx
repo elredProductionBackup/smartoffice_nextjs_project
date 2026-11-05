@@ -21,7 +21,9 @@ import {
   removeNetworkClusterAdmin,
   resendNetworkClusterAdminInvite,
   updateNetworkClusterAdminActivation,
+  updateNetworkClusterAdminDpURL,
 } from "@/services/auth.service";
+import UserAvatar from "./UserAvatar";
 import { addToast } from "@/store/toastSlice";
 import EventActionConfirmModal from "@/_components/EventsComps/EventActionConfirmModal";
 import ChangeRoleModal from "./ChangeRoleModal";
@@ -70,6 +72,7 @@ const toUser = (u, index) => {
     id: u.userCode || u._id || u.email,
     name: name || u.email || "No name",
     email: u.email || "",
+    dpURL: u.dpURL || "",
     roles,
     portfolios: (u.portfolios || []).map(portfolioKey).filter(Boolean),
     whatsapp: u.phone || u.phoneNumber || "",
@@ -78,14 +81,6 @@ const toUser = (u, index) => {
     color: AVATAR_COLORS[index % AVATAR_COLORS.length],
   };
 };
-
-const getInitials = (name = "") =>
-  name
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w[0].toUpperCase())
-    .join("");
 
 // Portfolio Officers get one circle per portfolio; other roles get a single circle
 const roleBadges = (user) =>
@@ -418,6 +413,30 @@ export default function UserManagementPage() {
     }
   };
 
+  // Uploads a new profile photo for another admin. Errors are rethrown so the popup can show them.
+  const changePhoto = async (target, image) => {
+    try {
+      const res = await updateNetworkClusterAdminDpURL({ userCode: target.id, image });
+      if (!res?.data?.success) throw new Error(res?.data?.message || "Request failed");
+      const result = res.data.result;
+      const dpURL = typeof result === "string" ? result : result?.dpURL;
+      // Use the URL the API hands back; if it doesn't send one, reload the list to pick it up
+      if (dpURL) updateUser(target.id, { dpURL });
+      else fetchUsers();
+      dispatch(addToast({
+        message: { title: "Photo updated", descrip: `${target.name}'s profile photo has been changed.` },
+        type: "success",
+      }));
+    } catch (err) {
+      console.error("Profile photo update error:", err);
+      dispatch(addToast({
+        message: { title: "Couldn't update photo", descrip: err.message || "Please try again." },
+        type: "error",
+      }));
+      throw err;
+    }
+  };
+
   const updateUser = (id, patch) => setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, ...patch } : u)));
   const removeUser = (id) => setUsers((prev) => prev.filter((u) => u.id !== id));
 
@@ -523,14 +542,7 @@ export default function UserManagementPage() {
                 className="rounded-[20px] border border-[#E2E8F0] bg-white p-4 cursor-pointer active:bg-[#FAFCFF]"
               >
                 <div className="flex items-start gap-3">
-                  <div
-                    className={`w-11 h-11 rounded-full text-white text-[14px] font-bold flex items-center justify-center shrink-0 ${
-                      u.status === "deactivated" ? "opacity-50" : ""
-                    }`}
-                    style={{ backgroundColor: u.color }}
-                  >
-                    {getInitials(u.name)}
-                  </div>
+                  <UserAvatar user={u} className="w-11 h-11 text-[14px]" />
                   <div className="min-w-0 flex-1">
                     <p
                       className={`flex flex-wrap items-center gap-x-2 text-[17px] font-semibold break-words ${
@@ -646,14 +658,7 @@ export default function UserManagementPage() {
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3.5">
-                        <div
-                          className={`w-11 h-11 rounded-full text-white text-[14px] font-bold flex items-center justify-center shrink-0 ${
-                            u.status === "deactivated" ? "opacity-50" : ""
-                          }`}
-                          style={{ backgroundColor: u.color }}
-                        >
-                          {getInitials(u.name)}
-                        </div>
+                        <UserAvatar user={u} className="w-11 h-11 text-[14px]" />
                         <div className="min-w-0">
                           <p
                             className={`flex items-center gap-2 text-[17px] font-semibold ${
@@ -729,6 +734,7 @@ export default function UserManagementPage() {
           user={detailsUser}
           isMe={isMeUser(detailsUser)}
           onClose={() => setDetailsUserId(null)}
+          onChangePhoto={isMeUser(detailsUser) ? undefined : (file) => changePhoto(detailsUser, file)}
         />
       )}
 

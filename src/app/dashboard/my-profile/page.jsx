@@ -3,9 +3,10 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
-import { FiMail, FiPhone, FiBriefcase, FiShield, FiHash, FiCopy, FiCheck, FiArrowLeft, FiChevronDown } from "react-icons/fi";
+import { FiMail, FiPhone, FiBriefcase, FiShield, FiHash, FiCopy, FiCheck, FiArrowLeft, FiChevronDown, FiCamera } from "react-icons/fi";
 import { setAdminDetail, setSelectedRole } from "@/store/auth/authSlice";
-import { getNetworkClusterAdminDetail } from "@/services/auth.service";
+import { getNetworkClusterAdminDetail, updateNetworkClusterAdminDpURL } from "@/services/auth.service";
+import { addToast } from "@/store/toastSlice";
 import { useOutsideClick } from "@/hooks/useOutsideClick";
 import { ROLE_HOME } from "@/utils/routeAccess";
 import useGlobalLoader from "@/store/useGlobalLoader";
@@ -18,6 +19,74 @@ const formatRole = (role = "") =>
     .replace(/^./, (c) => c.toUpperCase());
 
 const capitalize = (str = "") => str.charAt(0).toUpperCase() + str.slice(1);
+
+const MAX_PHOTO_MB = 5;
+
+// Profile photo; clicking it picks a new image. onPick(file) is async and resolves once uploaded.
+const ProfilePhoto = ({ src, alt, onPick }) => {
+  const fileRef = useRef(null);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleChange = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // so picking the same file again still fires onChange
+    if (!file) return;
+    if (!file.type.startsWith("image/")) return setError("Choose an image file.");
+    if (file.size > MAX_PHOTO_MB * 1024 * 1024) return setError(`Photo must be under ${MAX_PHOTO_MB} MB.`);
+
+    setError("");
+    setUploading(true);
+    try {
+      await onPick(file);
+    } catch (err) {
+      setError(err.message || "Couldn't update your photo.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-center gap-1.5 shrink-0">
+      <button
+        type="button"
+        onClick={() => fileRef.current?.click()}
+        disabled={uploading}
+        title="Change photo"
+        aria-label="Change photo"
+        className="group relative rounded-full cursor-pointer disabled:cursor-wait"
+      >
+        <img
+          src={src || "/logo/user-icon.svg"}
+          alt={alt}
+          width={96}
+          height={96}
+          className="w-[72px] h-[72px] sm:w-[96px] sm:h-[96px] rounded-full object-cover object-[50%_30%] bg-[#CCCCCC] border border-[#D4DFF1]"
+        />
+        {/* Dark overlay with a camera on hover; a spinner while uploading */}
+        <span
+          className={`absolute inset-0 rounded-full bg-black/45 grid place-items-center text-white transition-opacity ${
+            uploading ? "opacity-100" : "opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100"
+          }`}
+        >
+          {uploading ? (
+            <span className="w-6 h-6 rounded-full border-[3px] border-white/40 border-t-white animate-spin" />
+          ) : (
+            <FiCamera className="text-[22px]" />
+          )}
+        </span>
+        {/* Corner badge so touch users (no hover) can tell it's tappable */}
+        {!uploading && (
+          <span className="absolute -bottom-0.5 -right-0.5 w-7 h-7 rounded-full bg-white border border-[#E2E8F0] shadow grid place-items-center text-[#0B57D0]">
+            <FiCamera className="text-[14px]" />
+          </span>
+        )}
+      </button>
+      <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleChange} />
+      {error && <span className="max-w-[140px] text-center text-[12px] font-semibold text-[#DC2626]">{error}</span>}
+    </div>
+  );
+};
 
 const InfoRow = ({ icon: Icon, label, value, copyable = false }) => {
   const [copied, setCopied] = useState(false);
@@ -139,7 +208,7 @@ const MyProfilePage = () => {
 
   // adminDetail is cached from login; refetch so roles changed since then (e.g. in User Management) show up
   const email = adminDetail?.email || user?.email;
-  useEffect(() => {
+  const refreshAdminDetail = useCallback(() => {
     const code =
       user?.networkClusterDetails?.networkClusterCode || localStorage.getItem("networkClusterCode");
     const userEmail = email || localStorage.getItem("userEmail");
@@ -151,6 +220,34 @@ const MyProfilePage = () => {
       })
       .catch((err) => console.error("Admin detail refresh error:", err));
   }, [dispatch, email, user?.networkClusterDetails?.networkClusterCode]);
+
+  useEffect(() => {
+    refreshAdminDetail();
+  }, [refreshAdminDetail]);
+
+  // No userCode -> the API changes the logged-in admin's own photo.
+  // adminDetail feeds the header avatar too, so updating it refreshes both.
+  const changePhoto = async (image) => {
+    try {
+      const res = await updateNetworkClusterAdminDpURL({ image });
+      if (!res?.data?.success) throw new Error(res?.data?.message || "Request failed");
+      const result = res.data.result;
+      const dpURL = typeof result === "string" ? result : result?.dpURL;
+      if (dpURL) dispatch(setAdminDetail({ ...profile, dpURL }));
+      else refreshAdminDetail();
+      dispatch(addToast({
+        message: { title: "Photo updated", descrip: "Your profile photo has been changed." },
+        type: "success",
+      }));
+    } catch (err) {
+      console.error("Own photo update error:", err);
+      dispatch(addToast({
+        message: { title: "Couldn't update photo", descrip: err.message || "Please try again." },
+        type: "error",
+      }));
+      throw err;
+    }
+  };
 
   // Same token works for every role, so switching is just a new selectedRole.
   // Brief loader, then the success popup; OK takes the user to that role's home.
@@ -192,13 +289,7 @@ const MyProfilePage = () => {
 
       <div className="rounded-[22px] bg-white border border-[#EAEEF2] p-4 sm:p-6 md:p-8">
         <div className="flex flex-wrap sm:flex-nowrap items-center gap-4 sm:gap-5 pb-5 sm:pb-6 border-b border-[#EAEEF2]">
-          <img
-            src={profile.dpURL || "/logo/user-icon.svg"}
-            alt={fullName}
-            width={96}
-            height={96}
-            className="w-[72px] h-[72px] sm:w-[96px] sm:h-[96px] shrink-0 rounded-full object-cover bg-[#CCCCCC] border border-[#D4DFF1]"
-          />
+          <ProfilePhoto src={profile.dpURL} alt={fullName} onPick={changePhoto} />
           <div className="min-w-0 flex-1">
             <h3 className="text-[22px] sm:text-[26px] font-bold text-[#333333] capitalize break-words">{fullName}</h3>
             {titles.length > 0 && (

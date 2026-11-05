@@ -1,29 +1,50 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
+import { FiCamera } from "react-icons/fi";
 import { ROLES, STATUS } from "./constants";
+import UserAvatar from "./UserAvatar";
 
-const getInitials = (name = "") =>
-  name
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w[0].toUpperCase())
-    .join("");
+const MAX_PHOTO_MB = 5;
 
-// Read-only profile popup, laid out like the Members details modal
-export default function UserDetailsModal({ user, isMe, onClose }) {
+// Profile popup, laid out like the Members details modal.
+// onChangePhoto(file) is async; when passed, clicking the avatar picks and uploads a new photo.
+export default function UserDetailsModal({ user, isMe, onClose, onChangePhoto }) {
+  const fileRef = useRef(null);
+  const [uploading, setUploading] = useState(false);
+  const [photoError, setPhotoError] = useState("");
+
   useEffect(() => {
-    const onKey = (e) => e.key === "Escape" && onClose();
+    const onKey = (e) => e.key === "Escape" && !uploading && onClose();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  }, [onClose, uploading]);
+
+  const pickPhoto = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // so picking the same file again still fires onChange
+    if (!file) return;
+    if (!file.type.startsWith("image/")) return setPhotoError("Choose an image file.");
+    if (file.size > MAX_PHOTO_MB * 1024 * 1024) return setPhotoError(`Photo must be under ${MAX_PHOTO_MB} MB.`);
+
+    setPhotoError("");
+    setUploading(true);
+    try {
+      await onChangePhoto(file);
+    } catch (err) {
+      setPhotoError(err.message || "Couldn't update the photo. Please try again.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const avatarClass = "w-[80px] h-[80px] text-[30px] md:w-[100px] md:h-[100px] md:text-[38px] !font-semibold";
 
   const status = STATUS[user.status];
   const roleLabels = user.roles.map((r) => ROLES[r].label);
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center font-nunito p-4" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center font-nunito p-4" onClick={() => !uploading && onClose()}>
       <div
         className="bg-white w-[650px] max-w-full max-h-[90dvh] md:max-h-[90vh] rounded-[20px] p-6 md:p-[40px] relative flex flex-col gap-6 md:gap-[28px] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
@@ -38,14 +59,42 @@ export default function UserDetailsModal({ user, isMe, onClose }) {
 
         {/* Header */}
         <div className="flex flex-col gap-4 md:gap-[20px] items-start">
-          <div
-            className={`w-[80px] h-[80px] text-[30px] md:w-[100px] md:h-[100px] md:text-[38px] rounded-full grid place-items-center text-white font-semibold ${
-              user.status === "deactivated" ? "opacity-50" : ""
-            }`}
-            style={{ backgroundColor: user.color }}
-          >
-            {getInitials(user.name)}
-          </div>
+          {onChangePhoto ? (
+            <div className="flex flex-col items-start gap-2">
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                disabled={uploading}
+                title={user.dpURL ? "Change photo" : "Add photo"}
+                aria-label={user.dpURL ? "Change photo" : "Add photo"}
+                className="group relative rounded-full cursor-pointer disabled:cursor-wait"
+              >
+                <UserAvatar user={user} className={avatarClass} />
+                {/* Dark overlay with a camera on hover; a spinner while uploading */}
+                <span
+                  className={`absolute inset-0 rounded-full bg-black/45 grid place-items-center text-white transition-opacity ${
+                    uploading ? "opacity-100" : "opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100"
+                  }`}
+                >
+                  {uploading ? (
+                    <span className="w-7 h-7 rounded-full border-[3px] border-white/40 border-t-white animate-spin" />
+                  ) : (
+                    <FiCamera className="text-[26px]" />
+                  )}
+                </span>
+                {/* Small camera badge so touch users (no hover) can tell it's tappable */}
+                {!uploading && (
+                  <span className="absolute bottom-0 right-0 w-7 h-7 md:w-8 md:h-8 rounded-full bg-white border border-[#E2E8F0] shadow grid place-items-center text-[#0B57D0]">
+                    <FiCamera className="text-[14px] md:text-[16px]" />
+                  </span>
+                )}
+              </button>
+              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={pickPhoto} />
+              {photoError && <span className="text-[13px] font-semibold text-[#DC2626]">{photoError}</span>}
+            </div>
+          ) : (
+            <UserAvatar user={user} className={avatarClass} />
+          )}
 
           <div className="w-full flex flex-col items-start gap-[6px]">
             <div className="w-full flex items-center justify-between gap-4">
