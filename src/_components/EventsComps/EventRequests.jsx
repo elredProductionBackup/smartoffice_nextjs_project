@@ -352,7 +352,7 @@ const RequestDetails = ({ request, isAdmin, eventTypeName, onReview, onEdit, onD
           <img
             src={request.eventImage}
             alt=""
-            className="w-full max-h-[260px] object-cover rounded-[14px] bg-[#F1F5F9]"
+            className="block w-auto h-auto max-w-full sm:max-w-[360px] max-h-[200px] object-contain rounded-[14px] border border-[#EAEEF2] bg-[#F8FAFC]"
           />
         </div>
       )}
