@@ -57,7 +57,14 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => {
     // The API flags an invalid / expired token with HTTP 401 or `isAuth: false`
-    if (response?.status === 401 || response?.data?.isAuth === false) {
+    // Some endpoints (e.g. event details) also send `isAuth: false` for a missing record;
+    // callers opt in with `skipAuthRedirectOnNotFound` so a deleted record doesn't log the user out.
+    const isNotFound =
+      response?.config?.skipAuthRedirectOnNotFound &&
+      response?.status !== 401 &&
+      /not found/i.test(response?.data?.message || "");
+
+    if (!isNotFound && (response?.status === 401 || response?.data?.isAuth === false)) {
       handleSessionExpired();
     }
     return response; // always resolve

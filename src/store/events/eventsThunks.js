@@ -186,10 +186,17 @@ export const fetchEventDetails = createAsyncThunk(
       }
 
       const res = await getEventDetails({ eventId });
-      return {
-        eventId,
-        data: res?.data.result[0]
-      };
+      const event = res?.data?.result?.[0];
+
+      // Deleted / missing event: let the page show a "deleted" state instead of loading forever
+      if (!event) {
+        return rejectWithValue({
+          notFound: true,
+          message: res?.data?.message || "Event not found",
+        });
+      }
+
+      return { eventId, data: event };
     } catch (err) {
       return rejectWithValue(
         err?.response?.data?.message || err.message

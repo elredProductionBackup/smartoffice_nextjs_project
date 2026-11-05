@@ -102,6 +102,9 @@ export default function EventDetailsClient() {
   const event = useSelector(
     (state) => state.events.eventDetailsMap[eventId]
   );
+  const eventError = useSelector(
+    (state) => state.events.eventDetailsError[eventId]
+  );
 
   // ================= BUDGET TYPE =================
   // getEventsDetails already returns the budget type name inside eventType
@@ -237,6 +240,32 @@ export default function EventDetailsClient() {
       setClosing(false);
     }
   };
+
+  // ================= DELETED / NOT FOUND =================
+  if (!event && eventError?.notFound) {
+    return (
+      <div className="h-[calc(100dvh-60px)] md:h-[calc(100vh-80px)] flex items-center justify-center p-5">
+        <div className="bg-white rounded-2xl p-8 md:p-10 max-w-[440px] w-full flex flex-col items-center gap-4 text-center">
+          <div className="w-[56px] h-[56px] rounded-full bg-[#FEE2E2] grid place-items-center">
+            <HiOutlineTrash className="w-[26px] h-[26px] text-[#B91C1C]" />
+          </div>
+          <h1 className="font-heading text-[22px] md:text-[24px] font-semibold text-[#111]">
+            This event has been deleted
+          </h1>
+          <p className="text-[15px] text-[#6B7280]">
+            The event you are looking for no longer exists. It may have been removed after it was created.
+          </p>
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="mt-2 flex items-center gap-1.5 px-5 py-2.5 rounded-full text-[14px] font-semibold text-white bg-[#0B57D0] cursor-pointer border-0"
+          >
+            <HiArrowLeft /> Go back
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // ================= LOADING =================
   if (!event) {

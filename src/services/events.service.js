@@ -231,6 +231,8 @@
       params: {
         eventId,
       },
+      // A deleted event comes back as "Event not found" with isAuth: false — not a session expiry
+      skipAuthRedirectOnNotFound: true,
     });
   };
 

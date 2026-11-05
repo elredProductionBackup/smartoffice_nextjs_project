@@ -401,6 +401,7 @@ const eventSlice = createSlice({
       .addCase(fetchEventDetails.pending , (state,action) => {
           const { eventId } = action.meta.arg;
           state.eventDetailsFormLoader[eventId] = true;
+          delete state.eventDetailsError[eventId];
       })
       .addCase(fetchEventDetails.fulfilled, (state, action) => {
         const { eventId, data, skip } = action.payload;
