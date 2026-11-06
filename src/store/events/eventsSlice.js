@@ -274,6 +274,8 @@ const eventSlice = createSlice({
       // Checklist
       .addCase(fetchMasterConfig.pending, (state) => {
         state.masterLoading = true;
+        // Statuses are per event: drop the previous event's so they aren't shown or saved here
+        state.checklistMaster = state.checklistMaster.map((c) => ({ ...c, status: "" }));
       })
       .addCase(fetchMasterConfig.fulfilled, (state, action) => {
         state.masterLoading = false;

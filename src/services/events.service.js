@@ -50,9 +50,10 @@
     });
   };
 
-  export const getMasterList = (networkClusterCode) => {
+  // With eventId the checklist statuses come back for that event only
+  export const getMasterList = (networkClusterCode, eventId) => {
     return api.get("/smartOffice/masterList", {
-      params: { networkClusterCode },
+      params: { networkClusterCode, ...(eventId ? { eventId } : {}) },
     });
   };
 

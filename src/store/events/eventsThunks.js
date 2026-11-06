@@ -89,12 +89,13 @@ export const fetchCollaborators = createAsyncThunk(
 
 
 // GET
+// eventId is sent from an event's checklist, so each event gets its own statuses
 export const fetchMasterConfig = createAsyncThunk(
   "events/fetchMasterConfig",
-  async (_, { rejectWithValue }) => {
+  async ({ eventId } = {}, { rejectWithValue }) => {
     try {
       const networkClusterCode = localStorage.getItem("networkClusterCode");
-      const res = await getMasterList(networkClusterCode);
+      const res = await getMasterList(networkClusterCode, eventId);
       return res.data.result[0];
     } catch (err) {
       return rejectWithValue(err?.response?.data?.message || err.message);
@@ -103,15 +104,17 @@ export const fetchMasterConfig = createAsyncThunk(
 );
 
 // PATCH (Checklist + Points together)
+// eventId is sent when saving from an event's checklist, so the statuses are stored for that event
 export const saveMasterConfig = createAsyncThunk(
   "events/saveMasterConfig",
-  async (_, { getState, rejectWithValue }) => {
+  async ({ eventId } = {}, { getState, rejectWithValue }) => {
     try {
       const networkClusterCode = localStorage.getItem("networkClusterCode");
       const { checklistMaster, pointsMaster } = getState().events;
 
       const payload = {
         networkClusterCode,
+        ...(eventId ? { eventId } : {}),
         checkList: checklistMaster.map((c) => ({
           itemName: c.label,
           priority:
