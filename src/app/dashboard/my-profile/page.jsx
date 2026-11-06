@@ -5,12 +5,17 @@ import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import { FiMail, FiPhone, FiBriefcase, FiShield, FiHash, FiCopy, FiCheck, FiArrowLeft, FiChevronDown, FiCamera } from "react-icons/fi";
 import { setAdminDetail, setSelectedRole } from "@/store/auth/authSlice";
-import { getNetworkClusterAdminDetail, updateNetworkClusterAdminDpURL } from "@/services/auth.service";
+import {
+  getNetworkClusterAdminDetail,
+  updateNetworkClusterAdminDpURL,
+  removeNetworkClusterAdminDp,
+} from "@/services/auth.service";
 import { addToast } from "@/store/toastSlice";
 import { useOutsideClick } from "@/hooks/useOutsideClick";
 import { ROLE_HOME } from "@/utils/routeAccess";
 import useGlobalLoader from "@/store/useGlobalLoader";
 import SuccessPopup from "@/_components/ConfirmationPopups/SuccessPopup";
+import ConfirmPopup from "@/_components/ConfirmationPopups/ConfirmPopup";
 import { PHOTO_ACCEPT, validateProfilePhoto } from "@/utils/profilePhoto";
 
 // "financeOfficer" -> "Finance Officer"
@@ -23,7 +28,8 @@ const capitalize = (str = "") => str.charAt(0).toUpperCase() + str.slice(1);
 
 
 // Profile photo; clicking it picks a new image. onPick(file) is async and resolves once uploaded.
-const ProfilePhoto = ({ src, alt, onPick }) => {
+// onRemove opens the remove-photo confirmation; the link only shows when there is a photo.
+const ProfilePhoto = ({ src, alt, onPick, onRemove }) => {
   const fileRef = useRef(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
@@ -83,6 +89,18 @@ const ProfilePhoto = ({ src, alt, onPick }) => {
         )}
       </button>
       <input ref={fileRef} type="file" accept={PHOTO_ACCEPT} className="hidden" onChange={handleChange} />
+      {src && onRemove && !uploading && (
+        <button
+          type="button"
+          onClick={() => {
+            setError("");
+            onRemove();
+          }}
+          className="mt-1 text-[13px] font-semibold text-[#DC2626] hover:underline cursor-pointer"
+        >
+          Remove photo
+        </button>
+      )}
       {error && <span className="max-w-[140px] text-center text-[12px] font-semibold text-[#DC2626]">{error}</span>}
     </div>
   );
@@ -249,6 +267,36 @@ const MyProfilePage = () => {
     }
   };
 
+  const [confirmRemove, setConfirmRemove] = useState(false);
+  const [removing, setRemoving] = useState(false);
+  const [removeError, setRemoveError] = useState("");
+
+  const closeRemovePopup = () => {
+    if (removing) return;
+    setConfirmRemove(false);
+    setRemoveError("");
+  };
+
+  const removePhoto = async () => {
+    setRemoving(true);
+    setRemoveError("");
+    try {
+      const res = await removeNetworkClusterAdminDp();
+      if (!res?.data?.success) throw new Error(res?.data?.message || "Request failed");
+      dispatch(setAdminDetail({ ...profile, dpURL: "" }));
+      setConfirmRemove(false);
+      dispatch(addToast({
+        message: { title: "Photo removed", descrip: "Your profile photo has been removed." },
+        type: "success",
+      }));
+    } catch (err) {
+      console.error("Own photo remove error:", err);
+      setRemoveError(err?.response?.data?.message || err.message || "Couldn't remove your photo.");
+    } finally {
+      setRemoving(false);
+    }
+  };
+
   // Same token works for every role, so switching is just a new selectedRole.
   // Brief loader, then the success popup; OK takes the user to that role's home.
   const handleRoleSwitch = (role) => {
@@ -289,7 +337,7 @@ const MyProfilePage = () => {
 
       <div className="rounded-[22px] bg-white border border-[#EAEEF2] p-4 sm:p-6 md:p-8">
         <div className="flex flex-wrap sm:flex-nowrap items-center gap-4 sm:gap-5 pb-5 sm:pb-6 border-b border-[#EAEEF2]">
-          <ProfilePhoto src={profile.dpURL} alt={fullName} onPick={changePhoto} />
+          <ProfilePhoto src={profile.dpURL} alt={fullName} onPick={changePhoto} onRemove={() => setConfirmRemove(true)} />
           <div className="min-w-0 flex-1">
             <h3 className="text-[22px] sm:text-[26px] font-bold text-[#333333] capitalize break-words">{fullName}</h3>
             {titles.length > 0 && (
@@ -311,6 +359,17 @@ const MyProfilePage = () => {
         </div>
       </div>
       </div>
+
+      <ConfirmPopup
+        isOpen={confirmRemove}
+        title="Remove profile photo?"
+        message="Your photo will be replaced with the default avatar."
+        confirmText="Remove"
+        isLoading={removing}
+        error={removeError}
+        onConfirm={removePhoto}
+        onCancel={closeRemovePopup}
+      />
 
       <SuccessPopup
         isOpen={!!switchedRole}
