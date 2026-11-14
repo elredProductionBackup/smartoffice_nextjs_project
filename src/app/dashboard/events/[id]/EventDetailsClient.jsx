@@ -528,6 +528,7 @@ export default function EventDetailsClient() {
             <MemberDetailsModal
               key={index}
               member={modal.payload}
+              isAttendee
               onClose={() => dispatch(closeAllEventsModals())}
             />
           );

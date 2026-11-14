@@ -9,6 +9,8 @@ export default function MemberDetailsModal({
   onClose,
   hideChildren = false,
   showLogisticsDetails = false,
+  // Event attendees: show company + description instead of spouse/children/documents
+  isAttendee = false,
 }) {
   const [tooltipOpen, setTooltipOpen] = useState(false);
   const tooltipRef = useRef(null);
@@ -170,7 +172,32 @@ export default function MemberDetailsModal({
             </div>
           </div>
 
+          {/* Company (full width) — attendees only */}
+          {isAttendee && (
+            <div className="flex flex-col gap-[12px] sm:col-span-2 text-[#333333]">
+              <span className="text-[18px] md:text-[20px] font-bold uppercase">
+                Company Name
+              </span>
+              <span className="text-[16px] font-semibold text-[#666666] break-words">
+                {member.companyName || "—"}
+              </span>
+            </div>
+          )}
+
+          {/* Description (full width) — attendees only; not mapped from the backend yet */}
+          {isAttendee && (
+            <div className="flex flex-col gap-[12px] sm:col-span-2 text-[#333333]">
+              <span className="text-[18px] md:text-[20px] font-bold uppercase">
+                Description
+              </span>
+              <p className="text-[16px] font-semibold text-[#666666] whitespace-pre-line break-words">
+                {member.description || "—"}
+              </p>
+            </div>
+          )}
+
           {/* Spouse (LEFT column) */}
+          {!isAttendee && (
           <div className="flex flex-col gap-[12px] justify-self-start text-[#333333] ">
             <span className="text-[18px] md:text-[20px] font-bold uppercase">
               Spouse Name
@@ -179,9 +206,10 @@ export default function MemberDetailsModal({
               {member.spouse || "—"}
             </span>
           </div>
+          )}
 
           {/* Children (RIGHT column – block aligned right) */}
-          {!hideChildren && (
+          {!hideChildren && !isAttendee && (
             <div className="flex flex-col gap-[12px] sm:justify-self-end text-[#333333] sm:w-[230px]">
               <span className="text-[18px] md:text-[20px] font-bold uppercase">
                 Children Name
@@ -267,6 +295,7 @@ export default function MemberDetailsModal({
         )}
 
         {/* Documents */}
+        {!isAttendee && (
         <div className="flex flex-col gap-[12px]">
           <div className="text-[18px] md:text-[20px] font-bold uppercase">
             Documents Uploaded
@@ -314,6 +343,7 @@ export default function MemberDetailsModal({
             </div>
           )}
         </div>
+        )}
 
         {/* </>} */}
       </div>

@@ -10,4 +10,5 @@ export const formatMember = (member) => ({
   documents: member?.documents || [],
   spouse: member?.spouseDetails?.name || "",
   children: member?.childrenDetails || [],
+  companyName: member?.companyName || "",
 });
