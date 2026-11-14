@@ -154,10 +154,10 @@ const ChecklistContent = ({ eventId }) => {
     }
   }, [dispatch, eventId]);
 
-  // Master checklist items are shown on every event
+  // Master checklist items are shown on every event, with this event's statuses
   useEffect(() => {
-    dispatch(fetchMasterConfig());
-  }, [dispatch]);
+    dispatch(fetchMasterConfig({ eventId }));
+  }, [dispatch, eventId]);
 
   // Search matches master item labels, and event task titles or their subtask titles
   const query = search.trim().toLowerCase();
@@ -233,7 +233,7 @@ const ChecklistContent = ({ eventId }) => {
       )
     );
 
-    const result = await dispatch(saveMasterConfig());
+    const result = await dispatch(saveMasterConfig({ eventId }));
     if (!saveMasterConfig.fulfilled.match(result)) {
       dispatch(setChecklistMaster(previous));
       showError("Couldn't update status", result.payload || "Please try again.");
