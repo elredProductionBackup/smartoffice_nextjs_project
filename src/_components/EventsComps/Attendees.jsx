@@ -1342,7 +1342,9 @@ const Attendees = ({ eventId }) => {
         </table>
       </div>
 
-      <Pagination total={membersTotal} currentPage={currentPage} perPage={10} className="bg-white! px-1! pb-2!" />
+      {/* Negative bottom offsets the scroll container's bottom padding (pb-20 / md:pb-[20px] in
+          EventDetailsClient) so the bar sticks flush to the bottom and rows can't show beneath it */}
+      <Pagination total={membersTotal} currentPage={currentPage} perPage={10} className="bg-white! px-1! pb-2! -bottom-20! md:-bottom-5!" />
 
       {/* Bulk actions for the ticked rows, floating above the table */}
       {canEdit && selectedVisible.length > 0 && (
