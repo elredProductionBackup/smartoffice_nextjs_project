@@ -23,6 +23,22 @@ function isToday(dateStr) {
   return dateStr === today;
 }
 
+const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+function ordinal(n) {
+  if (n % 100 >= 11 && n % 100 <= 13) return `${n}th`;
+  return `${n}${{ 1: "st", 2: "nd", 3: "rd" }[n % 10] || "th"}`;
+}
+
+// "29-10-2026" -> "Thursday, 29th Oct" (format the WhatsApp template expects).
+function formatWorkshopDate(dateStr) {
+  const [d, m, y] = dateStr.split("-").map(Number);
+  const date = new Date(y, m - 1, d);
+  if (!d || !m || !y || Number.isNaN(date.getTime())) return dateStr;
+  return `${WEEKDAYS[date.getDay()]}, ${ordinal(d)} ${MONTHS[m - 1]}`;
+}
+
 // Earliest selectable time in minutes since midnight — only restricted when the workshop is today.
 function getMinMinutes(dateStr) {
   if (!isToday(dateStr)) return 0;
@@ -188,9 +204,11 @@ export default function ConfirmSendModal({ contacts, templateId, messageType, su
     try {
       const recipients = attendeeNames.map((name) => {
         const match = contacts.find((c) => c.name === name);
+        // Messages greet by first name only ("Kavita Menon" -> "Kavita").
+        const firstName = name.trim().split(/\s+/)[0] || name;
         return messageType === "email"
-          ? { name, email: match?.email || "" }
-          : { name, phone: withIndianCountryCode(match?.phone) };
+          ? { name: firstName, email: match?.email || "" }
+          : { name: firstName, phone: withIndianCountryCode(match?.phone) };
       });
 
       const result = await sendBulkBroadcastMessage({
@@ -201,7 +219,7 @@ export default function ConfirmSendModal({ contacts, templateId, messageType, su
           ? {}
           : {
               workshopName: values.workshopName.trim(),
-              workshopDate: values.workshopDate.trim(),
+              workshopDate: formatWorkshopDate(values.workshopDate.trim()),
               sessionTime: values.sessionTime.trim(),
               arrivalTime: values.arrivalTime.trim(),
               venue: values.venue.trim(),

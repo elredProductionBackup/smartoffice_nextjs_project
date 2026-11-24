@@ -8,6 +8,7 @@ import { selectIsFinanceOfficer } from "@/store/auth/authSlice";
 import { fetchEventMembers } from "@/store/events/eventsThunks";
 import {
   addOfflineAttendees,
+  getEventAttendees,
   removeEventAttendees,
   updateEventAttendance,
   updateOfflineAttendee,
@@ -75,8 +76,10 @@ const primaryBtn =
 const secondaryBtn =
   "inline-flex items-center gap-2 h-10 px-4 rounded-full border border-[#E5E7EB] bg-white text-[#111] text-[14px] font-semibold hover:bg-[#F7F8FA] transition-colors cursor-pointer";
 const eyebrow = "text-[12px] font-medium uppercase tracking-[1.5px] text-[#9CA3AF]";
+// Bulk bar sits on the Smart Networks blue gradient, so its buttons are white-on-blue
 const bulkBtn =
-  "inline-flex items-center gap-2 h-9 px-3.5 rounded-full text-[14px] font-semibold hover:bg-white/10 transition-colors cursor-pointer";
+  "inline-flex items-center gap-2 h-9 px-3.5 rounded-full text-[14px] font-semibold text-white hover:bg-white/15 transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-60";
+const ALL_PAGE = 500; // rows per getEventAttendees call when selecting every attendee
 
 // Soft background / text pairs for initials, picked from the name so a person keeps their colour
 const AVATAR_TONES = [
@@ -486,6 +489,9 @@ const Attendees = ({ eventId }) => {
   const debouncedSearch = useDebounce(search.trim());
   const filtersActive = !!debouncedSearch || filter !== "all" || !!appFilter;
   const [selected, setSelected] = useState([]);
+  // Every attendee matching the filters (all pages), loaded once "Select all" is used; null = this page only
+  const [everyone, setEveryone] = useState(null);
+  const [loadingEveryone, setLoadingEveryone] = useState(false);
   const [success, setSuccess] = useState(null); // { title, message } after a save
   // Edits and removals live in the browser until the attendee APIs exist
   const [local, setLocal] = useState(() => loadLocal(eventId));
@@ -563,8 +569,14 @@ const Attendees = ({ eventId }) => {
   const visibleIds = visibleMembers.map((m) => m.id);
   const selectedVisible = visibleIds.filter((id) => selected.includes(id));
   const allSelected = visibleIds.length > 0 && selectedVisible.length === visibleIds.length;
+
+  // What the bulk bar acts on: ticked rows on this page, or across every page after "Select all"
+  const selectedRows = (everyone || visibleMembers).filter((m) => selected.includes(m.id));
+  const selectedIds = selectedRows.map((m) => m.id);
   // Ticked rows the bulk Remove can act on (app self-registrations are left out)
-  const selectedRemovable = visibleMembers.filter((m) => selected.includes(m.id) && !isSelfRegistered(m));
+  const selectedRemovable = selectedRows.filter((m) => !isSelfRegistered(m));
+  const everyoneCount = membersTotal + (filtersActive ? 0 : local.added.length);
+  const allEventSelected = !!everyone && selectedRows.length === everyone.length;
 
   const toggleRow = (id) =>
     setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
@@ -572,6 +584,51 @@ const Attendees = ({ eventId }) => {
     setSelected((prev) =>
       allSelected ? prev.filter((id) => !visibleIds.includes(id)) : [...new Set([...prev, ...visibleIds])]
     );
+
+  const clearSelection = () => {
+    setSelected([]);
+    setEveryone(null);
+  };
+
+  // A different search or filter is a different list, so "Select all" starts over
+  useEffect(() => {
+    setSelected([]);
+    setEveryone(null);
+  }, [eventId, debouncedSearch, filter, appFilter]);
+
+  // Loads every attendee matching the current search/filters, page by page, and ticks them all
+  const selectEveryone = async () => {
+    setLoadingEveryone(true);
+    try {
+      const all = [];
+      for (let start = 1; ; ) {
+        const res = await getEventAttendees({
+          eventId,
+          start,
+          offset: ALL_PAGE,
+          search: debouncedSearch,
+          attendanceStatus: FILTERS.find((f) => f.key === filter)?.api || "",
+          appStatus: appFilter,
+        });
+        if (res.data?.success === false) throw new Error(res.data?.message);
+        const list = res.data?.result || [];
+        all.push(...list);
+        const total = res.data?.totalCount ?? res.data?.total ?? 0;
+        if (!list.length || all.length >= total) break;
+        start += list.length;
+      }
+      const rows = [...(filtersActive ? [] : local.added), ...all].map(toRow);
+      setEveryone(rows);
+      setSelected(rows.map((m) => m.id));
+    } catch (err) {
+      dispatch(addToast({
+        message: { title: "Couldn't select all attendees", descrip: err.message || "Please try again." },
+        type: "error",
+      }));
+    } finally {
+      setLoadingEveryone(false);
+    }
+  };
 
   // The dropdown sends one id, the bulk bar every selected one. The pill updates at once; a refetch
   // then brings the saved status and fresh chip counts, and a failure puts the old status back.
@@ -1313,51 +1370,68 @@ const Attendees = ({ eventId }) => {
       <Pagination total={membersTotal} currentPage={currentPage} perPage={10} className="bg-white! px-1! pb-2! -bottom-20! md:-bottom-5!" />
 
       {/* Bulk actions for the ticked rows, floating above the table */}
-      {canEdit && selectedVisible.length > 0 && (
+      {canEdit && selectedRows.length > 0 && (
         <div
           role="toolbar"
           aria-label="Bulk actions"
-          className="fixed bottom-24 left-4 right-4 md:bottom-6 md:left-1/2 md:right-auto md:-translate-x-1/2 z-40 flex flex-wrap md:flex-nowrap items-center justify-center gap-1 rounded-2xl md:rounded-full bg-[#111] px-2 md:pl-5 md:pr-2 py-2 text-white shadow-[0_12px_32px_rgba(17,17,17,0.25)]"
+          className="fixed bottom-24 left-4 right-4 md:bottom-6 md:left-1/2 md:right-auto md:-translate-x-1/2 z-40 flex flex-wrap md:flex-nowrap items-center justify-center gap-1 rounded-2xl md:rounded-full bg-[linear-gradient(95.15deg,#5597ED_3.84%,#00449C_96.38%)] px-2 md:pl-5 md:pr-2 py-2 text-white shadow-[0_12px_32px_rgba(0,68,156,0.35)]"
         >
-          {/* Phones: count + close on the first line, the actions wrap underneath */}
-          <div className="flex items-center justify-between w-full md:w-auto pl-2 md:pl-0 md:mr-2">
-            <span className="text-[14px] font-semibold whitespace-nowrap">{selectedVisible.length} selected</span>
+          {/* Phones: count, select all and close on the first line, the actions wrap underneath */}
+          <div className="flex items-center gap-2 w-full md:w-auto pl-2 md:pl-0 md:mr-1">
+            <span className="text-[14px] font-bold whitespace-nowrap">
+              {allEventSelected ? `All ${selectedRows.length} selected` : `${selectedRows.length} selected`}
+            </span>
+            {!allEventSelected && everyoneCount > selectedRows.length && (
+              <button
+                type="button"
+                onClick={selectEveryone}
+                disabled={loadingEveryone}
+                className="h-8 px-3 rounded-full bg-white text-[#00449C] text-[13px] font-bold whitespace-nowrap hover:bg-[#F2F7FF] transition-colors cursor-pointer disabled:cursor-wait disabled:opacity-80"
+              >
+                {loadingEveryone ? "Selecting…" : `Select all ${everyoneCount}`}
+              </button>
+            )}
             <button
               type="button"
-              onClick={() => setSelected([])}
+              onClick={clearSelection}
               aria-label="Clear selection"
-              className="md:hidden w-9 h-9 grid place-items-center rounded-full hover:bg-white/10 transition-colors cursor-pointer"
+              className="md:hidden ml-auto w-9 h-9 grid place-items-center rounded-full hover:bg-white/15 transition-colors cursor-pointer"
             >
               <X size={16} />
             </button>
           </div>
-          <span className="hidden md:block mx-1 h-5 w-px bg-white/20" aria-hidden />
-          <button type="button" onClick={() => markAttendance(selectedVisible, "yes")} className={bulkBtn}>
-            <CircleCheck size={16} className="text-[#4ADE80]" />
+          <span className="hidden md:block mx-1 h-5 w-px bg-white/30" aria-hidden />
+          <button type="button" onClick={() => markAttendance(selectedIds, "yes")} disabled={loadingEveryone} className={bulkBtn}>
+            <CircleCheck size={16} className="text-[#86EFAC]" />
             Attended
           </button>
-          <button type="button" onClick={() => markAttendance(selectedVisible, "no")} className={bulkBtn}>
-            <CircleX size={16} className="text-[#F87171]" />
+          <button type="button" onClick={() => markAttendance(selectedIds, "no")} disabled={loadingEveryone} className={bulkBtn}>
+            <CircleX size={16} className="text-[#FECACA]" />
             Didn&apos;t attend
           </button>
-          <button type="button" onClick={() => markAttendance(selectedVisible, "none")} className={bulkBtn}>
-            <CircleDashed size={16} className="text-white/60" />
+          <button type="button" onClick={() => markAttendance(selectedIds, "none")} disabled={loadingEveryone} className={bulkBtn}>
+            <CircleDashed size={16} className="text-white/70" />
             Clear
           </button>
           {selectedRemovable.length > 0 && (
             <>
-              <span className="hidden md:block mx-1 h-5 w-px bg-white/20" aria-hidden />
-              <button type="button" onClick={() => askRemove(selectedRemovable)} className={`${bulkBtn} text-[#FCA5A5]`}>
+              <span className="hidden md:block mx-1 h-5 w-px bg-white/30" aria-hidden />
+              <button
+                type="button"
+                onClick={() => askRemove(selectedRemovable)}
+                disabled={loadingEveryone}
+                className={`${bulkBtn} text-[#FFD4D4]!`}
+              >
                 <FiTrash2 className="text-[15px]" />
-                Remove{selectedRemovable.length < selectedVisible.length ? ` ${selectedRemovable.length}` : ""}
+                Remove{selectedRemovable.length < selectedRows.length ? ` ${selectedRemovable.length}` : ""}
               </button>
             </>
           )}
           <button
             type="button"
-            onClick={() => setSelected([])}
+            onClick={clearSelection}
             aria-label="Clear selection"
-            className="hidden md:grid ml-1 w-9 h-9 place-items-center rounded-full hover:bg-white/10 transition-colors cursor-pointer"
+            className="hidden md:grid ml-1 w-9 h-9 place-items-center rounded-full hover:bg-white/15 transition-colors cursor-pointer"
           >
             <X size={16} />
           </button>
