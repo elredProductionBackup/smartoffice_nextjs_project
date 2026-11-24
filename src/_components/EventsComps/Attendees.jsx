@@ -15,6 +15,7 @@ import {
 import { openEventsModal } from "@/store/events/eventsUiSlice";
 import { addToast } from "@/store/toastSlice";
 import { formatMember } from "@/utils/formatMember";
+import { fieldForReason, toApiAttendee } from "@/utils/attendeeContact";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useDebounce } from "@/hooks/useDebounce";
 import Pagination from "../UI/Pagination";
@@ -51,39 +52,6 @@ const nameOfMember = (m) => `${m?.firstName || ""} ${m?.lastName || ""}`.trim() 
 
 // What updateEventAttendance stores; "" clears it back to Not marked
 const ATTENDANCE_TO_API = { yes: "attended", no: "notAttended", none: "" };
-
-// addOfflineAttendees accepts a 10-digit mobile or E.164, so drop spaces/dashes and keep a leading +.
-// Sheets often have numbers without +91: "9876543210" stays as is, "919876543210" gets a +,
-// the domestic trunk 0 ("09876543210") is dropped and the international 00 ("0091…") becomes +.
-function toApiPhone(value = "") {
-  const d = value.replace(/\D/g, "");
-  if (!d) return "";
-  if (value.trim().startsWith("+")) return `+${d}`;
-  if (d.startsWith("00")) return `+${d.slice(2)}`;
-  if (d.length === 11 && d.startsWith("0")) return d.slice(1);
-  return d.length > 10 ? `+${d}` : d;
-}
-
-// Popup form values → one attendees[] item; empty optional fields are left out
-function toApiAttendee(values) {
-  const item = {
-    name: values.name,
-    companyName: values.company,
-    title: values.designation,
-    phoneNumber: toApiPhone(values.whatsapp),
-    email: values.email,
-  };
-  return Object.fromEntries(Object.entries(item).filter(([, v]) => v));
-}
-
-// Which popup field a failed[] reason belongs to, so the error shows under it
-function fieldForReason(reason = "") {
-  const r = reason.toLowerCase();
-  if (r.startsWith("name")) return "name";
-  if (r.startsWith("email")) return "email";
-  if (r.includes("phone")) return "whatsapp";
-  return null;
-}
 
 // Counts may come flat or grouped under attendanceStatus / appStatus
 function normalizeCounts(raw = {}) {
@@ -856,8 +824,9 @@ const Attendees = ({ eventId }) => {
     setSheetFile(file);
   };
 
-  // Sends every mapped sheet row, up to 1000 per call, and merges the results.
+  // Sends the reviewed sheet rows, up to 1000 per call, and merges the results.
   // index in joined[]/failed[] is shifted back to the position in `items`.
+  // Rows the server still rejects go back to the import's Fix popup, so nothing is dropped.
   const importAttendees = async (items) => {
     const total = { addedCount: 0, joined: [], failed: [] };
     try {
@@ -878,20 +847,17 @@ const Attendees = ({ eventId }) => {
   };
 
   // Success popup once a sheet import saves anything. A clean import also closes the import window;
-  // with linked or skipped rows the summary stays underneath so they can be reviewed after OK.
-  const handleImported = ({ addedCount, joined, failed }) => {
+  // with linked rows the summary stays underneath so they can be checked after OK.
+  const handleImported = ({ addedCount, joined, removedCount = 0 }) => {
     if (!addedCount) return;
-    const needsReview = joined.length > 0 || failed.length > 0;
-    if (!needsReview) setSheetFile(null);
+    if (!joined.length) setSheetFile(null);
     setSuccess({
       title: "Attendees added",
-      message: needsReview
-        ? `${addedCount} ${addedCount === 1 ? "attendee was" : "attendees were"} added. Check the linked and skipped rows next.`
-        : `All ${addedCount} ${addedCount === 1 ? "attendee was" : "attendees were"} added to this event.`,
+      message: `${addedCount} ${addedCount === 1 ? "attendee was" : "attendees were"} added to this event.`,
       stats: [
         { label: "Added", value: addedCount },
         ...(joined.length ? [{ label: "Linked to app profiles", value: joined.length }] : []),
-        ...(failed.length ? [{ label: "Skipped", value: failed.length }] : []),
+        ...(removedCount ? [{ label: "Removed during review", value: removedCount }] : []),
       ],
     });
   };

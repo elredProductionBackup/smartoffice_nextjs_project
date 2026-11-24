@@ -1,117 +1,24 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { FiX, FiChevronDown, FiTrash2, FiAlertTriangle } from "react-icons/fi";
+import { useState } from "react";
+import { FiX, FiTrash2, FiAlertTriangle, FiCheckCircle } from "react-icons/fi";
 
-function initials(name) {
-  return name
-    .split(" ")
-    .map((p) => p[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-}
-
-function AddMemberControl({ groupName, contacts, onAddMember }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-
-  useEffect(() => {
-    function handleClickOutside(e) {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const available = contacts
-    .filter((c) => !c.groups?.includes(groupName))
-    .sort((a, b) => a.name.localeCompare(b.name));
-
-  return (
-    <div ref={ref} className="relative mt-3">
-      <button
-        type="button"
-        onClick={() => setOpen((p) => !p)}
-        className="w-full flex items-center justify-between h-[38px] px-3 rounded-[8px] border border-dashed border-[#93c5fd] text-[13px] font-semibold text-[#2563eb] hover:bg-[#eff6ff] cursor-pointer transition-colors"
-      >
-        Add member
-        <FiChevronDown className={`text-[14px] transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
-      </button>
-
-      {open && (
-        <div className="absolute z-30 w-full mt-1 bg-white border border-[#e5e7eb] rounded-[10px] shadow-lg py-1.5 px-1.5 max-h-[220px] overflow-y-auto">
-          {available.length === 0 && (
-            <div className="px-3 py-2.5 text-[13px] text-[#9ca3af]">Everyone is already in this group.</div>
-          )}
-          {available.map((c) => (
-            <button
-              key={c.id}
-              type="button"
-              onClick={() => {
-                onAddMember(groupName, c.id);
-                setOpen(false);
-              }}
-              className="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] text-left rounded-[7px] hover:bg-[#f9fafb] cursor-pointer"
-            >
-              <div className="w-6 h-6 min-w-[24px] rounded-full bg-[#E5E7EB] text-[#555] grid place-items-center text-[10px] font-bold">
-                {initials(c.name)}
-              </div>
-              <span className="truncate">{c.name}</span>
-              {c.groups?.length > 0 && (
-                <span className="text-[11px] text-[#9ca3af] ml-auto whitespace-nowrap max-md:max-w-[45%] max-md:truncate">in {c.groups.join(", ")}</span>
-              )}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
+const DELETED_HOLD_MS = 1200;
 
 export default function GroupsModal({
   contacts,
   groups,
+  partialGroups,
   onClose,
   onCreateGroup,
-  onAddMember,
-  onRemoveMember,
   onDeleteGroup,
 }) {
   const [newGroupName, setNewGroupName] = useState("");
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState("");
-  const [pendingRemove, setPendingRemove] = useState(null); // { groupName, member }
-
-  const [removing, setRemoving] = useState(false);
-  const [removeError, setRemoveError] = useState("");
-
-  const openRemove = (groupName, member) => {
-    setRemoveError("");
-    setPendingRemove({ groupName, member });
-  };
-
-  const closeRemove = () => {
-    if (removing) return;
-    setPendingRemove(null);
-  };
-
-  const confirmRemove = async () => {
-    if (!pendingRemove || removing) return;
-    setRemoving(true);
-    setRemoveError("");
-    try {
-      await onRemoveMember(pendingRemove.groupName, pendingRemove.member.id);
-      setPendingRemove(null);
-    } catch (error) {
-      setRemoveError(error?.response?.data?.message || error?.message || "Failed to remove member");
-    } finally {
-      setRemoving(false);
-    }
-  };
-
   const [pendingDeleteGroup, setPendingDeleteGroup] = useState(null); // { groupName, memberCount }
-  const [deletingGroup, setDeletingGroup] = useState(false);
+  const [deleteGroupStatus, setDeleteGroupStatus] = useState("idle"); // idle | deleting | deleted
+  const deletingGroup = deleteGroupStatus !== "idle";
   const [deleteGroupError, setDeleteGroupError] = useState("");
 
   const openDeleteGroup = (groupName, memberCount) => {
@@ -126,15 +33,18 @@ export default function GroupsModal({
 
   const confirmDeleteGroup = async () => {
     if (!pendingDeleteGroup || deletingGroup) return;
-    setDeletingGroup(true);
+    setDeleteGroupStatus("deleting");
     setDeleteGroupError("");
     try {
       await onDeleteGroup(pendingDeleteGroup.groupName);
-      setPendingDeleteGroup(null);
+      setDeleteGroupStatus("deleted");
+      setTimeout(() => {
+        setPendingDeleteGroup(null);
+        setDeleteGroupStatus("idle");
+      }, DELETED_HOLD_MS);
     } catch (error) {
       setDeleteGroupError(error?.response?.data?.message || error?.message || "Failed to delete group");
-    } finally {
-      setDeletingGroup(false);
+      setDeleteGroupStatus("idle");
     }
   };
 
@@ -202,51 +112,29 @@ export default function GroupsModal({
           </div>
 
           {/* Group list */}
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2.5">
             {groups.map((groupName) => {
-              const members = contacts
-                .filter((c) => c.groups?.includes(groupName))
-                .sort((a, b) => a.name.localeCompare(b.name));
+              const memberCount = contacts.filter((c) => c.groups?.includes(groupName)).length;
               return (
-                <div key={groupName} className="border border-[#e5e7eb] rounded-[12px] p-4">
-                  <div className="flex items-center justify-between gap-2">
-                    <h3 className="min-w-0 truncate text-[15px] font-bold text-[#1a1a2e]">{groupName}</h3>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span className="text-[13px] text-[#9ca3af]">
-                        {members.length} member{members.length === 1 ? "" : "s"}
-                      </span>
-                      <button
-                        onClick={() => openDeleteGroup(groupName, members.length)}
-                        title="Delete group"
-                        className="text-red-500 hover:bg-red-50 rounded-[6px] p-2.5 md:p-1.5 cursor-pointer transition-colors"
-                      >
-                        <FiTrash2 className="text-[15px]" />
-                      </button>
-                    </div>
+                <div
+                  key={groupName}
+                  className="flex items-center justify-between gap-2 border border-[#e5e7eb] rounded-[12px] pl-4 pr-2 py-2.5"
+                >
+                  <h3 className="min-w-0 truncate text-[15px] font-bold text-[#1a1a2e]">{groupName}</h3>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-[13px] text-[#9ca3af]">
+                      {memberCount}
+                      {/* The server may hold more than it returned */}
+                      {partialGroups?.has(groupName) && "+"} member{memberCount === 1 ? "" : "s"}
+                    </span>
+                    <button
+                      onClick={() => openDeleteGroup(groupName, memberCount)}
+                      title="Delete group"
+                      className="text-red-500 hover:bg-red-50 rounded-[6px] p-2.5 md:p-1.5 cursor-pointer transition-colors"
+                    >
+                      <FiTrash2 className="text-[15px]" />
+                    </button>
                   </div>
-
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    {members.map((m) => (
-                      <div
-                        key={m.id}
-                        className="flex items-center gap-1.5 max-w-full bg-[#eff6ff] rounded-full pl-1 pr-2 py-1 text-[13px] font-medium text-[#1a1a2e]"
-                      >
-                        <div className="w-6 h-6 min-w-[24px] rounded-full bg-[#6366F1] text-white grid place-items-center text-[10px] font-bold">
-                          {initials(m.name)}
-                        </div>
-                        <span className="min-w-0 truncate">{m.name}</span>
-                        <button
-                          onClick={() => openRemove(groupName, m)}
-                          title="Remove from group"
-                          className="text-[#6b7280] hover:text-red-500 cursor-pointer ml-0.5 shrink-0 max-md:p-1 max-md:-m-1"
-                        >
-                          <FiX className="text-[13px]" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-
-                  <AddMemberControl groupName={groupName} contacts={contacts} onAddMember={onAddMember} />
                 </div>
               );
             })}
@@ -270,45 +158,6 @@ export default function GroupsModal({
         </div>
       </div>
 
-      {pendingRemove && (
-        <div
-          className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/40"
-          onClick={(e) => {
-            e.stopPropagation();
-            closeRemove();
-          }}
-        >
-          <div
-            className="bg-white rounded-[16px] w-full max-w-[360px] mx-4 shadow-xl p-5 md:p-6"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="text-[16px] font-bold text-[#1a1a2e] mb-1.5">Remove from group?</h3>
-            <p className="text-[13px] text-[#666] mb-5">
-              <span className="font-semibold text-[#1a1a2e]">{pendingRemove.member.name}</span> will be removed from{" "}
-              <span className="font-semibold text-[#1a1a2e]">{pendingRemove.groupName}</span>. They&apos;ll stay in
-              your contacts and any other groups.
-            </p>
-            {removeError && <p className="text-[12px] text-red-600 mb-3">{removeError}</p>}
-            <div className="flex items-center justify-end gap-3">
-              <button
-                onClick={closeRemove}
-                disabled={removing}
-                className="px-5 h-[38px] rounded-[8px] border border-[#d1d5db] text-[13px] font-semibold text-[#333] hover:bg-[#f9fafb] cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmRemove}
-                disabled={removing}
-                className="px-5 h-[38px] rounded-[8px] bg-red-500 text-white text-[13px] font-semibold hover:bg-red-600 cursor-pointer transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {removing ? "Removing…" : "Remove"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {pendingDeleteGroup && (
         <div
           className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/40"
@@ -321,34 +170,51 @@ export default function GroupsModal({
             className="bg-white rounded-[16px] w-full max-w-[380px] mx-4 shadow-xl p-5 md:p-6"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center gap-2 mb-1.5">
-              <FiAlertTriangle className="text-[18px] text-red-600" />
-              <h3 className="text-[16px] font-bold text-[#1a1a2e]">Delete group?</h3>
-            </div>
-            <p className="text-[13px] text-[#666] mb-5">
-              <span className="font-semibold text-[#1a1a2e]">{pendingDeleteGroup.groupName}</span> and all{" "}
-              <span className="font-semibold text-[#1a1a2e]">
-                {pendingDeleteGroup.memberCount} contact{pendingDeleteGroup.memberCount === 1 ? "" : "s"}
-              </span>{" "}
-              in it will be deleted. Members of other groups stay in those groups. This can&apos;t be undone.
-            </p>
-            {deleteGroupError && <p className="text-[12px] text-red-600 mb-3">{deleteGroupError}</p>}
-            <div className="flex items-center justify-end gap-3">
-              <button
-                onClick={closeDeleteGroup}
-                disabled={deletingGroup}
-                className="px-5 h-[38px] rounded-[8px] border border-[#d1d5db] text-[13px] font-semibold text-[#333] hover:bg-[#f9fafb] cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmDeleteGroup}
-                disabled={deletingGroup}
-                className="px-5 h-[38px] rounded-[8px] bg-red-500 text-white text-[13px] font-semibold hover:bg-red-600 cursor-pointer transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {deletingGroup ? "Deleting…" : "Delete group"}
-              </button>
-            </div>
+            {deleteGroupStatus === "idle" && (
+              <>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <FiAlertTriangle className="text-[18px] text-red-600" />
+                  <h3 className="text-[16px] font-bold text-[#1a1a2e]">Delete group?</h3>
+                </div>
+                <p className="text-[13px] text-[#666] mb-5">
+                  <span className="font-semibold text-[#1a1a2e]">{pendingDeleteGroup.groupName}</span> and all{" "}
+                  <span className="font-semibold text-[#1a1a2e]">
+                    {pendingDeleteGroup.memberCount} contact{pendingDeleteGroup.memberCount === 1 ? "" : "s"}
+                  </span>{" "}
+                  in it will be deleted. Members of other groups stay in those groups. This can&apos;t be undone.
+                </p>
+                {deleteGroupError && <p className="text-[12px] text-red-600 mb-3">{deleteGroupError}</p>}
+                <div className="flex items-center justify-end gap-3">
+                  <button
+                    onClick={closeDeleteGroup}
+                    className="px-5 h-[38px] rounded-[8px] border border-[#d1d5db] text-[13px] font-semibold text-[#333] hover:bg-[#f9fafb] cursor-pointer transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmDeleteGroup}
+                    className="px-5 h-[38px] rounded-[8px] bg-red-500 text-white text-[13px] font-semibold hover:bg-red-600 cursor-pointer transition-colors"
+                  >
+                    Delete group
+                  </button>
+                </div>
+              </>
+            )}
+
+            {deleteGroupStatus === "deleting" && (
+              <div className="flex flex-col items-center py-3 gap-3">
+                <div className="w-8 h-8 border-[3px] border-red-500 border-t-transparent rounded-full animate-spin" />
+                <p className="text-[13px] font-semibold text-[#333]">Deleting {pendingDeleteGroup.groupName}…</p>
+              </div>
+            )}
+
+            {deleteGroupStatus === "deleted" && (
+              <div className="flex flex-col items-center py-3 gap-2">
+                <FiCheckCircle className="text-[32px] text-green-500" />
+                <p className="text-[14px] font-semibold text-[#1a1a2e]">Group deleted</p>
+                <p className="text-[12px] text-[#888] max-w-full truncate">{pendingDeleteGroup.groupName}</p>
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -91,7 +91,6 @@ export default function SendBulkPageClient() {
   const [selectedIds, setSelectedIds] = useState(new Set(DEFAULT_SELECTED));
   const [search, setSearch] = useState("");
   const [groupFilter, setGroupFilter] = useState("All groups");
-  const [groupFilterLoading, setGroupFilterLoading] = useState(false);
   const [showAllContacts, setShowAllContacts] = useState(false);
   const CONTACTS_PAGE_SIZE = 5;
   const [groupFilterOpen, setGroupFilterOpen] = useState(false);
@@ -199,14 +198,19 @@ export default function SendBulkPageClient() {
     return next;
   };
 
-  // Treat `serverGroups` ({ name, id, contacts }) as the source of truth for
-  // those groups: drop them from every local contact, then re-add them to
-  // exactly the contacts the backend returned.
-  const applyServerMembership = (serverGroups) => {
-    const names = new Set(serverGroups.map((g) => g.name));
+  // Merge `serverGroups` ({ name, id, contacts }) into the local list. This only
+  // ever ADDS memberships — loading data (e.g. opening a popup) must never take a
+  // contact out of a group, since a server list can be partial. Removals happen
+  // only through the delete actions, which update local state themselves.
+  // `existingGroupNames` (optional): every group the server has; memberships of
+  // groups that no longer exist are dropped.
+  const applyServerMembership = (serverGroups, existingGroupNames) => {
     updateContacts((prev) => {
       const byKey = new Map(
-        prev.map((c) => [contactKey(c), { ...c, groups: (c.groups || []).filter((g) => !names.has(g)) }])
+        prev.map((c) => [
+          contactKey(c),
+          existingGroupNames ? { ...c, groups: (c.groups || []).filter((g) => existingGroupNames.has(g)) } : c,
+        ])
       );
       serverGroups.forEach((g) => {
         (g.contacts || []).forEach((gc) => {
@@ -228,7 +232,38 @@ export default function SendBulkPageClient() {
     });
   };
 
-  const refreshGroups = async () => {
+  // Full member list of one group, straight from the backend.
+  // `complete` is false when the server may have cut the list short.
+  const fetchGroupMembers = async (groupId) => {
+    const result = await getContactGroupContacts(groupId);
+    if (result?.success === false) throw new Error(result?.message || "Failed to load group contacts");
+    return { contacts: Array.isArray(result?.result) ? result.result : [], complete: result?.complete !== false };
+  };
+
+  // Groups whose server list may be cut short — their counts show as "20+"
+  const [partialGroups, setPartialGroups] = useState(() => new Set());
+  const markPartial = (name, complete) =>
+    setPartialGroups((prev) => {
+      if (prev.has(name) === !complete) return prev;
+      const next = new Set(prev);
+      if (complete) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+
+  // One load at a time: popups opening (and React's dev-mode double effect)
+  // reuse the request already in flight instead of starting another.
+  const refreshInFlight = useRef(null);
+  const refreshGroups = () => {
+    if (!refreshInFlight.current) {
+      refreshInFlight.current = loadGroups().finally(() => {
+        refreshInFlight.current = null;
+      });
+    }
+    return refreshInFlight.current;
+  };
+
+  const loadGroups = async () => {
     try {
       const result = await getContactGroups();
       const rawList = Array.isArray(result?.result) ? result.result : Array.isArray(result) ? result : [];
@@ -250,9 +285,30 @@ export default function SendBulkPageClient() {
       setGroupList(list.map((g) => g.name));
       setGroupIds(Object.fromEntries(list.map((g) => [g.name, g._id])));
 
-      // Merge each group's contacts into the local contact list so member
-      // counts/lists stay in sync with the backend after a refresh.
-      applyServerMembership(list.map((g) => ({ name: g.name, id: g._id, contacts: g.contacts })));
+      // getContactGroups embeds only the first few contacts of each group (the
+      // same cap for every group). A group whose embedded list is shorter than the
+      // longest one isn't cut off, so use it as is. Only groups that may be cut
+      // off need their full list from getContactGroupContacts.
+      const previewOf = (g) => (Array.isArray(g.contacts) ? g.contacts : []);
+      const longestPreview = Math.max(0, ...list.map((g) => previewOf(g).length));
+      const fullGroups = await Promise.all(
+        list.map(async (g) => {
+          const preview = previewOf(g);
+          if (preview.length === 0 || preview.length < longestPreview) {
+            markPartial(g.name, true);
+            return { name: g.name, id: g._id, contacts: preview };
+          }
+          try {
+            const { contacts: members, complete } = await fetchGroupMembers(g._id);
+            markPartial(g.name, complete);
+            return { name: g.name, id: g._id, contacts: members };
+          } catch (error) {
+            console.error(`getContactGroupContacts failed for "${g.name}":`, error?.response || error);
+            return null; // keep what's on screen for this group rather than guess
+          }
+        })
+      );
+      applyServerMembership(fullGroups.filter(Boolean), new Set(list.map((g) => g.name)));
     } catch (error) {
       console.error("getContactGroups API Error:", error?.response || error);
       setNotice("Failed to load groups");
@@ -274,31 +330,9 @@ export default function SendBulkPageClient() {
     setContactsModalMode(mode);
   };
 
-  const fetchGroupContacts = async (groupName) => {
-    const groupId = groupIds[groupName];
-    if (!groupId) {
-      console.warn(`No groupId on file for "${groupName}" — skipping getContactGroupContacts fetch.`);
-      return;
-    }
-    setGroupFilterLoading(true);
-    try {
-      const result = await getContactGroupContacts(groupId);
-      const list = Array.isArray(result?.result) ? result.result : Array.isArray(result) ? result : [];
-
-      applyServerMembership([{ name: groupName, id: groupId, contacts: list }]);
-    } catch (error) {
-      console.error("getContactGroupContacts API Error:", error?.response || error);
-      setNotice("Failed to load group contacts");
-    } finally {
-      setGroupFilterLoading(false);
-    }
-  };
-
-  // Picking a group in the filter loads that group's contacts
-  const selectGroupFilter = (g) => {
-    if (g !== groupFilter && g !== "All groups") fetchGroupContacts(g);
-    setGroupFilter(g);
-  };
+  // Every group's full member list is already loaded with the groups, so
+  // picking one in the filter needs no extra request.
+  const selectGroupFilter = (g) => setGroupFilter(g);
 
   const createGroup = async (name) => {
     const trimmed = name.trim();
@@ -349,54 +383,41 @@ export default function SendBulkPageClient() {
     if (groupFilter === name) setGroupFilter("All groups");
   };
 
-  const syncGroupContacts = async (name, members) => {
+  // Saves the group's full member list; throws with a readable message on failure.
+  const saveGroupContacts = async (name, members) => {
     const groupId = groupIds[name];
     if (!groupId) {
-      console.warn(`No groupId on file for "${name}" — skipping createContactGroup sync.`);
-      return;
+      throw new Error(`Can't save to "${name}" — group not found. Try reopening the popup.`);
     }
+    // This call replaces the group's member list. The page may not have every
+    // member loaded, so merge in what the server already has — a save must
+    // never drop contacts. Abort if that list can't be loaded.
+    let serverMembers;
+    let complete;
     try {
-      const result = await createContactGroup({ groupId, name, contacts: members.map(toApiContact) });
-      if (result?.success === false) {
-        setNotice(result?.message || "Failed to sync group members");
-      }
-    } catch (error) {
-      console.error("createContactGroup sync error:", error?.response || error);
-      setNotice("Failed to sync group members");
+      ({ contacts: serverMembers, complete } = await fetchGroupMembers(groupId));
+    } catch {
+      throw new Error(`Couldn't load the current members of "${name}". Please try again.`);
     }
-  };
-
-  // Adding to one group never touches the contact's other memberships.
-  const addMemberToGroup = (name, contactId) => {
-    const next = updateContacts((prev) =>
-      prev.map((c) =>
-        c.id === contactId && !c.groups?.includes(name) ? { ...c, groups: [...(c.groups || []), name] } : c
-      )
-    );
-    syncGroupContacts(name, membersOf(next, name));
-  };
-
-  // Deletes the contact from this one group on the backend first; throws on
-  // failure (see deleteContactGroupContacts) so the member stays on-screen.
-  const removeMemberFromGroup = async (name, contactId) => {
-    const contact = contactsRef.current.find((c) => c.id === contactId);
-    const groupId = groupIds[name];
-    if (!contact || !groupId) {
-      throw new Error(`Can't remove from "${name}" — group not found. Try reopening the popup.`);
+    markPartial(name, complete);
+    // Saving on top of a cut-short list would delete the members we couldn't load
+    if (!complete) {
+      throw new Error(`"${name}" is too large to update safely right now — no contacts were changed.`);
     }
-
-    const dropFromGroup = (prev) =>
-      prev.map((c) => (c.id === contactId ? { ...c, groups: (c.groups || []).filter((g) => g !== name) } : c));
-
-    if (contact.phone) {
-      await deleteContactGroupContacts({ groupId, contacts: [{ phone: contact.phone }] });
-      updateContacts(dropFromGroup);
-    } else {
-      // The delete API identifies contacts by phone — for phone-less contacts
-      // fall back to re-saving the group without them.
-      const next = updateContacts(dropFromGroup);
-      await syncGroupContacts(name, membersOf(next, name));
+    const byPhone = new Map();
+    // Local entries win so edits to an existing contact's name/email are kept.
+    // The backend rejects the whole save if any contact lacks a phone.
+    [...serverMembers, ...members].forEach((c) => c.phone && byPhone.set(c.phone, toApiContact(c)));
+    const payload = Array.from(byPhone.values());
+    const result = await createContactGroup({ groupId, name, contacts: payload });
+    if (result?.success === false) {
+      // "contacts[3].phone is required" → "Ronak Barot: phone is required"
+      const message = result?.message || "Failed to save contacts";
+      const match = message.match(/contacts\[(\d+)\]\.(\w+)\s*(.*)/);
+      const who = match && payload[Number(match[1])]?.name;
+      throw new Error(who ? `${who}: ${match[2]} ${match[3]}`.trim() : message);
     }
+    return result;
   };
 
   // Merge incoming contacts (each carrying an optional single `group` from
@@ -419,24 +440,26 @@ export default function SendBulkPageClient() {
       return Array.from(byKey.values());
     });
 
-  const addContact = async (newContact) => {
-    const next = mergeIncomingContacts([newContact]);
+  // Adds contacts locally, saves their group, and undoes the local add if the
+  // save fails. Throws so the calling popup can show the error.
+  const addContactsToGroup = async (newContacts) => {
+    const snapshot = contactsRef.current;
+    const next = mergeIncomingContacts(newContacts);
     // The list is sorted alphabetically and paginated to CONTACTS_PAGE_SIZE —
-    // without this the new contact can silently land past the visible slice.
+    // without this the new contacts can silently land past the visible slice.
     setShowAllContacts(true);
-    if (newContact.group) {
-      await syncGroupContacts(newContact.group, membersOf(next, newContact.group));
+    const group = newContacts[0]?.group;
+    if (!group) return;
+    try {
+      await saveGroupContacts(group, membersOf(next, group));
+    } catch (error) {
+      updateContacts(() => snapshot);
+      throw error;
     }
   };
 
-  const importContacts = (newContacts) => {
-    const next = mergeIncomingContacts(newContacts);
-    const group = newContacts[0]?.group;
-    if (group) {
-      syncGroupContacts(group, membersOf(next, group));
-    }
-    setShowAllContacts(true);
-  };
+  const addContact = (newContact) => addContactsToGroup([newContact]);
+  const importContacts = (newContacts) => addContactsToGroup(newContacts);
 
   // Manage contacts lists one row per group membership, so a delete targets
   // a single group. The contact itself is only dropped once it's in no group.
@@ -796,15 +819,15 @@ export default function SendBulkPageClient() {
                 </button>
 
                 {sendToMenuOpen && (
-                  <div className="absolute z-30 right-0 mt-2 w-[200px] bg-white border border-[#e5e7eb] rounded-[10px] shadow-lg py-1.5 px-1.5">
+                  <div className="absolute z-30 right-0 mt-2 w-max min-w-[220px] bg-white border border-[#e5e7eb] rounded-[10px] shadow-lg py-1.5 px-1.5">
                     <button
                       onClick={() => {
                         openContactsModal("contact");
                         setSendToMenuOpen(false);
                       }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2.5 text-[16px] font-medium text-[#333] hover:bg-[#f9fafb] rounded-[7px] cursor-pointer"
+                      className="w-full flex items-center gap-2.5 px-3 py-2.5 text-[16px] font-medium text-[#333] text-left whitespace-nowrap hover:bg-[#f9fafb] rounded-[7px] cursor-pointer"
                     >
-                      <FiPlus className="text-[16px] text-[#2563eb]" />
+                      <FiPlus className="text-[16px] text-[#2563eb] shrink-0" />
                       Add contact
                     </button>
                     <button
@@ -812,10 +835,13 @@ export default function SendBulkPageClient() {
                         openContactsModal("manage");
                         setSendToMenuOpen(false);
                       }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2.5 text-[16px] font-medium text-[#333] hover:bg-[#f9fafb] rounded-[7px] cursor-pointer"
+                      className="w-full flex items-center gap-2.5 px-3 py-2.5 text-[16px] font-medium text-[#333] text-left whitespace-nowrap hover:bg-[#f9fafb] rounded-[7px] cursor-pointer"
                     >
-                      <FiUsers className="text-[16px] text-[#2563eb]" />
-                      Manage contacts ({contactEntryCount})
+                      <FiUsers className="text-[16px] text-[#2563eb] shrink-0" />
+                      <span className="flex-1">Manage contacts</span>
+                      <span className="ml-3 min-w-[22px] h-[22px] px-1.5 rounded-full bg-[#eff6ff] text-[#2563eb] text-[12px] font-semibold flex items-center justify-center">
+                        {contactEntryCount}
+                      </span>
                     </button>
                   </div>
                 )}
@@ -880,9 +906,6 @@ export default function SendBulkPageClient() {
               >
                 {allFilteredSelected ? "Deselect all" : `Select all ${selectableInFilter.length}`}
               </button>
-              {groupFilterLoading && (
-                <span className="text-[14px] text-[#9ca3af]">Loading group…</span>
-              )}
             </div>
 
             <div className="flex-1 min-h-[120px] overflow-y-auto -mx-2 pr-1 space-y-1">
@@ -988,11 +1011,10 @@ export default function SendBulkPageClient() {
         <GroupsModal
           contacts={contacts}
           groups={groupList}
+          partialGroups={partialGroups}
           onClose={() => setGroupsModalOpen(false)}
           onCreateGroup={createGroup}
           onDeleteGroup={deleteGroup}
-          onAddMember={addMemberToGroup}
-          onRemoveMember={removeMemberFromGroup}
         />
       )}
 

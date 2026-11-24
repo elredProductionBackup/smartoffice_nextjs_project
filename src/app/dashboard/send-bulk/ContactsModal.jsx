@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { FiX, FiTrash2, FiChevronDown, FiCheckCircle, FiUpload, FiAlertTriangle } from "react-icons/fi";
+import CsvMappingModal from "./CsvMappingModal";
+import { parseCsv } from "./csvImport";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -98,31 +100,6 @@ function GroupSelect({ groups, value, onChange }) {
   );
 }
 
-function parseCsv(text) {
-  const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
-  if (lines.length === 0) return [];
-  const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
-  return lines.slice(1).map((line) => {
-    const cells = line.split(",").map((c) => c.trim());
-    const row = {};
-    headers.forEach((h, i) => {
-      row[h] = cells[i] || "";
-    });
-    return row;
-  });
-}
-
-function rowsToContacts(rows, group) {
-  return rows
-    .map((row) => {
-      const name = row.name || row["full name"] || "";
-      const phone = row.phone || row["phone number"] || row.mobile || "";
-      const email = row.email || "";
-      return { name: name.trim(), phone: phone.trim(), email: email.trim(), group: group || null, hasWhatsApp: !!phone.trim() };
-    })
-    .filter((c) => c.name);
-}
-
 export default function ContactsModal({
   mode,
   contacts,
@@ -142,6 +119,7 @@ export default function ContactsModal({
   const [phone, setPhone] = useState("");
   const [group, setGroup] = useState("");
   const [csvNotice, setCsvNotice] = useState("");
+  const [csvFile, setCsvFile] = useState(null); // { fileName, headers, rows, rowNumbers } while mapping columns
   const [pendingDelete, setPendingDelete] = useState(null);
   const [deleteStatus, setDeleteStatus] = useState("idle"); // idle | deleting | deleted
   const [deleteError, setDeleteError] = useState("");
@@ -169,6 +147,7 @@ export default function ContactsModal({
   const canSubmit =
     fullName.trim() &&
     !nameError &&
+    phone.trim() &&
     !emailValidationError &&
     !phoneError &&
     !!group;
@@ -213,22 +192,28 @@ export default function ContactsModal({
 
   const handleCsvChange = (e) => {
     const file = e.target.files?.[0];
+    e.target.value = "";
     if (!file) return;
     const reader = new FileReader();
     reader.onload = () => {
-      const rows = parseCsv(String(reader.result || ""));
-      const newContacts = rowsToContacts(rows, group);
-      if (newContacts.length === 0) {
-        setCsvNotice("No valid rows found. Expect columns: name, phone, email.");
-      } else {
-        onImportContacts(newContacts);
-        setCsvNotice(
-          `Imported ${newContacts.length} contact${newContacts.length === 1 ? "" : "s"} into ${group || "no group"}.`
-        );
+      const { headers, rows, rowNumbers } = parseCsv(String(reader.result || ""));
+      if (headers.length === 0 || rows.length === 0) {
+        setCsvNotice("This file has no rows to import.");
+        return;
       }
+      setCsvFile({ fileName: file.name, headers, rows, rowNumbers });
     };
+    reader.onerror = () => setCsvNotice("Couldn't read this file.");
     reader.readAsText(file);
-    e.target.value = "";
+  };
+
+  // Throws on failure so the mapping popup stays open and shows the error
+  const handleCsvImport = (mapped) => onImportContacts(mapped.map((c) => ({ ...c, group, hasWhatsApp: true })));
+
+  // Called after the popup has shown its success state
+  const handleCsvDone = (count) => {
+    setCsvFile(null);
+    setCsvNotice(`Imported ${count} contact${count === 1 ? "" : "s"} into ${group}.`);
   };
 
   const confirmDelete = async () => {
@@ -369,7 +354,7 @@ export default function ContactsModal({
                   onChange={handleCsvChange}
                   className="hidden"
                 />
-                <p className="text-[12px] text-[#9ca3af] mt-2">CSV columns: name, phone, email.</p>
+                <p className="text-[12px] text-[#9ca3af] mt-2">You&apos;ll match your columns to name, phone and email next.</p>
                 {csvNotice && <p className="text-[12px] text-[#2563eb] font-medium mt-2">{csvNotice}</p>}
               </div>
             </div>
@@ -560,6 +545,19 @@ export default function ContactsModal({
             )}
           </div>
         </div>
+      )}
+
+      {csvFile && (
+        <CsvMappingModal
+          fileName={csvFile.fileName}
+          headers={csvFile.headers}
+          rows={csvFile.rows}
+          rowNumbers={csvFile.rowNumbers}
+          group={group}
+          onCancel={() => setCsvFile(null)}
+          onImport={handleCsvImport}
+          onDone={handleCsvDone}
+        />
       )}
 
       {(addStatus === "adding" || addStatus === "added") && (
